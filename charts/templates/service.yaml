@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: controller
+  labels:
+    {{- include "terraform-controller.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: builds
+    port: 80
+    targetPort: {{ .Values.controller.port }}
+  - name: webhooks
+    port: 443
+    targetPort: {{ .Values.controller.webhooks.port }}
+  sessionAffinity: ClientIP
+  selector:
+    app.kubernetes.io/name: {{ include "terraform-controller.name" . }}

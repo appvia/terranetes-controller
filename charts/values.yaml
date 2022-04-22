@@ -1,0 +1,111 @@
+
+nameOverride: ""
+fullnameOverride: ""
+replicaCount: 1
+
+controller:
+  # Indicate we register the validating and mutating webhooks
+  enableWebhookRegistration: true
+  # Is the port the apiserver is running
+  port: 10080
+  # Is the port for the metrics service
+  metricsPort: 9090
+  # The namespace to run all the jobs in
+  namespace: default
+  # Configuration for the images used by the jobs
+  images:
+    # The terraform image used when running jobs
+    terraform: "hashicorp/terraform"
+    # The image used for git operations in the jobs
+    git: "alpine/git:latest"
+  # The default terraform version (or tag of the above image)
+  terraformVersion: 1.1.7
+  # configuration for the webhooks
+  webhooks:
+    # is the port the webhooks is running
+    port: 10081
+    # enables the webhooks
+    enabled: true
+    # creates the certificate authority
+    ca: true
+    # name of the file containing the certificate authority
+    tlsAuthority: /certs/ca.pem
+    # name of the file containing the tls certificate
+    tlsCert: tls.pem
+    # directory containing the above certificates
+    tlsDir: /certs
+    # name of the file containing the tls private key
+    tlsKey: tls-key.pem
+
+networkPolicies:
+  # Indicates we should create the network policies
+  enabled: true
+
+image:
+  repository: quay.io/appvia/terraform-controller
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets: []
+
+podAnnotations:
+  prometheus.io/port: "9090"
+  prometheus.io/scheme: "http"
+  prometheus.io/scrape: "true"
+
+podSecurityContext:
+  fsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - all
+
+rbac:
+  # Indicates we should provision the rbac
+  create: true
+  # Indicates we should create the service account for terraform executors
+  createExecutorServiceAccount: true
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: name
+              operator: In
+              values:
+              - controller
+          topologyKey: failure-domain.beta.kubernetes.io/zone
+      - weight: 95
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: name
+              operator: In
+              values:
+              - controller
+          topologyKey: kubernetes.io/hostname
+

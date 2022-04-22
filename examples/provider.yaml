@@ -1,0 +1,12 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: default
+spec:
+  source: secret
+  provider: aws
+  secretRef:
+    namespace: default
+    name: aws
+

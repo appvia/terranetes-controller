@@ -1,0 +1,10 @@
+FROM alpine:3.15.4
+
+RUN apk add ca-certificates git
+
+ADD bin/controller /controller
+ADD bin/source /source
+
+USER 65534
+
+ENTRYPOINT ["/controller"]

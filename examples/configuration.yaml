@@ -1,0 +1,37 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Configuration
+metadata:
+  name: bucket
+spec:
+  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git
+
+  providerRef:
+    namespace: default
+    name: default
+
+  writeConnectionSecretToRef:
+    name: test
+
+  variables:
+    # -- The name of the bucket. If omitted, Terraform will assign a random, unique name
+    bucket: rohith-test-1234
+    # -- The canned ACL to apply
+    acl: private
+    # -- Map containing versioning configuration
+    versioning:
+      enabled: true
+    # --Whether Amazon S3 should block public ACLs for this bucket
+    block_public_acls: true
+    # -- Whether Amazon S3 should block public bucket policies for this bucket
+    block_public_policy: true
+    # -- Whether Amazon S3 should ignore public ACLs for this bucket
+    ignore_public_acls: true
+    # -- Whether Amazon S3 should restrict public bucket policies for this bucket
+    restrict_public_buckets: true
+    # -- Map containing server-side encryption configuration
+    server_side_encryption_configuration:
+      rule:
+        apply_server_side_encryption_by_default:
+          sse_algorithm: "aws:kms"
+        bucket_key_enabled: true

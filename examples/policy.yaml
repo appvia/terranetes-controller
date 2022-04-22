@@ -1,0 +1,25 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: permitted-modules
+spec:
+  constraints:
+    modules:
+      allowed:
+        - "https://github.com/.*"
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: environment-defaults
+spec:
+  defaults:
+    - selector:
+        namespace:
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: Exists
+      variables:
+        environment: dev
+

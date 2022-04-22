@@ -1,0 +1,59 @@
+*.DS_Store
+*.orig
+.idea
+.vscode
+gcp-auth.json
+/*.env
+#local dev artifacts
+/dev
+/dev/
+/bin/
+/deploy
+/cmd/cluster-controller
+/release
+/secret.yml
+/values.yaml
+*.kubeconfig
+
+# Created by https://www.toptal.com/developers/gitignore/api/go,vim,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=go,vim,visualstudiocode
+
+### Go ###
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+!*.svg  # comment out if you don't need vector files
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+*~
+# Persistent undo
+[._]*.un~
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# End of https://www.toptal.com/developers/gitignore/api/go,vim,visualstudiocode

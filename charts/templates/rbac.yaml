@@ -1,0 +1,170 @@
+{{- if .Values.rbac.create -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "terraform-controller.fullname" . }}
+rules:
+  - apiGroups:
+      - ""
+      - batch
+    resources:
+      - configmaps
+      - events
+      - jobs
+      - pods
+      - secrets
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - ""
+      - batch
+      - terraform.appvia.io
+    resources:
+      - configmaps
+      - configurations
+      - events
+      - jobs
+      - namespaces
+      - pods
+      - policies
+      - providers
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - terraform.appvia.io
+    resources:
+      - configurations
+      - configurations/status
+      - policies
+      - policies/status
+      - providers
+      - providers/status
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "terraform-controller.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "terraform-controller.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: terraform-controller
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "terraform-controller.fullname" . }}
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+      - pods/log
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "terraform-controller.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "terraform-controller.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: terraform-controller
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "terraform-controller.fullname" . }}-executor
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: terraform-executor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "terraform-controller.fullname" . }}-executor
+subjects:
+  - kind: ServiceAccount
+    name: terraform-executor
+    namespace: {{ .Release.Namespace }}
+{{- end }}
