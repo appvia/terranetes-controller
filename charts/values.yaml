@@ -17,7 +17,7 @@ controller:
     # The terraform image used when running jobs
     terraform: "hashicorp/terraform"
     # The image used for git operations in the jobs
-    git: "alpine/git:latest"
+    git: "quay.io/appvia/controller:latest"
   # The default terraform version (or tag of the above image)
   terraformVersion: 1.1.7
   # configuration for the webhooks

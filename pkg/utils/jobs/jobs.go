@@ -207,8 +207,8 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 						Name:            "source",
 						Image:           options.GitImage,
 						ImagePullPolicy: v1.PullIfNotPresent,
-						Command:         []string{"git"},
-						Args:            []string{"clone", r.configuration.Spec.Module, "/data"},
+						Command:         []string{"sh"},
+						Args:            []string{"-c", fmt.Sprintf("/bin/source %s /tmp/source && cp -r /tmp/source/* /data", r.configuration.Spec.Module)},
 						VolumeMounts: []v1.VolumeMount{
 							{
 								Name:      "source",

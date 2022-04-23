@@ -63,7 +63,7 @@ func main() {
 	flags.IntVar(&config.APIServerPort, "apiserver-port", 10080, "The port the apiserver should be listening on")
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
-	flags.StringVar(&config.GitImage, "git-image", "alpine/git:v2.32.0", "The image to use for git operations")
+	flags.StringVar(&config.GitImage, "git-image", "quay.io/appvia/terraform-controller:latest", "The image to use for git operations")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
 	flags.StringVar(&config.TLSAuthority, "tls-ca", "", "The filename to the ca certificate")
 	flags.StringVar(&config.TLSDir, "tls-dir", "", "The directory the certificates are held")

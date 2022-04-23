@@ -84,6 +84,8 @@ func Run(ctx context.Context, source, dest string) error {
 		source = strings.TrimPrefix(source, "https://")
 	}
 
+	log.Infof("downloading the source: %s", source)
+
 	// Build the client
 	client := &getter.Client{
 		Ctx:       ctx,

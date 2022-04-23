@@ -112,37 +112,20 @@ test:
 
 ### IMAGES ###
 
-logger-image:
-	@echo "--> Build the logger docker image ${REGISTRY}/${REGISTRY_ORG}/logger:${VERSION} (registry image expiry: ${IMAGE_EXPIRATION})"
-	@DOCKER_BUILDKIT=1 docker build \
-		--build-arg IMAGE_EXPIRATION=${IMAGE_EXPIRATION} \
-		--build-arg VERSION=${VERSION} \
-		--build-arg LFLAGS=${LFLAGS} \
-		--progress=plain \
-		-t ${REGISTRY}/${REGISTRY_ORG}/logger:${VERSION} -f images/Dockerfile.logger .
-
-logger-image-verify: install-trivy
-	@echo "--> Verifying auth proxy image ${REGISTRY}/${REGISTRY_ORG}/logger:${VERSION}"
-	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/logger:${VERSION} for vulnerabilities"
-	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/logger:${VERSION}
-
 # Terraform Controller image
 
 controller-image:
-	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}"
-	@docker build \
-		--build-arg VERSION=${VERSION} \
-		--progress=plain \
-		-t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
+	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
+	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
 
 controller-kind: build controller-image
 	@echo "--> Updating the kind image for controller and reloading"
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
-	@kubectl delete po -l app=controller --wait=false
+	@kubectl -n default delete po --all --wait=false
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}"
-	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION} for vulnerabilities"
+	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} for vulnerabilities"
 	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}
 
 
