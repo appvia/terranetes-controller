@@ -18,6 +18,8 @@
 package filters
 
 import (
+	"strings"
+
 	batchv1 "k8s.io/api/batch/v1"
 
 	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
@@ -89,6 +91,28 @@ func (j *Filter) Latest() (*batchv1.Job, bool) {
 	}
 
 	return latest, true
+}
+
+// String returns a string representation of the filter
+func (j *Filter) String() string {
+	var list []string
+	if j.namespace != "" {
+		list = append(list, "namespace="+j.namespace)
+	}
+	if j.generation != "" {
+		list = append(list, "generation="+j.generation)
+	}
+	if j.stage != "" {
+		list = append(list, "stage="+j.stage)
+	}
+	if j.name != "" {
+		list = append(list, "name="+j.name)
+	}
+	if j.uid != "" {
+		list = append(list, "uid="+j.uid)
+	}
+
+	return strings.Join(list, ",")
 }
 
 // List returns the filtered list

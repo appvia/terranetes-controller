@@ -71,6 +71,7 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 	}
 
 	endpoint := fmt.Sprintf("http://controller.%s.svc.cluster.local/builds?%s", namespace, strings.Join(query, "&"))
+	buildLog := "/tmp/build.log"
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -95,6 +96,7 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 				Spec: v1.PodSpec{
 					RestartPolicy: v1.RestartPolicyOnFailure,
 					SecurityContext: &v1.PodSecurityContext{
+						RunAsGroup:   pointer.Int64(65534),
 						RunAsNonRoot: pointer.Bool(true),
 						RunAsUser:    pointer.Int64(65534),
 					},
@@ -102,13 +104,12 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 						{
 							Name:    "watch",
 							Image:   "curlimages/curl:7.82.0",
-							Command: []string{"curl"},
-							Args:    []string{"--no-buffer", "--silent", endpoint},
+							Command: []string{"sh"},
+							Args:    []string{"-c", fmt.Sprintf("curl --no-buffer --silent '%s' | tee -a %[2]s && grep -qi 'build.*complete' %[2]s", endpoint, buildLog)},
 							SecurityContext: &v1.SecurityContext{
 								AllowPrivilegeEscalation: pointer.Bool(false),
 								Capabilities:             &v1.Capabilities{Drop: []v1.Capability{"ALL"}},
 								Privileged:               pointer.Bool(false),
-								ReadOnlyRootFilesystem:   pointer.Bool(true),
 							},
 						},
 					},

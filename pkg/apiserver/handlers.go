@@ -82,7 +82,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 	// @step: we query the jobs using the labels and find the latest job for the configuration at stage x, generation y. We then
 	// find the associated pods and stream the logs back to the caller
-	err := utils.RetryWithTimeout(req.Context(), 20*time.Second, 2*time.Second, func() (bool, error) {
+	err := utils.RetryWithTimeout(req.Context(), 30*time.Second, 2*time.Second, func() (bool, error) {
 		w.Write([]byte("."))
 
 		// @step: find the matching job
@@ -95,6 +95,8 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 			return false, nil
 		}
 		if len(list.Items) == 0 {
+			log.WithFields(fields).Warn("no jobs found")
+
 			return false, nil
 		}
 
@@ -106,8 +108,11 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 			WithUID(values["uid"]).
 			Latest()
 		if !found || latest == nil {
+			log.WithFields(fields).Debug("no matching job found")
+
 			return false, nil
 		}
+		log.WithFields(fields).Warn("found zero matching jobs for the build")
 
 		// @step: find the latest pod associated to the job
 		pods, err := s.Client.CoreV1().Pods(s.Namespace).List(req.Context(), metav1.ListOptions{
@@ -119,15 +124,18 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 			return false, nil
 		}
 		if len(pods.Items) == 0 {
+			log.WithFields(fields).Warn("no pods associated to the job")
+
 			return false, nil
 		}
 
 		pod = findLatestPod(pods)
-		if pod.Status.Phase != v1.PodRunning {
-			return false, nil
+		switch pod.Status.Phase {
+		case v1.PodRunning, v1.PodSucceeded:
+			return true, nil
 		}
 
-		return true, nil
+		return false, nil
 	})
 	if err != nil {
 		log.WithFields(fields).WithError(err).Error("failed to find the pod")
@@ -157,6 +165,8 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 		return
 	}
+
+	w.Write([]byte("[build] completed\n"))
 }
 
 // findLatestPod returns the latest pod in the list

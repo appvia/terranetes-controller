@@ -121,7 +121,7 @@ controller-image:
 controller-kind: build controller-image
 	@echo "--> Updating the kind image for controller and reloading"
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
-	@kubectl -n default delete po --all --wait=false
+	@kubectl -n default delete po -l app.kubernetes.io/name=terraform-controller --wait=false
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}"
