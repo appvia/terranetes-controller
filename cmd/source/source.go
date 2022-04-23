@@ -19,11 +19,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
+	"syscall"
 	"time"
 
 	"github.com/hashicorp/go-getter"
@@ -31,6 +32,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/appvia/terraform-controller/pkg/server"
+	"github.com/appvia/terraform-controller/pkg/utils"
 	"github.com/appvia/terraform-controller/pkg/version"
 )
 
@@ -44,23 +46,17 @@ func main() {
 	cmd := &cobra.Command{
 		Use:     "source <URL> <DIRECTORY>",
 		Short:   "Used to retrieve the source code for the terraform controller",
+		Args:    cobra.ExactArgs(2),
 		Version: version.Version,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if v, _ := cmd.Flags().GetBool("verbose"); v {
-				log.SetLevel(log.DebugLevel)
-			}
+			timeout, _ := cmd.Flags().GetDuration("timeout")
 
-			if len(args) != 2 {
-				return fmt.Errorf("invalid arguments, expected <URL> <DIRECTORY>")
-			}
-
-			return Run(context.Background(), args[0], args[1])
+			return Run(context.Background(), args[0], args[1], timeout)
 		},
 	}
 
 	flags := cmd.Flags()
-	flags.Bool("verbose", false, "Enable verbose logging")
-	flags.Bool("trace", false, "Enable trace logging")
+	flags.Duration("timeout", 10*time.Minute, "The timeout for the operation")
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[error] failed to run: %s", err)
@@ -70,8 +66,8 @@ func main() {
 }
 
 // Run is called to execute the action
-func Run(ctx context.Context, source, dest string) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+func Run(ctx context.Context, source, dest string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	pwd, err := os.Getwd()
@@ -84,9 +80,11 @@ func Run(ctx context.Context, source, dest string) error {
 		source = strings.TrimPrefix(source, "https://")
 	}
 
-	log.Infof("downloading the source: %s", source)
+	log.WithFields(log.Fields{
+		"source": source,
+		"dest":   dest,
+	}).Info("downloading the assets")
 
-	// Build the client
 	client := &getter.Client{
 		Ctx:       ctx,
 		Dir:       true,
@@ -98,31 +96,40 @@ func Run(ctx context.Context, source, dest string) error {
 		Src:       source,
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	errChan := make(chan error, 2)
+	doneCh := make(chan struct{})
+	errCh := make(chan error, 1)
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-		defer wg.Done()
-		defer cancel()
-		if err := client.Get(); err != nil {
-			errChan <- err
+		switch err := client.Get(); err {
+		case nil:
+			doneCh <- struct{}{}
+		default:
+			errCh <- err
 		}
 	}()
 
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt)
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
 
-	select {
-	case <-c:
-		signal.Reset(os.Interrupt)
-		wg.Wait()
-	case <-ctx.Done():
-		wg.Wait()
-		log.Printf("Success downloaded the asset")
-	case err := <-errChan:
-		wg.Wait()
-		log.Fatalf("Error downloading: %s", err)
+	for {
+		select {
+		case <-ticker.C:
+			if size, err := utils.DirSize(dest); err == nil {
+				log.WithFields(log.Fields{
+					"bytes": utils.ByteCountSI(size),
+				}).Info("continuing downloaded the assets")
+			}
+		case <-sigCh:
+			return errors.New("received a signal, cancelling the download")
+		case <-ctx.Done():
+			return errors.New("download has timed out, cancelling the download")
+		case <-doneCh:
+			log.WithField("source", source).Info("successfully downloaded the source")
+			return nil
+		case err := <-errCh:
+			return fmt.Errorf("failed to download the source: %s", err)
+		}
 	}
-
-	return nil
 }
