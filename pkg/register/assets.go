@@ -119,13 +119,6 @@ spec:
                       description: Namespace is the namespace of the provider
                       type: string
                   type: object
-                terraform:
-                  description: Terraform provides the configuration for the terraform provider
-                  properties:
-                    version:
-                      description: Version is the version of the terraform to use for the configuration
-                      type: string
-                  type: object
                 variables:
                   description: Variables are the variables that are used to configure the terraform
                   type: object
@@ -200,6 +193,16 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
+                costs:
+                  description: Costs is the cost status of the configuration is enabled via the controller
+                  properties:
+                    budget:
+                      description: Budget is the applicable budget for this configuration determined by the current policy
+                      type: string
+                    costs:
+                      description: Costs is the estimated cost of this configuration
+                      type: string
+                  type: object
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:
@@ -309,6 +312,40 @@ spec:
                           items:
                             type: string
                           type: array
+                      type: object
+                    namespace:
+                      description: Namespace is a filter on the namespaces we handle
+                      properties:
+                        allowed:
+                          description: Allowed is a filter on the namespaces we handle
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                              items:
+                                description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector applies to.
+                                    type: string
+                                  operator:
+                                    description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                  - key
+                                  - operator
+                                type: object
+                              type: array
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
                       type: object
                   type: object
                 defaults:

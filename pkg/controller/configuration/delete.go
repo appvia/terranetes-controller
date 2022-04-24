@@ -70,10 +70,9 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
-			GitImage:         c.GitImage,
-			Namespace:        c.JobNamespace,
-			TerraformImage:   c.TerraformImage,
-			TerraformVersion: c.TerraformVersion,
+			ExecutorImage: c.ExecutorImage,
+			GitImage:      c.GitImage,
+			Namespace:     c.JobNamespace,
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")

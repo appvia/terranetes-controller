@@ -21,16 +21,14 @@ import "time"
 
 // Config is the configuration for the controller
 type Config struct {
-	// DisableWebhooks disables the webhook and mutation handlers
-	DisableWebhooks bool
-	// EnableWebhookRegistration enables the webhook registration
-	EnableWebhookRegistration bool
+	// EnableWebhook enables the webhook registration
+	EnableWebhook bool
+	// CostSecretName is the name of the secret that contains the cost token and endpoint
+	CostSecretName string
 	// Namespace is namespace the controller is running
 	Namespace string
-	// TerraformImage is the image version to use for the terraform jobNamespace
-	TerraformImage string
-	// TerraformVersion is the version of the terraform image to use
-	TerraformVersion string
+	// ExecutorImage is the image to use for the executor
+	ExecutorImage string
 	// ResyncPeriod is the period to resync the controller manager
 	ResyncPeriod time.Duration
 	// TLSDir is the directory where the TLS certificates are stored

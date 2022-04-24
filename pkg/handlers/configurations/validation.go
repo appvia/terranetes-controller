@@ -47,6 +47,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return v.validate(ctx, newObj.(*terraformv1alphav1.Configuration))
 }
 
+// ValidateDelete is called when a resource is being deleted
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return nil
+}
+
+// validate is called to ensure the configuration is valid and incline with current policies
 func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configuration) error {
 	list := &terraformv1alphav1.PolicyList{}
 	if err := v.cc.List(ctx, list); err != nil {
@@ -56,15 +62,34 @@ func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configur
 		return nil
 	}
 
+	// @step: validate the configuration against all module constraints
+	if err := validateModuleConstriants(ctx, c, list); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateModuleConstriants evaluates the module constraints and ensure the configuration passes all policies
+func validateModuleConstriants(ctx context.Context, configuration *terraformv1alphav1.Configuration, list *terraformv1alphav1.PolicyList) error {
+	var policies []terraformv1alphav1.Policy
+
+	// @step: first we find all policies which contains module constraints
 	for _, x := range list.Items {
 		switch {
-		case x.Spec.Constraints == nil:
-			continue
-		case x.Spec.Constraints.Modules == nil, len(x.Spec.Constraints.Modules.Allowed) == 0:
+		case x.Spec.Constraints == nil, x.Spec.Constraints.Modules == nil:
 			continue
 		}
+		policies = append(policies, x)
+	}
 
-		matches, err := x.Spec.Constraints.Modules.Matches(c.Spec.Module)
+	if len(policies) == 0 {
+		return nil
+	}
+
+	// @step: iterate all the policies for a matchj
+	for _, x := range policies {
+		matches, err := x.Spec.Constraints.Modules.Matches(configuration.Spec.Module)
 		if err != nil {
 			return fmt.Errorf("failed to compile the policy: %s, error: %s", x.Name, err)
 		}
@@ -74,9 +99,4 @@ func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configur
 	}
 
 	return fmt.Errorf("the configuration has been denied by policy")
-}
-
-// ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
 }

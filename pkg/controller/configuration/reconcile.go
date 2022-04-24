@@ -30,6 +30,8 @@ import (
 )
 
 type state struct {
+	// policies is a list of policies in the cluster
+	policies *terraformv1alpha1.PolicyList
 	// provider is the credentials provider to use
 	provider *terraformv1alpha1.Provider
 	// jobs is list of all jobs for this configuration and generation
@@ -56,6 +58,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	if finalizer.IsDeletionCandidate(configuration) {
 		result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 			[]controller.EnsureFunc{
+				c.ensurePoliciesList(configuration, state),
 				c.ensureJobsList(configuration, state),
 				c.ensureProviderIsReady(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
@@ -79,6 +82,8 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{
 			finalizer.EnsurePresent(configuration),
+			c.ensureCostAnalyticsSecret(configuration),
+			c.ensurePoliciesList(configuration, state),
 			c.ensureJobsList(configuration, state),
 			//c.ensureNoPreviousGeneration(configuration, state),
 			c.ensureProviderIsReady(configuration, state),

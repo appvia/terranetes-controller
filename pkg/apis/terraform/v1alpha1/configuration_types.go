@@ -99,12 +99,6 @@ type AdditionalResource struct {
 	Source string `json:"source,omitempty"`
 }
 
-// Terraform is the configuration for a terraform provider
-type Terraform struct {
-	// Version is the version of the terraform to use for the configuration
-	Version string `json:"version,omitempty"`
-}
-
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
@@ -114,9 +108,6 @@ type ConfigurationSpec struct {
 	// Module is the location of the module to use for the configuration
 	// +kubebuilder:validation:Required
 	Module string `json:"module"`
-	// Terraform provides the configuration for the terraform provider
-	// +kubebuilder:validation:Optional
-	Terraform Terraform `json:"terraform,omitempty"`
 	// ProviderRef is the reference to the provider
 	// +kubebuilder:validation:Required
 	ProviderRef *ProviderReference `json:"providerRef"`
@@ -152,13 +143,29 @@ type Configuration struct {
 	Status ConfigurationStatus `json:"status,omitempty"`
 }
 
+// CostStatus defines the cost status of a configuration
+type CostStatus struct {
+	// Budget is the applicable budget for this configuration determined by the current
+	// policy
+	// +kubebuilder:validation:Optional
+	Budget string `json:"budget,omitempty"`
+	// Costs is the estimated cost of this configuration
+	// +kubebuilder:validation:Optional
+	Costs string `json:"costs,omitempty"`
+}
+
 // ConfigurationStatus defines the observed state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
 	corev1alphav1.CommonStatus `json:",inline"`
+	// Costs is the cost status of the configuration is enabled via the controller
+	// +kubebuilder:validation:Optional
+	Costs *CostStatus `json:"costs,omitempty"`
 	// Resources is the number of managed resources created by this configuration
+	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
 	// TerraformVersion is the version held in the state
+	// +kubebuilder:validation:Optional
 	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 

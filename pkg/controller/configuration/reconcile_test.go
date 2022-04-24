@@ -66,12 +66,11 @@ var _ = Describe("Configuration Controller", func() {
 			fixtures.NewValidAWSProviderSecret("default", "aws"),
 		}, objects...)...)
 		ctrl = &Controller{
-			cc:               cc,
-			recorder:         record.NewFakeRecorder(10),
-			JobNamespace:     "default",
-			TerraformImage:   "hashicorp/terraform",
-			TerraformVersion: "1.1.7",
-			GitImage:         "appvia/git:latest",
+			cc:            cc,
+			recorder:      record.NewFakeRecorder(10),
+			JobNamespace:  "default",
+			ExecutorImage: "quay.io/appvia/terraform-executor",
+			GitImage:      "appvia/git:latest",
 		}
 	}
 
@@ -85,13 +84,12 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(5))
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
 		})
 
 		It("should indicate the provider is missing", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.Conditions).To(HaveLen(5))
 			Expect(configuration.Status.Conditions[0].Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
 			Expect(configuration.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 			Expect(configuration.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
@@ -114,7 +112,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(5))
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
 		})
 
 		It("should indicate the provider is not ready", func() {
@@ -141,7 +139,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(5))
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
 		})
 
 		It("should indicate the provider is ready", func() {
@@ -205,7 +203,7 @@ var _ = Describe("Configuration Controller", func() {
 
 			container := list.Items[0].Spec.Template.Spec.Containers[0]
 			Expect(container.Name).To(Equal("watch"))
-			Expect(container.Command).To(Equal([]string{"curl"}))
+			Expect(container.Command).To(Equal([]string{"sh"}))
 		})
 
 		It("should have added a approval annotation to the configuration", func() {
@@ -231,7 +229,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(5))
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
 		})
 
 		It("should indicate the terraform apply is running", func() {
@@ -272,13 +270,12 @@ var _ = Describe("Configuration Controller", func() {
 
 			container := list.Items[0].Spec.Template.Spec.Containers[0]
 			Expect(container.Name).To(Equal("watch"))
-			Expect(container.Command).To(Equal([]string{"curl"}))
+			Expect(container.Command).To(Equal([]string{"sh"}))
 		})
 
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
 		})
-
 	})
 })

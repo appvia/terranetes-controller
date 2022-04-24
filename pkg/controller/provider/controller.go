@@ -38,8 +38,6 @@ const controllerName = "provider.terraform.appvia.io"
 type Controller struct {
 	// cc is the client connection
 	cc client.Client
-	// EnableWebhook is a flag to enable the webhook
-	EnableWebhook bool
 }
 
 // Add is called to setup the manager for the controller
@@ -48,12 +46,10 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	c.cc = mgr.GetClient()
 
-	if c.EnableWebhook {
-		mgr.GetWebhookServer().Register(
-			fmt.Sprintf("/validate/%s/providers", terraformv1alphav1.GroupName),
-			admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, providers.NewValidator(c.cc)),
-		)
-	}
+	mgr.GetWebhookServer().Register(
+		fmt.Sprintf("/validate/%s/providers", terraformv1alphav1.GroupName),
+		admission.WithCustomValidator(&terraformv1alphav1.Provider{}, providers.NewValidator(c.cc)),
+	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terraformv1alphav1.Provider{}).

@@ -59,13 +59,6 @@ spec:
                       description: Namespace is the namespace of the provider
                       type: string
                   type: object
-                terraform:
-                  description: Terraform provides the configuration for the terraform provider
-                  properties:
-                    version:
-                      description: Version is the version of the terraform to use for the configuration
-                      type: string
-                  type: object
                 variables:
                   description: Variables are the variables that are used to configure the terraform
                   type: object
@@ -140,6 +133,16 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
+                costs:
+                  description: Costs is the cost status of the configuration is enabled via the controller
+                  properties:
+                    budget:
+                      description: Budget is the applicable budget for this configuration determined by the current policy
+                      type: string
+                    costs:
+                      description: Costs is the estimated cost of this configuration
+                      type: string
+                  type: object
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:

@@ -40,7 +40,8 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.controller.images.controller }}"
+          imagePullPolicy: {{ .Values.controller.imagePullPolicy }}
           env:
             - name: KUBE_NAMESPACE
               valueFrom:
@@ -48,22 +49,21 @@ spec:
                   fieldPath: metadata.namespace
           args:
             - --apiserver-port={{ .Values.controller.port }}
-            - --enable-webhook-registration={{ .Values.controller.enableWebhookRegistration }}
+            {{- if .Values.controller.costs.secret }}
+            - --cost-secret={{ .Values.controller.costs.secret }}
+            {{- end }}
+            - --enable-webhook={{ .Values.controller.webhooks.enabled }}
+            - --executor-image={{ .Values.controller.images.executor }}
             - --git-image={{ .Values.controller.images.git }}
             - --metrics-port={{ .Values.controller.metricsPort }}
-            - --terraform-image={{ .Values.controller.images.terraform }}
-            - --terraform-version={{ .Values.controller.terraformVersion }}
             {{- if .Values.controller.webhooks.enabled }}
             - --tls-ca={{ .Values.controller.webhooks.tlsAuthority }}
             - --tls-dir={{ .Values.controller.webhooks.tlsDir }}
             - --tls-cert={{ .Values.controller.webhooks.tlsCert }}
             - --tls-key={{ .Values.controller.webhooks.tlsKey }}
             - --webhooks-port={{ .Values.controller.webhooks.port }}
-            {{- else }}
-            - --disable-webhooks
             {{- end }}
             - --verbose=true
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: metrics
               containerPort: {{ .Values.controller.metricsPort }}

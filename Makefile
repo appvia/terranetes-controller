@@ -118,16 +118,25 @@ controller-image:
 	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
 	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
 
-controller-kind: build controller-image
+controller-kind: build controller-image executor-image
 	@echo "--> Updating the kind image for controller and reloading"
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
+	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
 	@kubectl -n default delete po -l app.kubernetes.io/name=terraform-controller --wait=false
 
 controller-image-verify: install-trivy
-	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}"
+	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
 	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} for vulnerabilities"
 	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}
 
+executor-image:
+	@echo "--> Compiling the terraform-executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
+	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} -f images/Dockerfile.executor .
+
+executor-image-verify: install-trivy
+	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
+	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} for vulnerabilities"
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/executor:${VERSION}
 
 # Image management
 
@@ -174,10 +183,15 @@ spelling:
 
 lint: golangci-lint
 
+shfmt:
+	@echo "--> Running shfmt"
+	@go run mvdan.cc/sh/v3/cmd/shfmt -l -w -ci -i 2 -- images/assets
+
 check:
 	@echo "--> Running code checkers"
 	@$(MAKE) golang
 	@$(MAKE) check-gofmt
+	@$(MAKE) shfmt
 	@$(MAKE) spelling
 	@$(MAKE) golangci-lint
 

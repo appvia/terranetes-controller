@@ -20,9 +20,13 @@ package configuration
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	cache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
+
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -46,16 +50,18 @@ const controllerName = "configuration.terraform.appvia.io"
 type Controller struct {
 	// cc is the kubernetes client to the cluster
 	cc client.Client
+	// cache is a local cache of resources to make lookups faster
+	cache *cache.Cache
 	// recorder is the event recorder for this controller
 	recorder record.EventRecorder
-	// EnableWebhook enables the webhooks
-	EnableWebhook bool
+	// EnableCostAnalytics enables the cost analytics via infracost
+	EnableCostAnalytics bool
+	// CostAnalyticsSecretName is the name of the secret containing the api and token
+	CostAnalyticsSecretName string
 	// JobNamespace is the namespace where the runner is running
 	JobNamespace string
-	// TerraformImage is the image to use for the terraform runner
-	TerraformImage string
-	// TerraformVersion is the version of terraform to use
-	TerraformVersion string
+	// ExecutorImage is the image to use for the executor
+	ExecutorImage string
 	// GitImage is the image to use for the git in the init container
 	GitImage string
 }
@@ -67,33 +73,42 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	switch {
 	case c.JobNamespace == "":
 		return errors.New("job namespace is required")
-	case c.TerraformImage == "":
-		return errors.New("terraform image is required")
-	case c.TerraformVersion == "":
-		return errors.New("terraform version is required")
+	case c.ExecutorImage == "":
+		return errors.New("executor image is required")
 	case c.GitImage == "":
 		return errors.New("git image is required")
 	}
 
 	c.cc = mgr.GetClient()
+	c.cache = cache.New(3*time.Hour, 5*time.Minute)
 
-	if c.EnableWebhook {
-		log.Info("registering the configuration webhooks")
-
-		mgr.GetWebhookServer().Register(
-			fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
-			admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc)),
-		)
-		mgr.GetWebhookServer().Register(
-			fmt.Sprintf("/mutate/%s/configurations", terraformv1alphav1.GroupName),
-			admission.WithCustomDefaulter(&terraformv1alphav1.Configuration{}, configurations.NewMutator(c.cc)),
-		)
-	}
+	mgr.GetWebhookServer().Register(
+		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
+		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc)),
+	)
+	mgr.GetWebhookServer().Register(
+		fmt.Sprintf("/mutate/%s/configurations", terraformv1alphav1.GroupName),
+		admission.WithCustomDefaulter(&terraformv1alphav1.Configuration{}, configurations.NewMutator(c.cc)),
+	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terraformv1alphav1.Configuration{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
+		Watches(
+			// We use this it keep a local cache of all namespaces in the cluster
+			&source.Kind{Type: &v1.Namespace{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				switch {
+				case !o.GetDeletionTimestamp().IsZero():
+					c.cache.Delete(o.GetName())
+				default:
+					c.cache.SetDefault(o.GetName(), o)
+				}
+
+				return nil
+			}),
+		).
 		Watches(
 			&source.Kind{Type: &batchv1.Job{}},
 			// allows us to requeue the resource when the job has updated
@@ -105,11 +120,21 @@ func (c *Controller) Add(mgr manager.Manager) error {
 					}},
 				}
 			}),
-			builder.WithPredicates(&predicate.ResourceVersionChangedPredicate{}),
-			builder.WithPredicates(&predicate.Funcs{
+			// we only care about jobs in our namespace
+			builder.WithPredicates(predicate.Funcs{
+				GenericFunc: func(e event.GenericEvent) bool {
+					return e.Object.GetNamespace() == c.JobNamespace
+				},
+				CreateFunc: func(e event.CreateEvent) bool {
+					return e.Object.GetNamespace() == c.JobNamespace
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					return e.ObjectNew.GetNamespace() == c.JobNamespace
+				},
 				DeleteFunc: func(e event.DeleteEvent) bool {
 					return false
 				},
-			})).
+			}),
+			builder.WithPredicates(&predicate.ResourceVersionChangedPredicate{})).
 		Complete(c)
 }
