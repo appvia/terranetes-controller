@@ -1,0 +1,76 @@
+<img src="docs/images/cogs.png" width="170" float="right">
+
+# **Terraform Controller**
+
+Terraform Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
+
+**Developers**
+
+* Workflows are run outside developer namespace so credentials can be shared without being exposed.
+* Changes can be approved beforehand, following a plan and apply workflow.
+* Developers can view and debug the terraform workflows from their our namespaces.
+
+**Platforms engineers**
+
+* Place guardrails around which modules can be consumed.
+* Automatically inject environment specific configuration (dev, prod, cost centres and so forth) into the module, based on labels.
+* Allow developers to see the associated costs to their configurations
+
+
+**Roadmap**
+
+- Ability to set and control budgets
+- Integration of policy via [checkov](https://www.checkov.io/)
+
+### Getting Started
+
+
+#### Prerequisites
+
+* Helm CLI (https://helm.sh/docs/intro/install/
+* Kind (https://kind.sigs.k8s.io/)
+
+The quickest way to get up the running is via the Helm chart.
+
+```shell
+$ git clone git@github.com:appvia/terraform-controller.git
+$ cd terraform-controller
+# kind create cluster
+$ helm install -n terraform-system terraform-controller charts/--create-namespace
+$ kubectl -n terraform-system get po
+
+```
+
+* Configure credentials for developers
+
+```shell
+# The follow assume you can using static credentials, for managed pod identity see below
+
+$ kubectl -n terraform-system create secret generic aws \
+  --from-literal=AWS_ACCESS_KEY_ID=<ID> \
+  --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET>
+$ kubectl -n terraform-system apply -f examples/providers
+$ kubectl -n terraform-system get provider -o yaml
+```
+
+* Create your first configuration
+
+```shell
+$ cat examples/configuration.yaml # demos a s3 bucket
+$ kubectl create namespace apps
+$ kubectl -n apps apply -f examples/configuration.yaml
+$ kubectl -n apps get po
+
+# Straight away a job is creates which is used to 'watch' the terraform workflow, ensure
+# developers are given full access to view and debug terraform jobs, but not given away any secrets.
+
+$ kubectl -n apps logs -f <POD_ID>
+```
+
+* Approve the plan
+
+By default unless the `spec.enableAutoApproval` is true, all changes must be approved before making any changes. An annotations
+
+```shell
+$ kubectl -n apps annotate configurations.terraform.appvia.io bucket "terraform.appvia.io/apply"=true --overwrite
+```
