@@ -1,29 +1,32 @@
-<img src="docs/images/cogs.png" width="170" float="right">
+<p align="right">
+  <img src="docs/images/cogs.png" width="130">
+<p>
 
-# **Terraform Controller**
+# **TERRAFORM CONTROLLER**
 
 Terraform Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
-**Developers**
+**DEVELOPERS**
 
 * Workflows are run outside developer namespace so credentials can be shared without being exposed.
 * Changes can be approved beforehand, following a plan and apply workflow.
 * Developers can view and debug the terraform workflows from their our namespaces.
 
-**Platforms engineers**
+**PLATFORM ENGINEERS**
 
 * Place guardrails around which modules can be consumed.
 * Automatically inject environment specific configuration (dev, prod, cost centres and so forth) into the module, based on labels.
 * Allow developers to see the associated costs to their configurations
 
 
-**Roadmap**
+**ROADMAP**
+---
 
 - Ability to set and control budgets
 - Integration of policy via [checkov](https://www.checkov.io/)
 
-### Getting Started
-
+**GETTING STARTED**
+---
 
 #### Prerequisites
 
