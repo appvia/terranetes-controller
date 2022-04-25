@@ -1,0 +1,39 @@
+name: Build
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+    - name: Unit Tests
+      run: make test
+    - name: Linting
+      run: make check
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Binaries
+      run: make
+    - name: Build Images
+      run: |
+        make controller-image
+        make executor-image
