@@ -130,6 +130,60 @@ var _ = Describe("Configuration Controller", func() {
 		})
 	})
 
+	When("the costs analytics token is missing", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+			ctrl.EnableCostAnalytics = true
+			ctrl.CostAnalyticsSecretName = "not_there"
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
+		})
+
+		It("should indicate the costs analytics token is invalid", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(cond.Message).To(Equal("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
+		})
+	})
+
+	When("the costs analytics token is invalid", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			secret := &v1.Secret{}
+			secret.Name = "token"
+			secret.Namespace = ctrl.JobNamespace
+
+			Setup(configuration, secret)
+			ctrl.EnableCostAnalytics = true
+			ctrl.CostAnalyticsSecretName = "token"
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
+		})
+
+		It("should indicate the costs analytics token is invalid", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(cond.Message).To(Equal("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
+		})
+	})
+
 	When("terraform plan has not been provisioned", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
@@ -221,6 +275,12 @@ var _ = Describe("Configuration Controller", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			plan := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{
+				{
+					Type:   batchv1.JobComplete,
+					Status: v1.ConditionTrue,
+				},
+			}
 			plan.Status.Succeeded = 1
 
 			Setup(configuration, plan)
