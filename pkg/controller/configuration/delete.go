@@ -85,6 +85,12 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 		// @step: we can requeue or move on depending on the status
 		if !found {
+			if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformDestroy); err != nil {
+				cond.Failed(err, "Failed to create the terraform destroy watcher")
+
+				return reconcile.Result{}, err
+			}
+
 			if err := c.cc.Create(ctx, runner); err != nil {
 				cond.Failed(err, "Failed to create the terraform destroy job")
 
