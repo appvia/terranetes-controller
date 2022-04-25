@@ -42,7 +42,10 @@ failed() { log "${YELLOW}[fail] $*"; }
 # error is used when unexpected errors occur (e.g. unable to communicate with API)
 error() { log "${RED}[error] $*"; }
 # fatal is used when an unrecoverable error occurs and execution should be stopped
-fatal() { error "$*"; exit 1; }
+fatal() {
+  error "$*"
+  exit 1
+}
 
 usage() {
   cat <<EOF
@@ -114,7 +117,7 @@ terraform_cost() {
   fi
 
   # @show: retrieve the json from the infracost
-  if ! infracost breakdown ${INFRACOST_OPTS} --path ${TERRAFORM_PLAN_JSON} --format json > ${COST_REPORT_FILE}; then
+  if ! infracost breakdown ${INFRACOST_OPTS} --path ${TERRAFORM_PLAN_JSON} --format json >${COST_REPORT_FILE}; then
     error "Unable to retrieve the json report from infracost"
     exit 1
   fi
@@ -140,7 +143,7 @@ terraform_destroy() {
 
 terraform_plan() {
   $TERRAFORM plan ${TERRAFORM_VARIABLES} -out=${TERRAFORM_PLAN} -lock=true || exit 1
-  $TERRAFORM show -json $TERRAFORM_PLAN > $TERRAFORM_PLAN_JSON
+  $TERRAFORM show -json $TERRAFORM_PLAN >$TERRAFORM_PLAN_JSON
   [[ ${ENABLE_CHECKOV} == "true" ]] && terraform_verify
   [[ ${ENABLE_INFRACOST} == "true" ]] && terraform_cost
 }
@@ -191,7 +194,7 @@ while [[ $# -gt 0 ]]; do
       TERRAFORM_VARIABLES="-var-file=$2"
       shift 2
       ;;
-    -h|--help)
+    -h | --help)
       usage
       ;;
     *)
