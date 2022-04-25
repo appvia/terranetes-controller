@@ -26,8 +26,6 @@ const (
 	ConditionProviderReady corev1alphav1.ConditionType = "ProviderReady"
 	// ConditionTerraformPlan indicates the status of the terraform plan
 	ConditionTerraformPlan corev1alphav1.ConditionType = "TerraformPlan"
-	// ConditionTerraformScan indicates the status of the plan scan
-	ConditionTerraformScan corev1alphav1.ConditionType = "TerraformScan"
 	// ConditionTerraformApply indicates the status of the terraform apply
 	ConditionTerraformApply corev1alphav1.ConditionType = "TerraformApply"
 )
@@ -36,7 +34,6 @@ const (
 var DefaultConfigurationConditions = []corev1alphav1.ConditionSpec{
 	{Type: ConditionProviderReady, Name: "Provider ready"},
 	{Type: ConditionTerraformPlan, Name: "Terraform Plan"},
-	{Type: ConditionTerraformScan, Name: "Terraform Security Scan"},
 	{Type: ConditionTerraformApply, Name: "Terraform Apply"},
 	{Type: corev1alphav1.ConditionReady, Name: "Ready"},
 }

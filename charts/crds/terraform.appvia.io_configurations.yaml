@@ -22,7 +22,10 @@ spec:
           name: Secret
           type: string
         - jsonPath: .status.resources
-          name: Resoures
+          name: Resources
+          type: string
+        - jsonPath: .status.costs.monthly
+          name: Cost
           type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
@@ -57,13 +60,6 @@ spec:
                       type: string
                     namespace:
                       description: Namespace is the namespace of the provider
-                      type: string
-                  type: object
-                terraform:
-                  description: Terraform provides the configuration for the terraform provider
-                  properties:
-                    version:
-                      description: Version is the version of the terraform to use for the configuration
                       type: string
                   type: object
                 variables:
@@ -140,6 +136,19 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
+                costs:
+                  description: Costs is the cost status of the configuration is enabled via the controller
+                  properties:
+                    enabled:
+                      description: Enabled indicates if the cost is enabled
+                      type: boolean
+                    hourly:
+                      description: Hourly is the hourly estimated cost of the configuration
+                      type: string
+                    monthly:
+                      description: Monthly is the monthly estimated cost of the configuration
+                      type: string
+                  type: object
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:

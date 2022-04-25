@@ -20,11 +20,6 @@ package configuration
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
-	batchv1 "k8s.io/api/batch/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/utils/jobs"
 	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
@@ -44,20 +39,4 @@ func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv
 	}
 
 	return c.cc.Create(ctx, watcher)
-}
-
-// ListJobs is responsible for listing all the jobs for a given configuration
-func (c *Controller) ListJobs(ctx context.Context, configuration *terraformv1alpha1.Configuration) (*batchv1.JobList, error) {
-	list := &batchv1.JobList{}
-
-	if err := c.cc.List(ctx, list, client.InNamespace(c.JobNamespace), client.MatchingLabels{
-		terraformv1alpha1.ConfigurationNameLabel:      configuration.GetName(),
-		terraformv1alpha1.ConfigurationNamespaceLabel: configuration.GetNamespace(),
-	}); err != nil {
-		log.WithError(err).Error("failed to list jobs")
-
-		return list, err
-	}
-
-	return list, nil
 }

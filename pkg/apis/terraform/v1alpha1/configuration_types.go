@@ -99,12 +99,6 @@ type AdditionalResource struct {
 	Source string `json:"source,omitempty"`
 }
 
-// Terraform is the configuration for a terraform provider
-type Terraform struct {
-	// Version is the version of the terraform to use for the configuration
-	Version string `json:"version,omitempty"`
-}
-
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
@@ -114,9 +108,6 @@ type ConfigurationSpec struct {
 	// Module is the location of the module to use for the configuration
 	// +kubebuilder:validation:Required
 	Module string `json:"module"`
-	// Terraform provides the configuration for the terraform provider
-	// +kubebuilder:validation:Optional
-	Terraform Terraform `json:"terraform,omitempty"`
 	// ProviderRef is the reference to the provider
 	// +kubebuilder:validation:Required
 	ProviderRef *ProviderReference `json:"providerRef"`
@@ -142,7 +133,8 @@ type ConfigurationSpec struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
-// +kubebuilder:printcolumn:name="Resoures",type="string",JSONPath=".status.resources"
+// +kubebuilder:printcolumn:name="Resources",type="string",JSONPath=".status.resources"
+// +kubebuilder:printcolumn:name="Cost",type="string",JSONPath=".status.costs.monthly"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Configuration struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -152,13 +144,31 @@ type Configuration struct {
 	Status ConfigurationStatus `json:"status,omitempty"`
 }
 
+// CostStatus defines the cost status of a configuration
+type CostStatus struct {
+	// Enabled indicates if the cost is enabled
+	// +kubebuilder:validation:Optional
+	Enabled bool `json:"enabled,omitempty"`
+	// Hourly is the hourly estimated cost of the configuration
+	// +kubebuilder:validation:Optional
+	Hourly string `json:"hourly,omitempty"`
+	// Monthly is the monthly estimated cost of the configuration
+	// +kubebuilder:validation:Optional
+	Monthly string `json:"monthly,omitempty"`
+}
+
 // ConfigurationStatus defines the observed state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
 	corev1alphav1.CommonStatus `json:",inline"`
+	// Costs is the cost status of the configuration is enabled via the controller
+	// +kubebuilder:validation:Optional
+	Costs *CostStatus `json:"costs,omitempty"`
 	// Resources is the number of managed resources created by this configuration
+	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
 	// TerraformVersion is the version held in the state
+	// +kubebuilder:validation:Optional
 	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 
@@ -197,6 +207,11 @@ func (c *Configuration) NeedsApproval() bool {
 // GetTerraformStateSecretName returns the name of the secret holding the terraform state
 func (c *Configuration) GetTerraformStateSecretName() string {
 	return fmt.Sprintf("tfstate-default-%s", string(c.GetUID()))
+}
+
+// GetTerraformCostSecretName returns the name which should be used for the costs report
+func (c *Configuration) GetTerraformCostSecretName() string {
+	return fmt.Sprintf("costs-%s", string(c.GetUID()))
 }
 
 // GetCommonStatus returns the common status

@@ -18,17 +18,21 @@
 package configuration
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/controller"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
@@ -37,25 +41,89 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils/terraform"
 )
 
-// ensureJobsList is responsible for retrieving all the current jobs for this configuration
+// ensureCostAnalyticsSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
+// the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
+// place guard around it
+func (c *Controller) ensureCostAnalyticsSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if !c.EnableCostAnalytics {
+			return reconcile.Result{}, nil
+		}
+
+		secret := &v1.Secret{}
+		secret.Namespace = c.JobNamespace
+		secret.Name = c.CostAnalyticsSecretName
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the cost analytics secret")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.ActionRequired("Cost analytics secret (%s/%s) does not exist, contact platform administrator", secret.Namespace, secret.Name)
+
+			return reconcile.Result{RequeueAfter: 10 * time.Minute}, nil
+		}
+
+		// @step: check the secret contains a token
+		if secret.Data["INFRACOST_API_KEY"] == nil {
+			cond.ActionRequired("Cost analytics secret (%s/%s) does not contain a token, contact platform administrator", secret.Namespace, secret.Name)
+
+			return reconcile.Result{RequeueAfter: 10 * time.Minute}, nil
+		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
+// ensurePoliciesList is responsible for retrieving all the policies in the cluster before we start processing this job. These
+// policies are used further down the line by other ensure methods
+func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		list := &terraformv1alphav1.PolicyList{}
+
+		if err := c.cc.List(ctx, list); err != nil {
+			cond.Failed(err, "Failed to list the policies in cluster")
+
+			return reconcile.Result{}, err
+		}
+
+		state.policies = list
+
+		return reconcile.Result{}, nil
+	}
+}
+
+// ensureJobsList is responsible for retrieving all the jobs in the configuration namespace - these are used by ensure methods
+// further down the line
 func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		list, err := c.ListJobs(ctx, configuration)
-		if err != nil {
-			cond.Failed(err, "Failed to find the configuration jobs")
+		list := &batchv1.JobList{}
+
+		if err := c.cc.List(ctx, list, client.InNamespace(c.JobNamespace), client.MatchingLabels{
+			terraformv1alpha1.ConfigurationNameLabel:      configuration.GetName(),
+			terraformv1alpha1.ConfigurationNamespaceLabel: configuration.GetNamespace(),
+		}); err != nil {
+			cond.Failed(err, "Failed to list the jobs in controller namespace")
 
 			return reconcile.Result{}, err
 		}
+
 		state.jobs = list
 
 		return reconcile.Result{}, nil
 	}
 }
 
-// ensureNoPreviousGeneration is responsible for ensuring there active jobs are running for this
-// configuration, if so we act safely and wait for the job to finish
+// ensureNoPreviousGeneration is responsible for ensuring there active jobs are running for this configuration, if so we act
+// safely and wait for the job to finish
 func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	return func(ctx context.Context) (reconcile.Result, error) {
 		currentGeneration := configuration.Generation
@@ -76,14 +144,9 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 		provider.Namespace = configuration.Spec.ProviderRef.Namespace
 		provider.Name = configuration.Spec.ProviderRef.Name
 
-		// @step: we can default the provider namespace to the running namespace if not set
-		if provider.Namespace == "" {
-			provider.Namespace = c.JobNamespace
-		}
-
 		found, err := kubernetes.GetIfExists(ctx, c.cc, provider)
 		if err != nil {
-			cond.Failed(err, "Failed to retrieve the provider for the configuration")
+			cond.Failed(err, "Failed to retrieve the provider for the configuration: (%s/%s)", provider.Namespace, provider.Name)
 
 			return reconcile.Result{}, err
 		}
@@ -93,7 +156,7 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 			return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
 
-		// @step: check the status of the provider
+		// @step: we need to check the status of the provider to ensure it's ready to be used
 		status := provider.Status.GetCondition(corev1alphav1.ConditionReady)
 		if status.Status != metav1.ConditionTrue {
 			cond.Warning("Provider is not ready")
@@ -108,8 +171,8 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 	}
 }
 
-// ensureGeneratedConfig is responsible the terraform configuration is generated for this job to run. This
-// includes the backend configuration and the variables
+// ensureGeneratedConfig is responsible in ensuring the terraform configuration is generated for this job. This
+// includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 	name := string(configuration.GetUID())
@@ -169,13 +232,16 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 	}
 }
 
-// ensureTerraformPlan is responsible for ensuring the terraform plan is running or ran
+// ensureTerraformPlan is responsible for ensuring the terraform plan is running or has already ran for this generation. We
+// consult the status of the resource to check the status of a stage at generation x
 func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPlan)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		// @note: this is effectively checking the status of plan condition - if the condition is True for the given generation
+		// we can say the plan has already been run and move on
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{}, nil
 		}
@@ -183,10 +249,11 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		// @step: generate the job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformPlan(jobs.Options{
-			GitImage:         c.GitImage,
-			Namespace:        c.JobNamespace,
-			TerraformImage:   c.TerraformImage,
-			TerraformVersion: c.TerraformVersion,
+			ExecutorImage:      c.ExecutorImage,
+			GitImage:           c.GitImage,
+			Namespace:          c.JobNamespace,
+			EnableCostAnalysis: c.EnableCostAnalytics,
+			CostAnalysisSecret: c.CostAnalyticsSecretName,
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform plan job")
@@ -257,6 +324,51 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 	}
 }
 
+// ensureCostStatus is responsible for updating the cost status post a plan
+func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if !c.EnableCostAnalytics {
+			return reconcile.Result{}, nil
+		}
+
+		secret := &v1.Secret{}
+		secret.Namespace = c.JobNamespace
+		secret.Name = configuration.GetTerraformCostSecretName()
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to get the terraform costs secret")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			configuration.Status.Costs = &terraformv1alphav1.CostStatus{Enabled: false}
+
+			return reconcile.Result{}, nil
+		}
+
+		// @step: parse the cost report json
+		if secret.Data["costs.json"] != nil {
+			report := make(map[string]interface{})
+			if err := json.NewDecoder(bytes.NewReader(secret.Data["costs.json"])).Decode(&report); err != nil {
+				cond.Failed(err, "Failed to decode the terraform costs report")
+
+				return reconcile.Result{}, err
+			}
+
+			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
+				Enabled: true,
+				Hourly:  fmt.Sprintf("%v", report["totalHourlyCost"]),
+				Monthly: fmt.Sprintf("%v", report["totalMonthlyCost"]),
+			}
+		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureTerraformApply is responsible for ensuring the terraform apply is running or run
 func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply)
@@ -274,10 +386,9 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			GitImage:         c.GitImage,
-			Namespace:        c.JobNamespace,
-			TerraformImage:   c.TerraformImage,
-			TerraformVersion: c.TerraformVersion,
+			ExecutorImage: c.ExecutorImage,
+			GitImage:      c.GitImage,
+			Namespace:     c.JobNamespace,
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")
@@ -330,9 +441,10 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 // ensureTerraformStatus is responsible for updating the configuration status
 func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	condition := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace
@@ -340,19 +452,19 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
-			condition.Failed(err, "Failed to get the terraform state secret")
+			cond.Failed(err, "Failed to get the terraform state secret")
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			condition.Failed(nil, "Terraform state secret not found")
+			cond.Failed(nil, "Terraform state secret not found")
 
 			return reconcile.Result{}, nil
 		}
 
 		state, err := terraform.DecodeState(secret.Data["tfstate"])
 		if err != nil {
-			condition.Failed(err, "Failed to decode the terraform state")
+			cond.Failed(err, "Failed to decode the terraform state")
 
 			return reconcile.Result{}, err
 		}
@@ -366,13 +478,13 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 
 // ensureTerraformSecret is responsible for ensuring the jobs ran successfully
 func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	condition := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 	name := configuration.GetTerraformStateSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: if no secrets have been created we can defer and move successful
 		if configuration.Spec.WriteConnectionSecretToRef == nil {
-			condition.Success("Terraform has completed successfully")
+			cond.Success("Terraform has completed successfully")
 
 			return reconcile.Result{}, nil
 		}
@@ -384,12 +496,12 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, ss)
 		if err != nil {
-			condition.Failed(err, "Failed to get terraform state secret (%s/%s)", c.JobNamespace, name)
+			cond.Failed(err, "Failed to get terraform state secret (%s/%s)", c.JobNamespace, name)
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			condition.Failed(nil, "Terraform state secret (%s/%s) not found", c.JobNamespace, name)
+			cond.Failed(nil, "Terraform state secret (%s/%s) not found", c.JobNamespace, name)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -397,12 +509,13 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 		// @step: decode the terraform state (essentially just returning the uncompressed content)
 		state, err := terraform.DecodeState(ss.Data["tfstate"])
 		if err != nil {
-			condition.Failed(err, "Failed to decode the terraform state")
+			cond.Failed(err, "Failed to decode the terraform state")
 
 			return reconcile.Result{}, err
 		}
 
-		// @step: check if we have any module outputs
+		// @step: check if we have any module outputs and if found, we convert the outputs to a
+		// kubernetes secret
 		if state.HasOutputs() {
 			secret := &v1.Secret{}
 			secret.Namespace = configuration.Namespace
@@ -419,7 +532,7 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 			for k, v := range state.Outputs {
 				value, err := v.ToValue()
 				if err != nil {
-					condition.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
+					cond.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
 
 					return reconcile.Result{}, err
 				}
@@ -428,12 +541,12 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 
 			// @step: create the terraform secret
 			if err := kubernetes.CreateOrForceUpdate(ctx, c.cc, secret); err != nil {
-				condition.Failed(err, "Failed to create the terraform state secret")
+				cond.Failed(err, "Failed to create the terraform state secret")
 
 				return reconcile.Result{}, err
 			}
 		}
-		condition.Success("Terraform has completed successfully")
+		cond.Success("Terraform has completed successfully")
 
 		return reconcile.Result{}, nil
 	}

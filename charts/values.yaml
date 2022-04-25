@@ -4,28 +4,34 @@ fullnameOverride: ""
 replicaCount: 1
 
 controller:
-  # Indicate we register the validating and mutating webhooks
-  enableWebhookRegistration: true
   # Is the port the apiserver is running
   port: 10080
   # Is the port for the metrics service
   metricsPort: 9090
   # The namespace to run all the jobs in
   namespace: default
+  # Configuration related to costs
+  costs:
+    # Name of the secret containing the infracost api token
+    # Naming format of values found https://www.infracost.io/docs/features/environment_variables/
+    secret: ""
   # Configuration for the images used by the jobs
   images:
+    # is the controller image
+    controller: "quay.io/appvia/terraform-controller:latest"
     # The terraform image used when running jobs
-    terraform: "hashicorp/terraform"
+    executor: "quay.io/appvia/terraform-executor:latest"
     # The image used for git operations in the jobs
-    git: "quay.io/appvia/controller:latest"
+    git: "quay.io/appvia/terraform-controller:latest"
+  # is the image pull policy
+  imagePullPolicy: IfNotPresent
+
   # The default terraform version (or tag of the above image)
-  terraformVersion: 1.1.7
-  # configuration for the webhooks
   webhooks:
-    # is the port the webhooks is running
-    port: 10081
     # enables the webhooks
     enabled: true
+    # is the port the webhooks is running
+    port: 10081
     # creates the certificate authority
     ca: true
     # name of the file containing the certificate authority
@@ -40,11 +46,6 @@ controller:
 networkPolicies:
   # Indicates we should create the network policies
   enabled: true
-
-image:
-  repository: quay.io/appvia/terraform-controller
-  pullPolicy: IfNotPresent
-  tag: latest
 
 imagePullSecrets: []
 
@@ -66,10 +67,21 @@ securityContext:
     - all
 
 rbac:
-  # Indicates we should provision the rbac
+  # Indicates we should create all the rbac
   create: true
-  # Indicates we should create the service account for terraform executors
-  createExecutorServiceAccount: true
+  # service account for the controller
+  controller:
+    # Indicates we should provision the rbac
+    create: true
+    # annotations is a collection of annotations which should be added
+    annotations: {}
+
+  # Configuration for the terraform executor service account
+  executor:
+    # indicates we should create the terraform-executor service account
+    create: true
+    # annotations is a collection of annotations which should be added
+    annotations: {}
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

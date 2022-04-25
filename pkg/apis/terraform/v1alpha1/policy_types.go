@@ -46,15 +46,23 @@ const (
 	SkipDefaultsValidationCheck = "terraform.appvia.io/skip-defaults-check"
 )
 
-// ModuleConstraints provides a collection of constraints on modules
-type ModuleConstraints struct {
+// NamespaceConstraint provides a ability to filter out which configurations we handle
+// based on namespace labels
+type NamespaceConstraint struct {
+	// Allowed is a filter on the namespaces we handle
+	// +kubebuilder:validation:Optional
+	Allowed *metav1.LabelSelector `json:"allowed,omitempty"`
+}
+
+// ModuleConstraint provides a collection of constraints on modules
+type ModuleConstraint struct {
 	// Allowed is a list of regexes which are permitted as module sources
 	// +kubebuilder:validation:Optional
 	Allowed []string `json:"allowed,omitempty"`
 }
 
 // Matches returns true if the module matches the regex
-func (m *ModuleConstraints) Matches(module string) (bool, error) {
+func (m *ModuleConstraint) Matches(module string) (bool, error) {
 	for _, m := range m.Allowed {
 		re, err := regexp.Compile(m)
 		if err != nil {
@@ -74,12 +82,15 @@ func (m *ModuleConstraints) Matches(module string) (bool, error) {
 type Constraints struct {
 	// Modules is a list of regexes which are permitted as module sources
 	// +kubebuilder:validation:Optional
-	Modules *ModuleConstraints `json:"modules,omitempty"`
+	Modules *ModuleConstraint `json:"modules,omitempty"`
+	// Namespace is a filter on the namespaces we handle
+	// +kubebuilder:validation:Optional
+	Namespace *NamespaceConstraint `json:"namespace,omitempty"`
 }
 
 // VerifyConstraints verifies the constraints
 type VerifyConstraints struct {
-	// URL is the respository url to checkout for checks
+	// URL is the repository url to checkout for checks
 	// +kubebuilder:validation:Required
 	URL string `json:"url"`
 }

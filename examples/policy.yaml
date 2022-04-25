@@ -22,4 +22,22 @@ spec:
               operator: Exists
       variables:
         environment: dev
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: environment-defaults
+spec:
+  costs:
+    token:
+    url:
+  constraints:
+    budgets:
+      - selector:
+          matchExpressions: []
+        cost: 100
+      - selector:
+          matchLabels:
+            costCode: 1234
+        cost: 1000
 

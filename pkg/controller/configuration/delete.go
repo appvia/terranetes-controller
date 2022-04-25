@@ -70,10 +70,9 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
-			GitImage:         c.GitImage,
-			Namespace:        c.JobNamespace,
-			TerraformImage:   c.TerraformImage,
-			TerraformVersion: c.TerraformVersion,
+			ExecutorImage: c.ExecutorImage,
+			GitImage:      c.GitImage,
+			Namespace:     c.JobNamespace,
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")
@@ -170,6 +169,15 @@ func (c *Controller) ensureTerraformStateDeleted(configuration *terraformv1alpha
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace
 		secret.Name = configuration.GetTerraformStateSecretName()
+
+		if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {
+			cond.Failed(err, "Failed to delete the terraform state secret")
+
+			return reconcile.Result{}, err
+		}
+
+		secret.Namespace = c.JobNamespace
+		secret.Name = configuration.GetTerraformCostSecretName()
 
 		if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {
 			cond.Failed(err, "Failed to delete the terraform state secret")

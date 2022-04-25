@@ -33,8 +33,6 @@ import (
 type Controller struct {
 	// cc is the kubernetes client to the cluster
 	cc client.Client
-	// EnableWebhook enables the webhooks
-	EnableWebhook bool
 }
 
 // Add is called to setup the manager for the controller
@@ -43,14 +41,10 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	c.cc = mgr.GetClient()
 
-	if c.EnableWebhook {
-		log.Info("registering the policy webhooks")
-
-		mgr.GetWebhookServer().Register(
-			fmt.Sprintf("/validate/%s/policies", terraformv1alphav1.GroupName),
-			admission.WithCustomValidator(&terraformv1alphav1.Policy{}, policies.NewValidator(c.cc)),
-		)
-	}
+	mgr.GetWebhookServer().Register(
+		fmt.Sprintf("/validate/%s/policies", terraformv1alphav1.GroupName),
+		admission.WithCustomValidator(&terraformv1alphav1.Policy{}, policies.NewValidator(c.cc)),
+	)
 
 	return nil
 }

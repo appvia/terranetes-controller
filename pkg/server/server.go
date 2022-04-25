@@ -73,16 +73,14 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		LeaderElectionID:              "controller.terraform.appvia.io",
 		LeaderElectionNamespace:       os.Getenv("KUBE_NAMESPACE"),
 		LeaderElectionReleaseOnCancel: true,
-		//Logger:                        klogr.New(),
-		MetricsBindAddress: fmt.Sprintf(":%d", config.MetricsPort),
-		Port:               config.WebhookPort,
-		Scheme:             schema.GetScheme(),
-		SyncPeriod:         &config.ResyncPeriod,
+		MetricsBindAddress:            fmt.Sprintf(":%d", config.MetricsPort),
+		Port:                          config.WebhookPort,
+		Scheme:                        schema.GetScheme(),
+		SyncPeriod:                    &config.ResyncPeriod,
 	}
 
-	if !config.DisableWebhooks {
+	if config.EnableWebhook {
 		log.Info("creating the webhook server for validation and mutations")
-
 		options.WebhookServer = &webhook.Server{
 			CertDir:  config.TLSDir,
 			CertName: config.TLSCert,
@@ -98,24 +96,20 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	if err := (&configuration.Controller{
-		EnableWebhook:    !config.DisableWebhooks,
-		GitImage:         config.GitImage,
-		JobNamespace:     config.Namespace,
-		TerraformImage:   config.TerraformImage,
-		TerraformVersion: config.TerraformVersion,
+		CostAnalyticsSecretName: config.CostSecretName,
+		EnableCostAnalytics:     (config.CostSecretName != ""),
+		ExecutorImage:           config.ExecutorImage,
+		GitImage:                config.GitImage,
+		JobNamespace:            config.Namespace,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)
 	}
 
-	if err := (&provider.Controller{
-		EnableWebhook: !config.DisableWebhooks,
-	}).Add(mgr); err != nil {
+	if err := (&provider.Controller{}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the provider controller, error: %v", err)
 	}
 
-	if err := (&policy.Controller{
-		EnableWebhook: !config.DisableWebhooks,
-	}).Add(mgr); err != nil {
+	if err := (&policy.Controller{}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the policy controller, error: %v", err)
 	}
 
@@ -130,7 +124,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 // Start is called to begin the service
 func (s *Server) Start(ctx context.Context) error {
-	if !s.config.DisableWebhooks && s.config.EnableWebhookRegistration {
+	if s.config.EnableWebhook {
 		if err := s.registerWebhooks(ctx); err != nil {
 			return fmt.Errorf("failed to register the webhooks, error: %v", err)
 		}

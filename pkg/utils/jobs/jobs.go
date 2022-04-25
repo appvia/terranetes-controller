@@ -32,16 +32,18 @@ import (
 
 // Options is the configuration for the render
 type Options struct {
-	// Namespace is the location of the jobs
-	Namespace string
-	// TerraformImage is the image to use for the terraform jobs
-	TerraformImage string
-	// TerraformVersion is the version of terraform to use
-	TerraformVersion string
+	// CostAnalysisSecret is the name of the secret contain the infracost token and url
+	CostAnalysisSecret string
+	// EnableCostAnalysis is the flag to enable cost analysis
+	EnableCostAnalysis bool
+	// EnableVerification is the flag to enable verification
+	EnableVerification bool
+	// ExecutorImage is the image to use for the terraform jobs
+	ExecutorImage string
 	// GitImage is the image to use for the git jobs
 	GitImage string
-	// ChekovImage is the image to use for the chekov jobs
-	ChekovImage string
+	// Namespace is the location of the jobs
+	Namespace string
 }
 
 // Render is responsible for rendering the terraform configuration
@@ -102,10 +104,11 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 					},
 					Containers: []v1.Container{
 						{
-							Name:    "watch",
-							Image:   "curlimages/curl:7.82.0",
-							Command: []string{"sh"},
-							Args:    []string{"-c", fmt.Sprintf("curl --no-buffer --silent '%s' | tee -a %[2]s && grep -qi 'build.*complete' %[2]s", endpoint, buildLog)},
+							Name:            "watch",
+							Image:           "curlimages/curl:7.82.0",
+							ImagePullPolicy: v1.PullIfNotPresent,
+							Command:         []string{"sh"},
+							Args:            []string{"-c", fmt.Sprintf("curl --no-buffer --silent '%s' | tee -a %[2]s && grep -qi 'build.*complete' %[2]s", endpoint, buildLog)},
 							SecurityContext: &v1.SecurityContext{
 								AllowPrivilegeEscalation: pointer.Bool(false),
 								Capabilities:             &v1.Capabilities{Drop: []v1.Capability{"ALL"}},
@@ -121,80 +124,56 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 
 // NewTerraformPlan is responsible for creating a batch job to run terraform plan
 func (r *Render) NewTerraformPlan(options Options) (*batchv1.Job, error) {
-	o := r.createTerraformJob(options)
+	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformPlan)
 	o.Namespace = options.Namespace
 	o.GenerateName = fmt.Sprintf("%s-plan-", r.configuration.Name)
 	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformPlan
-	o.Spec.Template.Spec.Containers[0].Command = []string{"terraform"}
-	o.Spec.Template.Spec.Containers[0].Args = []string{"plan"}
-
-	if r.configuration.HasVariables() {
-		o.Spec.Template.Spec.Containers[0].Args = append(o.Spec.Template.Spec.Containers[0].Args, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
-	}
 
 	return o, nil
 }
 
 // NewTerraformApply is responsible for creating a batch job to run terraform apply
 func (r *Render) NewTerraformApply(options Options) (*batchv1.Job, error) {
-	o := r.createTerraformJob(options)
-	o.Namespace = options.Namespace
+	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformApply)
 	o.GenerateName = fmt.Sprintf("%s-apply-", r.configuration.Name)
 	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformApply
-	o.Spec.Template.Spec.Containers[0].Command = []string{"terraform"}
-	o.Spec.Template.Spec.Containers[0].Args = []string{"apply", "-auto-approve"}
-
-	if r.configuration.HasVariables() {
-		o.Spec.Template.Spec.Containers[0].Args = append(o.Spec.Template.Spec.Containers[0].Args, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
-	}
 
 	return o, nil
 }
 
 // NewTerraformDestroy is responsible for creating a batch job to run terraform destroy
 func (r *Render) NewTerraformDestroy(options Options) (*batchv1.Job, error) {
-	o := r.createTerraformJob(options)
+	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformDestroy)
 	o.Namespace = options.Namespace
 	o.GenerateName = fmt.Sprintf("%s-destroy-", r.configuration.Name)
 	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformDestroy
-	o.Spec.Template.Spec.Containers[0].Command = []string{"terraform"}
-	o.Spec.Template.Spec.Containers[0].Args = []string{"apply", "-auto-approve", "-destroy"}
-
-	if r.configuration.HasVariables() {
-		o.Spec.Template.Spec.Containers[0].Args = append(o.Spec.Template.Spec.Containers[0].Args, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
-	}
-
-	return o, nil
-}
-
-// NewTerraformVerify is responsible for creating a batch job to run terraform verify
-func (r *Render) NewTerraformVerify(options Options) (*batchv1.Job, error) {
-	o := r.createTerraformJob(options)
-	o.Namespace = options.Namespace
-	o.GenerateName = fmt.Sprintf("%s-verify-", r.configuration.Name)
-	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformVerify
-	o.Spec.Template.Spec.Containers[0].Command = []string{"sh"}
-
-	args := []string{"terraform", "plan", "plan.out"}
-	if r.configuration.HasVariables() {
-		args = append(args, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
-	}
-	args = append(args, []string{"&&", "chekov", "scan"}...)
-
-	o.Spec.Template.Spec.Containers[0].Args = []string{"-c", fmt.Sprintf("terraform plan plan.out && chekov verify plan.out")}
 
 	return o, nil
 }
 
 // createTerraformJob is responsible for creating a terraform job from the configuration
-func (r *Render) createTerraformJob(options Options) *batchv1.Job {
+func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job {
 	o := &batchv1.Job{}
+	o.Namespace = options.Namespace
 	o.Labels = map[string]string{
 		terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 		terraformv1alphav1.ConfigurationNameLabel:       r.configuration.GetName(),
 		terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
 		terraformv1alphav1.ConfigurationUID:             string(r.configuration.GetUID()),
 	}
+
+	// @step: construct the arguments for the executor
+	arguments := []string{fmt.Sprintf("-%s", stage)}
+	if options.EnableCostAnalysis {
+		arguments = append(arguments, []string{"-enable-costs"}...)
+	}
+	if options.EnableVerification {
+		arguments = append(arguments, []string{"-enable-checkov", "-checkov-url", "bad"}...)
+	}
+	if r.configuration.HasVariables() {
+		arguments = append(arguments, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
+	}
+
 	o.Spec = batchv1.JobSpec{
 		BackoffLimit: pointer.Int32(3),
 		Completions:  pointer.Int32(1),
@@ -237,10 +216,9 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 					},
 					{
 						Name:            "init",
-						Image:           GetTerraformImage(r.configuration, options.TerraformImage, options.TerraformVersion),
+						Image:           options.ExecutorImage,
 						ImagePullPolicy: v1.PullIfNotPresent,
-						Command:         []string{"terraform"},
-						Args:            []string{"init"},
+						Args:            []string{"-init"},
 						WorkingDir:      "/data",
 						VolumeMounts: []v1.VolumeMount{
 							{
@@ -252,8 +230,10 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 				},
 				Containers: []v1.Container{
 					{
-						Name:  "terraform",
-						Image: GetTerraformImage(r.configuration, options.TerraformImage, options.TerraformVersion),
+						Name:            "terraform",
+						Image:           options.ExecutorImage,
+						ImagePullPolicy: v1.PullIfNotPresent,
+						Args:            arguments,
 						SecurityContext: &v1.SecurityContext{
 							Capabilities: &v1.Capabilities{
 								Drop: []v1.Capability{"ALL"},
@@ -261,6 +241,32 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 							Privileged:   &[]bool{true}[0],
 							RunAsNonRoot: &[]bool{true}[0],
 							RunAsUser:    &[]int64{65534}[0],
+						},
+						Env: []v1.EnvVar{
+							{
+								Name:  "CONFIGURATION_NAME",
+								Value: r.configuration.GetName(),
+							},
+							{
+								Name:  "CONFIGURATION_NAMESPACE",
+								Value: r.configuration.GetNamespace(),
+							},
+							{
+								Name:  "CONFIGURATION_UID",
+								Value: string(r.configuration.GetUID()),
+							},
+							{
+								Name:  "COST_REPORT_NAME",
+								Value: r.configuration.GetTerraformCostSecretName(),
+							},
+							{
+								Name: "KUBE_NAMESPACE",
+								ValueFrom: &v1.EnvVarSource{
+									FieldRef: &v1.ObjectFieldSelector{
+										FieldPath: "metadata.namespace",
+									},
+								},
+							},
 						},
 						WorkingDir: "/data",
 						VolumeMounts: []v1.VolumeMount{
@@ -272,11 +278,11 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 						Resources: v1.ResourceRequirements{
 							Limits: v1.ResourceList{
 								v1.ResourceCPU:    resource.MustParse("1"),
-								v1.ResourceMemory: resource.MustParse("2Gi"),
+								v1.ResourceMemory: resource.MustParse("1Gi"),
 							},
 							Requests: v1.ResourceList{
-								v1.ResourceCPU:    resource.MustParse("10m"),
-								v1.ResourceMemory: resource.MustParse("256Mi"),
+								v1.ResourceCPU:    resource.MustParse("5m"),
+								v1.ResourceMemory: resource.MustParse("32Mi"),
 							},
 						},
 					},
@@ -320,6 +326,17 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 		},
 	})
 
+	// @step: add any additional secrets to the job
+	if options.CostAnalysisSecret != "" {
+		o.Spec.Template.Spec.Containers[0].EnvFrom = append(o.Spec.Template.Spec.Containers[0].EnvFrom, v1.EnvFromSource{
+			SecretRef: &v1.SecretEnvSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: options.CostAnalysisSecret,
+				},
+			},
+		})
+	}
+
 	// @step: add the credentials to the job
 	switch r.provider.Spec.Source {
 	case terraformv1alphav1.SourceSecret:
@@ -332,8 +349,8 @@ func (r *Render) createTerraformJob(options Options) *batchv1.Job {
 				},
 			},
 		}
-		o.Spec.Template.Spec.Containers[0].EnvFrom = environment
-		o.Spec.Template.Spec.InitContainers[2].EnvFrom = environment
+		o.Spec.Template.Spec.Containers[0].EnvFrom = append(o.Spec.Template.Spec.Containers[0].EnvFrom, environment...)
+		o.Spec.Template.Spec.InitContainers[2].EnvFrom = append(o.Spec.Template.Spec.InitContainers[2].EnvFrom, environment...)
 
 	case terraformv1alphav1.SourceInjected:
 		o.Spec.Template.Spec.ServiceAccountName = *r.provider.Spec.ServiceAccount
