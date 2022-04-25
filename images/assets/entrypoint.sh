@@ -17,6 +17,7 @@
 #
 
 CHECKOV_POLICY_URL=""
+COST_REPORT_FILE="/tmp/costs.json"
 ENABLE_CHECKOV="${ENABLE_CHECKOV:-false}"
 ENABLE_INFRACOST=${ENABLE_INFRACOST:-"false"}
 INFRACOST=${INFRACOST:-"/usr/bin/infracost"}
@@ -88,7 +89,7 @@ terraform_verify() {
   echo "--------------------------------------------------------------------------------"
   echo " Evaluating Against Policy"
   echo "--------------------------------------------------------------------------------"
-
+  echo
   announce "Verifying the plan against permitted policy"
 }
 
@@ -97,9 +98,26 @@ terraform_cost() {
   echo "--------------------------------------------------------------------------------"
   echo " Evaluating Cost"
   echo "--------------------------------------------------------------------------------"
-
+  echo
+  # @step: show the user the breakdown of the costs
   if ! infracost breakdown --terraform-parse-hcl --path .; then
     error "Unable to assess the costs of the configuration"
+    exit 1
+  fi
+
+  # @show: retrieve the json from the infracost
+  if ! infracost breakdown --terraform-parse-hcl --path . --format json > ${COST_REPORT_FILE}; then
+    error "Unable to retrieve the json report from infracost"
+    exit 1
+  fi
+
+  if ! kubectl -n ${KUBE_NAMESPACE} delete secret ${COST_REPORT_NAME} --ignore-not-found >/dev/null; then
+    error "Failed to delete the cost report secret"
+    exit 1
+  fi
+
+  if ! kubectl -n ${KUBE_NAMESPACE} create secret generic ${COST_REPORT_NAME} --from-file=${COST_REPORT_FILE} >/dev/null; then
+    error "Failed to create the cost report secret"
     exit 1
   fi
 }

@@ -18,7 +18,9 @@
 package configuration
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -322,6 +324,51 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 	}
 }
 
+// ensureCostStatus is responsible for updating the cost status post a plan
+func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if !c.EnableCostAnalytics {
+			return reconcile.Result{}, nil
+		}
+
+		secret := &v1.Secret{}
+		secret.Namespace = c.JobNamespace
+		secret.Name = configuration.GetTerraformCostSecretName()
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to get the terraform costs secret")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			configuration.Status.Costs = &terraformv1alphav1.CostStatus{Enabled: false}
+
+			return reconcile.Result{}, nil
+		}
+
+		// @step: parse the cost report json
+		if secret.Data["costs.json"] != nil {
+			report := make(map[string]interface{})
+			if err := json.NewDecoder(bytes.NewReader(secret.Data["costs.json"])).Decode(&report); err != nil {
+				cond.Failed(err, "Failed to decode the terraform costs report")
+
+				return reconcile.Result{}, err
+			}
+
+			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
+				Enabled: true,
+				Hourly:  fmt.Sprintf("%v", report["totalHourlyCost"]),
+				Monthly: fmt.Sprintf("%v", report["totalMonthlyCost"]),
+			}
+		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureTerraformApply is responsible for ensuring the terraform apply is running or run
 func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply)
@@ -394,9 +441,10 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 // ensureTerraformStatus is responsible for updating the configuration status
 func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	condition := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace
@@ -404,19 +452,19 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
-			condition.Failed(err, "Failed to get the terraform state secret")
+			cond.Failed(err, "Failed to get the terraform state secret")
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			condition.Failed(nil, "Terraform state secret not found")
+			cond.Failed(nil, "Terraform state secret not found")
 
 			return reconcile.Result{}, nil
 		}
 
 		state, err := terraform.DecodeState(secret.Data["tfstate"])
 		if err != nil {
-			condition.Failed(err, "Failed to decode the terraform state")
+			cond.Failed(err, "Failed to decode the terraform state")
 
 			return reconcile.Result{}, err
 		}
@@ -430,13 +478,13 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 
 // ensureTerraformSecret is responsible for ensuring the jobs ran successfully
 func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	condition := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 	name := configuration.GetTerraformStateSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: if no secrets have been created we can defer and move successful
 		if configuration.Spec.WriteConnectionSecretToRef == nil {
-			condition.Success("Terraform has completed successfully")
+			cond.Success("Terraform has completed successfully")
 
 			return reconcile.Result{}, nil
 		}
@@ -448,12 +496,12 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, ss)
 		if err != nil {
-			condition.Failed(err, "Failed to get terraform state secret (%s/%s)", c.JobNamespace, name)
+			cond.Failed(err, "Failed to get terraform state secret (%s/%s)", c.JobNamespace, name)
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			condition.Failed(nil, "Terraform state secret (%s/%s) not found", c.JobNamespace, name)
+			cond.Failed(nil, "Terraform state secret (%s/%s) not found", c.JobNamespace, name)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -461,7 +509,7 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 		// @step: decode the terraform state (essentially just returning the uncompressed content)
 		state, err := terraform.DecodeState(ss.Data["tfstate"])
 		if err != nil {
-			condition.Failed(err, "Failed to decode the terraform state")
+			cond.Failed(err, "Failed to decode the terraform state")
 
 			return reconcile.Result{}, err
 		}
@@ -484,7 +532,7 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 			for k, v := range state.Outputs {
 				value, err := v.ToValue()
 				if err != nil {
-					condition.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
+					cond.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
 
 					return reconcile.Result{}, err
 				}
@@ -493,12 +541,12 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 
 			// @step: create the terraform secret
 			if err := kubernetes.CreateOrForceUpdate(ctx, c.cc, secret); err != nil {
-				condition.Failed(err, "Failed to create the terraform state secret")
+				cond.Failed(err, "Failed to create the terraform state secret")
 
 				return reconcile.Result{}, err
 			}
 		}
-		condition.Success("Terraform has completed successfully")
+		cond.Success("Terraform has completed successfully")
 
 		return reconcile.Result{}, nil
 	}

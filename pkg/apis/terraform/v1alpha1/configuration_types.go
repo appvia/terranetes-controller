@@ -133,7 +133,8 @@ type ConfigurationSpec struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
-// +kubebuilder:printcolumn:name="Resoures",type="string",JSONPath=".status.resources"
+// +kubebuilder:printcolumn:name="Resources",type="string",JSONPath=".status.resources"
+// +kubebuilder:printcolumn:name="Cost",type="string",JSONPath=".status.costs.monthly"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Configuration struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -145,13 +146,15 @@ type Configuration struct {
 
 // CostStatus defines the cost status of a configuration
 type CostStatus struct {
-	// Budget is the applicable budget for this configuration determined by the current
-	// policy
+	// Enabled indicates if the cost is enabled
 	// +kubebuilder:validation:Optional
-	Budget string `json:"budget,omitempty"`
-	// Costs is the estimated cost of this configuration
+	Enabled bool `json:"enabled,omitempty"`
+	// Hourly is the hourly estimated cost of the configuration
 	// +kubebuilder:validation:Optional
-	Costs string `json:"costs,omitempty"`
+	Hourly string `json:"hourly,omitempty"`
+	// Monthly is the monthly estimated cost of the configuration
+	// +kubebuilder:validation:Optional
+	Monthly string `json:"monthly,omitempty"`
 }
 
 // ConfigurationStatus defines the observed state of a terraform
@@ -204,6 +207,11 @@ func (c *Configuration) NeedsApproval() bool {
 // GetTerraformStateSecretName returns the name of the secret holding the terraform state
 func (c *Configuration) GetTerraformStateSecretName() string {
 	return fmt.Sprintf("tfstate-default-%s", string(c.GetUID()))
+}
+
+// GetTerraformCostSecretName returns the name which should be used for the costs report
+func (c *Configuration) GetTerraformCostSecretName() string {
+	return fmt.Sprintf("costs-%s", string(c.GetUID()))
 }
 
 // GetCommonStatus returns the common status

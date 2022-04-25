@@ -22,7 +22,10 @@ spec:
           name: Secret
           type: string
         - jsonPath: .status.resources
-          name: Resoures
+          name: Resources
+          type: string
+        - jsonPath: .status.costs.monthly
+          name: Cost
           type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
@@ -136,11 +139,14 @@ spec:
                 costs:
                   description: Costs is the cost status of the configuration is enabled via the controller
                   properties:
-                    budget:
-                      description: Budget is the applicable budget for this configuration determined by the current policy
+                    enabled:
+                      description: Enabled indicates if the cost is enabled
+                      type: boolean
+                    hourly:
+                      description: Hourly is the hourly estimated cost of the configuration
                       type: string
-                    costs:
-                      description: Costs is the estimated cost of this configuration
+                    monthly:
+                      description: Monthly is the monthly estimated cost of the configuration
                       type: string
                   type: object
                 lastReconcile:

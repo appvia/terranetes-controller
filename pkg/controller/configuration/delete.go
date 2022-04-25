@@ -176,6 +176,15 @@ func (c *Controller) ensureTerraformStateDeleted(configuration *terraformv1alpha
 			return reconcile.Result{}, err
 		}
 
+		secret.Namespace = c.JobNamespace
+		secret.Name = configuration.GetTerraformCostSecretName()
+
+		if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {
+			cond.Failed(err, "Failed to delete the terraform state secret")
+
+			return reconcile.Result{}, err
+		}
+
 		return reconcile.Result{}, nil
 	}
 }

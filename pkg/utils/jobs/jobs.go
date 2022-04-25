@@ -244,6 +244,22 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 						},
 						Env: []v1.EnvVar{
 							{
+								Name:  "CONFIGURATION_NAME",
+								Value: r.configuration.GetName(),
+							},
+							{
+								Name:  "CONFIGURATION_NAMESPACE",
+								Value: r.configuration.GetNamespace(),
+							},
+							{
+								Name:  "CONFIGURATION_UID",
+								Value: string(r.configuration.GetUID()),
+							},
+							{
+								Name:  "COST_REPORT_NAME",
+								Value: r.configuration.GetTerraformCostSecretName(),
+							},
+							{
 								Name: "KUBE_NAMESPACE",
 								ValueFrom: &v1.EnvVarSource{
 									FieldRef: &v1.ObjectFieldSelector{
