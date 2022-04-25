@@ -127,7 +127,7 @@ controller-kind: build controller-image executor-image
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
 	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} for vulnerabilities"
-	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/controller:${VERSION}
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
 
 executor-image:
 	@echo "--> Compiling the terraform-executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
@@ -136,7 +136,7 @@ executor-image:
 executor-image-verify: install-trivy
 	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
 	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} for vulnerabilities"
-	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/executor:${VERSION}
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
 
 # Image management
 

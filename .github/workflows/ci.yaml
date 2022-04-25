@@ -12,10 +12,11 @@ on:
     types: [opened, reopened, synchronize]
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
@@ -24,3 +25,15 @@ jobs:
       run: make test
     - name: Linting
       run: make check
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Binaries
+      run: make
+    - name: Build Images
+      run: |
+        make controller-image
+        make executor-image
