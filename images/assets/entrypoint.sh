@@ -24,6 +24,8 @@ INFRACOST=${INFRACOST:-"/usr/bin/infracost"}
 INFRACOST_API_KEY=${INFRACOST_API_KEY:-""}
 INFRACOST_API_URL=${INFRACOST_API_URL:-""}
 TERRAFORM=${TERRAFORM:-"/usr/bin/terraform"}
+TERRAFORM_PLAN="/tmp/plan.out"
+TERRAFORM_PLAN_JSON="/tmp/plan.json"
 TERRAFORM_VARIABLES=""
 
 export NC='\e[0m'
@@ -106,13 +108,13 @@ terraform_cost() {
   fi
 
   # @step: show the user the breakdown of the costs
-  if ! infracost breakdown ${INFRACOST_OPTS} --terraform-parse-hcl --path .; then
+  if ! infracost breakdown ${INFRACOST_OPTS} --path $TERRAFORM_PLAN_JSON .; then
     error "Unable to assess the costs of the configuration"
     exit 1
   fi
 
   # @show: retrieve the json from the infracost
-  if ! infracost breakdown ${INFRACOST_OPTS} --terraform-parse-hcl --path . --format json > ${COST_REPORT_FILE}; then
+  if ! infracost breakdown ${INFRACOST_OPTS} --path ${TERRAFORM_PLAN_JSON} --format json > ${COST_REPORT_FILE}; then
     error "Unable to retrieve the json report from infracost"
     exit 1
   fi
@@ -122,7 +124,7 @@ terraform_cost() {
     exit 1
   fi
 
-  if ! kubectl -n ${KUBE_NAMESPACE} create secret generic ${COST_REPORT_NAME} --from-file=${COST_REPORT_FILE} >/dev/null; then
+  if ! kubectl -n ${KUBE_NAMESPACE} create secret generic ${COST_REPORT_NAME} --from-file=${COST_REPORT_FILE} --validate=false >/dev/null; then
     error "Failed to create the cost report secret"
     exit 1
   fi
@@ -137,7 +139,8 @@ terraform_destroy() {
 }
 
 terraform_plan() {
-  $TERRAFORM plan ${TERRAFORM_VARIABLES} -out=plan.out -lock=true || exit 1
+  $TERRAFORM plan ${TERRAFORM_VARIABLES} -out=${TERRAFORM_PLAN} -lock=true || exit 1
+  $TERRAFORM show -json $TERRAFORM_PLAN > $TERRAFORM_PLAN_JSON
   [[ ${ENABLE_CHECKOV} == "true" ]] && terraform_verify
   [[ ${ENABLE_INFRACOST} == "true" ]] && terraform_cost
 }

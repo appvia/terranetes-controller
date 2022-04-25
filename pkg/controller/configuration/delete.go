@@ -63,8 +63,11 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 		// @step: find any currently running destroy jobs
 		job, found := filters.Jobs(state.jobs).
-			WithStage(terraformv1alphav1.StageTerraformDestroy).
 			WithGeneration(generation).
+			WithName(configuration.GetName()).
+			WithNamespace(configuration.GetNamespace()).
+			WithStage(terraformv1alphav1.StageTerraformDestroy).
+			WithUID(string(configuration.GetUID())).
 			Latest()
 
 		// @step: generate the destroy job
