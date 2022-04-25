@@ -120,14 +120,21 @@ func (j *Filter) List() (*batchv1.JobList, bool) {
 	list := &batchv1.JobList{}
 
 	for i := 0; i < len(j.list.Items); i++ {
+		labels := j.list.Items[i].GetLabels()
+		if labels == nil {
+			continue
+		}
+
 		switch {
-		case j.stage != "" && j.list.Items[i].Labels[terraformv1alpha1.ConfigurationStageLabel] != j.stage:
+		case j.namespace != "" && labels[terraformv1alpha1.ConfigurationNamespaceLabel] != j.namespace:
 			continue
-
-		case j.generation != "" && j.list.Items[i].Labels[terraformv1alpha1.ConfigurationGenerationLabel] != j.generation:
+		case j.name != "" && labels[terraformv1alpha1.ConfigurationNameLabel] != j.name:
 			continue
-
-		case j.uid != "" && j.list.Items[i].Labels[terraformv1alpha1.ConfigurationUID] != j.uid:
+		case j.stage != "" && labels[terraformv1alpha1.ConfigurationStageLabel] != j.stage:
+			continue
+		case j.generation != "" && labels[terraformv1alpha1.ConfigurationGenerationLabel] != j.generation:
+			continue
+		case j.uid != "" && labels[terraformv1alpha1.ConfigurationUIDLabel] != j.uid:
 			continue
 		}
 

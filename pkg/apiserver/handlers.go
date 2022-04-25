@@ -69,7 +69,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 		terraformv1alphav1.ConfigurationNameLabel + "=" + values["name"],
 		terraformv1alphav1.ConfigurationNamespaceLabel + "=" + values["namespace"],
 		terraformv1alphav1.ConfigurationStageLabel + "=" + values["stage"],
-		terraformv1alphav1.ConfigurationUID + "=" + values["uid"],
+		terraformv1alphav1.ConfigurationUIDLabel + "=" + values["uid"],
 	}
 
 	var pod *v1.Pod

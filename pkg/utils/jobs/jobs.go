@@ -127,7 +127,6 @@ func (r *Render) NewTerraformPlan(options Options) (*batchv1.Job, error) {
 	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformPlan)
 	o.Namespace = options.Namespace
 	o.GenerateName = fmt.Sprintf("%s-plan-", r.configuration.Name)
-	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformPlan
 
 	return o, nil
 }
@@ -136,7 +135,6 @@ func (r *Render) NewTerraformPlan(options Options) (*batchv1.Job, error) {
 func (r *Render) NewTerraformApply(options Options) (*batchv1.Job, error) {
 	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformApply)
 	o.GenerateName = fmt.Sprintf("%s-apply-", r.configuration.Name)
-	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformApply
 
 	return o, nil
 }
@@ -146,7 +144,6 @@ func (r *Render) NewTerraformDestroy(options Options) (*batchv1.Job, error) {
 	o := r.createTerraformJob(options, terraformv1alphav1.StageTerraformDestroy)
 	o.Namespace = options.Namespace
 	o.GenerateName = fmt.Sprintf("%s-destroy-", r.configuration.Name)
-	o.Labels[terraformv1alphav1.ConfigurationStageLabel] = terraformv1alphav1.StageTerraformDestroy
 
 	return o, nil
 }
@@ -159,7 +156,8 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 		terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 		terraformv1alphav1.ConfigurationNameLabel:       r.configuration.GetName(),
 		terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
-		terraformv1alphav1.ConfigurationUID:             string(r.configuration.GetUID()),
+		terraformv1alphav1.ConfigurationStageLabel:      stage,
+		terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 	}
 
 	// @step: construct the arguments for the executor

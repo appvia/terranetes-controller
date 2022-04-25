@@ -82,9 +82,10 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{
 			finalizer.EnsurePresent(configuration),
-			c.ensureCostAnalyticsSecret(configuration),
 			c.ensurePoliciesList(configuration, state),
 			c.ensureJobsList(configuration, state),
+			c.ensureNoPreviousGeneration(configuration, state),
+			c.ensureCostAnalyticsSecret(configuration),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),
 			c.ensureTerraformPlan(configuration, state),

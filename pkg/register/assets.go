@@ -85,7 +85,7 @@ spec:
           name: Resources
           type: string
         - jsonPath: .status.costs.monthly
-          name: Cost
+          name: Estimated
           type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
@@ -236,9 +236,6 @@ spec:
                 resources:
                   description: Resources is the number of managed resources created by this configuration
                   type: integer
-                terraformVersion:
-                  description: TerraformVersion is the version held in the state
-                  type: string
               type: object
           type: object
       served: true

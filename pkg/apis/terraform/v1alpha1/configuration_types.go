@@ -54,8 +54,8 @@ const (
 	ConfigurationGenerationLabel = "terraform.appvia.io/generation"
 	// ConfigurationNameLabel is the label used to identify a configuration
 	ConfigurationNameLabel = "terraform.appvia.io/configuration"
-	// ConfigurationUID is the uid of the configuration
-	ConfigurationUID = "terraform.appvia.io/configuration-uid"
+	// ConfigurationUIDLabel is the uid of the configuration
+	ConfigurationUIDLabel = "terraform.appvia.io/configuration-uid"
 	// ConfigurationNamespaceLabel is the label used to identify a configuration namespace
 	ConfigurationNamespaceLabel = "terraform.appvia.io/namespace"
 	// ConfigurationStageLabel is the label used to identify a configuration stage
@@ -134,7 +134,7 @@ type ConfigurationSpec struct {
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
 // +kubebuilder:printcolumn:name="Resources",type="string",JSONPath=".status.resources"
-// +kubebuilder:printcolumn:name="Cost",type="string",JSONPath=".status.costs.monthly"
+// +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Configuration struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -167,9 +167,6 @@ type ConfigurationStatus struct {
 	// Resources is the number of managed resources created by this configuration
 	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
-	// TerraformVersion is the version held in the state
-	// +kubebuilder:validation:Optional
-	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 
 // GetNamespacedName returns the namespaced resource type

@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
-	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/controller"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
@@ -107,10 +107,7 @@ func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configurat
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list := &batchv1.JobList{}
 
-		if err := c.cc.List(ctx, list, client.InNamespace(c.JobNamespace), client.MatchingLabels{
-			terraformv1alpha1.ConfigurationNameLabel:      configuration.GetName(),
-			terraformv1alpha1.ConfigurationNamespaceLabel: configuration.GetNamespace(),
-		}); err != nil {
+		if err := c.cc.List(ctx, list, client.InNamespace(c.JobNamespace)); err != nil {
 			cond.Failed(err, "Failed to list the jobs in controller namespace")
 
 			return reconcile.Result{}, err
@@ -125,10 +122,32 @@ func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configurat
 // ensureNoPreviousGeneration is responsible for ensuring there active jobs are running for this configuration, if so we act
 // safely and wait for the job to finish
 func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+
 	return func(ctx context.Context) (reconcile.Result, error) {
-		currentGeneration := configuration.Generation
-		if currentGeneration <= 1 {
+		list, found := filters.Jobs(state.jobs).
+			WithNamespace(configuration.GetNamespace()).
+			WithName(configuration.GetName()).
+			WithUID(string(configuration.GetUID())).
+			List()
+		if !found {
 			return reconcile.Result{}, nil
+		}
+
+		// @step: iterate the items, if running AND from another generation, we wait
+		for _, x := range list.Items {
+
+			if !jobs.IsComplete(&x) && !jobs.IsFailed(&x) {
+				if x.GetGeneration() != configuration.GetGeneration() {
+					logrus.WithFields(logrus.Fields{
+						"generation": x.GetGeneration(),
+						"name":       x.GetName(),
+						"namespace":  x.GetNamespace(),
+						"uid":        x.GetUID(),
+					}).Info("found a previous generation job, waiting for it to finish")
+
+					return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+				}
+			}
 		}
 
 		return reconcile.Result{}, nil
@@ -263,8 +282,11 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 		// @step: search for any current jobs
 		job, found := filters.Jobs(state.jobs).
-			WithStage(terraformv1alphav1.StageTerraformPlan).
 			WithGeneration(generation).
+			WithNamespace(configuration.GetNamespace()).
+			WithName(configuration.GetName()).
+			WithStage(terraformv1alphav1.StageTerraformPlan).
+			WithUID(string(configuration.GetUID())).
 			Latest()
 
 		if !found {
@@ -360,8 +382,8 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 
 			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
 				Enabled: true,
-				Hourly:  fmt.Sprintf("%v", report["totalHourlyCost"]),
-				Monthly: fmt.Sprintf("%v", report["totalMonthlyCost"]),
+				Hourly:  fmt.Sprintf("$%v", report["totalHourlyCost"]),
+				Monthly: fmt.Sprintf("$%v", report["totalMonthlyCost"]),
 			}
 		}
 
@@ -398,8 +420,11 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: find the job which is implementing this stage if any
 		job, found := filters.Jobs(state.jobs).
-			WithStage(terraformv1alphav1.StageTerraformApply).
 			WithGeneration(generation).
+			WithNamespace(configuration.GetNamespace()).
+			WithName(configuration.GetName()).
+			WithStage(terraformv1alphav1.StageTerraformApply).
+			WithUID(string(configuration.GetUID())).
 			Latest()
 
 		// @step: we can requeue or move on depending on the status
@@ -469,7 +494,6 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 			return reconcile.Result{}, err
 		}
 
-		configuration.Status.TerraformVersion = state.TerraformVersion
 		configuration.Status.Resources = state.CountResources()
 
 		return reconcile.Result{}, nil
