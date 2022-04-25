@@ -14,7 +14,7 @@ controller:
   costs:
     # Name of the secret containing the infracost api token
     # Naming format of values found https://www.infracost.io/docs/features/environment_variables/
-    secret: infracost
+    secret: ""
   # Configuration for the images used by the jobs
   images:
     # is the controller image
@@ -67,10 +67,21 @@ securityContext:
     - all
 
 rbac:
-  # Indicates we should provision the rbac
+  # Indicates we should create all the rbac
   create: true
-  # Indicates we should create the service account for terraform executors
-  createExecutorServiceAccount: true
+  # service account for the controller
+  controller:
+    # Indicates we should provision the rbac
+    create: true
+    # annotations is a collection of annotations which should be added
+    annotations: {}
+
+  # Configuration for the terraform executor service account
+  executor:
+    # indicates we should create the terraform-executor service account
+    create: true
+    # annotations is a collection of annotations which should be added
+    annotations: {}
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

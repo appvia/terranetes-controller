@@ -1,0 +1,8 @@
+title:
+modules:
+  - url: github.com/terraform-aws-modules/terraform-aws-s3-bucket.git
+    tags: [v3.1.0]
+    category: [aws, s3]
+  - url: github.com/terraform-aws-modules/terraform-aws-s3-bucket.git
+    tags: [all]
+    category: [database]
