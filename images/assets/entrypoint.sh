@@ -99,14 +99,20 @@ terraform_cost() {
   echo " Evaluating Cost"
   echo "--------------------------------------------------------------------------------"
   echo
+
+  INFRACOST_OPTS=""
+  if [[ -f infracost-usage.yml ]]; then
+    INFRACOST_OPTS="${INFRACOST_OPTS} --usage-file infracost-usage.yml"
+  fi
+
   # @step: show the user the breakdown of the costs
-  if ! infracost breakdown --terraform-parse-hcl --path .; then
+  if ! infracost breakdown ${INFRACOST_OPTS} --terraform-parse-hcl --path .; then
     error "Unable to assess the costs of the configuration"
     exit 1
   fi
 
   # @show: retrieve the json from the infracost
-  if ! infracost breakdown --terraform-parse-hcl --path . --format json > ${COST_REPORT_FILE}; then
+  if ! infracost breakdown ${INFRACOST_OPTS} --terraform-parse-hcl --path . --format json > ${COST_REPORT_FILE}; then
     error "Unable to retrieve the json report from infracost"
     exit 1
   fi
