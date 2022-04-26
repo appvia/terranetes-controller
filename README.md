@@ -64,12 +64,18 @@ $ kubectl -n terraform-system get provider -o yaml
 ```shell
 $ cat examples/configuration.yaml # demos a s3 bucket
 $ kubectl create namespace apps
+
+# NOTE: Make sure to change the bucket name in examples/configuration.yaml
+# spec.variables.bucket
+$ vim examples/configuration.yaml
 $ kubectl -n apps apply -f examples/configuration.yaml
 $ kubectl -n apps get po
 
 # Straight away a job is created to 'watch' the terraform workflow
-
 $ kubectl -n apps logs -f <POD_ID>
+
+# Check the module output
+$ kubectl -n apps get secret test -o yaml
 ```
 
 * Approve the plan
