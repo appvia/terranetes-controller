@@ -222,3 +222,5 @@ elif [[ ${STAGE} == "init" ]]; then
 else
   fatal "Unknown stage: ${STAGE}"
 fi
+
+exit 0
