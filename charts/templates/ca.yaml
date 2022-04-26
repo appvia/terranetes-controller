@@ -1,7 +1,8 @@
 {{- if .Values.controller.webhooks.ca }}
 {{ $ca := genCA "terraform-controller" 7300 }}
 {{ $dn := printf "controller.%s.svc.cluster.local" .Release.Namespace }}
-{{ $server := genSignedCert "" (list "127.0.0.1") (list "localhost" "controller" "controller.default.svc" $dn) 3650 $ca }}
+{{ $sn := printf "controller.%s.svc" .Release.Namespace }}
+{{ $server := genSignedCert "" (list "127.0.0.1") (list "localhost" "controller" $sn $dn) 3650 $ca }}
 ---
 apiVersion: v1
 kind: Secret

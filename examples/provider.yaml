@@ -7,6 +7,6 @@ spec:
   source: secret
   provider: aws
   secretRef:
-    namespace: default
+    namespace: terraform-system
     name: aws
 

@@ -1,7 +1,7 @@
 <p align="right">
   <img src="docs/images/cogs.png" width="130">
 <p>
-  
+
 [![GPL license](https://img.shields.io/badge/License-GPL-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens) [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terraform-controller)](https://goreportcard.com/report/github.com/appvia/terraform-controller)
 
 # **TERRAFORM CONTROLLER**
@@ -41,7 +41,7 @@ The quickest way to get up the running is via the Helm chart.
 $ git clone git@github.com:appvia/terraform-controller.git
 $ cd terraform-controller
 # kind create cluster
-$ helm install -n terraform-system terraform-controller charts/--create-namespace
+$ helm install -n terraform-system terraform-controller charts/ --create-namespace
 $ kubectl -n terraform-system get po
 
 ```
@@ -53,8 +53,9 @@ $ kubectl -n terraform-system get po
 
 $ kubectl -n terraform-system create secret generic aws \
   --from-literal=AWS_ACCESS_KEY_ID=<ID> \
-  --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET>
-$ kubectl -n terraform-system apply -f examples/providers
+  --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET> \
+  --from-literal=AWS_REGION=<REGION>
+$ kubectl -n terraform-system apply -f examples/provider.yaml
 $ kubectl -n terraform-system get provider -o yaml
 ```
 
@@ -67,7 +68,7 @@ $ kubectl -n apps apply -f examples/configuration.yaml
 $ kubectl -n apps get po
 
 # Straight away a job is created to 'watch' the terraform workflow
-  
+
 $ kubectl -n apps logs -f <POD_ID>
 ```
 
