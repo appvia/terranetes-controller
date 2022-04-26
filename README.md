@@ -49,7 +49,7 @@ $ kubectl -n terraform-system get po
 * Configure credentials for developers
 
 ```shell
-# The follow assume you can using static credentials, for managed pod identity see below
+# The following assumes you can using static credentials, for managed pod identity see docs
 
 $ kubectl -n terraform-system create secret generic aws \
   --from-literal=AWS_ACCESS_KEY_ID=<ID> \
@@ -66,15 +66,14 @@ $ kubectl create namespace apps
 $ kubectl -n apps apply -f examples/configuration.yaml
 $ kubectl -n apps get po
 
-# Straight away a job is creates which is used to 'watch' the terraform workflow, ensure
-# developers are given full access to view and debug terraform jobs, but not given away any secrets.
-
+# Straight away a job is created to 'watch' the terraform workflow
+  
 $ kubectl -n apps logs -f <POD_ID>
 ```
 
 * Approve the plan
 
-By default unless the `spec.enableAutoApproval` is true, all changes must be approved before making any changes. An annotations
+By default unless the `spec.enableAutoApproval` is true, all changes must be approved before acting on. An annotation is used to approve the previous plan.
 
 ```shell
 $ kubectl -n apps annotate configurations.terraform.appvia.io bucket "terraform.appvia.io/apply"=true --overwrite
