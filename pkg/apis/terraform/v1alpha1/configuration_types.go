@@ -84,24 +84,19 @@ var ConfigurationGVK = schema.GroupVersionKind{
 // the configuration
 type ProviderReference struct {
 	// Name is the name of the provider
-	Name string `json:"name,omitempty"`
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
 	// Namespace is the namespace of the provider
-	Namespace string `json:"namespace,omitempty"`
-}
-
-// AdditionalResource defines an additional resource to be created
-type AdditionalResource struct {
-	// Name is the name of the resource
-	Name string `json:"name,omitempty"`
-	// Type is the type of the resource
-	Type string `json:"type,omitempty"`
-	// Source is the source of the resource
-	Source string `json:"source,omitempty"`
+	// +kubebuilder:validation:Required
+	Namespace string `json:"namespace"`
 }
 
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
+	// SCMAuth provides the ability to add authentication for private repositories
+	// +kubebuilder:validation:Optional
+	Auth *v1.SecretReference `json:"auth,omitempty"`
 	// EnableAutoApproval indicates the apply it automatically approved
 	// +kubebuilder:validation:Optional
 	EnableAutoApproval bool `json:"enableAutoApproval,omitempty"`
@@ -199,6 +194,11 @@ func (c *Configuration) HasApproval() bool {
 // NeedsApproval returns true if the configuration needs approval
 func (c *Configuration) NeedsApproval() bool {
 	return c.GetAnnotations()[ApplyAnnotation] == "false"
+}
+
+// GetTerraformConfigSecretName returns the name of the configuration secret
+func (c *Configuration) GetTerraformConfigSecretName() string {
+	return fmt.Sprintf("config-%s", string(c.GetUID()))
 }
 
 // GetTerraformStateSecretName returns the name of the secret holding the terraform state
