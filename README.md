@@ -85,3 +85,7 @@ By default unless the `spec.enableAutoApproval` is true, all changes must be app
 ```shell
 $ kubectl -n apps annotate configurations.terraform.appvia.io bucket "terraform.appvia.io/apply"=true --overwrite
 ```
+
+**ADDITIONAL RESOURCES**
+
+- You can review the specification of the terraform configurations [here](docs/crd.md)
