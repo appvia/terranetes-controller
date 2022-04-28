@@ -236,6 +236,7 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 // includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	backend := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -256,7 +257,7 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 
 		// @step: generate the terraform backend configuration - this creates a kubernetes terraform backend
 		// pointing at a secret
-		cfg, err := terraform.NewKubernetesBackend(c.JobNamespace, name)
+		cfg, err := terraform.NewKubernetesBackend(c.JobNamespace, backend)
 		if err != nil {
 			cond.Failed(err, "Failed to generate the terraform backend configuration")
 

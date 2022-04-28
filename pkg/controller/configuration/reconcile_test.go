@@ -360,6 +360,62 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
 		})
 
+		It("should have create a terraform backend configuration", func() {
+			expected := `
+terraform {
+	backend "kubernetes" {
+		in_cluster_config = true
+		namespace         = "default"
+		secret_suffix     = "1234-122-1234-1234"
+	}
+}
+`
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+
+			backend := string(secret.Data[terraformv1alphav1.TerraformBackendConfigMapKey])
+			Expect(backend).ToNot(BeZero())
+			Expect(backend).To(Equal(expected))
+		})
+
+		It("should have a provider.tf", func() {
+			expected := `
+provider "aws" {}
+`
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+
+			backend := string(secret.Data[terraformv1alphav1.TerraformProviderConfigMapKey])
+			Expect(backend).ToNot(BeZero())
+			Expect(backend).To(Equal(expected))
+		})
+
+		It("should have the following variables in the config", func() {
+			expected := `{"name":"test"}`
+
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+
+			backend := string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])
+			Expect(backend).ToNot(BeZero())
+			Expect(backend).To(Equal(expected))
+		})
+
 		It("should indicate the terraform plan is running", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 

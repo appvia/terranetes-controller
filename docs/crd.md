@@ -76,3 +76,10 @@ $ kubectl -n apps create secret generic ssh --from-file=SSH_KEY_AUTH=id.rsa
 ```
 
 You can also pass `GIT_USERNAME` and `GIT_PASSWORD` as an alternative to SSH.
+
+**Annotations**
+
+The following annotations exists
+
+* `terraform.appvia.io/apply` is applied by the controller after a successful plan on a configuration with `spec.enableAutoApproval: false`
+* `terraform.appvia.io/orphan` can added by users to the Configuration CRD and on deletion the destroy job is skipped.
