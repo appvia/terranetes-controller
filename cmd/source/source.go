@@ -19,10 +19,15 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -31,7 +36,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/appvia/terraform-controller/pkg/server"
 	"github.com/appvia/terraform-controller/pkg/utils"
 	"github.com/appvia/terraform-controller/pkg/version"
 )
@@ -40,23 +44,25 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 }
 
-var config server.Config
-
 func main() {
+	var source, destination string
+	var timeout time.Duration
+	var tmpDirectory bool
+
 	cmd := &cobra.Command{
-		Use:     "source <URL> <DIRECTORY>",
+		Use:     "source [options]",
 		Short:   "Used to retrieve the source code for the terraform controller",
-		Args:    cobra.ExactArgs(2),
 		Version: version.Version,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			timeout, _ := cmd.Flags().GetDuration("timeout")
-
-			return Run(context.Background(), args[0], args[1], timeout)
+			return Run(context.Background(), source, destination, timeout, tmpDirectory)
 		},
 	}
 
 	flags := cmd.Flags()
-	flags.Duration("timeout", 10*time.Minute, "The timeout for the operation")
+	flags.DurationVarP(&timeout, "timeout", "t", 10*time.Minute, "The timeout for the operation")
+	flags.StringVarP(&source, "source", "s", "", "Source which needs to be downloaded")
+	flags.StringVarP(&destination, "dest", "d", "", "Directory where the source code to be saved")
+	flags.BoolVar(&tmpDirectory, "tmpdir", true, "Use a temporary directory to download the assets")
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[error] failed to run: %s", err)
@@ -66,34 +72,99 @@ func main() {
 }
 
 // Run is called to execute the action
-func Run(ctx context.Context, source, dest string, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+func Run(ctx context.Context, source, destination string, timeout time.Duration, tmpdir bool) error {
+	if source == "" {
+		return errors.New("no source defined")
+	}
+	if destination == "" {
+		return errors.New("no destination directory defined")
+	}
+	if timeout < 0 {
+		return errors.New("timeout can not be less than zero")
+	}
 
+	uri, err := url.Parse(source)
+	if err != nil {
+		return fmt.Errorf("failed to parse source url: %v", err)
+	}
+	location := source
+
+	// @step: check for an ssh key in the environment variables and provision a configuration
+	switch {
+	case os.Getenv("SSH_AUTH_KEYFILE") != "":
+		data, err := ioutil.ReadFile(os.Getenv("SSH_AUTH_KEYFILE"))
+		if err != nil {
+			return fmt.Errorf("failed to read ssh key file: %v", err)
+		}
+		encoded := base64.StdEncoding.EncodeToString(data)
+		location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+
+	case os.Getenv("SSH_AUTH_KEY") != "":
+		encoded := base64.StdEncoding.EncodeToString([]byte(os.Getenv("SSH_AUTH_KEY")))
+		location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+
+	case os.Getenv("GIT_USERNAME") != "" && os.Getenv("GIT_PASSWORD") != "":
+		filename := path.Join("${HOME}", ".git", "config")
+
+		found, err := utils.FileExists(os.ExpandEnv(filename))
+		if err != nil {
+			return err
+		}
+		if found {
+			log.WithField("path", filename).Warn("git configuration file already found, skipping")
+
+			break
+		}
+
+		// @step: update the gitconfig to overload the URL
+		// git config --global url."https://token:$GIT_TOKEN@github.com/example/".insteadOf "ssh://git@github.com/example/"
+		args := []string{
+			"config", "--global",
+			fmt.Sprintf("url.\"https://%s:%s@%s\".insteadOf \"%s\"", os.Getenv("GIT_USERNAME"), os.Getenv("GIT_PASSWORD"), uri.Hostname()),
+		}
+		if err := exec.Command("git", args...).Run(); err != nil {
+			return fmt.Errorf("failed tp update the git configuration: %v", err)
+		}
+
+	}
+
+	// @step: retrieve the working directory
 	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	if strings.HasPrefix(source, "http") {
-		source = strings.TrimPrefix(source, "http://")
-		source = strings.TrimPrefix(source, "https://")
+	if strings.HasPrefix(location, "http") {
+		location = strings.TrimPrefix(location, "http://")
+		location = strings.TrimPrefix(location, "https://")
 	}
 
 	log.WithFields(log.Fields{
 		"source": source,
-		"dest":   dest,
+		"dest":   destination,
 	}).Info("downloading the assets")
+
+	// @step: create a temporary directory
+	dest := destination
+	if tmpdir {
+		dest = "/tmp/source"
+
+		if err := os.RemoveAll(dest); err != nil {
+			return fmt.Errorf("failed to remove temporary directory: %v", err)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	client := &getter.Client{
 		Ctx:       ctx,
-		Dir:       true,
 		Dst:       dest,
 		Detectors: goGetterDetectors,
 		Mode:      getter.ClientModeAny,
 		Options:   []getter.ClientOption{},
 		Pwd:       pwd,
-		Src:       source,
+		Src:       location,
 	}
 
 	doneCh := make(chan struct{})
@@ -113,23 +184,35 @@ func Run(ctx context.Context, source, dest string, timeout time.Duration) error 
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			if size, err := utils.DirSize(dest); err == nil {
-				log.WithFields(log.Fields{
-					"bytes": utils.ByteCountSI(size),
-				}).Info("continuing downloaded the assets")
+	err = func() error {
+		for {
+			select {
+			case <-ticker.C:
+				if size, err := utils.DirSize(dest); err == nil {
+					log.WithFields(log.Fields{
+						"bytes": utils.ByteCountSI(size),
+					}).Info("continuing to download the assets")
+				}
+			case <-sigCh:
+				return errors.New("received a signal, cancelling the download")
+			case <-ctx.Done():
+				return errors.New("download has timed out, cancelling the download")
+			case <-doneCh:
+				return nil
+			case err := <-errCh:
+				return fmt.Errorf("failed to download the source: %s", err)
 			}
-		case <-sigCh:
-			return errors.New("received a signal, cancelling the download")
-		case <-ctx.Done():
-			return errors.New("download has timed out, cancelling the download")
-		case <-doneCh:
-			log.WithField("source", source).Info("successfully downloaded the source")
-			return nil
-		case err := <-errCh:
-			return fmt.Errorf("failed to download the source: %s", err)
 		}
+	}()
+	if err != nil {
+		return err
 	}
+	log.WithField("source", source).Info("successfully downloaded the source")
+
+	// @step: if we were using a temporary directory we need to copy the files over
+	if !tmpdir {
+		return nil
+	}
+
+	return exec.Command("cp", []string{"-rT", "/tmp/source/", destination}...).Run()
 }

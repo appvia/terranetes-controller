@@ -22,6 +22,34 @@ import (
 	"path/filepath"
 )
 
+// DirExists checks if the directory exists
+func DirExists(path string) (bool, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return stat.IsDir(), nil
+}
+
+// FileExists checks if a file exists
+func FileExists(filename string) (bool, error) {
+	info, err := os.Stat(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return !info.IsDir(), nil
+}
+
 // DirSize returns the size of the directory
 func DirSize(path string) (int64, error) {
 	var size int64
