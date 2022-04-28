@@ -19,7 +19,7 @@ The name of the secret *(inside the Configuration namespace)* where any module o
 
 **Variables** (spec.variables)
 
-Provides the ability to supply varaibles to the terraform module itself. These are converted to HCL and provided into the workflow via `-var-file` on the `plan` and `apply` stages.
+Provides the ability to supply variables to the terraform module itself. These are converted to HCL and provided into the workflow via `-var-file` on the `plan` and `apply` stages.
 
 ```
 apiVersion: terraform.appvia.io/v1alpha1

@@ -120,7 +120,10 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		// git config --global url."https://token:$GIT_TOKEN@github.com/example/".insteadOf "ssh://git@github.com/example/"
 		args := []string{
 			"config", "--global",
-			fmt.Sprintf("url.\"https://%s:%s@%s\".insteadOf \"%s\"", os.Getenv("GIT_USERNAME"), os.Getenv("GIT_PASSWORD"), uri.Hostname()),
+			fmt.Sprintf("url.\"https://%s:%s@%s/%s\".insteadOf \"%s\"",
+				os.Getenv("GIT_USERNAME"),
+				os.Getenv("GIT_PASSWORD"),
+				uri.Hostname(), uri.Path, source),
 		}
 		if err := exec.Command("git", args...).Run(); err != nil {
 			return fmt.Errorf("failed tp update the git configuration: %v", err)

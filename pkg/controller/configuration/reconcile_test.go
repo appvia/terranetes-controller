@@ -158,11 +158,9 @@ var _ = Describe("Configuration Controller", func() {
 	When("authentication secret is missing", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-			configuration.Spec.SCMAuth = &terraformv1alphav1.SCMAuth{
-				SecretRef: v1.SecretReference{
-					Namespace: "default",
-					Name:      "not_there",
-				},
+			configuration.Spec.Auth = &v1.SecretReference{
+				Namespace: "default",
+				Name:      "not_there",
 			}
 			Setup(configuration)
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -188,11 +186,9 @@ var _ = Describe("Configuration Controller", func() {
 
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-			configuration.Spec.SCMAuth = &terraformv1alphav1.SCMAuth{
-				SecretRef: v1.SecretReference{
-					Namespace: cfgNamespace,
-					Name:      "auth",
-				},
+			configuration.Spec.Auth = &v1.SecretReference{
+				Namespace: cfgNamespace,
+				Name:      "auth",
 			}
 			secret = &v1.Secret{}
 			secret.Namespace = cfgNamespace
@@ -354,7 +350,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should have created the generated configuration secret", func() {
 			secret := &v1.Secret{}
 			secret.Namespace = ctrl.JobNamespace
-			secret.Name = string(configuration.GetUID())
+			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
 			Expect(err).ToNot(HaveOccurred())
