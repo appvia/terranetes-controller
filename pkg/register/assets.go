@@ -106,6 +106,16 @@ spec:
             spec:
               description: ConfigurationSpec defines the desired state of a terraform
               properties:
+                auth:
+                  description: SCMAuth provides the ability to add authentication for private repositories
+                  properties:
+                    name:
+                      description: Name is unique within a namespace to reference a secret resource.
+                      type: string
+                    namespace:
+                      description: Namespace defines the space within which the secret name must be unique.
+                      type: string
+                  type: object
                 enableAutoApproval:
                   description: EnableAutoApproval indicates the apply it automatically approved
                   type: boolean
@@ -121,6 +131,9 @@ spec:
                     namespace:
                       description: Namespace is the namespace of the provider
                       type: string
+                  required:
+                    - name
+                    - namespace
                   type: object
                 variables:
                   description: Variables are the variables that are used to configure the terraform
