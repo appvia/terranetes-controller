@@ -155,7 +155,153 @@ var _ = Describe("Configuration Controller", func() {
 		})
 	})
 
-	When("the costs analytics token is invalid", func() {
+	When("authentication secret is missing", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Spec.SCMAuth = &terraformv1alphav1.SCMAuth{
+				SecretRef: v1.SecretReference{
+					Namespace: "default",
+					Name:      "not_there",
+				},
+			}
+			Setup(configuration)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
+		})
+
+		It("should indicate the credentials are missing", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(cond.Message).To(Equal("Authentication secret (spec.scmAuth) does not exist"))
+		})
+	})
+
+	When("the authentication secret is invalid", func() {
+		var secret *v1.Secret
+
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Spec.SCMAuth = &terraformv1alphav1.SCMAuth{
+				SecretRef: v1.SecretReference{
+					Namespace: cfgNamespace,
+					Name:      "auth",
+				},
+			}
+			secret = &v1.Secret{}
+			secret.Namespace = cfgNamespace
+			secret.Data = make(map[string][]byte)
+			secret.Name = "auth"
+		})
+
+		When("is has not valid key", func() {
+			BeforeEach(func() {
+				Setup(configuration, secret)
+				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should indicate on the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
+			})
+		})
+
+		When("is has ssh key", func() {
+			BeforeEach(func() {
+				secret.Data["SSH_AUTH_KEY"] = []byte("test")
+
+				Setup(configuration, secret)
+				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should be ok", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+			})
+		})
+
+		When("is has a git username but no password", func() {
+			BeforeEach(func() {
+				secret.Data["GIT_USERNAME"] = []byte("test")
+
+				Setup(configuration, secret)
+				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should indicate the GIT_PASSWORD is missing", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
+			})
+		})
+
+		When("is has a git username but not password", func() {
+			BeforeEach(func() {
+				secret.Data["GIT_PASSWORD"] = []byte("test")
+
+				Setup(configuration, secret)
+				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should indicate the GIT_USERNAME is missing", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
+			})
+		})
+
+		When("both GIT_USERNAME and GIT_PASSWORD are given", func() {
+			BeforeEach(func() {
+				secret.Data["GIT_USERNAME"] = []byte("test")
+				secret.Data["GIT_PASSWORD"] = []byte("test")
+
+				Setup(configuration, secret)
+				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should be ok", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+			})
+		})
+	})
+
+	When("using authentication on the configuration", func() {
+
+		It("should have a secret mapped onto the plan", func() {
+
+		})
+
+		It("should have copied the secret into the job namespace", func() {
+
+		})
+	})
+
+	When("cost analytics token is invalid", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			secret := &v1.Secret{}
@@ -205,17 +351,17 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Message).To(Equal("Provider ready"))
 		})
 
-		It("should have created the generated configuration", func() {
-			cm := &v1.ConfigMap{}
-			cm.Namespace = ctrl.JobNamespace
-			cm.Name = string(configuration.GetUID())
+		It("should have created the generated configuration secret", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = string(configuration.GetUID())
 
-			found, err := kubernetes.GetIfExists(context.TODO(), cc, cm)
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			Expect(cm.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
-			Expect(cm.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
 		})
 
 		It("should indicate the terraform plan is running", func() {

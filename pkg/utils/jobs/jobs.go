@@ -185,7 +185,7 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 		Env: []v1.EnvVar{
 			{
 				Name:  "HOME",
-				Value: "/tmp/nobody",
+				Value: "/home/controller",
 			},
 		},
 		EnvFrom: []v1.EnvFromSource{

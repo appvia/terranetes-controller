@@ -99,6 +99,48 @@ func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Config
 	}
 }
 
+// ensureAuthenticationSecret is responsible for verifying that any secret which is referenced by the
+// configuration does exist
+func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if configuration.Spec.Auth == nil {
+			return reconcile.Result{}, nil
+		}
+
+		secret := &v1.Secret{}
+		secret.Namespace = configuration.Namespace
+		secret.Name = configuration.Spec.Auth.Name
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the authentication secret: (%s/%s)", secret.Namespace, secret.Name)
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.ActionRequired("Authentication secret (spec.scmAuth) does not exist")
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		// @step: ensure the format of the secret
+		switch {
+		case secret.Data["SSH_AUTH_KEY"] != nil:
+		case secret.Data["GIT_USERNAME"] != nil && secret.Data["GIT_PASSWORD"] != nil:
+		default:
+			cond.ActionRequired("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY")
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		state.auth = secret
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureJobsList is responsible for retrieving all the jobs in the configuration namespace - these are used by ensure methods
 // further down the line
 func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
@@ -194,20 +236,20 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 // includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
-	name := string(configuration.GetUID())
+	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		cm := &v1.ConfigMap{}
-		cm.Namespace = c.JobNamespace
-		cm.Name = name
+		secret := &v1.Secret{}
+		secret.Namespace = c.JobNamespace
+		secret.Name = name
 
-		// @step: check if the configmap exists
-		if _, err := kubernetes.GetIfExists(ctx, c.cc, cm); err != nil {
-			cond.Failed(err, "Failed to retrieve the terraform job configuration configmap")
+		if _, err := kubernetes.GetIfExists(ctx, c.cc, secret); err != nil {
+			cond.Failed(err, "Failed to check for configuration secret")
 
 			return reconcile.Result{}, err
 		}
-		cm.Labels = map[string]string{
+
+		secret.Labels = map[string]string{
 			terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
 			terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
 		}
@@ -220,8 +262,8 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 
 			return reconcile.Result{}, err
 		}
-		cm.Data = map[string]string{
-			terraformv1alphav1.TerraformBackendConfigMapKey: string(cfg),
+		secret.Data = map[string][]byte{
+			terraformv1alphav1.TerraformBackendConfigMapKey: cfg,
 		}
 
 		// @step: generate the provider for the terraform configuration
@@ -231,18 +273,24 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 
 			return reconcile.Result{}, err
 		}
-		cm.Data[terraformv1alphav1.TerraformProviderConfigMapKey] = string(cfg)
+		secret.Data[terraformv1alphav1.TerraformProviderConfigMapKey] = cfg
 
 		// @step: if the any variables for this job lets create the variables configmap
 		if configuration.HasVariables() {
-			cm.Data[terraformv1alphav1.TerraformVariablesConfigMapKey] = string(configuration.Spec.Variables.Raw)
+			secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey] = configuration.Spec.Variables.Raw
 		} else {
-			delete(cm.Data, terraformv1alphav1.TerraformVariablesConfigMapKey)
+			delete(secret.Data, terraformv1alphav1.TerraformVariablesConfigMapKey)
 		}
 
-		// @step: create or update the configmap
-		if err := kubernetes.CreateOrPatch(ctx, c.cc, cm); err != nil {
-			cond.Failed(err, "Failed to create or update the terraform backend configmap")
+		// @step: copy any authentication details into the secret
+		if state.auth != nil {
+			for k, v := range state.auth.Data {
+				secret.Data[k] = v
+			}
+		}
+
+		if err := kubernetes.CreateOrPatch(ctx, c.cc, secret); err != nil {
+			cond.Failed(err, "Failed to create or update the configuration secret")
 
 			return reconcile.Result{}, err
 		}
