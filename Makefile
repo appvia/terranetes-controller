@@ -143,12 +143,20 @@ executor-image-verify: install-trivy
 install-trivy:
 	@hack/install-trivy.sh
 
+images: controller-image executor-image
+	@echo "--> Building the Images"
+
 ### RELEASE PACKAGING ###
 
 package:
 	@rm -rf ./release
 	@mkdir ./release
 	cd ./release && sha256sum * > terraform-controller.sha256sums
+
+release-images: images
+	@echo "--> Releasing docker images for controller and executor"
+	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
+	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
 
 ### CHECKING AND LINTING ###
 
