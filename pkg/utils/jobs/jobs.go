@@ -172,60 +172,87 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 		arguments = append(arguments, []string{"-var-file", terraformv1alphav1.TerraformVariablesConfigMapKey}...)
 	}
 
+	// @step: construct the source container - this is responsible for checking out the terraform module
+	checkout := v1.Container{
+		Name:            "source",
+		Image:           options.ExecutorImage,
+		ImagePullPolicy: v1.PullIfNotPresent,
+		Command:         []string{"source"},
+		Args: []string{
+			"--dest", "/data",
+			"--source", r.configuration.Spec.Module,
+		},
+		Env: []v1.EnvVar{
+			{
+				Name:  "HOME",
+				Value: "/home/controller",
+			},
+		},
+		EnvFrom: []v1.EnvFromSource{
+			{
+				// @note: all configurations have an associated secret - using the UID as the name
+				SecretRef: &v1.SecretEnvSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: r.configuration.GetTerraformConfigSecretName(),
+					},
+					Optional: pointer.Bool(false),
+				},
+			},
+		},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      "source",
+				MountPath: "/data",
+			},
+		},
+	}
+
+	// @step: create the configuration container - this is used to copy any job specific files i.e.
+	// backend.tf, variables.tf into the source directory
+	config := v1.Container{
+		Name:            "config",
+		Image:           options.GitImage,
+		ImagePullPolicy: v1.PullIfNotPresent,
+		Command:         []string{"sh"},
+		Args:            []string{"-c", "cp /tf/config/* /data"},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      "config",
+				MountPath: "/tf/config",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "source",
+				MountPath: "/data",
+			},
+		},
+	}
+
+	// @step: create the terraform init container - this is used to initialize any terraform
+	// related resources - modules, plugins, providers etc
+	init := v1.Container{
+		Name:            "init",
+		Image:           options.ExecutorImage,
+		ImagePullPolicy: v1.PullIfNotPresent,
+		Args:            []string{"-init"},
+		WorkingDir:      "/data",
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      "source",
+				MountPath: "/data",
+			},
+		},
+	}
+
 	o.Spec = batchv1.JobSpec{
-		BackoffLimit: pointer.Int32(3),
+		BackoffLimit: pointer.Int32(2),
 		Completions:  pointer.Int32(1),
 		Parallelism:  pointer.Int32(1),
 		Template: v1.PodTemplateSpec{
 			Spec: v1.PodSpec{
 				RestartPolicy:      v1.RestartPolicyOnFailure,
 				ServiceAccountName: "terraform-executor",
-				InitContainers: []v1.Container{
-					{
-						Name:            "source",
-						Image:           options.GitImage,
-						ImagePullPolicy: v1.PullIfNotPresent,
-						Command:         []string{"sh"},
-						Args:            []string{"-c", fmt.Sprintf("/bin/source %s /tmp/source && cp -r /tmp/source/* /data", r.configuration.Spec.Module)},
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "source",
-								MountPath: "/data",
-							},
-						},
-					},
-					{
-						Name:            "config",
-						Image:           options.GitImage,
-						ImagePullPolicy: v1.PullIfNotPresent,
-						Command:         []string{"sh"},
-						Args:            []string{"-c", "cp /tf/config/* /data"},
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "config",
-								MountPath: "/tf/config",
-								ReadOnly:  true,
-							},
-							{
-								Name:      "source",
-								MountPath: "/data",
-							},
-						},
-					},
-					{
-						Name:            "init",
-						Image:           options.ExecutorImage,
-						ImagePullPolicy: v1.PullIfNotPresent,
-						Args:            []string{"-init"},
-						WorkingDir:      "/data",
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "source",
-								MountPath: "/data",
-							},
-						},
-					},
-				},
+				InitContainers:     []v1.Container{checkout, config, init},
 				Containers: []v1.Container{
 					{
 						Name:            "terraform",
@@ -315,11 +342,10 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 	o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, v1.Volume{
 		Name: "config",
 		VolumeSource: v1.VolumeSource{
-			ConfigMap: &v1.ConfigMapVolumeSource{
-				Items: items,
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: string(r.configuration.GetUID()),
-				},
+			Secret: &v1.SecretVolumeSource{
+				Items:      items,
+				Optional:   pointer.Bool(false),
+				SecretName: r.configuration.GetTerraformConfigSecretName(),
 			},
 		},
 	})

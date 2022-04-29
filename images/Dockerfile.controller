@@ -1,9 +1,8 @@
 FROM alpine:3.15.4
 
-RUN apk add ca-certificates git
+RUN apk add ca-certificates
 
 ADD bin/controller /bin/controller
-ADD bin/source /bin/source
 
 USER 65534
 

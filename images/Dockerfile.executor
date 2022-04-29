@@ -1,6 +1,7 @@
 FROM alpine:3.15.4 AS builder
 
 ENV \
+  HOME=/home/nobody \
   KUBECTL_VERSION="1.23.0" \
   TERRAFORM_VERSION="1.1.9" \
   INFRACOST_VERSION="0.9.22"
@@ -28,13 +29,19 @@ RUN terraform version
 
 FROM alpine:3.15.4
 
-RUN apk add ca-certificates bash
+RUN apk add ca-certificates bash openssh git
 
 COPY --from=builder /usr/bin/infracost /usr/bin/infracost
 COPY --from=builder /usr/bin/kubectl /usr/bin/kubectl
 COPY --from=builder /usr/bin/terraform /usr/bin/terraform
 COPY images/assets/entrypoint.sh /entrypoint.sh
+COPY images/assets/config /home/controller/.ssh/config
+COPY bin/source /bin/source
 
-USER 65334
+RUN adduser -G nobody controller -s /home/controller -u 1001 -s /sbin/nologin -D
+RUN chown -R controller:nobody /home/controller/.ssh && \
+    chmod 0700 /home/controller/.ssh
+
+USER 1001
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -22,6 +22,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -30,6 +31,8 @@ import (
 )
 
 type state struct {
+	// auth is an optional secret which is used for authetication
+	auth *v1.Secret
 	// policies is a list of policies in the cluster
 	policies *terraformv1alpha1.PolicyList
 	// provider is the credentials provider to use
@@ -61,6 +64,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 				c.ensurePoliciesList(configuration, state),
 				c.ensureJobsList(configuration, state),
 				c.ensureProviderIsReady(configuration, state),
+				c.ensureAuthenticationSecret(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
 				c.ensureTerraformConfigDeleted(configuration),
 				c.ensureTerraformStateDeleted(configuration),
@@ -86,6 +90,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureJobsList(configuration, state),
 			c.ensureNoPreviousGeneration(configuration, state),
 			c.ensureCostAnalyticsSecret(configuration),
+			c.ensureAuthenticationSecret(configuration, state),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),
 			c.ensureTerraformPlan(configuration, state),

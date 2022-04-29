@@ -120,7 +120,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 // ensureTerraformConfigDeleted is responsible for deleting any associated terraform configuration configmap
 func (c *Controller) ensureTerraformConfigDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
-	name := string(configuration.GetUID())
+	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		cm := &v1.ConfigMap{}
