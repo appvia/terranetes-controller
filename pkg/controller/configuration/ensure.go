@@ -514,7 +514,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 }
 
 // ensureTerraformStatus is responsible for updating the configuration status
-func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {

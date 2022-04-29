@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -92,7 +91,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 	// @step: check for an ssh key in the environment variables and provision a configuration
 	switch {
 	case os.Getenv("SSH_AUTH_KEYFILE") != "":
-		data, err := ioutil.ReadFile(os.Getenv("SSH_AUTH_KEYFILE"))
+		data, err := os.ReadFile(os.Getenv("SSH_AUTH_KEYFILE"))
 		if err != nil {
 			return fmt.Errorf("failed to read ssh key file: %v", err)
 		}
@@ -161,18 +160,25 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 	defer cancel()
 
 	client := &getter.Client{
-		Ctx:       ctx,
-		Dst:       dest,
-		Detectors: goGetterDetectors,
-		Mode:      getter.ClientModeAny,
-		Options:   []getter.ClientOption{},
-		Pwd:       pwd,
-		Src:       location,
+		Ctx: ctx,
+		Dst: dest,
+		Detectors: []getter.Detector{
+			new(getter.GitHubDetector),
+			new(getter.GitLabDetector),
+			new(getter.GitDetector),
+			new(getter.BitBucketDetector),
+			new(getter.GCSDetector),
+			new(getter.S3Detector),
+		},
+		Mode:    getter.ClientModeAny,
+		Options: []getter.ClientOption{},
+		Pwd:     pwd,
+		Src:     location,
 	}
 
 	doneCh := make(chan struct{})
 	errCh := make(chan error, 1)
-	sigCh := make(chan os.Signal)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	go func() {

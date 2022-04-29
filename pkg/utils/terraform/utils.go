@@ -21,7 +21,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"text/template"
 )
 
@@ -51,7 +51,7 @@ func Decode(state []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return ioutil.ReadAll(in)
+	return io.ReadAll(in)
 }
 
 // DecodeState decodes the terraform state outputs

@@ -96,7 +96,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureTerraformPlan(configuration, state),
 			c.ensureCostStatus(configuration),
 			c.ensureTerraformApply(configuration, state),
-			c.ensureTerraformStatus(configuration, state),
+			c.ensureTerraformStatus(configuration),
 			c.ensureTerraformSecret(configuration),
 		})
 	if err != nil {

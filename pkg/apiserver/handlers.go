@@ -35,7 +35,7 @@ import (
 
 // handleHealth is http handler for the health endpoint
 func (s *Server) handleHealth(w http.ResponseWriter, req *http.Request) {
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // handleBuilds is http handler for the logs endpoint
@@ -77,12 +77,13 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	// @step: try and find the pod running the terraform job: We have to assume also
 	// the pods hasn't been scheduled yet
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("[info] waiting for the job to be scheduled\n"))
-	w.Write([]byte(fmt.Sprintf("[info] watching build: %s, generation: %s for the job to be scheduled\n", values["name"], values["generation"])))
+	_, _ = w.Write([]byte("[info] waiting for the job to be scheduled\n"))
+	_, _ = w.Write([]byte(fmt.Sprintf("[info] watching build: %s, generation: %s for the job to be scheduled\n", values["name"], values["generation"])))
 
 	// @step: we query the jobs using the labels and find the latest job for the configuration at stage x, generation y. We then
 	// find the associated pods and stream the logs back to the caller
 	err := utils.RetryWithTimeout(req.Context(), 30*time.Second, 2*time.Second, func() (bool, error) {
+		//nolint
 		w.Write([]byte("."))
 
 		// @step: find the matching job
@@ -139,7 +140,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		log.WithFields(fields).WithError(err).Error("failed to find the pod")
-
+		//nolint
 		w.Write([]byte("[error] failed to find associated pod in time\n"))
 
 		return
@@ -153,7 +154,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	}).Stream(req.Context())
 	if err != nil {
 		log.WithFields(fields).WithError(err).Error("failed to stream the logs")
-
+		//nolint
 		w.Write([]byte("[error] failed to retrieve the logs\n"))
 
 		return
@@ -166,19 +167,20 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	//nolint
 	w.Write([]byte("[build] completed\n"))
 }
 
 // findLatestPod returns the latest pod in the list
 func findLatestPod(list *v1.PodList) *v1.Pod {
 	var latest *v1.Pod
-	for _, pod := range list.Items {
+	for i := 0; i < len(list.Items); i++ {
 		if latest == nil {
-			latest = &pod
+			latest = &list.Items[i]
 			continue
 		}
-		if pod.CreationTimestamp.After(latest.CreationTimestamp.Time) {
-			latest = &pod
+		if list.Items[i].CreationTimestamp.After(latest.CreationTimestamp.Time) {
+			latest = &list.Items[i]
 		}
 	}
 

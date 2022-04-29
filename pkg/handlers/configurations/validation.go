@@ -71,7 +71,7 @@ func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configur
 }
 
 // validateModuleConstriants evaluates the module constraints and ensure the configuration passes all policies
-func validateModuleConstriants(ctx context.Context, configuration *terraformv1alphav1.Configuration, list *terraformv1alphav1.PolicyList) error {
+func validateModuleConstriants(_ context.Context, configuration *terraformv1alphav1.Configuration, list *terraformv1alphav1.PolicyList) error {
 	var policies []terraformv1alphav1.Policy
 
 	// @step: first we find all policies which contains module constraints

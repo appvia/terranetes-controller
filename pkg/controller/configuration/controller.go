@@ -27,7 +27,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,8 +51,6 @@ type Controller struct {
 	cc client.Client
 	// cache is a local cache of resources to make lookups faster
 	cache *cache.Cache
-	// recorder is the event recorder for this controller
-	recorder record.EventRecorder
 	// EnableCostAnalytics enables the cost analytics via infracost
 	EnableCostAnalytics bool
 	// CostAnalyticsSecretName is the name of the secret containing the api and token

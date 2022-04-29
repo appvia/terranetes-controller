@@ -179,7 +179,7 @@ func (c *Configuration) HasVariables() bool {
 		return false
 	case c.Spec.Variables.Raw == nil, len(c.Spec.Variables.Raw) <= 0:
 		return false
-	case bytes.Compare(c.Spec.Variables.Raw, []byte("{}")) == 0:
+	case bytes.Equal(c.Spec.Variables.Raw, []byte("{}")):
 		return false
 	}
 
