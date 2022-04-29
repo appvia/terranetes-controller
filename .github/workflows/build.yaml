@@ -1,0 +1,31 @@
+name: Latest
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  DOCKER_USER: ${{secrets.DOCKER_USER}}
+  REGISTRY: quay.io
+  REGISTRY_ORG: appvia
+  VERSION: latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18.1'
+      run: make
+    - name: Images
+      run: make images
+    - name: Docker Login
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+    - name: Pushing Images
+      run: make release-images
