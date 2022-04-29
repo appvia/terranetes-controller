@@ -195,7 +195,7 @@ shfmt:
 	@echo "--> Running shfmt"
 	@go run mvdan.cc/sh/v3/cmd/shfmt -l -w -ci -i 2 -- images/assets
 
-check:
+check: test
 	@echo "--> Running code checkers"
 	@$(MAKE) golang
 	@$(MAKE) check-gofmt
