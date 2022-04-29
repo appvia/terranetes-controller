@@ -154,7 +154,7 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 			return reconcile.Result{}, err
 		}
 
-		if len(list.Items) < 0 {
+		if len(list.Items) == 0 {
 			return reconcile.Result{}, nil
 		}
 

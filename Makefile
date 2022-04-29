@@ -189,6 +189,10 @@ spelling:
 	@find . -name "*.go" -type f -not -path "./vendor/*" -not -path "./charts/*" | xargs go run github.com/client9/misspell/cmd/misspell -error -source=go *.go
 	@find . -name "*.md" -type f -not -path "./vendor/*" -not -path "./charts/*" | xargs go run github.com/client9/misspell/cmd/misspell -error -source=text *.md
 
+golangci-lint:
+	@echo "--> Checking against the golangci-lint"
+	@go run github.com/golangci/golangci-lint/cmd/golangci-lint run ./...
+
 lint: golangci-lint
 
 shfmt:

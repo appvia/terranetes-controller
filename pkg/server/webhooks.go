@@ -58,23 +58,21 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 			return fmt.Errorf("failed to decode the webhook, %s", err)
 		}
 
-		switch o.(type) {
+		switch o := o.(type) {
 		case *admissionv1.ValidatingWebhookConfiguration:
-			wh := o.(*admissionv1.ValidatingWebhookConfiguration)
-			for i := 0; i < len(wh.Webhooks); i++ {
-				wh.Webhooks[i].ClientConfig.CABundle = ca
-				wh.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
-				wh.Webhooks[i].ClientConfig.Service.Name = "controller"
-				wh.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
+			for i := 0; i < len(o.Webhooks); i++ {
+				o.Webhooks[i].ClientConfig.CABundle = ca
+				o.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
+				o.Webhooks[i].ClientConfig.Service.Name = "controller"
+				o.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
 			}
 
 		case *admissionv1.MutatingWebhookConfiguration:
-			wh := o.(*admissionv1.MutatingWebhookConfiguration)
-			for i := 0; i < len(wh.Webhooks); i++ {
-				wh.Webhooks[i].ClientConfig.CABundle = ca
-				wh.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
-				wh.Webhooks[i].ClientConfig.Service.Name = "controller"
-				wh.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
+			for i := 0; i < len(o.Webhooks); i++ {
+				o.Webhooks[i].ClientConfig.CABundle = ca
+				o.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
+				o.Webhooks[i].ClientConfig.Service.Name = "controller"
+				o.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
 			}
 
 		default:

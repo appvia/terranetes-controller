@@ -30,7 +30,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -67,7 +66,6 @@ var _ = Describe("Configuration Controller", func() {
 		}, objects...)...)
 		ctrl = &Controller{
 			cc:            cc,
-			recorder:      record.NewFakeRecorder(10),
 			JobNamespace:  "default",
 			ExecutorImage: "quay.io/appvia/terraform-executor",
 			GitImage:      "appvia/git:latest",
@@ -199,6 +197,7 @@ var _ = Describe("Configuration Controller", func() {
 		When("is has not valid key", func() {
 			BeforeEach(func() {
 				Setup(configuration, secret)
+				//lint:ignore
 				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 			})
 

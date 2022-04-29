@@ -1,0 +1,68 @@
+---
+run:
+  go: '1.17'
+  tests: false
+  timeout: 10m
+  skip-dirs:
+    - hack
+    - tests
+
+linters:
+  enable:
+    - deadcode
+    - depguard
+    - errcheck
+    - exportloopref
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unparam
+    - unused
+    - varcheck
+    - wastedassign
+
+linters-settings:
+  depguard:
+    list-type: blacklist
+    include-go-root: true
+    packages-with-error-message:
+      - github.com/davecgh/go-spew/spew: "used for debugging - should not appear in the codebase"
+      - github.com/satori/go.uuid: "considered unsafe - see https://github.com/satori/go.uuid/issues/73"
+      - io/ioutil: "deprecated in go1.16 - see https://golang.org/doc/go1.16#ioutil"
+
+  errcheck:
+    ignore: github.com/appvia/wayfinder/pkg/utils/validation:^AddFieldError
+
+  gosimple:
+    go: "1.17"
+    checks:
+      - all
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+
+  staticcheck:
+    go: "1.17"
+    checks:
+      - all
+
+  stylecheck:
+    go: "1.17"
+    checks:
+      - all
+      - -ST1003
+    dot-import-whitelist:
+      - github.com/onsi/ginkgo
+      - github.com/onsi/gomega
+
+issues:
+  exclude:
+    - "not declared by package utf8"
+    - "unicode/utf8/utf8.go"
