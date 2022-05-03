@@ -68,7 +68,6 @@ var _ = Describe("Configuration Controller", func() {
 			cc:            cc,
 			JobNamespace:  "default",
 			ExecutorImage: "quay.io/appvia/terraform-executor",
-			GitImage:      "appvia/git:latest",
 		}
 	}
 
