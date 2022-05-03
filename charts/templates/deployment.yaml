@@ -54,7 +54,6 @@ spec:
             {{- end }}
             - --enable-webhook={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
-            - --git-image={{ .Values.controller.images.git }}
             - --metrics-port={{ .Values.controller.metricsPort }}
             {{- if .Values.controller.webhooks.enabled }}
             - --tls-ca={{ .Values.controller.webhooks.tlsAuthority }}

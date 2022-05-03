@@ -21,8 +21,6 @@ controller:
     controller: "quay.io/appvia/terraform-controller:v0.0.2"
     # The terraform image used when running jobs
     executor: "quay.io/appvia/terraform-executor:v0.0.2"
-    # The image used for git operations in the jobs
-    git: "quay.io/appvia/terraform-controller:v0.0.2"
   # is the image pull policy
   imagePullPolicy: IfNotPresent
 
