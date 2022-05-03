@@ -9,4 +9,12 @@ spec:
   secretRef:
     namespace: terraform-system
     name: aws
-
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: default-irsa
+spec:
+  source: injected
+  provider: aws
+  serviceAccount: terraform-executor
