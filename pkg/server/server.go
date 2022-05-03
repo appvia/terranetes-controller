@@ -99,7 +99,6 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		CostAnalyticsSecretName: config.CostSecretName,
 		EnableCostAnalytics:     (config.CostSecretName != ""),
 		ExecutorImage:           config.ExecutorImage,
-		GitImage:                config.GitImage,
 		JobNamespace:            config.Namespace,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)

@@ -40,8 +40,6 @@ type Options struct {
 	EnableVerification bool
 	// ExecutorImage is the image to use for the terraform jobs
 	ExecutorImage string
-	// GitImage is the image to use for the git jobs
-	GitImage string
 	// Namespace is the location of the jobs
 	Namespace string
 }
@@ -211,7 +209,7 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 	// backend.tf, variables.tf into the source directory
 	config := v1.Container{
 		Name:            "config",
-		Image:           options.GitImage,
+		Image:           options.ExecutorImage,
 		ImagePullPolicy: v1.PullIfNotPresent,
 		Command:         []string{"sh"},
 		Args:            []string{"-c", "cp /tf/config/* /data"},

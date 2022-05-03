@@ -45,6 +45,4 @@ type Config struct {
 	APIServerPort int
 	// MetricsPort is the port to listen on
 	MetricsPort int
-	// GitImage is the image version to use for git in terraform jobs
-	GitImage string
 }

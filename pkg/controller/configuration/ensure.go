@@ -318,7 +318,6 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformPlan(jobs.Options{
 			ExecutorImage:      c.ExecutorImage,
-			GitImage:           c.GitImage,
 			Namespace:          c.JobNamespace,
 			EnableCostAnalysis: c.EnableCostAnalytics,
 			CostAnalysisSecret: c.CostAnalyticsSecretName,
@@ -458,7 +457,6 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
 			ExecutorImage: c.ExecutorImage,
-			GitImage:      c.GitImage,
 			Namespace:     c.JobNamespace,
 		})
 		if err != nil {

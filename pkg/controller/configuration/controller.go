@@ -59,8 +59,6 @@ type Controller struct {
 	JobNamespace string
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
-	// GitImage is the image to use for the git in the init container
-	GitImage string
 }
 
 // Add is called to setup the manager for the controller
@@ -72,8 +70,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		return errors.New("job namespace is required")
 	case c.ExecutorImage == "":
 		return errors.New("executor image is required")
-	case c.GitImage == "":
-		return errors.New("git image is required")
 	}
 
 	c.cc = mgr.GetClient()

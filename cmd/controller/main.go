@@ -64,7 +64,6 @@ func main() {
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
 	flags.StringVar(&config.CostSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.ExecutorImage, "executor-image", "quay.io/appvia/terraform-executor:latest", "The image to use for the executor")
-	flags.StringVar(&config.GitImage, "git-image", "quay.io/appvia/terraform-controller:latest", "The image to use for git operations")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
 	flags.StringVar(&config.TLSAuthority, "tls-ca", "", "The filename to the ca certificate")
 	flags.StringVar(&config.TLSCert, "tls-cert", "tls.pem", "The name of the file containing the TLS certificate")

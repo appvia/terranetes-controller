@@ -74,7 +74,6 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
 			ExecutorImage: c.ExecutorImage,
-			GitImage:      c.GitImage,
 			Namespace:     c.JobNamespace,
 		})
 		if err != nil {
