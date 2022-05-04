@@ -165,7 +165,7 @@ release-images: images
 
 check-gofmt:
 	@echo "--> Running gofmt check"
-	@if ./scripts/gofmt.sh -l ${GO_DIRS} | grep \.go ; then \
+	@if ./hack/gofmt.sh -l ${GO_DIRS} | grep \.go ; then \
 		echo "There are unformatted Go files - did you forget to run 'make gofmt'?"; \
 		exit 1; \
 	fi
