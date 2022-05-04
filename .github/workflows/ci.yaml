@@ -6,8 +6,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - 'v*'
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -27,8 +25,7 @@ jobs:
     - name: Unit Tests
       run: make check
 
-  golangci:
-    name: lint
+  linting:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v3
@@ -40,6 +37,25 @@ jobs:
       with:
         args: --timeout 1m
 
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.2.1
+      - name: Run chart-testing (lint)
+        run: ct lint
+
   images:
     runs-on: ubuntu-latest
     steps:
@@ -48,6 +64,4 @@ jobs:
     - name: Binaries
       run: make
     - name: Build Images
-      run: |
-        make controller-image
-        make executor-image
+      run: make images

@@ -146,6 +146,9 @@ install-trivy:
 images: controller-image executor-image
 	@echo "--> Building the Images"
 
+verify-images: controller-image-verify executor-image-verify
+	@echo "--> Verifying the Images"
+
 ### RELEASE PACKAGING ###
 
 package:
