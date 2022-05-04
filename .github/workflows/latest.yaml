@@ -21,12 +21,28 @@ jobs:
         go-version: '1.18.1'
     - name: Build
       run: make
+
+  verify-images:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: make
     - name: Images
       run: make images
+    - name: Scanning Images
+      run: make verify-images
+
+  release_latest:
+    needs: verify-images
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: make
     - name: Docker Login
-      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
       env:
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD quay.io
     - name: Pushing Images
       run: make release-images

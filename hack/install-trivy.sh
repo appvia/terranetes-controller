@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2021  Rohith Jayawardene <gambol99@gmail.com>
+# Copyright (C) 2021  Appvia Ltd <info@appvia.io>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
