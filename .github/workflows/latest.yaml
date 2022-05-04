@@ -10,7 +10,8 @@ env:
   VERSION: latest
 
 jobs:
-  build:
+  release:
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -21,24 +22,10 @@ jobs:
         go-version: '1.18.1'
     - name: Build
       run: make
-
-  verify-images:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Build
-      run: make
     - name: Images
       run: make images
     - name: Scanning Images
       run: make verify-images
-
-  release_latest:
-    needs: verify-images
-    runs-on: ubuntu-latest
-    steps:
-    - name: Build
-      run: make
     - name: Docker Login
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
