@@ -18,9 +18,9 @@ controller:
   # Configuration for the images used by the jobs
   images:
     # is the controller image
-    controller: "quay.io/appvia/terraform-controller:v0.0.3"
+    controller: "quay.io/appvia/terraform-controller:v0.0.4"
     # The terraform image used when running jobs
-    executor: "quay.io/appvia/terraform-executor:v0.0.3"
+    executor: "quay.io/appvia/terraform-executor:v0.0.4"
   # is the image pull policy
   imagePullPolicy: IfNotPresent
 
