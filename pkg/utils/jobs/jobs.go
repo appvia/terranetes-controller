@@ -261,9 +261,9 @@ func (r *Render) createTerraformJob(options Options, stage string) *batchv1.Job 
 							Capabilities: &v1.Capabilities{
 								Drop: []v1.Capability{"ALL"},
 							},
-							Privileged:   &[]bool{true}[0],
-							RunAsNonRoot: &[]bool{true}[0],
-							RunAsUser:    &[]int64{65534}[0],
+							Privileged:   pointer.Bool(false),
+							RunAsNonRoot: pointer.Bool(true),
+							RunAsUser:    pointer.Int64(65534),
 						},
 						Env: []v1.EnvVar{
 							{
