@@ -15,27 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package recovery
 
 import (
 	"net/http"
-	"net/http/httptest"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/gorilla/mux"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
+// Recovery returns a middleware method to handle panics
+func Recovery() mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if err := recover(); err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			}()
 
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
-
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+			next.ServeHTTP(w, r)
+		})
+	}
 }
