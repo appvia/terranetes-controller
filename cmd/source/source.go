@@ -40,7 +40,7 @@ import (
 )
 
 func init() {
-	log.SetFormatter(&log.JSONFormatter{})
+	log.SetFormatter(&log.TextFormatter{})
 }
 
 func main() {
