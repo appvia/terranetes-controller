@@ -22,6 +22,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/appvia/terraform-controller/pkg/apiserver/logging"
+	"github.com/appvia/terraform-controller/pkg/apiserver/recovery"
 )
 
 // Server is the api server
@@ -32,11 +35,15 @@ type Server struct {
 	Namespace string
 }
 
-// ServerHTTP returns the http handler
-func (s *Server) ServerHTTP() http.Handler {
+// Serve returns the http handler: is externally facing and called from the user namespace
+// to retrieve the logs from the builds
+func (s *Server) Serve() http.Handler {
 	router := mux.NewRouter()
-	router.HandleFunc("/builds", s.handleBuilds).Methods(http.MethodGet)
+	router.Use(recovery.Recovery())
+	router.Use(logging.Logger())
+
 	router.HandleFunc("/healthz", s.handleHealth).Methods(http.MethodGet)
+	router.HandleFunc("/v1/builds/{namespace}/{name}/logs", s.handleBuilds).Methods(http.MethodGet)
 
 	return router
 }
