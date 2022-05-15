@@ -37,6 +37,7 @@ golang:
 	@echo "--> Go Version"
 	@go version
 	@echo "GOFLAGS: $$GOFLAGS"
+	@mkdir -p bin
 
 ### GENERATE ###
 
@@ -93,24 +94,19 @@ schema-gen:
 
 ### BUILD ###
 
-build: golang
+build: controller source step
 	@echo "--> Compiling the project ($(VERSION))"
-	@mkdir -p bin
-	@echo "--> Building controller binary"
+
+controller: golang
+	@echo "--> Compiling the controller ($(VERSION))"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/controller cmd/controller/*.go
-	@echo "--> Building source binary"
-	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/source cmd/source/*.go
 
 source: golang
 	@echo "--> Compiling the source binary ($(VERSION))"
-	@mkdir -p bin
-	@echo "--> Building step binary"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/source cmd/source/*.go
 
 step: golang
 	@echo "--> Compiling the step binary ($(VERSION))"
-	@mkdir -p bin
-	@echo "--> Building step binary"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/step cmd/step/*.go
 
 ### TESTING ###
@@ -134,7 +130,6 @@ controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
 	@kubectl -n terraform-system scale deployment terraform-controller --replicas=0
 	@kubectl -n terraform-system delete job --all
-	@$(MAKE) build
 	@$(MAKE) controller-image
 	@$(MAKE) executor-image
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
