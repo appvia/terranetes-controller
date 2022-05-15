@@ -52,9 +52,13 @@ spec:
             {{- if .Values.controller.costs.secret }}
             - --cost-secret={{ .Values.controller.costs.secret }}
             {{- end }}
+            - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhook={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
+            - --infracosts-image={{ .Values.controller.images.infracosts }}
             - --metrics-port={{ .Values.controller.metricsPort }}
+            - --policy-image={{ .Values.controller.images.policy }}
+            - --terraform-image={{ .Values.controller.images.terraform }}
             {{- if .Values.controller.webhooks.enabled }}
             - --tls-ca={{ .Values.controller.webhooks.tlsAuthority }}
             - --tls-dir={{ .Values.controller.webhooks.tlsDir }}
