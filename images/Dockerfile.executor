@@ -1,47 +1,40 @@
-FROM alpine:3.15.4 AS builder
+FROM golang:1.18 AS builder
+
+ARG VERSION=latest
+ARG LFLAGS
 
 ENV \
-  HOME=/home/nobody \
-  KUBECTL_VERSION="1.23.0" \
-  TERRAFORM_VERSION="1.1.9" \
-  INFRACOST_VERSION="0.9.22"
+  KUBECTL_VERSION="1.23.0"
 
 ENV \
-  INFRACOST_BINARY_URL=https://github.com/infracost/infracost/releases/download/v${INFRACOST_VERSION}/infracost-linux-amd64.tar.gz \
-  KUBECTL_BINARY_URL=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
-  TERRAFORM_BINARY_URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+  KUBECTL_BINARY_URL=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 
-RUN apk add ca-certificates curl unzip
+RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kubectl
 
-RUN curl -sL -o /tmp/terraform.zip ${TERRAFORM_BINARY_URL} && \
-    unzip /tmp/terraform.zip -d /usr/bin
+COPY . /go/src/github.com/appvia/terraform-controller
 
-RUN curl -sL -o /tmp/infracost.tar.gz ${INFRACOST_BINARY_URL} && \
-    tar xvf /tmp/infracost.tar.gz -C /tmp && \
-    mv /tmp/infracost-linux-amd64 /usr/bin/infracost
+ENV CGO_ENABLED=0
+ENV VERSION=$VERSION
 
-RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && \
-    chmod +x /usr/bin/kubectl
+RUN /usr/bin/kubectl version --client
 
-RUN infracost --version
-RUN kubectl version --client
-RUN terraform version
+RUN cd /go/src/github.com/appvia/terraform-controller && make source
+RUN cd /go/src/github.com/appvia/terraform-controller && make step
 
 FROM alpine:3.15.4
 
+RUN apk add ca-certificates curl unzip
+
 RUN apk add ca-certificates bash openssh git
 
-COPY --from=builder /usr/bin/infracost /usr/bin/infracost
-COPY --from=builder /usr/bin/kubectl /usr/bin/kubectl
-COPY --from=builder /usr/bin/terraform /usr/bin/terraform
-COPY images/assets/entrypoint.sh /entrypoint.sh
+COPY --from=builder /usr/bin/kubectl /bin/kubectl
+COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/source /bin/source
+COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/step /bin/step
+
 COPY images/assets/config /home/controller/.ssh/config
-COPY bin/source /bin/source
 
 RUN adduser -G nobody controller -s /home/controller -u 1001 -s /sbin/nologin -D
 RUN chown -R controller:nobody /home/controller/.ssh && \
     chmod 0700 /home/controller/.ssh
 
 USER 1001
-
-ENTRYPOINT ["/entrypoint.sh"]
