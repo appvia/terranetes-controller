@@ -18,27 +18,15 @@
 package utils
 
 import (
-	"io"
-	"regexp"
-	"strings"
+	"context"
+	"time"
 )
 
-// YAMLDocuments returns a collection of documents from the reader
-func YAMLDocuments(reader io.Reader) ([]string, error) {
-	content, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	splitter := regexp.MustCompile("(?m)^---\n")
+// WaitForFile waits for a file to exist or times out
+func WaitForFile(ctx context.Context, path string, timeout time.Duration) error {
+	return RetryWithTimeout(ctx, timeout, time.Second, func() (bool, error) {
+		found, _ := FileExists(path)
 
-	var list []string
-
-	for _, document := range splitter.Split(string(content), -1) {
-		if strings.TrimSpace(document) == "" {
-			continue
-		}
-		list = append(list, document)
-	}
-
-	return list, nil
+		return found, nil
+	})
 }

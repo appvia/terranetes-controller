@@ -15,30 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package kubernetes
 
 import (
-	"io"
-	"regexp"
-	"strings"
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// YAMLDocuments returns a collection of documents from the reader
-func YAMLDocuments(reader io.Reader) ([]string, error) {
-	content, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
+func TestDelete(t *testing.T) {
+	cases := []struct {
+		Expected error
+		Object   client.Object
+		Existing []client.Object
+	}{
+		{
+			Expected: nil,
+			Object:   &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}},
+		},
 	}
-	splitter := regexp.MustCompile("(?m)^---\n")
-
-	var list []string
-
-	for _, document := range splitter.Split(string(content), -1) {
-		if strings.TrimSpace(document) == "" {
-			continue
-		}
-		list = append(list, document)
+	for _, c := range cases {
+		cc := fake.NewClientBuilder().WithObjects(c.Existing...).Build()
+		err := DeleteIfExists(context.Background(), cc, c.Object)
+		assert.Equal(t, c.Expected, err)
 	}
-
-	return list, nil
 }
