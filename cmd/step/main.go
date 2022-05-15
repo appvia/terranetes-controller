@@ -136,7 +136,9 @@ func Run(ctx context.Context, step Step) error {
 			return err
 		}
 
+		//nolint:errcheck
 		go io.Copy(os.Stdout, stdout)
+		//nolint:errcheck
 		go io.Copy(os.Stdout, stderr)
 
 		if err := cmd.Start(); err != nil {
