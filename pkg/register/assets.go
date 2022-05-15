@@ -135,6 +135,9 @@ spec:
                     - name
                     - namespace
                   type: object
+                terraformVersion:
+                  description: TerraformVersion provides the ability to override the default terraform version
+                  type: string
                 variables:
                   description: Variables are the variables that are used to configure the terraform
                   type: object

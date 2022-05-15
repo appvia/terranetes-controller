@@ -46,9 +46,6 @@ func main() {
 			if v, _ := cmd.Flags().GetBool("verbose"); v {
 				log.SetLevel(log.DebugLevel)
 			}
-			if v, _ := cmd.Flags().GetBool("trace"); v {
-				log.SetLevel(log.TraceLevel)
-			}
 
 			return Run(context.Background())
 		},
@@ -56,14 +53,17 @@ func main() {
 
 	flags := cmd.Flags()
 	flags.Bool("verbose", false, "Enable verbose logging")
-	flags.Bool("trace", false, "Enable trace logging")
 	flags.BoolVar(&config.EnableWebhook, "enable-webhook", true, "Indicates we should register the webhooks")
+	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuation namespaces")
 	flags.DurationVar(&config.ResyncPeriod, "resync-period", 1*time.Hour, "The resync period for the controller")
 	flags.IntVar(&config.APIServerPort, "apiserver-port", 10080, "The port the apiserver should be listening on")
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
-	flags.StringVar(&config.CostSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
+	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.ExecutorImage, "executor-image", "quay.io/appvia/terraform-executor:latest", "The image to use for the executor")
+	flags.StringVar(&config.TerraformImage, "terraform-image", "hashicorp/terraform:v1.1.9", "The image to use for the terraform")
+	flags.StringVar(&config.InfracostsImage, "infracosts-image", "infracosts/infracost:0.9.24", "The image to use for the infracosts")
+	flags.StringVar(&config.PolicyImage, "policy-image", "bridgecrew/checkov:2.0.1140", "The image to use for the policy")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
 	flags.StringVar(&config.TLSAuthority, "tls-ca", "", "The filename to the ca certificate")
 	flags.StringVar(&config.TLSCert, "tls-cert", "tls.pem", "The name of the file containing the TLS certificate")
