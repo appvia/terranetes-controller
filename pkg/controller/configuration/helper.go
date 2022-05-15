@@ -19,11 +19,24 @@ package configuration
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/utils/jobs"
 	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
+
+// GetTerraformImage is called to return the terraform image to use, or the image plus version
+// override
+func GetTerraformImage(configuration *terraformv1alphav1.Configuration, image string) string {
+	if configuration.Spec.TerraformVersion == "" {
+		return image
+	}
+	e := strings.Split(image, ":")
+
+	return fmt.Sprintf("%s:%s", e[0], configuration.Spec.TerraformVersion)
+}
 
 // CreateWatcher is responsible for ensuring the logger is running in the application namespace
 func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv1alphav1.Configuration, stage string) error {

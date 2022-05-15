@@ -65,9 +65,14 @@ var _ = Describe("Configuration Controller", func() {
 			fixtures.NewValidAWSProviderSecret("default", "aws"),
 		}, objects...)...)
 		ctrl = &Controller{
-			cc:            cc,
-			JobNamespace:  "default",
-			ExecutorImage: "quay.io/appvia/terraform-executor",
+			cc:               cc,
+			EnableInfracosts: false,
+			EnableWatchers:   true,
+			ExecutorImage:    "quay.io/appvia/terraform-executor",
+			InfracostsImage:  "infracosts/infracost:latest",
+			JobNamespace:     "default",
+			PolicyImage:      "bridgecrew/checkov:2.0.1140",
+			TerraformImage:   "hashicorp/terraform:1.1.9",
 		}
 	}
 
@@ -131,8 +136,8 @@ var _ = Describe("Configuration Controller", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			Setup(configuration)
-			ctrl.EnableCostAnalytics = true
-			ctrl.CostAnalyticsSecretName = "not_there"
+			ctrl.EnableInfracosts = true
+			ctrl.InfracostsSecretName = "not_there"
 
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
@@ -303,8 +308,8 @@ var _ = Describe("Configuration Controller", func() {
 			secret.Namespace = ctrl.JobNamespace
 
 			Setup(configuration, secret)
-			ctrl.EnableCostAnalytics = true
-			ctrl.CostAnalyticsSecretName = "token"
+			ctrl.EnableInfracosts = true
+			ctrl.InfracostsSecretName = "token"
 
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
@@ -464,6 +469,49 @@ provider "aws" {}
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
+		})
+	})
+
+	When("the terraform version should be dictated by the controller", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
+		})
+
+		It("should have created job for the terraform plan", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:1.1.9"))
+		})
+	})
+
+	When("the terraform version should be overriden by the configuration", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Spec.TerraformVersion = "test"
+			Setup(configuration)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(4))
+		})
+
+		It("should have created job for the terraform plan", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:test"))
 		})
 	})
 
