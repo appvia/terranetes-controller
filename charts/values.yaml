@@ -4,8 +4,10 @@ fullnameOverride: ""
 replicaCount: 1
 
 controller:
-  # Is the port the apiserver is running
+  # Is the port the builds apis
   port: 10080
+  # Is the port the store api
+  apiPort: 10081
   # Is the port for the metrics service
   metricsPort: 9090
   # The namespace to run all the jobs in
@@ -17,12 +19,21 @@ controller:
     secret: ""
   # Configuration for the images used by the jobs
   images:
+    # is the default image to use for terraform operations
+    terraform: hashicorp/terraform:1.1.9
+    # infracosts is the image to use for infracosts
+    infracosts: infracost/infracost:0.9.24
+    # policy is image for policy
+    policy: bridgecrew/checkov:2.0.1140
     # is the controller image
     controller: "quay.io/appvia/terraform-controller:v0.0.4"
     # The terraform image used when running jobs
     executor: "quay.io/appvia/terraform-executor:v0.0.4"
   # is the image pull policy
   imagePullPolicy: IfNotPresent
+  # indicate we create the watcher jobs in user namespace, these allow users
+  # to view the terraform output
+  enableWatchers: true
 
   # The default terraform version (or tag of the above image)
   webhooks:
