@@ -65,7 +65,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		Handler: (&apiserver.Server{
 			Client:    cc,
 			Namespace: config.Namespace,
-		}).ServerHTTP(),
+		}).Serve(),
 	}
 
 	options := manager.Options{
@@ -95,11 +95,19 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the controller manager: %v", err)
 	}
 
+	if config.InfracostsSecretName != "" && config.InfracostsImage != "" {
+		log.Info("enabling the infracost integration")
+	}
+
 	if err := (&configuration.Controller{
-		CostAnalyticsSecretName: config.CostSecretName,
-		EnableCostAnalytics:     (config.CostSecretName != ""),
-		ExecutorImage:           config.ExecutorImage,
-		JobNamespace:            config.Namespace,
+		EnableInfracosts:     (config.InfracostsSecretName != ""),
+		EnableWatchers:       config.EnableWatchers,
+		ExecutorImage:        config.ExecutorImage,
+		InfracostsImage:      config.InfracostsImage,
+		InfracostsSecretName: config.InfracostsSecretName,
+		JobNamespace:         config.Namespace,
+		PolicyImage:          config.PolicyImage,
+		TerraformImage:       config.TerraformImage,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)
 	}

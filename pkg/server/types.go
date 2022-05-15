@@ -23,12 +23,20 @@ import "time"
 type Config struct {
 	// EnableWebhook enables the webhook registration
 	EnableWebhook bool
-	// CostSecretName is the name of the secret that contains the cost token and endpoint
-	CostSecretName string
-	// Namespace is namespace the controller is running
-	Namespace string
+	// EnableWatchers enables the creation of watcher jobs
+	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// InfracostsSecretName is the name of the secret that contains the cost token and endpoint
+	InfracostsSecretName string
+	// Namespace is namespace the controller is running
+	Namespace string
+	// TerraformImage is the image to use for terraform
+	TerraformImage string
+	// InfracostsImage is the image to use for infracosts
+	InfracostsImage string
+	// PolicyImage is the image to use for policy
+	PolicyImage string
 	// ResyncPeriod is the period to resync the controller manager
 	ResyncPeriod time.Duration
 	// TLSDir is the directory where the TLS certificates are stored
