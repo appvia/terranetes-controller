@@ -34,6 +34,7 @@ import (
 
 	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terraform-controller/pkg/assets"
 	"github.com/appvia/terraform-controller/pkg/controller"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
 	"github.com/appvia/terraform-controller/pkg/utils/jobs"
@@ -41,20 +42,20 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils/terraform"
 )
 
-// ensureCostAnalyticsSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
+// ensureInfracostsSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
 // the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
 // place guard around it
-func (c *Controller) ensureCostAnalyticsSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		if !c.EnableCostAnalytics {
+		if !c.EnableInfracosts {
 			return reconcile.Result{}, nil
 		}
 
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace
-		secret.Name = c.CostAnalyticsSecretName
+		secret.Name = c.InfracostsSecretName
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
@@ -317,10 +318,14 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		// @step: generate the job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformPlan(jobs.Options{
-			ExecutorImage:      c.ExecutorImage,
-			Namespace:          c.JobNamespace,
-			EnableCostAnalysis: c.EnableCostAnalytics,
-			CostAnalysisSecret: c.CostAnalyticsSecretName,
+			EnableInfraCosts: c.EnableInfracosts,
+			ExecutorImage:    c.ExecutorImage,
+			InfracostsImage:  c.InfracostsImage,
+			InfracostsSecret: c.InfracostsSecretName,
+			Namespace:        c.JobNamespace,
+			ServiceAccount:   "terraform-controller",
+			Template:         string(assets.MustAsset("job.yaml.tpl")),
+			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform plan job")
@@ -357,20 +362,23 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 				return controller.RequeueImmediate, nil
 			}
 
-			// @step: create a watch job in the configuration namespace to allow the user to witness
-			// the terraform output
-			if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformPlan); err != nil {
-				cond.Failed(err, "Failed to create the terraform plan watcher")
+			if c.EnableWatchers {
+				// @step: create a watch job in the configuration namespace to allow the user to witness
+				// the terraform output
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformPlan); err != nil {
+					cond.Failed(err, "Failed to create the terraform plan watcher")
 
-				return reconcile.Result{}, err
+					return reconcile.Result{}, err
+				}
+
+				// @step: create the terraform plan job
+				if err := c.cc.Create(ctx, runner); err != nil {
+					cond.Failed(err, "Failed to create the terraform plan job")
+
+					return reconcile.Result{}, err
+				}
 			}
 
-			// @step: create the terraform plan job
-			if err := c.cc.Create(ctx, runner); err != nil {
-				cond.Failed(err, "Failed to create the terraform plan job")
-
-				return reconcile.Result{}, err
-			}
 			cond.InProgress("Terraform plan in progress")
 
 			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
@@ -399,7 +407,12 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		if !c.EnableCostAnalytics {
+		if !c.EnableInfracosts {
+			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
+				Enabled: false,
+				Monthly: "Not Enabled",
+			}
+
 			return reconcile.Result{}, nil
 		}
 
@@ -456,8 +469,14 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			ExecutorImage: c.ExecutorImage,
-			Namespace:     c.JobNamespace,
+			EnableInfraCosts: c.EnableInfracosts,
+			ExecutorImage:    c.ExecutorImage,
+			InfracostsImage:  c.InfracostsImage,
+			InfracostsSecret: c.InfracostsSecretName,
+			Namespace:        c.JobNamespace,
+			ServiceAccount:   "terraform-controller",
+			Template:         string(assets.MustAsset("job.yaml.tpl")),
+			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")
@@ -476,16 +495,18 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: we can requeue or move on depending on the status
 		if !found {
-			if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformApply); err != nil {
-				cond.Failed(err, "Failed to create the terraform apply watcher")
+			if c.EnableWatchers {
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformApply); err != nil {
+					cond.Failed(err, "Failed to create the terraform apply watcher")
 
-				return reconcile.Result{}, err
-			}
+					return reconcile.Result{}, err
+				}
 
-			if err := c.cc.Create(ctx, runner); err != nil {
-				cond.Failed(err, "Failed to create the terraform apply job")
+				if err := c.cc.Create(ctx, runner); err != nil {
+					cond.Failed(err, "Failed to create the terraform apply job")
 
-				return reconcile.Result{}, err
+					return reconcile.Result{}, err
+				}
 			}
 			cond.InProgress("Terraform apply is running")
 
@@ -516,7 +537,6 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace

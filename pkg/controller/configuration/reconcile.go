@@ -89,7 +89,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensurePoliciesList(configuration, state),
 			c.ensureJobsList(configuration, state),
 			c.ensureNoPreviousGeneration(configuration, state),
-			c.ensureCostAnalyticsSecret(configuration),
+			c.ensureInfracostsSecret(configuration),
 			c.ensureAuthenticationSecret(configuration, state),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),
