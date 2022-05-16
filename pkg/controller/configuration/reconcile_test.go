@@ -30,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -493,7 +494,7 @@ provider "aws" {}
 		})
 	})
 
-	When("the terraform version should be overriden by the configuration", func() {
+	When("the terraform version should override by the configuration", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.TerraformVersion = "test"
@@ -512,6 +513,96 @@ provider "aws" {}
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:test"))
+		})
+	})
+
+	When("using a custom job template", func() {
+		templateName := "template"
+
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+			ctrl.JobTemplate = cm.Name
+
+			Expect(ctrl.cc.Create(context.TODO(), cm)).ToNot(HaveOccurred())
+		})
+
+		When("the template is missing", func() {
+			BeforeEach(func() {
+				ctrl.cc.Delete(context.TODO(), fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName))
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(4))
+			})
+
+			It("should indicate action is required in the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Custom job template (default/template) does not exists"))
+			})
+		})
+
+		When("the template does not have the correct key", func() {
+			BeforeEach(func() {
+				// @step: delete the old one and create a new one with missing keys
+				cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+				invalid := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+				invalid.Data = map[string]string{}
+
+				ctrl.cc.Delete(context.TODO(), cm)
+				ctrl.cc.Create(context.TODO(), invalid)
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the template", func() {
+				cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+				req := types.NamespacedName{Namespace: cm.Namespace, Name: cm.Name}
+
+				Expect(ctrl.cc.Get(context.TODO(), req, &v1.ConfigMap{})).ToNot(HaveOccurred())
+			})
+
+			It("should have conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(4))
+			})
+
+			It("should indicate action is required due to missing keys", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Custom job template (default/template) does not contain the \"job.yaml\" key"))
+			})
+		})
+
+		When("we have a valid template", func() {
+			BeforeEach(func() {
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(4))
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+			})
 		})
 	})
 

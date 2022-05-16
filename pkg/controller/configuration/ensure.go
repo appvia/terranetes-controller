@@ -80,6 +80,48 @@ func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Co
 	}
 }
 
+// ensureJobTemplate is used to verify the job template exists if we have been configured to override the template
+func (c *Controller) ensureJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if c.JobTemplate == "" {
+			// @step: lets default to the embedded template
+			state.jobTemplate = assets.MustAsset("job.yaml.tpl")
+
+			return reconcile.Result{}, nil
+		}
+
+		cm := &v1.ConfigMap{}
+		cm.Namespace = c.JobNamespace
+		cm.Name = c.JobTemplate
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, cm)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the custom job template")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.ActionRequired("Custom job template (%s/%s) does not exists", c.JobNamespace, c.JobTemplate)
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		template, found := cm.Data[terraformv1alphav1.TerraformJobTemplateConfigMapKey]
+		if !found {
+			cond.ActionRequired("Custom job template (%s/%s) does not contain the %q key",
+				c.JobNamespace, c.JobTemplate, terraformv1alphav1.TerraformJobTemplateConfigMapKey)
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		state.jobTemplate = []byte(template)
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensurePoliciesList is responsible for retrieving all the policies in the cluster before we start processing this job. These
 // policies are used further down the line by other ensure methods
 func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
@@ -324,7 +366,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.JobNamespace,
 			ServiceAccount:   "terraform-controller",
-			Template:         string(assets.MustAsset("job.yaml.tpl")),
+			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
@@ -475,7 +517,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.JobNamespace,
 			ServiceAccount:   "terraform-controller",
-			Template:         string(assets.MustAsset("job.yaml.tpl")),
+			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
