@@ -82,7 +82,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 	// @step: we query the jobs using the labels and find the latest job for the configuration at stage x, generation y. We then
 	// find the associated pods and stream the logs back to the caller
-	err := utils.RetryWithTimeout(req.Context(), 30*time.Second, 2*time.Second, func() (bool, error) {
+	err := utils.RetryWithTimeout(req.Context(), 60*time.Second, 2*time.Second, func() (bool, error) {
 		//nolint
 		w.Write([]byte("."))
 

@@ -95,13 +95,14 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 				terraformv1alphav1.ConfigurationNameLabel:       r.configuration.Name,
 				terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.Namespace,
 				terraformv1alphav1.ConfigurationStageLabel:      stage,
+				terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.configuration, r.configuration.GroupVersionKind()),
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            pointer.Int32Ptr(3),
+			BackoffLimit:            pointer.Int32Ptr(5),
 			Completions:             pointer.Int32Ptr(1),
 			Parallelism:             pointer.Int32Ptr(1),
 			TTLSecondsAfterFinished: pointer.Int32Ptr(3600),
