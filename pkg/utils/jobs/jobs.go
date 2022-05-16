@@ -47,10 +47,10 @@ type Options struct {
 	InfracostsSecret string
 	// Namespace is the location of the jobs
 	Namespace string
-	// ServiceAccount is the name of the serivce account to run the jobs under
+	// ServiceAccount is the name of the service account to run the jobs under
 	ServiceAccount string
 	// Template is the source for the job template if overridden by the controller
-	Template string
+	Template []byte
 	// TerraformImage is the image to use for the terraform jobs
 	TerraformImage string
 }
@@ -201,15 +201,9 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		},
 	}
 
-	// @step: we either use the inbuilt template or a user defined one
-	source := ""
-	if options.Template != "" {
-		source = options.Template
-	}
-
 	// @step: create the template and render
 	render := &bytes.Buffer{}
-	tmpl, err := template.New("main").Parse(source)
+	tmpl, err := template.New("main").Parse(string(options.Template))
 	if err != nil {
 		return nil, err
 	}

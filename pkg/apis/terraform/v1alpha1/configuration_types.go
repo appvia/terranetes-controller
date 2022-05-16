@@ -47,6 +47,8 @@ const (
 	TerraformVariablesConfigMapKey = "variables.tfvars.json"
 	// TerraformProviderConfigMapKey is the key name for the terraform variables in the configmap
 	TerraformProviderConfigMapKey = "provider.tf"
+	// TerraformJobTemplateConfigMapKey is the key name for the job template in the configmap
+	TerraformJobTemplateConfigMapKey = "job.yaml"
 )
 
 const (

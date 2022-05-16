@@ -63,6 +63,8 @@ type Controller struct {
 	InfracostsSecretName string
 	// JobNamespace is the namespace where the runner is running
 	JobNamespace string
+	// JobTemplate is a custom override for the template to use
+	JobTemplate string
 	// PolicyImage is the image to use for all policy / checkov jobs
 	PolicyImage string
 	// TerraformImage is the image to use for all terraform jobs
