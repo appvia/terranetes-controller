@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
@@ -60,8 +61,14 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, err
 	}
 
+	namespace := os.Getenv("KUBE_NAMESPACE")
+	if namespace == "" {
+		namespace = "terraform-system"
+	}
+
 	hs := &http.Server{
-		Addr: listener.Addr().String(),
+		Addr:        listener.Addr().String(),
+		IdleTimeout: 30 * time.Second,
 		Handler: (&apiserver.Server{
 			Client:    cc,
 			Namespace: config.Namespace,
@@ -71,7 +78,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	options := manager.Options{
 		LeaderElection:                false,
 		LeaderElectionID:              "controller.terraform.appvia.io",
-		LeaderElectionNamespace:       os.Getenv("KUBE_NAMESPACE"),
+		LeaderElectionNamespace:       namespace,
 		LeaderElectionReleaseOnCancel: true,
 		MetricsBindAddress:            fmt.Sprintf(":%d", config.MetricsPort),
 		Port:                          config.WebhookPort,
