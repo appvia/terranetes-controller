@@ -18,29 +18,10 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/json"
 	"io"
 	"regexp"
 	"strings"
-
-	"sigs.k8s.io/yaml"
 )
-
-// DecodeYAML decodes the yaml resource into a runtime.Object
-func DecodeYAML(data []byte, in interface{}) error {
-	data, err := yaml.YAMLToJSON(data)
-	if err != nil {
-		return err
-	}
-
-	return DecodeJSON(data, in)
-}
-
-// DecodeJSON decodes the json into a runtime.Object
-func DecodeJSON(data []byte, in interface{}) error {
-	return json.NewDecoder(bytes.NewReader(data)).Decode(in)
-}
 
 // YAMLDocuments returns a collection of documents from the reader
 func YAMLDocuments(reader io.Reader) ([]string, error) {

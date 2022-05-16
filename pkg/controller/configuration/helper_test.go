@@ -15,27 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package configuration
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
+func TestGetTerraformImage(t *testing.T) {
+	cases := []struct {
+		Default  string
+		Override string
+		Expected string
+	}{
+		{
+			Default:  "hashicorp/terraform:1.1.9",
+			Expected: "hashicorp/terraform:1.1.9",
+		},
+		{
+			Default:  "hashicorp/terraform:1.1.9",
+			Override: "override",
+			Expected: "hashicorp/terraform:override",
+		},
+	}
 
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
+	for _, c := range cases {
+		config := &terraformv1alphav1.Configuration{}
+		config.Spec.TerraformVersion = c.Override
 
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+		assert.Equal(t, c.Expected, GetTerraformImage(config, c.Default))
+	}
 }

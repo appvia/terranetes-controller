@@ -47,10 +47,6 @@ jobs:
     - name: Get version
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-    - name: Build
-      run: make
-      env:
-        VERSION: ${{ steps.get_version.outputs.VERSION }}
     - name: Images
       run: make images
       env:

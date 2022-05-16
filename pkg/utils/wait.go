@@ -15,27 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package utils
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"context"
+	"time"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
+// WaitForFile waits for a file to exist or times out
+func WaitForFile(ctx context.Context, path string, timeout time.Duration) error {
+	return RetryWithTimeout(ctx, timeout, time.Second, func() (bool, error) {
+		found, _ := FileExists(path)
 
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
-
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+		return found, nil
+	})
 }

@@ -15,27 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package recovery
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
+func TestRecovery(t *testing.T) {
+	r := mux.NewRouter()
+	r.Use(Recovery())
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		panic("oh crap")
+	})
 
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	resp := httptest.NewRecorder()
+	r.ServeHTTP(resp, req)
 
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+	assert.Equal(t, http.StatusInternalServerError, resp.Result().StatusCode)
+	assert.Equal(t, "application/json", resp.Result().Header.Get("Content-Type"))
 }

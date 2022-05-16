@@ -15,27 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package logging
 
 import (
 	"net/http"
-	"net/http/httptest"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/felixge/httpsnoop"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/gorilla/mux"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
+// Logger returns the middleware method for the router
+func Logger() mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			m := httpsnoop.CaptureMetrics(next, w, req)
 
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
-
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+			log.WithFields(log.Fields{
+				"bytes":    m.Written,
+				"ip":       req.RemoteAddr,
+				"method":   req.Method,
+				"response": m.Code,
+				"time":     m.Duration,
+			}).Info("received api request")
+		})
+	}
 }
