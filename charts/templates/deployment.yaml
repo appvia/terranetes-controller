@@ -59,8 +59,8 @@ spec:
             - --metrics-port={{ .Values.controller.metricsPort }}
             - --policy-image={{ .Values.controller.images.policy }}
             - --terraform-image={{ .Values.controller.images.terraform }}
-            {{- if .Values.controller.template.job }}
-            - --job-template={{ .Values.controller.template.job }}
+            {{- if .Values.controller.templates.job }}
+            - --job-template={{ .Values.controller.templates.job }}
             {{- end }}
             {{- if .Values.controller.webhooks.enabled }}
             - --tls-ca={{ .Values.controller.webhooks.tlsAuthority }}
