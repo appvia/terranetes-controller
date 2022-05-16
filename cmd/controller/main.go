@@ -62,7 +62,7 @@ func main() {
 	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.ExecutorImage, "executor-image", "quay.io/appvia/terraform-executor:latest", "The image to use for the executor")
 	flags.StringVar(&config.TerraformImage, "terraform-image", "hashicorp/terraform:v1.1.9", "The image to use for the terraform")
-	flags.StringVar(&config.InfracostsImage, "infracosts-image", "infracosts/infracost:0.9.24", "The image to use for the infracosts")
+	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:0.9.24", "The image to use for the infracosts")
 	flags.StringVar(&config.PolicyImage, "policy-image", "bridgecrew/checkov:2.0.1140", "The image to use for the policy")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
 	flags.StringVar(&config.TLSAuthority, "tls-ca", "", "The filename to the ca certificate")

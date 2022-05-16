@@ -29,7 +29,6 @@ import (
 
 	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/assets"
 	"github.com/appvia/terraform-controller/pkg/controller"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
 	"github.com/appvia/terraform-controller/pkg/utils/jobs"
@@ -80,7 +79,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.JobNamespace,
 			ServiceAccount:   "terraform-controller",
-			Template:         string(assets.MustAsset("job.yaml.tpl")),
+			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {

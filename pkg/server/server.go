@@ -113,6 +113,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		InfracostsImage:      config.InfracostsImage,
 		InfracostsSecretName: config.InfracostsSecretName,
 		JobNamespace:         config.Namespace,
+		JobTemplate:          config.JobTemplate,
 		PolicyImage:          config.PolicyImage,
 		TerraformImage:       config.TerraformImage,
 	}).Add(mgr); err != nil {
