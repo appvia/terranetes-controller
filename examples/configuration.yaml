@@ -16,7 +16,7 @@ spec:
 
   variables:
     # -- The name of the bucket. If omitted, Terraform will assign a random, unique name
-    bucket: rohith-test-1234
+    bucket: terraform-controller-ci-bucket
     # -- The canned ACL to apply
     acl: private
     # -- Map containing versioning configuration
