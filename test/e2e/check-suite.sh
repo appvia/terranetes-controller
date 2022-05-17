@@ -17,7 +17,7 @@
 #
 
 UNITS="test/e2e/integration"
-BATS_OPTIONS=${BATS_OPTIONS:-"--timing"}
+BATS_OPTIONS=${BATS_OPTIONS:-""}
 
 run_bats() {
   echo "Running unit: ${@}"

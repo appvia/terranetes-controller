@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load test/e2e/lib/helper.bash
+load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
