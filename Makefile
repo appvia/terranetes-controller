@@ -128,13 +128,13 @@ controller-image:
 
 controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
-	@kubectl -n terraform-system scale deployment terraform-controller --replicas=0
-	@kubectl -n terraform-system delete job --all
+	@kubectl -n terraform-system scale deployment terraform-controller --replicas=0 || true
+	@kubectl -n terraform-system delete job --all || true
 	@$(MAKE) controller-image
 	@$(MAKE) executor-image
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
-	@kubectl -n terraform-system scale deployment terraform-controller --replicas=1
+	@kubectl -n terraform-system scale deployment terraform-controller --replicas=1 || true
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
