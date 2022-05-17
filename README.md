@@ -17,15 +17,13 @@ Terraform Controller manages the life cycles of a terraform resource, allowing d
 **PLATFORM ENGINEERS**
 
 * Place guardrails around which modules can be consumed.
-* Automatically inject environment specific configuration (dev, prod, cost centres and so forth) into the module, based on labels.
+* Automatically inject environment specific configuration _(dev, prod, cost centres and so forth)_ into the module, based on labels.
 * Allow developers to see the associated costs to their configurations
-
 
 **ROADMAP**
 ---
 
 - Ability to set and control budgets
-- Integration of policy via [checkov](https://www.checkov.io/)
 
 **GETTING STARTED**
 ---
@@ -85,6 +83,10 @@ By default unless the `spec.enableAutoApproval` is true, all changes must be app
 ```shell
 $ kubectl -n apps annotate configurations.terraform.appvia.io bucket "terraform.appvia.io/apply"=true --overwrite
 ```
+
+**ADMIN GUIDE**
+
+You can view administrative guide [here](docs/admin.md)
 
 **ADDITIONAL RESOURCES**
 
