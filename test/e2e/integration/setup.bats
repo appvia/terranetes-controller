@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load test/e2e/lib/helper.bash
+load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -30,8 +30,8 @@ teardown() {
 replicaCount: 1
 controller:
   images:
-    controller: "quay.io/appvia/terraform-controller:latest"
-    executor: "quay.io/appvia/terraform-executor:latest"
+    controller: "quay.io/appvia/terraform-controller:ci"
+    executor: "quay.io/appvia/terraform-executor:ci"
 EOF
 
   if ! helm -n ${NAMESPACE} ls | grep terraform-controller; then
