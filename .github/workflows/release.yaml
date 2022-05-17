@@ -10,51 +10,40 @@ env:
   REGISTRY_ORG: appvia
 
 jobs:
-  ci:
+  images:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.18.1'
-    - name: Unit Tests
-      run: make check
+    - name: Verifying Images
+      run: verify-images
 
-  linting:
+  e2e:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '1.18.1'
-    - uses: actions/checkout@v3
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        args: --timeout 1m
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install Requirements
+      run: |
+        sudo apt update -y
+        sudo apt install bats jq
+    - name: E2E
+      run: |
+        test/e2e/check-suite.sh
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
+        AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
 
-  release-images:
-    needs: [linting, ci]
+  release:
+    needs: [e2e, images]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.18.1'
     - name: Get version
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-    - name: Build
-      run: make
-      env:
-        VERSION: ${{ steps.get_version.outputs.VERSION }}
-    - name: Images
-      run: make images
-      env:
-        VERSION: ${{ steps.get_version.outputs.VERSION }}
     - name: Release Images
       run: make release-images
       env:

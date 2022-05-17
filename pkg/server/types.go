@@ -21,16 +21,30 @@ import "time"
 
 // Config is the configuration for the controller
 type Config struct {
+	// APIServerPort is the port to listen on
+	APIServerPort int
 	// EnableWebhook enables the webhook registration
 	EnableWebhook bool
-	// CostSecretName is the name of the secret that contains the cost token and endpoint
-	CostSecretName string
-	// Namespace is namespace the controller is running
-	Namespace string
+	// EnableWatchers enables the creation of watcher jobs
+	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// InfracostsSecretName is the name of the secret that contains the cost token and endpoint
+	InfracostsSecretName string
+	// InfracostsImage is the image to use for infracosts
+	InfracostsImage string
+	// JobTemplate is the name of the configmap containing a template for the jobs
+	JobTemplate string
+	// MetricsPort is the port to listen on
+	MetricsPort int
+	// Namespace is namespace the controller is running
+	Namespace string
+	// PolicyImage is the image to use for policy
+	PolicyImage string
 	// ResyncPeriod is the period to resync the controller manager
 	ResyncPeriod time.Duration
+	// TerraformImage is the image to use for terraform
+	TerraformImage string
 	// TLSDir is the directory where the TLS certificates are stored
 	TLSDir string
 	// TLSAuthority is the path to the ca certificate
@@ -41,8 +55,4 @@ type Config struct {
 	TLSKey string
 	// WebhookPort is the port to listen on
 	WebhookPort int
-	// APIServerPort is the port to listen on
-	APIServerPort int
-	// MetricsPort is the port to listen on
-	MetricsPort int
 }

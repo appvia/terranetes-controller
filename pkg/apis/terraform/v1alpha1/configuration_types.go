@@ -47,6 +47,8 @@ const (
 	TerraformVariablesConfigMapKey = "variables.tfvars.json"
 	// TerraformProviderConfigMapKey is the key name for the terraform variables in the configmap
 	TerraformProviderConfigMapKey = "provider.tf"
+	// TerraformJobTemplateConfigMapKey is the key name for the job template in the configmap
+	TerraformJobTemplateConfigMapKey = "job.yaml"
 )
 
 const (
@@ -114,6 +116,9 @@ type ConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Variables *runtime.RawExtension `json:"variables,omitempty"`
+	// TerraformVersion provides the ability to override the default terraform version
+	// +kubebuilder:validation:Optional
+	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 
 // +kubebuilder:webhook:name=configurations.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/configurations,verbs=create;update,groups="terraform.appvia.io",resources=configurations,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1

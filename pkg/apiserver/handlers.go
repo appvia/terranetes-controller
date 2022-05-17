@@ -82,7 +82,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 	// @step: we query the jobs using the labels and find the latest job for the configuration at stage x, generation y. We then
 	// find the associated pods and stream the logs back to the caller
-	err := utils.RetryWithTimeout(req.Context(), 30*time.Second, 2*time.Second, func() (bool, error) {
+	err := utils.RetryWithTimeout(req.Context(), 60*time.Second, 2*time.Second, func() (bool, error) {
 		//nolint
 		w.Write([]byte("."))
 
@@ -147,24 +147,27 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	}
 	log.WithFields(fields).WithField("pod", pod.Name).Debug("found the pod")
 
-	// @step: find the latest pod in the list and retrieve the logs from the logs
-	stream, err := s.Client.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &v1.PodLogOptions{
-		Container: "terraform",
-		Follow:    true,
-	}).Stream(req.Context())
-	if err != nil {
-		log.WithFields(fields).WithError(err).Error("failed to stream the logs")
-		//nolint
-		w.Write([]byte("[error] failed to retrieve the logs\n"))
+	// @step: we iterate through the containers and retrieve all the logs
+	for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
+		// @step: find the latest pod in the list and retrieve the logs from the logs
+		stream, err := s.Client.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &v1.PodLogOptions{
+			Container: container.Name,
+			Follow:    true,
+		}).Stream(req.Context())
+		if err != nil {
+			log.WithFields(fields).WithError(err).Error("failed to stream the logs")
+			//nolint
+			w.Write([]byte("[error] failed to retrieve the logs\n"))
 
-		return
-	}
-	defer stream.Close()
+			return
+		}
 
-	if _, err := io.Copy(w, stream); err != nil {
-		log.WithFields(fields).WithError(err).Error("failed to stream the logs")
+		if _, err := io.Copy(w, stream); err != nil {
+			log.WithFields(fields).WithError(err).Error("failed to stream the logs")
 
-		return
+			return
+		}
+		stream.Close()
 	}
 
 	//nolint

@@ -15,30 +15,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package fixtures
 
 import (
-	"io"
-	"regexp"
-	"strings"
+	v1 "k8s.io/api/core/v1"
+
+	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 )
 
-// YAMLDocuments returns a collection of documents from the reader
-func YAMLDocuments(reader io.Reader) ([]string, error) {
-	content, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
+// NewJobTemplateConfigmap returns a custom job template configmap
+func NewJobTemplateConfigmap(namespace, name string) *v1.ConfigMap {
+	template := `apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: "test-pi-"
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never
+  backoffLimit: 4
+`
+
+	cm := &v1.ConfigMap{}
+	cm.Namespace = namespace
+	cm.Name = name
+	cm.Data = map[string]string{
+		terraformv1alphav1.TerraformJobTemplateConfigMapKey: template,
 	}
-	splitter := regexp.MustCompile("(?m)^---\n")
 
-	var list []string
-
-	for _, document := range splitter.Split(string(content), -1) {
-		if strings.TrimSpace(document) == "" {
-			continue
-		}
-		list = append(list, document)
-	}
-
-	return list, nil
+	return cm
 }

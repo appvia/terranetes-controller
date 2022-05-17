@@ -51,14 +51,24 @@ type Controller struct {
 	cc client.Client
 	// cache is a local cache of resources to make lookups faster
 	cache *cache.Cache
-	// EnableCostAnalytics enables the cost analytics via infracost
-	EnableCostAnalytics bool
-	// CostAnalyticsSecretName is the name of the secret containing the api and token
-	CostAnalyticsSecretName string
-	// JobNamespace is the namespace where the runner is running
-	JobNamespace string
+	// EnableInfracosts enables the cost analytics via infracost
+	EnableInfracosts bool
+	// EnableWatchers indicates we should create watcher jobs in the user namespace
+	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// InfracostsImage is the image to use for all infracost jobs
+	InfracostsImage string
+	// InfracostsSecretName is the name of the secret containing the api and token
+	InfracostsSecretName string
+	// JobNamespace is the namespace where the runner is running
+	JobNamespace string
+	// JobTemplate is a custom override for the template to use
+	JobTemplate string
+	// PolicyImage is the image to use for all policy / checkov jobs
+	PolicyImage string
+	// TerraformImage is the image to use for all terraform jobs
+	TerraformImage string
 }
 
 // Add is called to setup the manager for the controller
@@ -68,8 +78,14 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	switch {
 	case c.JobNamespace == "":
 		return errors.New("job namespace is required")
-	case c.ExecutorImage == "":
-		return errors.New("executor image is required")
+	case c.TerraformImage == "":
+		return errors.New("terraform image is required")
+	case c.PolicyImage == "":
+		return errors.New("policy image is required")
+	case c.EnableInfracosts && c.InfracostsImage == "":
+		return errors.New("infracost image is required")
+	case c.EnableInfracosts && c.InfracostsSecretName == "":
+		return errors.New("infracost secret is required")
 	}
 
 	c.cc = mgr.GetClient()

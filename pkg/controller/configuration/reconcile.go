@@ -31,7 +31,7 @@ import (
 )
 
 type state struct {
-	// auth is an optional secret which is used for authetication
+	// auth is an optional secret which is used for authentication
 	auth *v1.Secret
 	// policies is a list of policies in the cluster
 	policies *terraformv1alpha1.PolicyList
@@ -39,13 +39,14 @@ type state struct {
 	provider *terraformv1alpha1.Provider
 	// jobs is list of all jobs for this configuration and generation
 	jobs *batchv1.JobList
+	// jobTemplate is the template to use when rendering the job
+	jobTemplate []byte
 }
 
 // Reconcile is called to handle the reconciliation of the provider resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	configuration := &terraformv1alpha1.Configuration{}
 
-	// @step: retrieve the resource
 	if err := c.cc.Get(ctx, request.NamespacedName, configuration); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -65,6 +66,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 				c.ensureJobsList(configuration, state),
 				c.ensureProviderIsReady(configuration, state),
 				c.ensureAuthenticationSecret(configuration, state),
+				c.ensureJobTemplate(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
 				c.ensureTerraformConfigDeleted(configuration),
 				c.ensureTerraformStateDeleted(configuration),
@@ -89,7 +91,8 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensurePoliciesList(configuration, state),
 			c.ensureJobsList(configuration, state),
 			c.ensureNoPreviousGeneration(configuration, state),
-			c.ensureCostAnalyticsSecret(configuration),
+			c.ensureInfracostsSecret(configuration),
+			c.ensureJobTemplate(configuration, state),
 			c.ensureAuthenticationSecret(configuration, state),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),

@@ -15,27 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package apiserver
+package kubernetes
 
 import (
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestServerHTTP(t *testing.T) {
-	s := &Server{}
-	assert.NotNil(t, s.Serve())
-}
-
-func TestHealthHandler(t *testing.T) {
-	svc := &Server{}
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
-
-	svc.handleHealth(w, req)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+func TestDelete(t *testing.T) {
+	cases := []struct {
+		Expected error
+		Object   client.Object
+		Existing []client.Object
+	}{
+		{
+			Expected: nil,
+			Object:   &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}},
+		},
+	}
+	for _, c := range cases {
+		cc := fake.NewClientBuilder().WithObjects(c.Existing...).Build()
+		err := DeleteIfExists(context.Background(), cc, c.Object)
+		assert.Equal(t, c.Expected, err)
+	}
 }

@@ -22,6 +22,17 @@ import (
 	"path/filepath"
 )
 
+// TouchFile is used to create a file
+func TouchFile(path string) error {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC, os.FileMode(0660))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return nil
+}
+
 // DirExists checks if the directory exists
 func DirExists(path string) (bool, error) {
 	stat, err := os.Stat(path)

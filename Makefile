@@ -37,6 +37,7 @@ golang:
 	@echo "--> Go Version"
 	@go version
 	@echo "GOFLAGS: $$GOFLAGS"
+	@mkdir -p bin
 
 ### GENERATE ###
 
@@ -93,13 +94,20 @@ schema-gen:
 
 ### BUILD ###
 
-build: golang
+build: controller source step
 	@echo "--> Compiling the project ($(VERSION))"
-	@mkdir -p bin
-	@echo "--> Building controller binary"
+
+controller: golang
+	@echo "--> Compiling the controller ($(VERSION))"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/controller cmd/controller/*.go
-	@echo "--> Building source binary"
+
+source: golang
+	@echo "--> Compiling the source binary ($(VERSION))"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/source cmd/source/*.go
+
+step: golang
+	@echo "--> Compiling the step binary ($(VERSION))"
+	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/step cmd/step/*.go
 
 ### TESTING ###
 
@@ -118,11 +126,15 @@ controller-image:
 	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
 	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
 
-controller-kind: build controller-image executor-image
+controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
+	@kubectl -n terraform-system scale deployment terraform-controller --replicas=0 || true
+	@kubectl -n terraform-system delete job --all || true
+	@$(MAKE) controller-image
+	@$(MAKE) executor-image
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
-	@kubectl -n terraform-system delete po -l app.kubernetes.io/name=terraform-controller --wait=false
+	@kubectl -n terraform-system scale deployment terraform-controller --replicas=1 || true
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
@@ -132,6 +144,10 @@ controller-image-verify: install-trivy
 executor-image:
 	@echo "--> Compiling the terraform-executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
 	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} -f images/Dockerfile.executor .
+
+executor-image-kind: executor-image
+	@echo "--> Building and loading executor image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
+	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
 
 executor-image-verify: install-trivy
 	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"

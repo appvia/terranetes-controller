@@ -73,8 +73,14 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
-			ExecutorImage: c.ExecutorImage,
-			Namespace:     c.JobNamespace,
+			EnableInfraCosts: c.EnableInfracosts,
+			ExecutorImage:    c.ExecutorImage,
+			InfracostsImage:  c.InfracostsImage,
+			InfracostsSecret: c.InfracostsSecretName,
+			Namespace:        c.JobNamespace,
+			ServiceAccount:   "terraform-controller",
+			Template:         state.jobTemplate,
+			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")
@@ -84,16 +90,18 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 		// @step: we can requeue or move on depending on the status
 		if !found {
-			if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformDestroy); err != nil {
-				cond.Failed(err, "Failed to create the terraform destroy watcher")
+			if c.EnableWatchers {
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformDestroy); err != nil {
+					cond.Failed(err, "Failed to create the terraform destroy watcher")
 
-				return reconcile.Result{}, err
-			}
+					return reconcile.Result{}, err
+				}
 
-			if err := c.cc.Create(ctx, runner); err != nil {
-				cond.Failed(err, "Failed to create the terraform destroy job")
+				if err := c.cc.Create(ctx, runner); err != nil {
+					cond.Failed(err, "Failed to create the terraform destroy job")
 
-				return reconcile.Result{}, err
+					return reconcile.Result{}, err
+				}
 			}
 
 			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
