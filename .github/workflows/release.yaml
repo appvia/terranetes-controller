@@ -27,6 +27,12 @@ jobs:
       run: |
         sudo apt update -y
         sudo apt install bats jq
+    - name: Install Kind
+      run: |
+        curl -sL -O https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64
+        mv kind-linux-amd64 kind
+        chmod +x kind
+        kind create cluster
     - name: E2E
       run: |
         test/e2e/check-suite.sh
