@@ -19,6 +19,7 @@ package policies
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -41,11 +42,23 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return nil
+	return v.ValidateUpdate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	o := newObj.(*terraformv1alphav1.Policy)
+
+	if o.Spec.Constraints != nil {
+		if o.Spec.Constraints.Checkov != nil {
+			if len(o.Spec.Constraints.Checkov.Checks) > 0 && len(o.Spec.Constraints.Checkov.SkipChecks) > 0 {
+				if utils.ContainsList(o.Spec.Constraints.Checkov.Checks, o.Spec.Constraints.Checkov.SkipChecks) {
+					return errors.New("spec.constraints.policy.skipChecks cannot contain checks from spec.constraints.policy.checks")
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
