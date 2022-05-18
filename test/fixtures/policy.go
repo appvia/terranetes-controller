@@ -30,3 +30,12 @@ func NewPolicy(name string) *terraformv1alphav1.Policy {
 		Spec:       terraformv1alphav1.PolicySpec{},
 	}
 }
+
+// NewMatchAllPolicyConstraint returns a policy which matches all configurations
+func NewMatchAllPolicyConstraint(name string) *terraformv1alphav1.Policy {
+	p := NewPolicy(name)
+	p.Spec.Constraints = &terraformv1alphav1.Constraints{}
+	p.Spec.Constraints.Checkov = &terraformv1alphav1.PolicyConstraint{}
+
+	return p
+}
