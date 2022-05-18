@@ -22,3 +22,35 @@ spec:
               operator: Exists
       variables:
         environment: dev
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: checkov
+spec:
+  constraints:
+    checkov:
+      # See: https://www.checkov.io/5.Policy%20Index/terraform.html
+      checks: []
+      # See: https://www.checkov.io/5.Policy%20Index/terraform.html
+      skipChecks: []
+---
+# Create an exception to the above policy and force configurations
+# in the specific namespace to use this instead
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: checkov-override
+spec:
+  constraints:
+    checkov:
+      selector:
+        namespace:
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: In
+              values: [apps2]
+      # See: https://www.checkov.io/5.Policy%20Index/terraform.html
+      skipChecks:
+        - <NAME>
