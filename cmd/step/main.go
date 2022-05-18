@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -38,6 +39,10 @@ import (
 type Step struct {
 	// Commands is the commands and arguments to run
 	Commands []string
+	// Comment adds a banner to the stage
+	Comment string
+	// UploadFile is file to upload on success of the command
+
 	// ErrorFile is the path to a file which is created when the command failed
 	ErrorFile string
 	// FailureFile is the path to a file indicating failure
@@ -71,9 +76,11 @@ func main() {
 			return Run(signals.SetupSignalHandler(), step)
 		},
 	}
+	cmd.SilenceUsage = true
 
 	flags := cmd.Flags()
 	flags.DurationVar(&step.Timeout, "timeout", 30*time.Second, "Timeout for wait-on file to appear")
+	flags.StringVar(&step.Comment, "comment", "", "Adds a banner before executing the step")
 	flags.StringVar(&step.ErrorFile, "on-error", "", "The path to a file to indicate we have failed")
 	flags.StringVar(&step.SuccessFile, "on-success", "", "The path of the file used to indicate the step was successful")
 	flags.StringVarP(&step.Shell, "shell", "s", "/bin/sh", "The shell to execute the command in")
@@ -92,6 +99,14 @@ func main() {
 func Run(ctx context.Context, step Step) error {
 	if len(step.Commands) == 0 {
 		return errors.New("no commands defined")
+	}
+
+	if step.Comment != "" {
+		fmt.Printf(`
+=======================================================
+%s
+=======================================================
+`, strings.ToUpper(step.Comment))
 	}
 
 	if step.WaitFile != "" {
@@ -119,19 +134,21 @@ func Run(ctx context.Context, step Step) error {
 		}
 	}
 
-	for _, command := range step.Commands {
+	for i, command := range step.Commands {
 		cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
 		cmd.Env = os.Environ()
 
+		logger := log.WithField("command", i)
+
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			log.WithError(err).Error("failed to acquire stdout pipe on command")
+			logger.WithError(err).Error("failed to acquire stdout pipe on command")
 
 			return err
 		}
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			log.WithError(err).Error("failed to acquire stderr pipe on command")
+			logger.WithError(err).Error("failed to acquire stderr pipe on command")
 
 			return err
 		}
@@ -142,18 +159,18 @@ func Run(ctx context.Context, step Step) error {
 		go io.Copy(os.Stdout, stderr)
 
 		if err := cmd.Start(); err != nil {
-			log.WithError(err).Error("failed to execute the command")
+			logger.WithError(err).Error("failed to execute the command")
 
 			return err
 		}
 
 		// @step: wait for the command to finish
 		if err := cmd.Wait(); err != nil {
-			log.WithError(err).Error("failed to execute command successfully")
+			logger.WithError(err).Error("failed to execute command successfully")
 
 			if step.ErrorFile != "" {
 				if err := utils.TouchFile(step.ErrorFile); err != nil {
-					log.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
+					logger.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
 
 					return err
 				}
