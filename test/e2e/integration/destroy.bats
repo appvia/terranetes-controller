@@ -59,6 +59,6 @@ teardown() {
 @test "We should have a confirmation the bucket have been deleted" {
   expected="The specified bucket does not exist"
 
-  runit "aws s3 ls s3://terraform-controller-ci-bucket 2>&1" "grep -q '${expected}'"
+  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }

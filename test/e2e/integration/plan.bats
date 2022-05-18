@@ -65,7 +65,7 @@ spec:
     name: test
   variables:
     unused: $(date +"%s")
-    bucket: terraform-controller-ci-bucket
+    bucket: ${BUCKET}
     acl: private
     versioning:
       enabled: true
