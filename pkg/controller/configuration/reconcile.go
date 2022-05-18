@@ -26,7 +26,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/controller"
 )
 
@@ -34,9 +34,11 @@ type state struct {
 	// auth is an optional secret which is used for authentication
 	auth *v1.Secret
 	// policies is a list of policies in the cluster
-	policies *terraformv1alpha1.PolicyList
+	policies *terraformv1alphav1.PolicyList
 	// provider is the credentials provider to use
-	provider *terraformv1alpha1.Provider
+	provider *terraformv1alphav1.Provider
+	// checkovConstraint is the polict constraint for this configuration
+	checkovConstraint *terraformv1alphav1.PolicyConstraint
 	// jobs is list of all jobs for this configuration and generation
 	jobs *batchv1.JobList
 	// jobTemplate is the template to use when rendering the job
@@ -45,7 +47,7 @@ type state struct {
 
 // Reconcile is called to handle the reconciliation of the provider resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	configuration := &terraformv1alpha1.Configuration{}
+	configuration := &terraformv1alphav1.Configuration{}
 
 	if err := c.cc.Get(ctx, request.NamespacedName, configuration); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -65,11 +67,11 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 				c.ensurePoliciesList(configuration, state),
 				c.ensureJobsList(configuration, state),
 				c.ensureProviderIsReady(configuration, state),
-				c.ensureAuthenticationSecret(configuration, state),
+				c.ensureAuthenticationSecret(configuration),
 				c.ensureJobTemplate(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
 				c.ensureTerraformConfigDeleted(configuration),
-				c.ensureTerraformStateDeleted(configuration),
+				c.ensureConfigurationSecrets(configuration),
 				c.ensureConfigurationJobsDeleted(configuration),
 				finalizer.EnsureRemoved(configuration),
 			})
@@ -83,7 +85,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// @step: ensure the conditions are registered
-	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
 
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{
@@ -93,11 +95,12 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureNoPreviousGeneration(configuration, state),
 			c.ensureInfracostsSecret(configuration),
 			c.ensureJobTemplate(configuration, state),
-			c.ensureAuthenticationSecret(configuration, state),
+			c.ensureAuthenticationSecret(configuration),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),
 			c.ensureTerraformPlan(configuration, state),
 			c.ensureCostStatus(configuration),
+			c.ensureCheckovPolicy(configuration, state),
 			c.ensureTerraformApply(configuration, state),
 			c.ensureTerraformStatus(configuration),
 			c.ensureTerraformSecret(configuration),

@@ -17,24 +17,35 @@
 
 package utils
 
-// Contains checks a list has a value in it
-func Contains(v string, l []string) bool {
-	for _, x := range l {
-		if v == x {
-			return true
-		}
-	}
+import (
+	"fmt"
+	"strings"
 
-	return false
+	"github.com/Masterminds/sprig/v3"
+)
+
+// GetTxtFunc returns a defaults list of methods for text templating
+func GetTxtFunc() map[string]any {
+	funcs := sprig.TxtFuncMap()
+	funcs["prefix"] = Prefix
+
+	return funcs
 }
 
-// ContainsList checks a list has a value in it
-func ContainsList(v []string, l []string) bool {
-	for _, x := range v {
-		if Contains(x, l) {
-			return true
+// Prefix is a hack to get prefixes to fix
+func Prefix(prefix string, e interface{}) string {
+	w := &strings.Builder{}
+
+	list, ok := e.([]string)
+	if !ok {
+		return ""
+	}
+
+	for _, line := range list {
+		for _, x := range strings.Split(line, ", ") {
+			w.WriteString(fmt.Sprintf("%s %s ", prefix, x))
 		}
 	}
 
-	return false
+	return w.String()
 }

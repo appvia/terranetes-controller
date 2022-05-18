@@ -36,3 +36,11 @@ func TestContainsBad(t *testing.T) {
 
 	assert.False(t, Contains("d", list))
 }
+
+func TestContainsList(t *testing.T) {
+	a := []string{"b"}
+	b := []string{"a", "b", "c"}
+
+	assert.True(t, ContainsList(a, b))
+	assert.False(t, ContainsList([]string{"x"}, b))
+}
