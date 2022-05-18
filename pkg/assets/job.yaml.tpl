@@ -9,7 +9,7 @@ metadata:
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
-  backoffLimit: 100
+  backoffLimit: 3
   completions: 1
   parallelism: 1
   template:
