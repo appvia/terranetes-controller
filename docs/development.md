@@ -12,6 +12,9 @@ $ cp charts/values.yaml dev/values.yaml
 
 # Use the following values
 $ vim dev/values.yaml
+```
+
+```YAML
 ---
 replicaCount: 1
 controller:
@@ -20,12 +23,13 @@ controller:
     #secret: infracost
   images:
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:ci
+    controller: quay.io/appvia/terraform-controller:latest
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:ci
+    executor: quay.io/appvia/terraform-executor:latest
 ```
 
-# Build the images locally as <IMAGE>:ci and loads them into kind cluster
+```shell
+# Build the images locally as <IMAGE>:latest and loads them into kind cluster
 $ make controller-kind
 
 # Change the values of the images to :latest in values.yaml
@@ -36,7 +40,7 @@ You can easily iterate locally by running `make controller-kind` again to build,
 
 ### Running off the terminal
 
-You can also run the controller locally connecting to a remote Kubernetes cluster. Here were using kind again, but the controller will pick up whatever your current KUBE_CONFIG is defined as. Note, you'll need to apply the CRDs seperately `kubectl apply -f charts/crds`
+You can also run the controller locally connecting to a remote Kubernetes cluster. Here were using kind again, but the controller will pick up whatever your current KUBE_CONFIG is defined as. Note, you'll need to apply the CRDs separately `kubectl apply -f charts/crds`
 
 ```shell
 # Create a new local cluster for testing

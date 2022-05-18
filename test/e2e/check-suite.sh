@@ -18,11 +18,13 @@
 
 UNITS="test/e2e/integration"
 BATS_OPTIONS=${BATS_OPTIONS:-""}
+BUCKET=${BUCKET:-"terraform-controller-ci-bucket"}
 
 run_bats() {
   echo "Running unit: ${@}"
 
   APP_NAMESPACE="apps" \
+  BUCKET=${BUCKET} \
   NAMESPACE="terraform-system" \
   bats ${BATS_OPTIONS} ${@} || exit 1
 }

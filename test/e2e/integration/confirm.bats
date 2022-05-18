@@ -26,6 +26,6 @@ teardown() {
 }
 
 @test "We should be able to confirm the existence of the bucket" {
-  runit "aws s3 ls s3://terraform-controller-ci-bucket"
+  runit "aws s3 ls s3://${BUCKET}"
   [[ "$status" -eq 0 ]]
 }
