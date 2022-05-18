@@ -9,6 +9,8 @@ $ kind create cluster
 # Make a copy of the helm values (note ./dev is intentionally ignored by .gitignore)
 $ mkdir -p dev
 $ cp charts/values.yaml dev/values.yaml
+
+# Use the following values
 $ vim dev/values.yaml
 ---
 replicaCount: 1
@@ -30,7 +32,7 @@ $ make controller-kind
 $ helm install terraform-controller charts --create-namespace --values dev/values.yaml
 ```
 
-You can easily iterate locally and perform `make controller-kind` to push the local images and reload.
+You can easily iterate locally by running `make controller-kind` again to build, load and restart.
 
 ### Running off the terminal
 
@@ -56,7 +58,15 @@ If you need to update the API resources defined in `pkg/apis`, after updating th
 
 ### Running the tests
 
-You can run the entire test suite via `make check`. All the tools "should" be vendored so no need to download anything.
+You can run the entire test suite via `make check`. All the tools "should" be in vendor, so no need to download anything.
+
+### Running the E2E
+
+Located in `test/e2e`, there is a group of bats tests which is used to check the full E2E. You need to have a kind cluster running, the aws cli and either have the `aws` secret configured for a provider in `terraform-system` already created or export AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION into the environment; you can see take look [here](test/e2e/integration/provider.bats).
+
+To run the e2e: `BUCKET=<NAME_OF_S3_BUCKET> test/e2e/check-suite.sh`.
+
+Please remove all the checks [here](e2e/test/integration)
 
 ### Components
 
