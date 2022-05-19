@@ -41,11 +41,11 @@ type ProviderType string
 
 const (
 	// AzureProviderType is the Azure provider type
-	AzureProviderType ProviderType = "azure"
+	AzureProviderType ProviderType = "azurerm"
 	// AWSProviderType is the AWS provider type
 	AWSProviderType ProviderType = "aws"
 	// GCPProviderType is the GCP provider type
-	GCPProviderType ProviderType = "gcp"
+	GCPProviderType ProviderType = "google"
 )
 
 // SourceType is the type of source
