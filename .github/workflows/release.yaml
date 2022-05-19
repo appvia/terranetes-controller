@@ -49,6 +49,11 @@ jobs:
     - name: Get version
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+    - name: Docker Login
+      env:
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD quay.io
     - name: Release Images
       run: make release-images
       env:
