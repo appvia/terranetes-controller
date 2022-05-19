@@ -127,15 +127,15 @@ EOF
 @test "We should have a configuration in pending approval" {
   expected="Waiting for terraform apply annotation to be set to true"
 
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].name' | grep -q 'Terraform Apply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].reason' | grep -q 'ActionRequired'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].reason' | grep -q 'ActionRequired'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].status' | grep -q 'False'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].status' | grep -q 'False'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].type' | grep -q 'TerraformApply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].message' | grep -q '${expected}'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
