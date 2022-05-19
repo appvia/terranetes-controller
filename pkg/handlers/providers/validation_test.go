@@ -62,7 +62,7 @@ var _ = Describe("Provider Validation", func() {
 		It("should throw error", func() {
 			policy := fixtures.NewValidAWSProvider("default", "test")
 			policy.Spec.Provider = "invalid"
-			msg := "spec.provider: invalid is not supported"
+			msg := "spec.provider: invalid is not supported (must be aws,google,azurerm)"
 
 			err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
