@@ -211,6 +211,11 @@ func (c *Configuration) GetTerraformStateSecretName() string {
 	return fmt.Sprintf("tfstate-default-%s", string(c.GetUID()))
 }
 
+// GetTerraformPolicySecretName returns the name of the secret holding the terraform state
+func (c *Configuration) GetTerraformPolicySecretName() string {
+	return fmt.Sprintf("policy-%s", string(c.GetUID()))
+}
+
 // GetTerraformCostSecretName returns the name which should be used for the costs report
 func (c *Configuration) GetTerraformCostSecretName() string {
 	return fmt.Sprintf("costs-%s", string(c.GetUID()))

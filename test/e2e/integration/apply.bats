@@ -49,13 +49,13 @@ teardown() {
 }
 
 @test "We should have a configuration sucessfully applied" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].name' | grep -q 'Terraform Apply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].reason' | grep -q 'Ready'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].status' | grep -q 'True'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[2].type' | grep -q 'TerraformApply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
 }
 

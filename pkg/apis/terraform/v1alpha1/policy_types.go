@@ -46,55 +46,6 @@ const (
 	SkipDefaultsValidationCheck = "terraform.appvia.io/skip-defaults-check"
 )
 
-// NamespaceConstraint provides a ability to filter out which configurations we handle
-// based on namespace labels
-type NamespaceConstraint struct {
-	// Allowed is a filter on the namespaces we handle
-	// +kubebuilder:validation:Optional
-	Allowed *metav1.LabelSelector `json:"allowed,omitempty"`
-}
-
-// ModuleConstraint provides a collection of constraints on modules
-type ModuleConstraint struct {
-	// Allowed is a list of regexes which are permitted as module sources
-	// +kubebuilder:validation:Optional
-	Allowed []string `json:"allowed,omitempty"`
-}
-
-// Matches returns true if the module matches the regex
-func (m *ModuleConstraint) Matches(module string) (bool, error) {
-	for _, m := range m.Allowed {
-		re, err := regexp.Compile(m)
-		if err != nil {
-			return false, err
-		}
-
-		if re.MatchString(module) {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// Constraints defined a collection of constraints which can be applied against
-// the terraform configurations
-type Constraints struct {
-	// Modules is a list of regexes which are permitted as module sources
-	// +kubebuilder:validation:Optional
-	Modules *ModuleConstraint `json:"modules,omitempty"`
-	// Namespace is a filter on the namespaces we handle
-	// +kubebuilder:validation:Optional
-	Namespace *NamespaceConstraint `json:"namespace,omitempty"`
-}
-
-// VerifyConstraints verifies the constraints
-type VerifyConstraints struct {
-	// URL is the repository url to checkout for checks
-	// +kubebuilder:validation:Required
-	URL string `json:"url"`
-}
-
 // DefaultVariablesSelector is used to determine which configurations the variables
 // should be injected into - this can take into account the namespace labels and the
 // modules themselvesA

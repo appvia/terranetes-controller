@@ -25,7 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/tidwall/gjson"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,7 +145,7 @@ func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Config
 
 // ensureAuthenticationSecret is responsible for verifying that any secret which is referenced by the
 // configuration does exist
-func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -167,18 +168,6 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
-
-		// @step: ensure the format of the secret
-		switch {
-		case secret.Data["SSH_AUTH_KEY"] != nil:
-		case secret.Data["GIT_USERNAME"] != nil && secret.Data["GIT_PASSWORD"] != nil:
-		default:
-			cond.ActionRequired("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY")
-
-			return reconcile.Result{}, controller.ErrIgnore
-		}
-
-		state.auth = secret
 
 		return reconcile.Result{}, nil
 	}
@@ -223,7 +212,7 @@ func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav
 
 			if !jobs.IsComplete(&x) && !jobs.IsFailed(&x) {
 				if x.GetGeneration() != configuration.GetGeneration() {
-					logrus.WithFields(logrus.Fields{
+					log.WithFields(log.Fields{
 						"generation": x.GetGeneration(),
 						"name":       x.GetName(),
 						"namespace":  x.GetNamespace(),
@@ -350,25 +339,38 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+		// @step: we need to find any matching policy which should be attached to this configuration.
+		policy, err := c.findMatchingPolicy(ctx, configuration, state.policies)
+		if err != nil {
+			cond.Failed(err, "Failed to find matching policy constraints")
+
+			return reconcile.Result{}, err
+		}
+		state.checkovConstraint = policy
+
 		switch {
-		// @note: this is effectively checking the status of plan condition - if the condition is True for the given generation
-		// we can say the plan has already been run and move on
+		// @note: this is effectively checking the status of plan condition - if the condition is True
+		// for the given generation we can say the plan has already been run and move on
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{}, nil
 		}
 
-		// @step: generate the job
-		batch := jobs.New(configuration, state.provider)
-		runner, err := batch.NewTerraformPlan(jobs.Options{
+		// @step: lets build the options to render the job
+		options := jobs.Options{
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.JobNamespace,
+			PolicyImage:      c.PolicyImage,
+			PolicyConstraint: policy,
 			ServiceAccount:   "terraform-controller",
 			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
-		})
+		}
+
+		// @step: use the options to generate the job
+		runner, err := jobs.New(configuration, state.provider).NewTerraformPlan(options)
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform plan job")
 
@@ -489,6 +491,60 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 				Monthly: fmt.Sprintf("$%v", report["totalMonthlyCost"]),
 			}
 		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
+// ensureCheckovPolicy is responsible for checking the checkov results and refusing to continue if failed
+func (c *Controller) ensureCheckovPolicy(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if state.checkovConstraint == nil {
+			cond.Success("Security policy is not configured")
+
+			return reconcile.Result{}, nil
+		}
+
+		// @step: retrieve the uploaded scan
+		secret := &v1.Secret{}
+		secret.Namespace = c.JobNamespace
+		secret.Name = configuration.GetTerraformPolicySecretName()
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the secret containing the checkov scan")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.Warning("Failed to find the secret: (%s/%s) containing checkov scan", c.JobNamespace, configuration.GetTerraformPolicySecretName())
+
+			return reconcile.Result{RequeueAfter: 10 * time.Minute}, nil
+		}
+
+		// @step: retrieve summary from the report
+		checksFailed := gjson.GetBytes(secret.Data["results_json.json"], "summary.failed")
+		if !checksFailed.Exists() {
+			cond.Warning("Security report does not contain a summary of finding, please contact platform administrator")
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		if checksFailed.Type != gjson.Number {
+			cond.Warning("Security report failed summary is not numerical as expected, please contact platform administrator")
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		if checksFailed.Int() > 0 {
+			cond.Warning("Configuration has failed security policy, refusing to continue")
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		cond.Success("Passed security checks")
 
 		return reconcile.Result{}, nil
 	}

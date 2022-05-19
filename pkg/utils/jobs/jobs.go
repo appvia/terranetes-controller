@@ -31,14 +31,13 @@ import (
 	"sigs.k8s.io/yaml"
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
 // Options is the configuration for the render
 type Options struct {
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
-	// EnablePolicy is the flag to enable verification
-	EnablePolicy bool
 	// ExecutorImage is the image to use for the terraform jobs
 	ExecutorImage string
 	// InfracostsImage is the image to use for infracosts
@@ -47,6 +46,10 @@ type Options struct {
 	InfracostsSecret string
 	// Namespace is the location of the jobs
 	Namespace string
+	// PolicyConstraint is a matching constraint for this policy
+	PolicyConstraint *terraformv1alphav1.PolicyConstraint
+	// PolicyImage is image to use for checkov
+	PolicyImage string
 	// ServiceAccount is the name of the service account to run the jobs under
 	ServiceAccount string
 	// Template is the source for the job template if overridden by the controller
@@ -175,9 +178,9 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Source":         string(r.provider.Spec.Source),
 		},
 		"EnableInfraCosts":   options.EnableInfraCosts,
-		"EnablePolicy":       options.EnablePolicy,
 		"EnableVariables":    r.configuration.HasVariables(),
 		"ImagePullPolicy":    "IfNotPresent",
+		"Policy":             options.PolicyConstraint,
 		"ServiceAccount":     options.ServiceAccount,
 		"Stage":              stage,
 		"TerraformArguments": arguments,
@@ -193,17 +196,19 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Executor":   options.ExecutorImage,
 			"Infracosts": options.InfracostsImage,
 			"Terraform":  options.TerraformImage,
+			"Policy":     options.PolicyImage,
 		},
 		"Secrets": map[string]interface{}{
 			"Config":           r.configuration.GetTerraformConfigSecretName(),
 			"Infracosts":       options.InfracostsSecret,
 			"InfracostsReport": r.configuration.GetTerraformCostSecretName(),
+			"PolicyReport":     r.configuration.GetTerraformPolicySecretName(),
 		},
 	}
 
 	// @step: create the template and render
 	render := &bytes.Buffer{}
-	tmpl, err := template.New("main").Parse(string(options.Template))
+	tmpl, err := template.New("main").Funcs(utils.GetTxtFunc()).Parse(string(options.Template))
 	if err != nil {
 		return nil, err
 	}

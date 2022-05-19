@@ -64,6 +64,16 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	if err := m.mutateOnDefaults(ctx, list, o); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// mutateOnDefaults is called to validate the module policy enforced
+func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alphav1.PolicyList, o *terraformv1alphav1.Configuration) error {
+
 	namespace := &v1.Namespace{}
 	namespace.Name = o.Namespace
 	found, err := kubernetes.GetIfExists(ctx, m.cc, namespace)
@@ -83,7 +93,7 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 		}
 
 		for _, x := range policy.Spec.Defaults {
-			match, err := IsMatch(ctx, x.Selector, o, namespace)
+			match, err := isMatch(x.Selector, o, namespace)
 			if err != nil {
 				return fmt.Errorf("failed to match selector: %w", err)
 			}
@@ -119,9 +129,8 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// IsMatch returns if the selector matches the policy
-func IsMatch(
-	ctx context.Context,
+// isMatch returns if the selector matches the policy
+func isMatch(
 	selector terraformv1alphav1.DefaultVariablesSelector,
 	configuration *terraformv1alphav1.Configuration,
 	namespace client.Object,

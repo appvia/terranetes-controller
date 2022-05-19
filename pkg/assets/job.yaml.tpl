@@ -49,6 +49,7 @@ spec:
           command:
             - /bin/step
           args:
+            - --comment='Setting up the environment'
             - --command=/bin/mkdir -p /run/bin
             - --command=/bin/mkdir -p /run/steps
             - --command=/bin/cp /run/config/* /data
@@ -92,6 +93,7 @@ spec:
         command:
           - /run/bin/step
         args:
+          - --comment=Executing Terraform
           {{- if eq .Stage "plan" }}
           - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=true
           - --command=/bin/terraform show -json /run/plan.out > /run/plan.json
@@ -143,10 +145,11 @@ spec:
         command:
           - /run/bin/step
         args:
+          - --comment=Evaluating the costs
           - --command=/usr/bin/infracost breakdown --path /run/plan.json
           - --command=/usr/bin/infracost breakdown --path /run/plan.json --format json > /run/costs.json
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(COST_REPORT_NAME) --ignore-not-found
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(COST_REPORT_NAME) --from-file=/run/costs.json
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(COST_REPORT_NAME) --ignore-not-found >/dev/null
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(COST_REPORT_NAME) --from-file=/run/costs.json >/dev/null
           - --is-failure=/run/steps/terraform.failed
           - --timeout=5m
           - --wait-on=/run/steps/terraform.complete
@@ -172,7 +175,7 @@ spec:
             mountPath: /data
       {{- end }}
 
-      {{- if and (.EnablePolicy) (eq .Stage "plan") }}
+      {{- if and (.Policy) (eq .Stage "plan") }}
       - name: verify-policy
         image: {{ .Images.Policy }}
         imagePullPolicy: {{ .ImagePullPolicy }}
@@ -180,9 +183,21 @@ spec:
         command:
           - /run/bin/step
         args:
-          - --command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json
+          - --comment=Evaluating Against Security Policy
+          {{ $checks := prefix "--check" .Policy.Checks }}
+          {{ $skips := prefix "--skip-check" .Policy.SkipChecks }}
+          - --command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli {{ $checks }}{{ $skips }} --soft-fail --output-file-path /run >/dev/null
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null
           - --is-failure=/run/steps/terraform.failed
           - --wait-on=/run/steps/terraform.complete
+        env:
+          - name: KUBE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POLICY_REPORT_NAME
+            value: {{ .Secrets.PolicyReport }}
         {{- if .Secrets.Policy }}
         envFrom
           - secretRef:

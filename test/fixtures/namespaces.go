@@ -26,7 +26,8 @@ import (
 func NewNamespace(name string) *v1.Namespace {
 	return &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: map[string]string{"name": name},
 		},
 	}
 }

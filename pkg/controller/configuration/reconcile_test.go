@@ -25,6 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -58,6 +59,7 @@ var _ = Describe("Configuration Controller", func() {
 	var configuration *terraformv1alphav1.Configuration
 
 	cfgNamespace := "apps"
+	defaultConditions := 5
 
 	Setup := func(objects ...runtime.Object) {
 		cc = fake.NewFakeClientWithScheme(schema.GetScheme(), append([]runtime.Object{
@@ -67,6 +69,7 @@ var _ = Describe("Configuration Controller", func() {
 		}, objects...)...)
 		ctrl = &Controller{
 			cc:               cc,
+			cache:            cache.New(5*time.Minute, 10*time.Minute),
 			EnableInfracosts: false,
 			EnableWatchers:   true,
 			ExecutorImage:    "quay.io/appvia/terraform-executor",
@@ -75,6 +78,7 @@ var _ = Describe("Configuration Controller", func() {
 			PolicyImage:      "bridgecrew/checkov:2.0.1140",
 			TerraformImage:   "hashicorp/terraform:1.1.9",
 		}
+		ctrl.cache.SetDefault(cfgNamespace, fixtures.NewNamespace(cfgNamespace))
 	}
 
 	When("provider does not exist", func() {
@@ -87,7 +91,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the provider is missing", func() {
@@ -103,6 +107,13 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Minute}))
 			Expect(rerr).To(BeNil())
 		})
+
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
+		})
 	})
 
 	When("provider is not ready", func() {
@@ -115,7 +126,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the provider is not ready", func() {
@@ -131,6 +142,13 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 30 * time.Second}))
 			Expect(rerr).To(BeNil())
 		})
+
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
+		})
 	})
 
 	When("the costs analytics token is missing", func() {
@@ -145,7 +163,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the costs analytics token is invalid", func() {
@@ -155,6 +173,13 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(cond.Message).To(Equal("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
+		})
+
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
 
@@ -171,7 +196,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the credentials are missing", func() {
@@ -182,122 +207,12 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(cond.Message).To(Equal("Authentication secret (spec.scmAuth) does not exist"))
 		})
-	})
 
-	When("the authentication secret is invalid", func() {
-		var secret *v1.Secret
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
 
-		BeforeEach(func() {
-			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-			configuration.Spec.Auth = &v1.SecretReference{
-				Namespace: cfgNamespace,
-				Name:      "auth",
-			}
-			secret = &v1.Secret{}
-			secret.Namespace = cfgNamespace
-			secret.Data = make(map[string][]byte)
-			secret.Name = "auth"
-		})
-
-		When("is has not valid key", func() {
-			BeforeEach(func() {
-				Setup(configuration, secret)
-				//lint:ignore
-				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
-			})
-
-			It("should indicate on the conditions", func() {
-				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
-			})
-		})
-
-		When("is has ssh key", func() {
-			BeforeEach(func() {
-				secret.Data["SSH_AUTH_KEY"] = []byte("test")
-
-				Setup(configuration, secret)
-				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
-			})
-
-			It("should be ok", func() {
-				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
-				Expect(cond.Message).To(Equal("Terraform plan in progress"))
-			})
-		})
-
-		When("is has a git username but no password", func() {
-			BeforeEach(func() {
-				secret.Data["GIT_USERNAME"] = []byte("test")
-
-				Setup(configuration, secret)
-				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
-			})
-
-			It("should indicate the GIT_PASSWORD is missing", func() {
-				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
-			})
-		})
-
-		When("is has a git username but not password", func() {
-			BeforeEach(func() {
-				secret.Data["GIT_PASSWORD"] = []byte("test")
-
-				Setup(configuration, secret)
-				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
-			})
-
-			It("should indicate the GIT_USERNAME is missing", func() {
-				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-				Expect(cond.Message).To(Equal("Authentication secret needs either GIT_USERNAME & GIT_PASSWORD or SSH_AUTH_KEY"))
-			})
-		})
-
-		When("both GIT_USERNAME and GIT_PASSWORD are given", func() {
-			BeforeEach(func() {
-				secret.Data["GIT_USERNAME"] = []byte("test")
-				secret.Data["GIT_PASSWORD"] = []byte("test")
-
-				Setup(configuration, secret)
-				controllertests.Roll(context.TODO(), ctrl, configuration, 3)
-			})
-
-			It("should be ok", func() {
-				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
-				Expect(cond.Message).To(Equal("Terraform plan in progress"))
-			})
-		})
-	})
-
-	When("using authentication on the configuration", func() {
-
-		It("should have a secret mapped onto the plan", func() {
-
-		})
-
-		It("should have copied the secret into the job namespace", func() {
-
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
 
@@ -317,7 +232,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the costs analytics token is invalid", func() {
@@ -327,6 +242,47 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(cond.Message).To(Equal("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
+		})
+
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
+		})
+	})
+
+	When("we have multiple matching policy constraints", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			Expect(ctrl.cc.Create(context.TODO(), fixtures.NewMatchAllPolicyConstraint("all0"))).ToNot(HaveOccurred())
+			Expect(ctrl.cc.Create(context.TODO(), fixtures.NewMatchAllPolicyConstraint("all1"))).ToNot(HaveOccurred())
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should indicate the failure on the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+			Expect(cond.Message).To(Equal("Failed to find matching policy constraints"))
+			Expect(cond.Detail).To(Equal("multiple policies match configuration: all0, all1"))
+		})
+
+		It("should not create any jobs", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
 
@@ -339,7 +295,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the provider is ready", func() {
@@ -473,6 +429,208 @@ provider "aws" {}
 		})
 	})
 
+	When("we have a matching policy constraint", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+			constraint := fixtures.NewMatchAllPolicyConstraint("all")
+			constraint.Spec.Constraints.Checkov.Checks = []string{"check0, check1"}
+			constraint.Spec.Constraints.Checkov.SkipChecks = nil
+
+			Expect(ctrl.cc.Create(context.TODO(), constraint)).ToNot(HaveOccurred())
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should create a terraform plan job", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should add a verify-policy container to the job", func() {
+			list := &batchv1.JobList{}
+			expected := `--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --check check1  --soft-fail --output-file-path /run >/dev/null`
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			job := list.Items[0]
+
+			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
+			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
+			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
+			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
+			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+		})
+	})
+
+	When("we have multiple policies but with a heavy priority on one", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			// @notes: we add two policies here, the later one with the namespace should take priority
+			// given the namespace selector.
+
+			all := fixtures.NewMatchAllPolicyConstraint("all")
+			all.Spec.Constraints.Checkov.Checks = []string{"check0"}
+
+			priority := fixtures.NewMatchAllPolicyConstraint("priority")
+			priority.Spec.Constraints.Checkov.Checks = []string{"priority"}
+			priority.Spec.Constraints.Checkov.Selector = &terraformv1alphav1.Selector{}
+			priority.Spec.Constraints.Checkov.Selector.Namespace = &metav1.LabelSelector{
+				MatchLabels: map[string]string{"name": cfgNamespace},
+			}
+
+			Expect(ctrl.cc.Create(context.TODO(), all)).ToNot(HaveOccurred())
+			Expect(ctrl.cc.Create(context.TODO(), priority)).ToNot(HaveOccurred())
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should create a terraform plan job", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should have selected priority policy", func() {
+			list := &batchv1.JobList{}
+			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check priority  --soft-fail --output-file-path /run >/dev/null"
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			job := list.Items[0]
+
+			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
+			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
+			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
+			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
+			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+		})
+	})
+
+	When("we have failed a security policy", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+
+			// @note: we create a policy, we set the terraform plan job to complete and we create
+			// a fake security report
+			policy := fixtures.NewMatchAllPolicyConstraint("all")
+			policy.Spec.Constraints.Checkov.Checks = []string{"check0"}
+			plan := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+
+			report := &v1.Secret{}
+			report.Namespace = ctrl.JobNamespace
+			report.Name = configuration.GetTerraformPolicySecretName()
+			report.Data = map[string][]byte{"results_json.json": []byte(`{"summary":{"failed": 1}}`)}
+
+			Setup(configuration, policy, plan, report)
+		})
+
+		When("the policy secret is missing", func() {
+			BeforeEach(func() {
+				report := &v1.Secret{}
+				report.Namespace = ctrl.JobNamespace
+				report.Name = configuration.GetTerraformPolicySecretName()
+				ctrl.cc.Delete(context.TODO(), report)
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the we failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonWarning))
+				Expect(cond.Message).To(Equal("Failed to find the secret: (default/policy-1234-122-1234-1234) containing checkov scan"))
+			})
+		})
+
+		When("the policy secret contains failed checks", func() {
+			BeforeEach(func() {
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the we failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonWarning))
+				Expect(cond.Message).To(Equal("Configuration has failed security policy, refusing to continue"))
+			})
+
+			It("should have not create an apply job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+		})
+
+		When("the policy contains no fails", func() {
+			BeforeEach(func() {
+				report := &v1.Secret{}
+				report.Namespace = ctrl.JobNamespace
+				report.Name = configuration.GetTerraformPolicySecretName()
+
+				// @note: delete the old secret adding a passed one
+				Expect(ctrl.cc.Delete(context.TODO(), report)).ToNot(HaveOccurred())
+				report.Data = map[string][]byte{"results_json.json": []byte(`{"summary":{"failed": 0}}`)}
+				Expect(ctrl.cc.Create(context.TODO(), report)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the we failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Message).To(Equal("Passed security checks"))
+			})
+
+			It("should have not create an apply job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(2))
+			})
+		})
+	})
+
 	When("the terraform version should be dictated by the controller", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
@@ -482,7 +640,7 @@ provider "aws" {}
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should have created job for the terraform plan", func() {
@@ -504,7 +662,7 @@ provider "aws" {}
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should have created job for the terraform plan", func() {
@@ -537,7 +695,7 @@ provider "aws" {}
 
 			It("should have conditions", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-				Expect(configuration.Status.Conditions).To(HaveLen(4))
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 			})
 
 			It("should indicate action is required in the conditions", func() {
@@ -572,7 +730,7 @@ provider "aws" {}
 
 			It("should have conditions", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-				Expect(configuration.Status.Conditions).To(HaveLen(4))
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 			})
 
 			It("should indicate action is required due to missing keys", func() {
@@ -592,7 +750,7 @@ provider "aws" {}
 
 			It("should have conditions", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-				Expect(configuration.Status.Conditions).To(HaveLen(4))
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 			})
 
 			It("should indicate the terraform plan is running", func() {
@@ -624,7 +782,7 @@ provider "aws" {}
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Conditions).To(HaveLen(4))
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
 		})
 
 		It("should indicate the terraform apply is running", func() {

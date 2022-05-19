@@ -27,3 +27,14 @@ func Contains(v string, l []string) bool {
 
 	return false
 }
+
+// ContainsList checks a list has a value in it
+func ContainsList(v []string, l []string) bool {
+	for _, x := range v {
+		if Contains(x, l) {
+			return true
+		}
+	}
+
+	return false
+}

@@ -18,6 +18,7 @@
 package configuration
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -41,6 +42,7 @@ import (
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/handlers/configurations"
+	"github.com/appvia/terraform-controller/pkg/utils/policies"
 )
 
 const controllerName = "configuration.terraform.appvia.io"
@@ -146,4 +148,25 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			}),
 			builder.WithPredicates(&predicate.ResourceVersionChangedPredicate{})).
 		Complete(c)
+}
+
+// findMatchingPolicies is used to find a matching policy for the configuration. Note, ONLY one policy
+// can be returned - we weight multiple policy least to most specific - i.e. no selector (i.e match all, weight=1),
+// namespace labels=10, resource labels=20 per label. If multiple policies equal the same weight we throw
+// an error.
+func (c *Controller) findMatchingPolicy(
+	ctx context.Context,
+	configuration *terraformv1alphav1.Configuration,
+	list *terraformv1alphav1.PolicyList) (*terraformv1alphav1.PolicyConstraint, error) {
+
+	if len(list.Items) == 0 {
+		return nil, nil
+	}
+
+	namespace, found := c.cache.Get(configuration.Namespace)
+	if !found {
+		return nil, fmt.Errorf("namespace: %q was not found in the cache", configuration.Namespace)
+	}
+
+	return policies.FindMatchingPolicy(ctx, configuration, namespace.(client.Object), list)
 }
