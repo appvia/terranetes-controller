@@ -107,46 +107,46 @@ spec:
               description: ConfigurationSpec defines the desired state of a terraform
               properties:
                 auth:
-                  description: SCMAuth provides the ability to add authentication for private repositories
+                  description: SCMAuth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 enableAutoApproval:
-                  description: EnableAutoApproval indicates the apply it automatically approved
+                  description: EnableAutoApproval when enabled indicates the configuration does not need to be manually approved. On a change to the configuration, the controller will automatically approve the configuration. Note it still needs to adhere to any checks or policies.
                   type: boolean
                 module:
-                  description: Module is the location of the module to use for the configuration
+                  description: Module is the URL to the source of the terraform module. The format of the URL is a direct implementation of terraform's module reference. Please see the following repository for more details https://github.com/hashicorp/go-getter
                   type: string
                 providerRef:
-                  description: ProviderRef is the reference to the provider
+                  description: ProviderRef is the reference to the provider which should be used to execute this configuration.
                   properties:
                     name:
-                      description: Name is the name of the provider
+                      description: Name is the name of the provider which contains the credentials to use for this configuration.
                       type: string
                     namespace:
-                      description: Namespace is the namespace of the provider
+                      description: Namespace is the namespace of the provider itself.
                       type: string
                   required:
                     - name
                     - namespace
                   type: object
                 terraformVersion:
-                  description: TerraformVersion provides the ability to override the default terraform version
+                  description: TerraformVersion provides the ability to override the default terraform version. Before changing this field its best to consult with platform administrator. As the value of this field is used to change the tag of the terraform container image.
                   type: string
                 variables:
-                  description: Variables are the variables that are used to configure the terraform
+                  description: Variables provides the inputs for the terraform module itself. These are passed to the terraform executor and used to execute the plan, apply and destroy phases.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 writeConnectionSecretToRef:
-                  description: WriteConnectionSecretToRef is the name of the secret where the terraform configuration is stored
+                  description: WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module any module outputs are written to this secret. The outputs are automatically uppercased and ready to be consumed as environment variables.
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
@@ -213,10 +213,10 @@ spec:
                     - type
                   x-kubernetes-list-type: map
                 costs:
-                  description: Costs is the cost status of the configuration is enabled via the controller
+                  description: Costs is the predicted costs of this configuration. Note this field is only populated when the integration has been configured by the administrator.
                   properties:
                     enabled:
-                      description: Enabled indicates if the cost is enabled
+                      description: Enabled indicates if the cost integration was enabled when this configuration was last executed.
                       type: boolean
                     hourly:
                       description: Hourly is the hourly estimated cost of the configuration
@@ -250,7 +250,7 @@ spec:
                       type: string
                   type: object
                 resources:
-                  description: Resources is the number of managed resources created by this configuration
+                  description: Resources is the number of managed cloud resources which are currently under management. This field is taken from the terraform state itself.
                   type: integer
               type: object
           type: object
@@ -321,21 +321,21 @@ spec:
               description: PolicySpec defines the desired state of a provider
               properties:
                 constraints:
-                  description: Constraints defines the constraints which can be applied to the terraform configurations
+                  description: Constraints provides a series or constraints that must be enforced on the selectored terraform configurations.
                   properties:
                     checkov:
-                      description: Checkov provides a definition to enforce checkov policies on the terraform configurations
+                      description: Checkov provides the ability to enforce a set of security standards on all configurations. These can be configured to target specific resources based on namespace and resource labels
                       properties:
                         checks:
-                          description: Checks is a list of checks which should be applied against the configuration Please see https://www.checkov.io/5.Policy%20Index/terraform.html
+                          description: Checks is a list of checks which should be applied against the configuration. Note, an empty list here implies checkov should run ALL checks. Please see https://www.checkov.io/5.Policy%20Index/terraform.html
                           items:
                             type: string
                           type: array
                         selector:
-                          description: Selector is the selector on the namespace or labels on the configuration. Note, defining no selector dictates the policy should apply to all
+                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitedly selecting all configurations.
                           properties:
                             namespace:
-                              description: Namespace provides the ability to filter on the namespace
+                              description: Namespace is used to filter a configuration based on the namespace labels of where it exists
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -365,7 +365,7 @@ spec:
                                   type: object
                               type: object
                             resource:
-                              description: Resource provides the ability to filter on the resource labels
+                              description: Resource provides the ability to filter a configuration based on it's labels
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -396,23 +396,23 @@ spec:
                               type: object
                           type: object
                         skipChecks:
-                          description: SkipChecks is a collection of checks which need to be skipped
+                          description: SkipChecks is a collection of checkov checks which you can defined as skipped. The security scan will ignore any failures on these checks.
                           items:
                             type: string
                           type: array
                       type: object
                     modules:
-                      description: Modules is a list of regexes which are permitted as module sources
+                      description: Modules provides the ability to control the source for all terraform modules. Allowing platform teams to control where the modules can be downloaded from.
                       properties:
                         allowed:
-                          description: Allowed is a list of regexes which are permitted as module sources
+                          description: Allowed is a collection of regexes which are applied to the source of the terraform configuration. The configuration MUST match one or more of the regexes in order to be allowed to run.
                           items:
                             type: string
                           type: array
                       type: object
                   type: object
                 defaults:
-                  description: Defaults provides the default variables to inject into the configurations
+                  description: Defaults provides the ability to target specific terraform module based on namespace or resource labels and automatically inject variables into the configurations.
                   items:
                     description: DefaultVariables provides platform administrators the ability to inject default variables into a configuration
                     properties:
@@ -465,7 +465,7 @@ spec:
                     type: object
                   type: array
                 summary:
-                  description: Summary provides a short description of the policy
+                  description: Summary is an optional field which can be used to define a summary of what the policy is configured to enforce.
                   type: string
               type: object
             status:
@@ -623,27 +623,27 @@ spec:
               description: ProviderSpec defines the desired state of a provider
               properties:
                 provider:
-                  description: ProviderType is the type of provider
+                  description: ProviderType defines the cloud provider which is being used, currently supported providers are aws, google or azurerm.
                   enum:
                     - aws
                     - gcp
                     - azure
                   type: string
                 secretRef:
-                  description: SecretRef is the reference to the secret containing the credentials
+                  description: 'SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret. The secret should include the environment variables required to by the terraform provider.'
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 serviceAccount:
-                  description: ServiceAccount is the service account to use when using pod identity
+                  description: ServiceAccount is the name of a service account to use when the provider source is 'injected'. The service account should exist in the terraform controller namespace and be configure per cloud vendor requirements for pod identity.
                   type: string
                 source:
-                  description: Source is the source of the credentials
+                  description: Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret or using a managed identity. The currently supported values are secret and injected.
                   type: string
               required:
                 - provider
