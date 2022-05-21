@@ -647,7 +647,7 @@ spec:
                   description: Selector provider the ability to filter who can use this provider. If empty, all users in the cluster is permitted to use the provider. Otherrise you can specify a selector which can use namespace and resource labels
                   properties:
                     namespace:
-                      description: Namespace provides the ability to filter on the namespace
+                      description: Namespace is used to filter a configuration based on the namespace labels of where it exists
                       properties:
                         matchExpressions:
                           description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -677,7 +677,7 @@ spec:
                           type: object
                       type: object
                     resource:
-                      description: Resource provides the ability to filter on the resource labels
+                      description: Resource provides the ability to filter a configuration based on it's labels
                       properties:
                         matchExpressions:
                           description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
