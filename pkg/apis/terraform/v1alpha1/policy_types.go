@@ -105,13 +105,16 @@ type DefaultVariables struct {
 // PolicySpec defines the desired state of a provider
 // +k8s:openapi-gen=true
 type PolicySpec struct {
-	// Summary provides a short description of the policy
+	// Summary is an optional field which can be used to define a summary of what the policy is
+	// configured to enforce.
 	// +kubebuilder:validation:Optional
 	Summary string `json:"summary,omitempty"`
-	// Constraints defines the constraints which can be applied to the terraform configurations
+	// Constraints provides a series or constraints that must be enforced on the selectored
+	// terraform configurations.
 	// +kubebuilder:validation:Optional
 	Constraints *Constraints `json:"constraints,omitempty"`
-	// Defaults provides the default variables to inject into the configurations
+	// Defaults provides the ability to target specific terraform module based on namespace or
+	// resource labels and automatically inject variables into the configurations.
 	// +kubebuilder:validation:Optional
 	Defaults []DefaultVariables `json:"defaults,omitempty"`
 }

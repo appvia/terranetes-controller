@@ -58,27 +58,25 @@ const (
 	SourceInjected = "injected"
 )
 
-// Constraint provides a collection of constraints us to how this provider can be used
-type Constraint struct {
-	// Source provides a collection of regexes which all terraform modules must be sourced from
-	// +kubebuilder:validation:Optional
-	Source []string `json:"source,omitempty"`
-}
-
 // ProviderSpec defines the desired state of a provider
 // +k8s:openapi-gen=true
 type ProviderSpec struct {
-	// ProviderType is the type of provider
+	// ProviderType defines the cloud provider which is being used, currently supported providers are
+	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=aws;gcp;azure
 	Provider ProviderType `json:"provider"`
-	// Source is the source of the credentials
+	// Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
+	// or using a managed identity. The currently supported values are secret and injected.
 	// +kubebuilder:validation:Required
 	Source SourceType `json:"source"`
-	// SecretRef is the reference to the secret containing the credentials
+	// SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret.
+	// The secret should include the environment variables required to by the terraform provider.
 	// +kubebuilder:validation:Optional
 	SecretRef *v1.SecretReference `json:"secretRef,omitempty"`
-	// ServiceAccount is the service account to use when using pod identity
+	// ServiceAccount is the name of a service account to use when the provider source is 'injected'. The
+	// service account should exist in the terraform controller namespace and be configure per cloud vendor
+	// requirements for pod identity.
 	// +kubebuilder:validation:Optional
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
 }

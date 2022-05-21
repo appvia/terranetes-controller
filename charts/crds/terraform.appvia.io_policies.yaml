@@ -37,21 +37,21 @@ spec:
               description: PolicySpec defines the desired state of a provider
               properties:
                 constraints:
-                  description: Constraints defines the constraints which can be applied to the terraform configurations
+                  description: Constraints provides a series or constraints that must be enforced on the selectored terraform configurations.
                   properties:
                     checkov:
-                      description: Checkov provides a definition to enforce checkov policies on the terraform configurations
+                      description: Checkov provides the ability to enforce a set of security standards on all configurations. These can be configured to target specific resources based on namespace and resource labels
                       properties:
                         checks:
-                          description: Checks is a list of checks which should be applied against the configuration Please see https://www.checkov.io/5.Policy%20Index/terraform.html
+                          description: Checks is a list of checks which should be applied against the configuration. Note, an empty list here implies checkov should run ALL checks. Please see https://www.checkov.io/5.Policy%20Index/terraform.html
                           items:
                             type: string
                           type: array
                         selector:
-                          description: Selector is the selector on the namespace or labels on the configuration. Note, defining no selector dictates the policy should apply to all
+                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitedly selecting all configurations.
                           properties:
                             namespace:
-                              description: Namespace provides the ability to filter on the namespace
+                              description: Namespace is used to filter a configuration based on the namespace labels of where it exists
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -81,7 +81,7 @@ spec:
                                   type: object
                               type: object
                             resource:
-                              description: Resource provides the ability to filter on the resource labels
+                              description: Resource provides the ability to filter a configuration based on it's labels
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -112,23 +112,23 @@ spec:
                               type: object
                           type: object
                         skipChecks:
-                          description: SkipChecks is a collection of checks which need to be skipped
+                          description: SkipChecks is a collection of checkov checks which you can defined as skipped. The security scan will ignore any failures on these checks.
                           items:
                             type: string
                           type: array
                       type: object
                     modules:
-                      description: Modules is a list of regexes which are permitted as module sources
+                      description: Modules provides the ability to control the source for all terraform modules. Allowing platform teams to control where the modules can be downloaded from.
                       properties:
                         allowed:
-                          description: Allowed is a list of regexes which are permitted as module sources
+                          description: Allowed is a collection of regexes which are applied to the source of the terraform configuration. The configuration MUST match one or more of the regexes in order to be allowed to run.
                           items:
                             type: string
                           type: array
                       type: object
                   type: object
                 defaults:
-                  description: Defaults provides the default variables to inject into the configurations
+                  description: Defaults provides the ability to target specific terraform module based on namespace or resource labels and automatically inject variables into the configurations.
                   items:
                     description: DefaultVariables provides platform administrators the ability to inject default variables into a configuration
                     properties:
@@ -181,7 +181,7 @@ spec:
                     type: object
                   type: array
                 summary:
-                  description: Summary provides a short description of the policy
+                  description: Summary is an optional field which can be used to define a summary of what the policy is configured to enforce.
                   type: string
               type: object
             status:

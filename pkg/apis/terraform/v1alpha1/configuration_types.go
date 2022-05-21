@@ -85,10 +85,11 @@ var ConfigurationGVK = schema.GroupVersionKind{
 // ProviderReference is the reference to the provider which is used to create
 // the configuration
 type ProviderReference struct {
-	// Name is the name of the provider
+	// Name is the name of the provider which contains the credentials to use for this
+	// configuration.
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
-	// Namespace is the namespace of the provider
+	// Namespace is the namespace of the provider itself.
 	// +kubebuilder:validation:Required
 	Namespace string `json:"namespace"`
 }
@@ -96,27 +97,38 @@ type ProviderReference struct {
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
-	// SCMAuth provides the ability to add authentication for private repositories
+	// SCMAuth is used to configure any options required when the source of the terraform
+	// module is private or requires credentials to retrieve. This could be SSH keys or git
+	// user/pass or AWS credentials for an s3 bucket.
 	// +kubebuilder:validation:Optional
 	Auth *v1.SecretReference `json:"auth,omitempty"`
-	// EnableAutoApproval indicates the apply it automatically approved
+	// EnableAutoApproval when enabled indicates the configuration does not need to be
+	// manually approved. On a change to the configuration, the controller will automatically
+	// approve the configuration. Note it still needs to adhere to any checks or policies.
 	// +kubebuilder:validation:Optional
 	EnableAutoApproval bool `json:"enableAutoApproval,omitempty"`
-	// Module is the location of the module to use for the configuration
+	// Module is the URL to the source of the terraform module. The format of the URL is
+	// a direct implementation of terraform's module reference. Please see the following
+	// repository for more details https://github.com/hashicorp/go-getter
 	// +kubebuilder:validation:Required
 	Module string `json:"module"`
-	// ProviderRef is the reference to the provider
+	// ProviderRef is the reference to the provider which should be used to execute this
+	// configuration.
 	// +kubebuilder:validation:Required
 	ProviderRef *ProviderReference `json:"providerRef"`
-	// WriteConnectionSecretToRef is the name of the secret where the terraform
-	// configuration is stored
+	// WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
+	// any module outputs are written to this secret. The outputs are automatically uppercased
+	// and ready to be consumed as environment variables.
 	// +kubebuilder:validation:Optional
 	WriteConnectionSecretToRef *v1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
-	// Variables are the variables that are used to configure the terraform
+	// Variables provides the inputs for the terraform module itself. These are passed to the
+	// terraform executor and used to execute the plan, apply and destroy phases.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Variables *runtime.RawExtension `json:"variables,omitempty"`
-	// TerraformVersion provides the ability to override the default terraform version
+	// TerraformVersion provides the ability to override the default terraform version. Before
+	// changing this field its best to consult with platform administrator. As the
+	// value of this field is used to change the tag of the terraform container image.
 	// +kubebuilder:validation:Optional
 	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
@@ -146,7 +158,8 @@ type Configuration struct {
 
 // CostStatus defines the cost status of a configuration
 type CostStatus struct {
-	// Enabled indicates if the cost is enabled
+	// Enabled indicates if the cost integration was enabled when this configuration was last
+	// executed.
 	// +kubebuilder:validation:Optional
 	Enabled bool `json:"enabled,omitempty"`
 	// Hourly is the hourly estimated cost of the configuration
@@ -161,10 +174,12 @@ type CostStatus struct {
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
 	corev1alphav1.CommonStatus `json:",inline"`
-	// Costs is the cost status of the configuration is enabled via the controller
+	// Costs is the predicted costs of this configuration. Note this field is only populated
+	// when the integration has been configured by the administrator.
 	// +kubebuilder:validation:Optional
 	Costs *CostStatus `json:"costs,omitempty"`
-	// Resources is the number of managed resources created by this configuration
+	// Resources is the number of managed cloud resources which are currently under management.
+	// This field is taken from the terraform state itself.
 	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
 }

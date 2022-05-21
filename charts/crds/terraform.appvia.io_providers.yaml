@@ -43,27 +43,27 @@ spec:
               description: ProviderSpec defines the desired state of a provider
               properties:
                 provider:
-                  description: ProviderType is the type of provider
+                  description: ProviderType defines the cloud provider which is being used, currently supported providers are aws, google or azurerm.
                   enum:
                     - aws
                     - gcp
                     - azure
                   type: string
                 secretRef:
-                  description: SecretRef is the reference to the secret containing the credentials
+                  description: 'SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret. The secret should include the environment variables required to by the terraform provider.'
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 serviceAccount:
-                  description: ServiceAccount is the service account to use when using pod identity
+                  description: ServiceAccount is the name of a service account to use when the provider source is 'injected'. The service account should exist in the terraform controller namespace and be configure per cloud vendor requirements for pod identity.
                   type: string
                 source:
-                  description: Source is the source of the credentials
+                  description: Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret or using a managed identity. The currently supported values are secret and injected.
                   type: string
               required:
                 - provider

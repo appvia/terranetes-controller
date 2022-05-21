@@ -27,18 +27,22 @@ import (
 // Constraints defined a collection of constraints which can be applied against
 // the terraform configurations
 type Constraints struct {
-	// Modules is a list of regexes which are permitted as module sources
+	// Modules provides the ability to control the source for all terraform modules. Allowing
+	// platform teams to control where the modules can be downloaded from.
 	// +kubebuilder:validation:Optional
 	Modules *ModuleConstraint `json:"modules,omitempty"`
-	// Checkov provides a definition to enforce checkov policies on the terraform
-	// configurations
+	// Checkov provides the ability to enforce a set of security standards on all configurations.
+	// These can be configured to target specific resources based on namespace and resource
+	// labels
 	// +kubebuilder:validation:Optional
 	Checkov *PolicyConstraint `json:"checkov,omitempty"`
 }
 
 // ModuleConstraint provides a collection of constraints on modules
 type ModuleConstraint struct {
-	// Allowed is a list of regexes which are permitted as module sources
+	// Allowed is a collection of regexes which are applied to the source of the terraform
+	// configuration. The configuration MUST match one or more of the regexes in order to
+	// be allowed to run.
 	// +kubebuilder:validation:Optional
 	Allowed []string `json:"allowed,omitempty"`
 }
@@ -46,25 +50,28 @@ type ModuleConstraint struct {
 // Selector defines the definition for a selector on configuration labels
 // of the namespace the resource resides
 type Selector struct {
-	// Namespace provides the ability to filter on the namespace
+	// Namespace is used to filter a configuration based on the namespace labels of
+	// where it exists
 	// +kubebuilder:validation:Optional
 	Namespace *metav1.LabelSelector `json:"namespace,omitempty"`
-	// Resource provides the ability to filter on the resource labels
+	// Resource provides the ability to filter a configuration based on it's labels
 	// +kubebuilder:validation:Optional
 	Resource *metav1.LabelSelector `json:"resource,omitempty"`
 }
 
 // PolicyConstraint defines the checkov policies the configurations must comply with
 type PolicyConstraint struct {
-	// Checks is a list of checks which should be applied against the configuration
+	// Checks is a list of checks which should be applied against the configuration. Note, an
+	// empty list here implies checkov should run ALL checks.
 	// Please see https://www.checkov.io/5.Policy%20Index/terraform.html
 	// +kubebuilder:validation:Optional
 	Checks []string `json:"checks,omitempty"`
-	// Selector is the selector on the namespace or labels on the configuration. Note, defining
-	// no selector dictates the policy should apply to all
+	// Selector is the selector on the namespace or labels on the configuration. By leaving this
+	// fields empty you can implicitedly selecting all configurations.
 	// +kubebuilder:validation:Optional
 	Selector *Selector `json:"selector,omitempty"`
-	// SkipChecks is a collection of checks which need to be skipped
+	// SkipChecks is a collection of checkov checks which you can defined as skipped. The security
+	// scan will ignore any failures on these checks.
 	// +kubebuilder:validation:Optional
 	SkipChecks []string `json:"skipChecks,omitempty"`
 }

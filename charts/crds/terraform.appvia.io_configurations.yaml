@@ -47,46 +47,46 @@ spec:
               description: ConfigurationSpec defines the desired state of a terraform
               properties:
                 auth:
-                  description: SCMAuth provides the ability to add authentication for private repositories
+                  description: SCMAuth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 enableAutoApproval:
-                  description: EnableAutoApproval indicates the apply it automatically approved
+                  description: EnableAutoApproval when enabled indicates the configuration does not need to be manually approved. On a change to the configuration, the controller will automatically approve the configuration. Note it still needs to adhere to any checks or policies.
                   type: boolean
                 module:
-                  description: Module is the location of the module to use for the configuration
+                  description: Module is the URL to the source of the terraform module. The format of the URL is a direct implementation of terraform's module reference. Please see the following repository for more details https://github.com/hashicorp/go-getter
                   type: string
                 providerRef:
-                  description: ProviderRef is the reference to the provider
+                  description: ProviderRef is the reference to the provider which should be used to execute this configuration.
                   properties:
                     name:
-                      description: Name is the name of the provider
+                      description: Name is the name of the provider which contains the credentials to use for this configuration.
                       type: string
                     namespace:
-                      description: Namespace is the namespace of the provider
+                      description: Namespace is the namespace of the provider itself.
                       type: string
                   required:
                     - name
                     - namespace
                   type: object
                 terraformVersion:
-                  description: TerraformVersion provides the ability to override the default terraform version
+                  description: TerraformVersion provides the ability to override the default terraform version. Before changing this field its best to consult with platform administrator. As the value of this field is used to change the tag of the terraform container image.
                   type: string
                 variables:
-                  description: Variables are the variables that are used to configure the terraform
+                  description: Variables provides the inputs for the terraform module itself. These are passed to the terraform executor and used to execute the plan, apply and destroy phases.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 writeConnectionSecretToRef:
-                  description: WriteConnectionSecretToRef is the name of the secret where the terraform configuration is stored
+                  description: WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module any module outputs are written to this secret. The outputs are automatically uppercased and ready to be consumed as environment variables.
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
@@ -153,10 +153,10 @@ spec:
                     - type
                   x-kubernetes-list-type: map
                 costs:
-                  description: Costs is the cost status of the configuration is enabled via the controller
+                  description: Costs is the predicted costs of this configuration. Note this field is only populated when the integration has been configured by the administrator.
                   properties:
                     enabled:
-                      description: Enabled indicates if the cost is enabled
+                      description: Enabled indicates if the cost integration was enabled when this configuration was last executed.
                       type: boolean
                     hourly:
                       description: Hourly is the hourly estimated cost of the configuration
@@ -190,7 +190,7 @@ spec:
                       type: string
                   type: object
                 resources:
-                  description: Resources is the number of managed resources created by this configuration
+                  description: Resources is the number of managed cloud resources which are currently under management. This field is taken from the terraform state itself.
                   type: integer
               type: object
           type: object
