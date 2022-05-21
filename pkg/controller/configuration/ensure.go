@@ -258,9 +258,32 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 
 			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
-		cond.Success("Provider ready")
-
 		state.provider = provider
+
+		// @step: ensure we are permitted to use the provider
+		if provider.Spec.Selector != nil {
+			value, found := c.cache.Get(configuration.Namespace)
+			if !found {
+				cond.Failed(errors.New("namespace not found"), "Failed to retrieve the namespace from the cache")
+
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			}
+			namespace := value.(*v1.Namespace)
+
+			// @step: ensure we have match the selector of the provider - i.e our namespace and resource labels must match
+			match, err := utils.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
+			if err != nil {
+				cond.Failed(err, "Failed to check against the provider policy")
+
+				return reconcile.Result{}, err
+			}
+			if !match {
+				cond.ActionRequired("Provider policy does not permit the configuration to use it")
+
+				return reconcile.Result{}, controller.ErrIgnore
+			}
+		}
+		cond.Success("Provider ready")
 
 		return reconcile.Result{}, nil
 	}
