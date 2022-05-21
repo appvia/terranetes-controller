@@ -478,6 +478,11 @@ func (in *ProviderSpec) DeepCopyInto(out *ProviderSpec) {
 		*out = new(v1.SecretReference)
 		**out = **in
 	}
+	if in.Selector != nil {
+		in, out := &in.Selector, &out.Selector
+		*out = new(Selector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ServiceAccount != nil {
 		in, out := &in.ServiceAccount, &out.ServiceAccount
 		*out = new(string)
