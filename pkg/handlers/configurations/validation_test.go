@@ -165,7 +165,7 @@ var _ = Describe("Configuration Validation", func() {
 			})
 		})
 
-		When("provider resource selectors do match", func() {
+		When("provider resource selectors match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(namespace, name)
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
@@ -183,7 +183,7 @@ var _ = Describe("Configuration Validation", func() {
 				configuration.Labels = map[string]string{"does_match": "true"}
 
 				err := v.ValidateCreate(ctx, configuration)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(Succeed())
 			})
 
 			It("should allow the update of the configuration", func() {
@@ -191,7 +191,7 @@ var _ = Describe("Configuration Validation", func() {
 				configuration.Labels = map[string]string{"does_match": "true"}
 
 				err := v.ValidateUpdate(ctx, nil, configuration)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(Succeed())
 			})
 		})
 	})
