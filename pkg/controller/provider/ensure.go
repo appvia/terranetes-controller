@@ -31,7 +31,7 @@ import (
 
 // ensureProviderSecret is responsible for ensuring the provider secret exists
 func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) controller.EnsureFunc {
-	cond := controller.ConditionMgr(provider, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(provider, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if provider.Spec.SecretRef == nil {

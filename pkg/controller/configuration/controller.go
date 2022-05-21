@@ -26,6 +26,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/client-go/tools/record"
 
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,6 +54,8 @@ type Controller struct {
 	cc client.Client
 	// cache is a local cache of resources to make lookups faster
 	cache *cache.Cache
+	// recorder is the kubernetes event recorder
+	recorder record.EventRecorder
 	// EnableInfracosts enables the cost analytics via infracost
 	EnableInfracosts bool
 	// EnableWatchers indicates we should create watcher jobs in the user namespace
@@ -92,6 +95,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	c.cc = mgr.GetClient()
 	c.cache = cache.New(3*time.Hour, 5*time.Minute)
+	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),

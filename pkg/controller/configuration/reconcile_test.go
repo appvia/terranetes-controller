@@ -57,6 +57,7 @@ var _ = Describe("Configuration Controller", func() {
 	var rerr error
 	var ctrl *Controller
 	var configuration *terraformv1alphav1.Configuration
+	var recorder *controllertests.FakeRecorder
 
 	cfgNamespace := "apps"
 	defaultConditions := 5
@@ -67,9 +68,11 @@ var _ = Describe("Configuration Controller", func() {
 			fixtures.NewValidAWSReadyProvider("default", "aws"),
 			fixtures.NewValidAWSProviderSecret("default", "aws"),
 		}, objects...)...)
+		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:               cc,
 			cache:            cache.New(5*time.Minute, 10*time.Minute),
+			recorder:         recorder,
 			EnableInfracosts: false,
 			EnableWatchers:   true,
 			ExecutorImage:    "quay.io/appvia/terraform-executor",
@@ -86,7 +89,7 @@ var _ = Describe("Configuration Controller", func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.ProviderRef.Name = "does_not_exist"
 			Setup(configuration)
-			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 2)
 		})
 
 		It("should have the conditions", func() {
@@ -101,6 +104,11 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(configuration.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 			Expect(configuration.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(configuration.Status.Conditions[0].Message).To(Equal("Provider referenced (default/does_not_exist) does not exist"))
+		})
+
+		It("should have raised a event", func() {
+			Expect(recorder.Events).To(HaveLen(1))
+			Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced (default/does_not_exist) does not exist"))
 		})
 
 		It("should ask us to requeue", func() {
@@ -158,7 +166,7 @@ var _ = Describe("Configuration Controller", func() {
 			ctrl.EnableInfracosts = true
 			ctrl.InfracostsSecretName = "not_there"
 
-			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 2)
 		})
 
 		It("should have the conditions", func() {
@@ -173,6 +181,11 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(cond.Message).To(Equal("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
+		})
+
+		It("should have raised a event", func() {
+			Expect(recorder.Events).To(HaveLen(1))
+			Expect(recorder.Events[0]).To(ContainSubstring("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
 		})
 
 		It("should not create any jobs", func() {
@@ -214,6 +227,11 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
+
+		It("should have raised a event", func() {
+			Expect(recorder.Events).To(HaveLen(1))
+			Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.scmAuth) does not exist"))
+		})
 	})
 
 	When("cost analytics token is invalid", func() {
@@ -227,7 +245,7 @@ var _ = Describe("Configuration Controller", func() {
 			ctrl.EnableInfracosts = true
 			ctrl.InfracostsSecretName = "token"
 
-			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 2)
 		})
 
 		It("should have the conditions", func() {
@@ -242,6 +260,11 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 			Expect(cond.Message).To(Equal("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
+		})
+
+		It("should have raised a event", func() {
+			Expect(recorder.Events).To(HaveLen(1))
+			Expect(recorder.Events[0]).To(ContainSubstring("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
 		})
 
 		It("should not create any jobs", func() {
@@ -647,8 +670,13 @@ provider "aws" {}
 
 				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonWarning))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Configuration has failed security policy, refusing to continue"))
+			})
+
+			It("should have raised a event", func() {
+				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events[0]).To(ContainSubstring("Configuration has failed security policy, refusing to continue"))
 			})
 
 			It("should have not create an apply job", func() {
@@ -771,6 +799,11 @@ provider "aws" {}
 				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Custom job template (default/template) does not exists"))
 			})
+
+			It("should have raised a event", func() {
+				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events[0]).To(ContainSubstring("Custom job template (default/template) does not exists"))
+			})
 		})
 
 		When("the template does not have the correct key", func() {
@@ -805,6 +838,11 @@ provider "aws" {}
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Custom job template (default/template) does not contain the \"job.yaml\" key"))
+			})
+
+			It("should have raised a event", func() {
+				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events[0]).To(ContainSubstring("Custom job template (default/template) does not contain the \"job.yaml\" key"))
 			})
 		})
 

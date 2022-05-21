@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -38,6 +39,8 @@ const controllerName = "provider.terraform.appvia.io"
 type Controller struct {
 	// cc is the client connection
 	cc client.Client
+	// recorder is a event recorder
+	recorder record.EventRecorder
 }
 
 // Add is called to setup the manager for the controller
@@ -45,6 +48,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	log.Info("creating the provider controller")
 
 	c.cc = mgr.GetClient()
+	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/providers", terraformv1alphav1.GroupName),
