@@ -50,7 +50,7 @@ spec:
                   description: SCMAuth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
                   properties:
                     name:
-                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
+                      description: Name is unique within a namespace to reference a secret resource.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.
@@ -83,14 +83,18 @@ spec:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 writeConnectionSecretToRef:
-                  description: WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module any module outputs are written to this secret. The outputs are automatically uppercased and ready to be consumed as environment variables.
+                  description: WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module any module outputs are written to this secret. The outputs are automatically uppercased and ready to be consumed as environment variables. WriteConnectionSecretRef is the secret where the terraform outputs will be written.
                   properties:
+                    keys:
+                      description: Keys is a collection of name used to filter the terraform output. By default all keys from the output of the terraform state are written to the connection secret. Here we can define exactly which keys we want from that output.
+                      items:
+                        type: string
+                      type: array
                     name:
-                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
+                      description: Name is the of the secret where you want to the terraform output to be written. The terraform outputs will be written to the secret as a key value pair. All are uppercased can read to be consumed by the workload.
                       type: string
-                    namespace:
-                      description: Namespace defines the space within which the secret name must be unique.
-                      type: string
+                  required:
+                    - name
                   type: object
               required:
                 - module
