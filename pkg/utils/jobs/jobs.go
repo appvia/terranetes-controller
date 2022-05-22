@@ -36,6 +36,8 @@ import (
 
 // Options is the configuration for the render
 type Options struct {
+	// DefaultServiceAccount is the name of the service account to run the jobs under
+	DefaultServiceAccount string
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
 	// ExecutorImage is the image to use for the terraform jobs
@@ -50,8 +52,6 @@ type Options struct {
 	PolicyConstraint *terraformv1alphav1.PolicyConstraint
 	// PolicyImage is image to use for checkov
 	PolicyImage string
-	// ServiceAccount is the name of the service account to run the jobs under
-	ServiceAccount string
 	// Template is the source for the job template if overridden by the controller
 	Template []byte
 	// TerraformImage is the image to use for the terraform jobs
@@ -181,7 +181,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		"EnableVariables":    r.configuration.HasVariables(),
 		"ImagePullPolicy":    "IfNotPresent",
 		"Policy":             options.PolicyConstraint,
-		"ServiceAccount":     options.ServiceAccount,
+		"ServiceAccount":     options.DefaultServiceAccount,
 		"Stage":              stage,
 		"TerraformArguments": arguments,
 		"Configuration": map[string]interface{}{

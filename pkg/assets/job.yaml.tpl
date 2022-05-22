@@ -15,7 +15,11 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      {{- if eq .Provider.Source "injected" }}
+      serviceAccountName: {{ .Provider.ServiceAccount }}
+      {{- else }}
       serviceAccountName: {{ .ServiceAccount }}
+      {{- end }}
       securityContext:
         runAsUser: 65534
         runAsGroup: 65534

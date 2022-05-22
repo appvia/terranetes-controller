@@ -357,16 +357,16 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
-			EnableInfraCosts: c.EnableInfracosts,
-			ExecutorImage:    c.ExecutorImage,
-			InfracostsImage:  c.InfracostsImage,
-			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
-			PolicyImage:      c.PolicyImage,
-			PolicyConstraint: policy,
-			ServiceAccount:   "terraform-controller",
-			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			DefaultServiceAccount: "terraform-executor",
+			EnableInfraCosts:      c.EnableInfracosts,
+			ExecutorImage:         c.ExecutorImage,
+			InfracostsImage:       c.InfracostsImage,
+			InfracostsSecret:      c.InfracostsSecretName,
+			Namespace:             c.JobNamespace,
+			PolicyImage:           c.PolicyImage,
+			PolicyConstraint:      policy,
+			Template:              state.jobTemplate,
+			TerraformImage:        GetTerraformImage(configuration, c.TerraformImage),
 		}
 
 		// @step: use the options to generate the job
@@ -567,14 +567,14 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			EnableInfraCosts: c.EnableInfracosts,
-			ExecutorImage:    c.ExecutorImage,
-			InfracostsImage:  c.InfracostsImage,
-			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
-			ServiceAccount:   "terraform-controller",
-			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			DefaultServiceAccount: "terraform-executor",
+			EnableInfraCosts:      c.EnableInfracosts,
+			ExecutorImage:         c.ExecutorImage,
+			InfracostsImage:       c.InfracostsImage,
+			InfracostsSecret:      c.InfracostsSecretName,
+			Namespace:             c.JobNamespace,
+			Template:              state.jobTemplate,
+			TerraformImage:        GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")
