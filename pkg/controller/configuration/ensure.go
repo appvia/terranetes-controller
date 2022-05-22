@@ -37,6 +37,7 @@ import (
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/assets"
 	"github.com/appvia/terraform-controller/pkg/controller"
+	"github.com/appvia/terraform-controller/pkg/utils"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
 	"github.com/appvia/terraform-controller/pkg/utils/jobs"
 	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
@@ -719,6 +720,12 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 			secret.Data = make(map[string][]byte)
 
 			for k, v := range state.Outputs {
+				if len(configuration.Spec.WriteConnectionSecretToRef.Keys) > 0 {
+					if !utils.Contains(k, configuration.Spec.WriteConnectionSecretToRef.Keys) {
+						continue
+					}
+				}
+
 				value, err := v.ToValue()
 				if err != nil {
 					cond.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
