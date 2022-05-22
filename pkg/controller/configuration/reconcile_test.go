@@ -286,6 +286,71 @@ var _ = Describe("Configuration Controller", func() {
 		})
 	})
 
+	When("using static secrets for the provider", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should have created a plan job", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should be using the default service account", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal("terraform-executor"))
+		})
+	})
+
+	When("using a provider with injected identity", func() {
+		serviceAccount := "injected-service-account"
+
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Spec.ProviderRef.Name = "injected"
+
+			provider := fixtures.NewValidAWSReadyProvider(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
+			provider.Spec.Source = terraformv1alphav1.SourceInjected
+			provider.Spec.SecretRef = nil
+			provider.Spec.ServiceAccount = &serviceAccount
+
+			Setup(configuration, provider)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should have created a plan job", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should be using the custom provider identity", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal(serviceAccount))
+		})
+	})
+
 	When("terraform plan has not been provisioned", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")

@@ -73,14 +73,14 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
-			EnableInfraCosts: c.EnableInfracosts,
-			ExecutorImage:    c.ExecutorImage,
-			InfracostsImage:  c.InfracostsImage,
-			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
-			ServiceAccount:   "terraform-controller",
-			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			DefaultServiceAccount: "terraform-executor",
+			EnableInfraCosts:      c.EnableInfracosts,
+			ExecutorImage:         c.ExecutorImage,
+			InfracostsImage:       c.InfracostsImage,
+			InfracostsSecret:      c.InfracostsSecretName,
+			Namespace:             c.JobNamespace,
+			Template:              state.jobTemplate,
+			TerraformImage:        GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")
