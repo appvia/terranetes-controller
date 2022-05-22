@@ -49,12 +49,6 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 		return fmt.Errorf("expected terraform configuration, not %T", obj)
 	}
 
-	if o.Spec.WriteConnectionSecretToRef != nil {
-		if o.Spec.WriteConnectionSecretToRef.Namespace == "" {
-			o.Spec.WriteConnectionSecretToRef.Namespace = o.Namespace
-		}
-	}
-
 	// @step: retrieve a list of all policies
 	list := &terraformv1alphav1.PolicyList{}
 	if err := m.cc.List(ctx, list); err != nil {
