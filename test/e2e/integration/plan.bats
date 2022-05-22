@@ -63,6 +63,10 @@ spec:
     name: default
   writeConnectionSecretToRef:
     name: test
+    keys:
+      - s3_bucket_id
+      - s3_bucket_arn
+      - s3_bucket_region
   variables:
     unused: $(date +"%s")
     bucket: ${BUCKET}
