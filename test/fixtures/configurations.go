@@ -18,7 +18,6 @@
 package fixtures
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -40,9 +39,8 @@ func NewValidBucketConfiguration(namespace, name string) *terraformv1alphav1.Con
 		Variables: &runtime.RawExtension{
 			Raw: []byte(`{"name": "test"}`),
 		},
-		WriteConnectionSecretToRef: &v1.SecretReference{
-			Name:      "aws-secret",
-			Namespace: "default",
+		WriteConnectionSecretToRef: &terraformv1alphav1.WriteConnectionSecret{
+			Name: "aws-secret",
 		},
 	}
 
