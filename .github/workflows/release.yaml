@@ -13,8 +13,32 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install Requirements
+      run: |
+        sudo apt update -y
+        sudo apt install bats jq
+    - name: Install Kubectl
+      uses: azure/setup-kubectl@v2.0
+      with:
+        version: v1.21.1
+    - name: Install Kind
+      run: |
+        curl -sL -O https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64
+        mv kind-linux-amd64 kind
+        chmod +x kind
+        kind create cluster
+    - name: Load Images
+      run: |
+        VERSION=ci make controller-kind
     - name: E2E
-      uses: ./.github/workflows/e2e
+      run: |
+        test/e2e/check-suite.sh
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
+        AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
 
   release:
     needs: e2e
