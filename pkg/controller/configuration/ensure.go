@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -48,7 +49,7 @@ import (
 // the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
 // place guard around it
 func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if !c.EnableInfracosts {
@@ -84,7 +85,7 @@ func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Co
 
 // ensureJobTemplate is used to verify the job template exists if we have been configured to override the template
 func (c *Controller) ensureJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if c.JobTemplate == "" {
@@ -127,7 +128,7 @@ func (c *Controller) ensureJobTemplate(configuration *terraformv1alphav1.Configu
 // ensurePoliciesList is responsible for retrieving all the policies in the cluster before we start processing this job. These
 // policies are used further down the line by other ensure methods
 func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list := &terraformv1alphav1.PolicyList{}
@@ -147,7 +148,7 @@ func (c *Controller) ensurePoliciesList(configuration *terraformv1alphav1.Config
 // ensureAuthenticationSecret is responsible for verifying that any secret which is referenced by the
 // configuration does exist
 func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if configuration.Spec.Auth == nil {
@@ -177,7 +178,7 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav
 // ensureJobsList is responsible for retrieving all the jobs in the configuration namespace - these are used by ensure methods
 // further down the line
 func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list := &batchv1.JobList{}
@@ -231,7 +232,7 @@ func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav
 
 // ensureProviderIsReady is responsible for ensuring the provider referenced by this configuration is ready
 func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionProviderReady)
+	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionProviderReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		provider := &terraformv1alphav1.Provider{}
@@ -268,7 +269,7 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 // ensureGeneratedConfig is responsible in ensuring the terraform configuration is generated for this job. This
 // includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	backend := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
@@ -336,7 +337,7 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 // ensureTerraformPlan is responsible for ensuring the terraform plan is running or has already ran for this generation. We
 // consult the status of the resource to check the status of a stage at generation x
 func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPlan)
+	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPlan, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -449,7 +450,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 // ensureCostStatus is responsible for updating the cost status post a plan
 func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if !c.EnableInfracosts {
@@ -499,7 +500,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 
 // ensureCheckovPolicy is responsible for checking the checkov results and refusing to continue if failed
 func (c *Controller) ensureCheckovPolicy(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy)
+	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if state.checkovConstraint == nil {
@@ -528,19 +529,19 @@ func (c *Controller) ensureCheckovPolicy(configuration *terraformv1alphav1.Confi
 		// @step: retrieve summary from the report
 		checksFailed := gjson.GetBytes(secret.Data["results_json.json"], "summary.failed")
 		if !checksFailed.Exists() {
-			cond.Warning("Security report does not contain a summary of finding, please contact platform administrator")
+			cond.Failed(errors.New("missing report"), "Security report does not contain a summary of finding, please contact platform administrator")
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
 		if checksFailed.Type != gjson.Number {
-			cond.Warning("Security report failed summary is not numerical as expected, please contact platform administrator")
+			cond.Failed(errors.New("invalid resport"), "Security report failed summary is not numerical as expected, please contact platform administrator")
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
 		if checksFailed.Int() > 0 {
-			cond.Warning("Configuration has failed security policy, refusing to continue")
+			cond.ActionRequired("Configuration has failed security policy, refusing to continue")
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -553,7 +554,7 @@ func (c *Controller) ensureCheckovPolicy(configuration *terraformv1alphav1.Confi
 
 // ensureTerraformApply is responsible for ensuring the terraform apply is running or run
 func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply)
+	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -633,7 +634,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 // ensureTerraformStatus is responsible for updating the configuration status
 func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: check we have a terraform state - else we can just continue
@@ -668,7 +669,7 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 
 // ensureTerraformSecret is responsible for ensuring the jobs ran successfully
 func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	name := configuration.GetTerraformStateSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {

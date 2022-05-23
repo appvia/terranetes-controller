@@ -94,7 +94,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 		}
 	}
 
-	cond := ConditionMgr(resource, corev1alphav1.ConditionReady)
+	cond := ConditionMgr(resource, corev1alphav1.ConditionReady, nil)
 	cond.Success("Resource ready")
 
 	if status.LastSuccess == nil {

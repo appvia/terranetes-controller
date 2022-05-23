@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"reflect"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
@@ -33,16 +35,18 @@ type ConditionManager struct {
 	condition *corev1alphav1.Condition
 	// resource is the underlying resource
 	resource client.Object
+	// recorder is used to recorder kubernetes events on the resource
+	recorder record.EventRecorder
 }
 
 // ConditionMgr returns a manager for the condition
-func ConditionMgr(resource corev1alphav1.CommonStatusAware, condition corev1alphav1.ConditionType) *ConditionManager {
+func ConditionMgr(resource corev1alphav1.CommonStatusAware, condition corev1alphav1.ConditionType, recorder record.EventRecorder) *ConditionManager {
 	cond := resource.GetCommonStatus().GetCondition(condition)
 	if cond == nil {
 		cond = &corev1alphav1.Condition{}
 	}
 
-	return &ConditionManager{condition: cond, resource: resource}
+	return &ConditionManager{condition: cond, resource: resource, recorder: recorder}
 }
 
 // GetCondition returns the condition
@@ -53,7 +57,7 @@ func (c *ConditionManager) GetCondition() *corev1alphav1.Condition {
 // transition is a helper method used to update the transition time. The method takes of a copy of the current
 // condition and then allows the handler to update. Before exiting it performs a comparison and if it's been update
 // it updates the transitions time
-func transition(cond *corev1alphav1.Condition, fn func()) {
+func (c *ConditionManager) transition(cond *corev1alphav1.Condition, fn func()) {
 	original := *cond
 	fn()
 
@@ -61,11 +65,18 @@ func transition(cond *corev1alphav1.Condition, fn func()) {
 		cond.LastTransitionTime = metav1.Now()
 	}
 
+	if c.recorder != nil {
+		// @note: we could limit this to just one event per condition and use the original as the trigger
+		switch {
+		case cond.Reason == corev1alphav1.ReasonActionRequired:
+			c.recorder.Event(c.resource, v1.EventTypeWarning, "Action Required", cond.Message)
+		}
+	}
 }
 
 // ActionRequired sets the condition to action required
 func (c *ConditionManager) ActionRequired(message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
 		c.condition.Reason = corev1alphav1.ReasonActionRequired
@@ -76,7 +87,7 @@ func (c *ConditionManager) ActionRequired(message string, args ...interface{}) {
 
 // Warning sets the condition to successful
 func (c *ConditionManager) Warning(message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
 		c.condition.Reason = corev1alphav1.ReasonWarning
@@ -87,7 +98,7 @@ func (c *ConditionManager) Warning(message string, args ...interface{}) {
 
 // Success sets the condition to successful
 func (c *ConditionManager) Success(message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionTrue
 		c.condition.Reason = corev1alphav1.ReasonReady
@@ -98,7 +109,7 @@ func (c *ConditionManager) Success(message string, args ...interface{}) {
 
 // Failed sets the condition to failed
 func (c *ConditionManager) Failed(err error, message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
 		c.condition.Reason = corev1alphav1.ReasonError
@@ -111,7 +122,7 @@ func (c *ConditionManager) Failed(err error, message string, args ...interface{}
 
 // InProgress sets the condition to in progress
 func (c *ConditionManager) InProgress(message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
 		c.condition.Reason = corev1alphav1.ReasonInProgress
@@ -122,7 +133,7 @@ func (c *ConditionManager) InProgress(message string, args ...interface{}) {
 
 // Deleting sets the condition to deleting
 func (c *ConditionManager) Deleting(message string, args ...interface{}) {
-	transition(c.condition, func() {
+	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
 		c.condition.Reason = corev1alphav1.ReasonDeleting

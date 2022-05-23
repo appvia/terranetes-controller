@@ -37,7 +37,7 @@ import (
 
 // ensureTerraformDestroy is responsible for deleting any associated terraform configuration
 func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -126,7 +126,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 // ensureTerraformConfigDeleted is responsible for deleting any associated terraform configuration configmap
 func (c *Controller) ensureTerraformConfigDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -146,7 +146,7 @@ func (c *Controller) ensureTerraformConfigDeleted(configuration *terraformv1alph
 
 // ensureConfigurationJobsDeleted is responsible for deleting any associated terraform configuration jobs
 func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list := &batchv1.JobList{}
@@ -179,7 +179,7 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 
 // ensureConfigurationSecrets is responsible for deleting any associated terraform state
 func (c *Controller) ensureConfigurationSecrets(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady)
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		names := []string{
