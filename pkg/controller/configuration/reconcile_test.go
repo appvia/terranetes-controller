@@ -100,10 +100,11 @@ var _ = Describe("Configuration Controller", func() {
 		It("should indicate the provider is missing", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.Conditions[0].Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
-			Expect(configuration.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(configuration.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-			Expect(configuration.Status.Conditions[0].Message).To(Equal("Provider referenced (default/does_not_exist) does not exist"))
+			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+			Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(cond.Message).To(Equal("Provider referenced (default/does_not_exist) does not exist"))
 		})
 
 		It("should have raised a event", func() {
@@ -156,6 +157,139 @@ var _ = Describe("Configuration Controller", func() {
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
+		})
+	})
+
+	When("the provider has a selector policy associated", func() {
+		When("policy denies the use of the provider by namespace labels", func() {
+			BeforeEach(func() {
+				// @note: we create a configuration pointing to a new provider, a provider with a policy and a secret
+				// for the provider
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.ProviderRef.Name = "policy"
+
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider.Spec.Selector = &terraformv1alphav1.Selector{
+					Namespace: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"does_not_match": "true"},
+					},
+				}
+				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+
+				Setup(configuration, provider, secret)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the provider is denied", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Provider policy does not permit the configuration to use it"))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("policy denies the use of the provider by resource labels", func() {
+			BeforeEach(func() {
+				// @note: we create a configuration pointing to a new provider, a provider with a policy and a secret
+				// for the provider
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.ProviderRef.Name = "policy"
+				configuration.Labels = map[string]string{"does_not_match": "true"}
+
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider.Spec.Selector = &terraformv1alphav1.Selector{
+					Resource: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"does_not_match": "false"},
+					},
+				}
+				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+
+				Setup(configuration, provider, secret)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the provider is denied", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Provider policy does not permit the configuration to use it"))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("policy allows of the provider", func() {
+			BeforeEach(func() {
+				// @note: we create a configuration pointing to a new provider, a provider with a policy and a secret
+				// for the provider
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.ProviderRef.Name = "policy"
+				configuration.Labels = map[string]string{"does_match": "true"}
+
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider.Spec.Selector = &terraformv1alphav1.Selector{
+					Resource: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"does_match": "true"},
+					},
+					Namespace: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"name": configuration.Namespace},
+					},
+				}
+				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+
+				Setup(configuration, provider, secret)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the provider is ready", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Message).To(Equal("Provider ready"))
+			})
+
+			It("should create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
 		})
 	})
 

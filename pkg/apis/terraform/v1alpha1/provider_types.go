@@ -74,6 +74,11 @@ type ProviderSpec struct {
 	// The secret should include the environment variables required to by the terraform provider.
 	// +kubebuilder:validation:Optional
 	SecretRef *v1.SecretReference `json:"secretRef,omitempty"`
+	// Selector provider the ability to filter who can use this provider. If empty, all users
+	// in the cluster is permitted to use the provider. Otherrise you can specify a selector
+	// which can use namespace and resource labels
+	// +kubebuilder:validation:Optional
+	Selector *Selector `json:"selector,omitempty"`
 	// ServiceAccount is the name of a service account to use when the provider source is 'injected'. The
 	// service account should exist in the terraform controller namespace and be configure per cloud vendor
 	// requirements for pod identity.

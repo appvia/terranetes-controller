@@ -19,13 +19,17 @@ package configurations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
 
 type validator struct {
@@ -54,6 +58,21 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 
 // validate is called to ensure the configuration is valid and incline with current policies
 func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configuration) error {
+	// @step: let us check the provider
+	switch {
+	case c.Spec.ProviderRef == nil:
+		return errors.New("no spec.providerRef is defined")
+	case c.Spec.ProviderRef.Name == "":
+		return errors.New("spec.providerRef.name is empty")
+	case c.Spec.ProviderRef.Namespace == "":
+		return errors.New("spec.providerRef.namespace is empty")
+	}
+
+	// @step: check the configuration is permitted to use the provider
+	if err := validateProvider(ctx, v.cc, c); err != nil {
+		return err
+	}
+
 	list := &terraformv1alphav1.PolicyList{}
 	if err := v.cc.List(ctx, list); err != nil {
 		return err
@@ -65,6 +84,42 @@ func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configur
 	// @step: validate the configuration against all module constraints
 	if err := validateModuleConstriants(ctx, c, list); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateProvider is called to ensure the configuration is valid and inline with current provider policy
+func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alphav1.Configuration) error {
+	provider := &terraformv1alphav1.Provider{}
+	provider.Namespace = configuration.Spec.ProviderRef.Namespace
+	provider.Name = configuration.Spec.ProviderRef.Name
+
+	found, err := kubernetes.GetIfExists(ctx, cc, provider)
+	if err != nil {
+		return err
+	}
+	if !found || provider.Spec.Selector == nil {
+		return nil
+	}
+
+	// @step: grab the namespace of the configuration
+	namespace := &v1.Namespace{}
+	namespace.Name = configuration.Namespace
+	found, err = kubernetes.GetIfExists(ctx, cc, namespace)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.New("configuration namespace was not found")
+	}
+
+	matched, err := utils.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
+	if err != nil {
+		return err
+	}
+	if !matched {
+		return errors.New("configuration has been denied by the provider policy")
 	}
 
 	return nil

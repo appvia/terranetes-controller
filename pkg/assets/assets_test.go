@@ -21,8 +21,9 @@ import (
 	"html/template"
 	"testing"
 
-	"github.com/appvia/terraform-controller/pkg/utils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
 func TestJobTemplateParsable(t *testing.T) {

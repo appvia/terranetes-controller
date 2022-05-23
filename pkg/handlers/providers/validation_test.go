@@ -119,7 +119,7 @@ var _ = Describe("Provider Validation", func() {
 	})
 
 	When("creating a provider with a injected identity", func() {
-		It("should throw error when no sevice account", func() {
+		It("should throw error when no service account", func() {
 			policy := fixtures.NewValidAWSProvider("default", "test")
 			policy.Spec.Source = "injected"
 			policy.Spec.ServiceAccount = nil
