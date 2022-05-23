@@ -53,7 +53,7 @@ spec:
                   description: 'SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret. The secret should include the environment variables required to by the terraform provider.'
                   properties:
                     name:
-                      description: Name is name of a secret which contains the credentials to retrieve the terraform module code.
+                      description: Name is unique within a namespace to reference a secret resource.
                       type: string
                     namespace:
                       description: Namespace defines the space within which the secret name must be unique.

@@ -94,6 +94,20 @@ type ProviderReference struct {
 	Namespace string `json:"namespace"`
 }
 
+// WriteConnectionSecret defines the options around the secret produced by the terraform code
+type WriteConnectionSecret struct {
+	// Name is the of the secret where you want to the terraform output to be written. The terraform outputs
+	// will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
+	// workload.
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// Keys is a collection of name used to filter the terraform output. By default all keys from the
+	// output of the terraform state are written to the connection secret. Here we can define exactly
+	// which keys we want from that output.
+	// +kubebuilder:validation:Optional
+	Keys []string `json:"keys,omitempty"`
+}
+
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
@@ -120,7 +134,9 @@ type ConfigurationSpec struct {
 	// any module outputs are written to this secret. The outputs are automatically uppercased
 	// and ready to be consumed as environment variables.
 	// +kubebuilder:validation:Optional
-	WriteConnectionSecretToRef *v1.SecretReference `json:"writeConnectionSecretToRef,omitempty"`
+	// WriteConnectionSecretRef is the secret where the terraform outputs will be written.
+	// +kubebuilder:validation:Required
+	WriteConnectionSecretToRef *WriteConnectionSecret `json:"writeConnectionSecretToRef,omitempty"`
 	// Variables provides the inputs for the terraform module itself. These are passed to the
 	// terraform executor and used to execute the plan, apply and destroy phases.
 	// +kubebuilder:validation:Optional

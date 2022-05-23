@@ -13,6 +13,10 @@ spec:
 
   writeConnectionSecretToRef:
     name: test
+    keys:
+      - s3_bucket_id
+      - s3_bucket_arn
+      - s3_bucket_region
 
   variables:
     # -- The name of the bucket. If omitted, Terraform will assign a random, unique name

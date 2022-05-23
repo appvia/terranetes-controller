@@ -63,21 +63,6 @@ var _ = Describe("Configuration Mutation", func() {
 		err = m.Default(context.Background(), after)
 	})
 
-	When("no namespace defined on the write connection secret", func() {
-		BeforeEach(func() {
-			policies = nil
-			before = fixtures.NewValidBucketConfiguration("default", "test")
-			before.Spec.WriteConnectionSecretToRef = &v1.SecretReference{Name: "test"}
-		})
-
-		It("should add the namespace for us", func() {
-			before.Spec.WriteConnectionSecretToRef.Namespace = "default"
-
-			Expect(before).To(Equal(after))
-			Expect(err).ToNot(HaveOccurred())
-		})
-	})
-
 	When("we have not policies", func() {
 		BeforeEach(func() {
 			policies = nil

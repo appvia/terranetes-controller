@@ -68,3 +68,14 @@ teardown() {
   runit "kubectl -n ${APP_NAMESPACE} get secret test"
   [[ "$status" -eq 0 ]]
 }
+
+@test "We should only have the keys specificied in the connection secret" {
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_ID"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_ARN"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_REGION"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_DOMAIN_NAME | grep -q null"
+  [[ "$status" -eq 0 ]]
+}

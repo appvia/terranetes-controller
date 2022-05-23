@@ -39,6 +39,7 @@ run_checks() {
     "confirm"
     "destroy"
   )
+
   for x in "${units[@]}"; do
     run_bats ${UNITS}/${x}.bats
   done
