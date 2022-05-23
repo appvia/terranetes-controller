@@ -23,7 +23,7 @@ Terraform Controller manages the life cycles of a terraform resource, allowing d
 **DOCUMENTATION**
 ---
 
-View the documentation at https://terraform-controller.appvia.io/
+View the documentation at https://terranetes.appvia.io/terraform-controller
 
 **GETTING STARTED**
 ---
