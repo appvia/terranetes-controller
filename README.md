@@ -30,8 +30,8 @@ View the documentation at https://terranetes.appvia.io/terraform-controller
 
 #### Prerequisites
 
-* Helm CLI (https://helm.sh/docs/intro/install/
-* Kind (https://kind.sigs.k8s.io/)
+* [Helm CLI](https://helm.sh/docs/intro/install/)
+* [Kind](https://kind.sigs.k8s.io/)
 
 The quickest way to get up the running is via the Helm chart.
 
