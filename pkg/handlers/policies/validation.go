@@ -21,8 +21,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -50,7 +52,45 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	o := newObj.(*terraformv1alphav1.Policy)
 
 	if o.Spec.Constraints != nil {
+		if o.Spec.Constraints.Modules != nil {
+			if o.Spec.Constraints.Modules.Selector != nil {
+				if o.Spec.Constraints.Modules.Selector.Namespace != nil {
+					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Modules.Selector.Namespace); err != nil {
+						return fmt.Errorf("spec.constraints.modules.selector.namespace is invalid, %v", err)
+					}
+				}
+
+				if o.Spec.Constraints.Modules.Selector.Resource != nil {
+					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Modules.Selector.Resource); err != nil {
+						return fmt.Errorf("spec.constraints.modules.selector.resource is invalid, %v", err)
+					}
+				}
+			}
+
+			// @step: ensure the regexes are valid
+			for i, x := range o.Spec.Constraints.Modules.Allowed {
+				if _, err := regexp.Compile(x); err != nil {
+					return fmt.Errorf("spec.constraints.modules.allowed[%d] is invalid, %v", i, err)
+				}
+			}
+		}
+
 		if o.Spec.Constraints.Checkov != nil {
+			if o.Spec.Constraints.Checkov.Selector != nil {
+
+				if o.Spec.Constraints.Checkov.Selector.Namespace != nil {
+					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Checkov.Selector.Namespace); err != nil {
+						return fmt.Errorf("spec.constraints.checkov.selector.namespace is invalid, %v", err)
+					}
+				}
+
+				if o.Spec.Constraints.Checkov.Selector.Resource != nil {
+					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Checkov.Selector.Resource); err != nil {
+						return fmt.Errorf("spec.constraints.checkov.selector.resource is invalid, %v", err)
+					}
+				}
+			}
+
 			if len(o.Spec.Constraints.Checkov.Checks) > 0 && len(o.Spec.Constraints.Checkov.SkipChecks) > 0 {
 				if utils.ContainsList(o.Spec.Constraints.Checkov.Checks, o.Spec.Constraints.Checkov.SkipChecks) {
 					return errors.New("spec.constraints.policy.skipChecks cannot contain checks from spec.constraints.policy.checks")

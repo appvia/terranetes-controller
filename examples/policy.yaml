@@ -5,6 +5,14 @@ metadata:
   name: permitted-modules
 spec:
   constraints:
+    selector:
+#      Leaving the selector blank indicates the policy is applied to all
+#      namespace:
+#        matchLabels: {}
+#        matchExpressions: []
+#      resource:
+#        matchLabels: {}
+#        matchExpressions: []
     modules:
       allowed:
         - "https://github.com/.*"

@@ -19,10 +19,13 @@ package policies
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
@@ -34,6 +37,76 @@ func TestReconcile(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Running Test Suite")
 }
+
+var _ = Describe("Module Constraints", func() {
+	var err error
+	var v *validator
+	var policy *terraformv1alphav1.Policy
+	var cc client.Client
+
+	BeforeEach(func() {
+		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
+		v = &validator{cc: cc}
+		policy = fixtures.NewPolicy("modules")
+		policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
+		policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{}
+		policy.Spec.Constraints.Modules.Selector = &terraformv1alphav1.Selector{}
+	})
+
+	When("creating a module with constraints", func() {
+		cases := []struct {
+			Selector *terraformv1alphav1.Selector
+			Expect   error
+		}{
+			{
+				Selector: &terraformv1alphav1.Selector{
+					Namespace: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: ""},
+						},
+					},
+				},
+				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"\" is not a valid pod selector operator"),
+			},
+			{
+				Selector: &terraformv1alphav1.Selector{
+					Namespace: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "KEY", Operator: "BAD"},
+						},
+					},
+				},
+				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"BAD\" is not a valid pod selector operator"),
+			},
+			{
+				Selector: &terraformv1alphav1.Selector{
+					Resource: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "KEY", Operator: "BAD"},
+						},
+					},
+				},
+				Expect: errors.New("spec.constraints.modules.selector.resource is invalid, \"BAD\" is not a valid pod selector operator"),
+			},
+		}
+
+		It("should error on invalid selectors", func() {
+			for _, c := range cases {
+				policy.Spec.Constraints.Modules.Selector = c.Selector
+				err = v.ValidateCreate(context.TODO(), policy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(c.Expect.Error()))
+			}
+		})
+
+		It("should fail on invalid regex", func() {
+			policy.Spec.Constraints.Modules.Allowed = []string{"^^.[]$$"}
+			err = v.ValidateCreate(context.TODO(), policy)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("spec.constraints.modules.allowed[0] is invalid"))
+		})
+	})
+})
 
 var _ = Describe("Policy Delete Validation", func() {
 	var configurations []*terraformv1alphav1.Configuration

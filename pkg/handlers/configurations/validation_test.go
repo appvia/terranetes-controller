@@ -110,7 +110,7 @@ var _ = Describe("Configuration Validation", func() {
 			It("should deny the configuration of the module", func() {
 				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("the configuration has been denied by policy"))
+				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
 			})
 		})
 
@@ -134,6 +134,42 @@ var _ = Describe("Configuration Validation", func() {
 
 			It("should allow the configuration of the module", func() {
 				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		When("we have two module constraints", func() {
+			BeforeEach(func() {
+				provider := fixtures.NewValidAWSProvider(namespace, name)
+				all := fixtures.NewPolicy("all")
+				all.Spec.Constraints = &terraformv1alphav1.Constraints{}
+				all.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"default.*"}}
+
+				allow := fixtures.NewPolicy("allow")
+				allow.Spec.Constraints = &terraformv1alphav1.Constraints{}
+				allow.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"allow.*"}}
+
+				Expect(cc.Create(ctx, all)).To(Succeed())
+				Expect(cc.Create(ctx, allow)).To(Succeed())
+				Expect(cc.Create(ctx, provider)).To(Succeed())
+			})
+
+			It("should fail with a constraint violation", func() {
+				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
+				configuration.Spec.Module = "allow"
+
+				Expect(cc.Delete(ctx, fixtures.NewPolicy("allow"))).To(Succeed())
+
+				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
+			})
+
+			It("should be allowed by the second policy", func() {
+				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
+				configuration.Spec.Module = "allow"
+				err := v.ValidateCreate(ctx, configuration)
+
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})

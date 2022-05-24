@@ -45,6 +45,10 @@ type ModuleConstraint struct {
 	// be allowed to run.
 	// +kubebuilder:validation:Optional
 	Allowed []string `json:"allowed,omitempty"`
+	// Selector is the selector on the namespace or labels on the configuration. By leaving this
+	// fields empty you can implicitedly selecting all configurations.
+	// +kubebuilder:validation:Optional
+	Selector *Selector `json:"selector,omitempty"`
 }
 
 // Selector defines the definition for a selector on configuration labels
