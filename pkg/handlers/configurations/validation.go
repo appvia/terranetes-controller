@@ -34,21 +34,32 @@ import (
 
 type validator struct {
 	cc client.Client
+	// versioning indicates that configurations can be overridden
+	versioning bool
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
-	return &validator{cc: cc}
+func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
+	return &validator{cc: cc, versioning: versioning}
 }
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj.(*terraformv1alphav1.Configuration))
+	return v.validate(ctx, nil, obj.(*terraformv1alphav1.Configuration))
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.validate(ctx, newObj.(*terraformv1alphav1.Configuration))
+	var before, after *terraformv1alphav1.Configuration
+
+	if newObj != nil {
+		after = newObj.(*terraformv1alphav1.Configuration)
+	}
+	if oldObj != nil {
+		before = oldObj.(*terraformv1alphav1.Configuration)
+	}
+
+	return v.validate(ctx, before, after)
 }
 
 // ValidateDelete is called when a resource is being deleted
@@ -57,7 +68,9 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 // validate is called to ensure the configuration is valid and incline with current policies
-func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configuration) error {
+func (v *validator) validate(ctx context.Context, before, c *terraformv1alphav1.Configuration) error {
+	creating := before == nil
+
 	// @step: let us check the provider
 	switch {
 	case c.Spec.ProviderRef == nil:
@@ -66,6 +79,26 @@ func (v *validator) validate(ctx context.Context, c *terraformv1alphav1.Configur
 		return errors.New("spec.providerRef.name is empty")
 	case c.Spec.ProviderRef.Namespace == "":
 		return errors.New("spec.providerRef.namespace is empty")
+	}
+
+	// @step: perform some checks which are dependent on if the resource is being created or updated
+	switch creating {
+	case true:
+		if c.Spec.TerraformVersion != "" && !v.versioning {
+			return errors.New("spec.terraformVersion changes have been disabled")
+		}
+
+	default:
+		if !v.versioning {
+			switch {
+			case c.Spec.TerraformVersion == "":
+				break
+			case before.Spec.TerraformVersion == "" && c.Spec.TerraformVersion != "":
+				return errors.New("spec.terraformVersion has been disabled and cannot be changed")
+			case before.Spec.TerraformVersion != c.Spec.TerraformVersion:
+				return errors.New("spec.terraformVersion has been disabled, version cannot be changed only removed")
+			}
+		}
 	}
 
 	// @step: check the configuration is permitted to use the provider

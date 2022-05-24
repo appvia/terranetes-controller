@@ -40,6 +40,9 @@ controller:
   # indicate we create the watcher jobs in user namespace, these allow users
   # to view the terraform output
   enableWatchers: true
+  # enableTerraformVersions indicates configurations are permitted to override
+  # the terraform version in their spec.
+  enableTerraformVersions: true
 
   # The default terraform version (or tag of the above image)
   webhooks:

@@ -62,6 +62,8 @@ type Controller struct {
 	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// EnableTerraformVersions enables the use of the configuration's Terraform version
+	EnableTerraformVersions bool
 	// InfracostsImage is the image to use for all infracost jobs
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
@@ -99,7 +101,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc)),
+		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
 	)
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/mutate/%s/configurations", terraformv1alphav1.GroupName),

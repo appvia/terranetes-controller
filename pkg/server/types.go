@@ -27,6 +27,8 @@ type Config struct {
 	EnableWebhook bool
 	// EnableWatchers enables the creation of watcher jobs
 	EnableWatchers bool
+	// EnableTerraformVersions indicates if configurations can override the default terraform version
+	EnableTerraformVersions bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
 	// InfracostsSecretName is the name of the secret that contains the cost token and endpoint
