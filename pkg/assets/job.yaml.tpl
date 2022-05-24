@@ -99,11 +99,11 @@ spec:
         args:
           - --comment=Executing Terraform
           {{- if eq .Stage "plan" }}
-          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=true
+          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false
           - --command=/bin/terraform show -json /run/plan.out > /run/plan.json
           {{- end }}
           {{- if eq .Stage "apply" }}
-          - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=true
+          - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false
           {{- end }}
           {{- if eq .Stage "destroy" }}
           - --command=/bin/terraform destroy {{ .TerraformArguments }} -auto-approve
