@@ -24,6 +24,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -106,6 +107,98 @@ var _ = Describe("Module Constraints", func() {
 			Expect(err.Error()).To(ContainSubstring("spec.constraints.modules.allowed[0] is invalid"))
 		})
 	})
+})
+
+var _ = Describe("Policy Validation", func() {
+	var err error
+	var v *validator
+	var policy *terraformv1alphav1.Policy
+	var cc client.Client
+
+	BeforeEach(func() {
+		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
+		v = &validator{cc: cc}
+		policy = fixtures.NewMatchAllPolicyConstraint("default")
+	})
+
+	When("creating a checkov policy", func() {
+		cases := []struct {
+			CheckName string
+			Change    func(policy *terraformv1alphav1.PolicyConstraint)
+			Expected  string
+		}{
+			{
+				CheckName: "it should fail with invalid namespace selector",
+				Expected:  "spec.constraints.checkov.selector.namespace is invalid, \"BAD\" is not a valid pod selector operator",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.Selector = &terraformv1alphav1.Selector{
+						Namespace: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{Key: "KEY", Operator: "BAD"},
+							},
+						},
+					}
+				},
+			},
+			{
+				CheckName: "it should fail with invalid resource selector",
+				Expected:  "spec.constraints.checkov.selector.resource is invalid, \"BAD\" is not a valid pod selector operator",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.Selector = &terraformv1alphav1.Selector{
+						Resource: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{Key: "KEY", Operator: "BAD"},
+							},
+						},
+					}
+				},
+			},
+			{
+				CheckName: "it should fail with missing name",
+				Expected:  "spec.constraints.checkov.external[0].name cannot be empty",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.External = []terraformv1alphav1.ExternalCheck{{}}
+				},
+			},
+			{
+				CheckName: "it should fail with missing url",
+				Expected:  "spec.constraints.checkov.external[0].url cannot be empty",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.External = []terraformv1alphav1.ExternalCheck{{Name: "check"}}
+				},
+			},
+			{
+				CheckName: "it should fail with missing secret name",
+				Expected:  "spec.constraints.checkov.external[0].secretRef.name cannot be empty",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.External = []terraformv1alphav1.ExternalCheck{{Name: "check", URL: "check", SecretRef: &v1.SecretReference{}}}
+				},
+			},
+			{
+				CheckName: "it should fail with namespace set",
+				Expected:  "spec.constraints.checkov.external[0].secretRef.namespace should not be set",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.External = []terraformv1alphav1.ExternalCheck{
+						{Name: "check", URL: "check", SecretRef: &v1.SecretReference{Name: "check", Namespace: "bad"}},
+					}
+				},
+			},
+		}
+
+		for _, c := range cases {
+			It(c.CheckName, func() {
+				c.Change(policy.Spec.Constraints.Checkov)
+				err = v.ValidateCreate(context.TODO(), policy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(c.Expected))
+
+				err = v.ValidateUpdate(context.TODO(), nil, policy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(c.Expected))
+			})
+		}
+	})
+
 })
 
 var _ = Describe("Policy Delete Validation", func() {
