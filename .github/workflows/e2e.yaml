@@ -2,10 +2,25 @@ name: E2E
 
 on:
   workflow_call:
+    inputs:
+      cloud:
+        required: true
+        type: string
+
   workflow_dispatch:
+    inputs:
+      cloud:
+        description: 'Cloud vendor to run against'
+        required: true
+        default: 'aws'
+        type: choice
+        options:
+        - aws
+        - azure
+        - google
 
 jobs:
-  e2e:
+  e2e-aws:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -17,7 +32,7 @@ jobs:
     - name: Install Kubectl
       uses: azure/setup-kubectl@v2.0
       with:
-        version: v1.21.1
+        version: v1.23.0
     - name: Install Kind
       run: |
         curl -sL -O https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64
@@ -27,11 +42,20 @@ jobs:
     - name: Load Images
       run: |
         VERSION=ci make controller-kind
-    - name: E2E
+    - name: E2E on AWS
+      if: github.event.inputs.cloud == "aws"
       run: |
-        test/e2e/check-suite.sh
+        test/e2e/check-suite.sh --cloud aws
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
         AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
-
+    - name: E2E on Azure
+      if: github.event.inputs.cloud == "azure"
+      run: |
+        test/e2e/check-suite.sh --cloud azure
+      env:
+        ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.E2E_ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.E2E_ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.E2E_ARM_TENANT_ID }}

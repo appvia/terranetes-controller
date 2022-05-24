@@ -12,6 +12,7 @@ env:
 jobs:
   e2e:
     uses: appvia/terraform-controller/.github/workflows/e2e.yaml@master
+    secrets: inherit
 
   release:
     needs: e2e
