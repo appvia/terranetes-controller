@@ -41,7 +41,11 @@ terraform {
 
 // providerTF is a template for a terraform provider
 var providerTF = `
-provider "{{ .Provider }}" {}
+provider "{{ .Provider }}" {
+{{- if eq .Provider "azurerm" }}
+	features {}
+{{- end }}
+}
 `
 
 // Decode decodes the terraform state returning the json output
