@@ -101,8 +101,20 @@ func (v *validator) validate(ctx context.Context, before, c *terraformv1alphav1.
 		}
 	}
 
+
+	// @step: grab the namespace of the configuration
+	namespace := &v1.Namespace{}
+	namespace.Name = configuration.Namespace
+	found, err := kubernetes.GetIfExists(ctx, v.cc, namespace)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.New("configuration namespace was not found")
+	}
+
 	// @step: check the configuration is permitted to use the provider
-	if err := validateProvider(ctx, v.cc, c); err != nil {
+	if err := validateProvider(ctx, v.cc, configuration, namespace); err != nil {
 		return err
 	}
 
@@ -115,7 +127,7 @@ func (v *validator) validate(ctx context.Context, before, c *terraformv1alphav1.
 	}
 
 	// @step: validate the configuration against all module constraints
-	if err := validateModuleConstriants(ctx, c, list); err != nil {
+	if err := validateModuleConstriants(configuration, list, namespace); err != nil {
 		return err
 	}
 
@@ -123,7 +135,7 @@ func (v *validator) validate(ctx context.Context, before, c *terraformv1alphav1.
 }
 
 // validateProvider is called to ensure the configuration is valid and inline with current provider policy
-func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alphav1.Configuration) error {
+func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alphav1.Configuration, namespace *v1.Namespace) error {
 	provider := &terraformv1alphav1.Provider{}
 	provider.Namespace = configuration.Spec.ProviderRef.Namespace
 	provider.Name = configuration.Spec.ProviderRef.Name
@@ -134,17 +146,6 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 	}
 	if !found || provider.Spec.Selector == nil {
 		return nil
-	}
-
-	// @step: grab the namespace of the configuration
-	namespace := &v1.Namespace{}
-	namespace.Name = configuration.Namespace
-	found, err = kubernetes.GetIfExists(ctx, cc, namespace)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return errors.New("configuration namespace was not found")
 	}
 
 	matched, err := utils.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
@@ -159,32 +160,43 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 }
 
 // validateModuleConstriants evaluates the module constraints and ensure the configuration passes all policies
-func validateModuleConstriants(_ context.Context, configuration *terraformv1alphav1.Configuration, list *terraformv1alphav1.PolicyList) error {
-	var policies []terraformv1alphav1.Policy
+func validateModuleConstriants(
+	configuration *terraformv1alphav1.Configuration,
+	policies *terraformv1alphav1.PolicyList,
+	namespace *v1.Namespace) error {
 
-	// @step: first we find all policies which contains module constraints
-	for _, x := range list.Items {
+	var list []terraformv1alphav1.Policy
+
+	// @step: first we build a list of policies which apply this configuration.
+	for _, x := range policies.Items {
 		switch {
 		case x.Spec.Constraints == nil, x.Spec.Constraints.Modules == nil:
 			continue
 		}
-		policies = append(policies, x)
+		if x.Spec.Constraints.Modules.Selector != nil {
+			matched, err := utils.IsSelectorMatch(*x.Spec.Constraints.Modules.Selector, configuration.GetLabels(), namespace.GetLabels())
+			if err != nil {
+				return err
+			} else if !matched {
+				continue
+			}
+		}
+
+		list = append(list, x)
 	}
 
-	if len(policies) == 0 {
+	if len(list) == 0 {
 		return nil
 	}
 
-	// @step: iterate all the policies for a matchj
-	for _, x := range policies {
-		matches, err := x.Spec.Constraints.Modules.Matches(configuration.Spec.Module)
-		if err != nil {
+	// @step: we then iterate the allowed list; at least one of the policies must be satisfied
+	for _, x := range list {
+		if found, err := x.Spec.Constraints.Modules.Matches(configuration.Spec.Module); err != nil {
 			return fmt.Errorf("failed to compile the policy: %s, error: %s", x.Name, err)
-		}
-		if matches {
+		} else if found {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("the configuration has been denied by policy")
+	return fmt.Errorf("configuration has been denied by policy")
 }
