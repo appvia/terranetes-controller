@@ -52,6 +52,7 @@ spec:
             {{- if .Values.controller.costs.secret }}
             - --cost-secret={{ .Values.controller.costs.secret }}
             {{- end }}
+            - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhook={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
