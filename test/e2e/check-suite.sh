@@ -50,19 +50,21 @@ run_bats() {
 # run-checks runs a collection checks
 run_checks() {
   local FILES=(
-    "provider"
-    "plan"
-    "apply"
-    "confirm"
-    "destroy"
+    "${UNITS}/setup.bats"
+    "${UNITS}/${CLOUD}/provider.bats"
+    "${UNITS}/${CLOUD}/plan.bats"
+    "${UNITS}/plan.bats"
+    "${UNITS}/apply.bats"
+    "${UNITS}/${CLOUD}/confirm.bats"
+    "${UNITS}/destroy.bats"
+    "${UNITS}/${CLOUD}/destroy.bats"
   )
   echo "Running suite on: ${CLOUD^^}"
   echo
 
-  run_bats "${UNITS}/setup.bats"
   for filename in "${FILES[@]}"; do
-    if [[ -f "${UNITS}/${CLOUD}/${filename}.bats" ]]; then
-      run_bats ${UNITS}/${CLOUD}/${filename}.bats || exit 1
+    if [[ -f "${filename}.bats" ]]; then
+      run_bats ${filename}.bats || exit 1
     fi
   done
 }

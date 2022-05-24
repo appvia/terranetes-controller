@@ -25,13 +25,29 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should be able to approve the terraform configuration" {
-  runit "kubectl -n ${APP_NAMESPACE} annotate configurations.terraform.appvia.io ${RESOURCE_NAME} \"terraform.appvia.io/apply\"=true --overwrite"
+@test "We should have a condition indicating the provider is ready" {
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider ready'"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[0].status' | grep -q 'True'"
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a job created in the terraform-system ready to run " {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
+@test "We should have a job created in the terraform-system running the plan" {
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
+
+  runit "kubectl -n ${NAMESPACE} get job -l ${labels}"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should have a watcher job created in the configuration namespace" {
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
+
+  runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels}"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should see the terraform plan complete sucessfully" {
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
   retry 50 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
@@ -39,8 +55,8 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a job created in the application namespace ready to watch apply" {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
+@test "We should have a completed watcher job in the application namespace" {
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
@@ -48,28 +64,18 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a configuration sucessfully applied" {
+@test "We should have a configuration in pending approval" {
+  expected="Waiting for terraform apply annotation to be set to true"
+
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].reason' | grep -q 'ActionRequired'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].status' | grep -q 'False'"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
-}
-
-@test "We should have resources indicated in the status" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '3'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a secret in the application namespace" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should only have the keys specificied in the connection secret" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.BUCKET_NAME"
-  [[ "$status" -eq 0 ]]
-}

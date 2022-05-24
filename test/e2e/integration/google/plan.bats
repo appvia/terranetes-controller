@@ -25,14 +25,27 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should not have the application secret present" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test 2>&1" "grep -q NotFound"
+@test "We should be able to create a configuration" {
+cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Configuration
+metadata:
+  name: ${RESOURCE_NAME}
+spec:
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/modules/google?ref=develop
+  providerRef:
+    namespace: terraform-system
+    name: google
+  writeConnectionSecretToRef:
+    name: test
+    keys:
+      - bucket_name
+  variables:
+    bucket: terraform-controller-e2e
+EOF
+  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
-}
-
-@test "We should have a confirmation the bucket have been deleted" {
-  expected="The specified bucket does not exist"
-
-  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
   [[ "$status" -eq 0 ]]
 }
