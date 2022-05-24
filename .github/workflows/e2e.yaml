@@ -20,7 +20,7 @@ on:
         - google
 
 jobs:
-  e2e-aws:
+  e2e:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -35,27 +35,20 @@ jobs:
         version: v1.23.0
     - name: Install Kind
       run: |
-        curl -sL -O https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64
-        mv kind-linux-amd64 kind
+        curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
         chmod +x kind
         kind create cluster
     - name: Load Images
       run: |
         VERSION=ci make controller-kind
-    - name: E2E on AWS
-      if: github.event.inputs.cloud == "aws"
+    - name: E2E
       run: |
-        test/e2e/check-suite.sh --cloud aws
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
-        AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
-    - name: E2E on Azure
-      if: github.event.inputs.cloud == "azure"
-      run: |
-        test/e2e/check-suite.sh --cloud azure
+        test/e2e/check-suite.sh --cloud ${{ (github.event.inputs || inputs).cloud }}
       env:
         ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.E2E_ARM_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.E2E_ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.E2E_ARM_TENANT_ID }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
+        AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
