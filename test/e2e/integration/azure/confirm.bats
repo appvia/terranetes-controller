@@ -26,6 +26,6 @@ teardown() {
 }
 
 @test "We should be able to confirm the existence of the bucket" {
-  runit "echo hello world"
+  runit "echo hello world terraformcontrollere2e"
   [[ "$status" -eq 0 ]]
 }

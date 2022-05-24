@@ -57,7 +57,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/modules/azure?ref=e2e/azure
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/modules/azure?ref=e2e_azure
   providerRef:
     namespace: terraform-system
     name: azure
@@ -66,7 +66,7 @@ spec:
     keys:
       - bucket_name
   variables:
-    bucket: ${BUCKET}
+    bucket: terraformcontrollere2e
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
@@ -98,7 +98,7 @@ EOF
 @test "We should see the terraform plan complete sucessfully" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
-  retry 10 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
+  retry 20 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]

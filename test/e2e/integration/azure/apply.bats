@@ -33,7 +33,7 @@ teardown() {
 @test "We should have a job created in the terraform-system ready to run " {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
-  retry 10 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
+  retry 50 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
@@ -60,7 +60,7 @@ teardown() {
 }
 
 @test "We should have resources indicated in the status" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '5'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '3'"
   [[ "$status" -eq 0 ]]
 }
 
@@ -70,6 +70,6 @@ teardown() {
 }
 
 @test "We should only have the keys specificied in the connection secret" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_NAME"
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.BUCKET_NAME"
   [[ "$status" -eq 0 ]]
 }
