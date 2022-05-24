@@ -628,10 +628,6 @@ spec:
               properties:
                 provider:
                   description: ProviderType defines the cloud provider which is being used, currently supported providers are aws, google or azurerm.
-                  enum:
-                    - aws
-                    - gcp
-                    - azure
                   type: string
                 secretRef:
                   description: 'SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret. The secret should include the environment variables required to by the terraform provider.'
