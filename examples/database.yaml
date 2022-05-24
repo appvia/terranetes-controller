@@ -8,7 +8,7 @@ spec:
 
   providerRef:
     namespace: default
-    name: default
+    name: aws
 
   writeConnectionSecretToRef:
     name: test

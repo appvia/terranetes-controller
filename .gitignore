@@ -15,6 +15,13 @@ gcp-auth.json
 /values.yaml
 *.kubeconfig
 
+# Terraform Related
+terraform.tfstate
+terraform.tfstate.backup
+provider.tf
+.terraform
+.terraform.lock.hcl
+
 # Created by https://www.toptal.com/developers/gitignore/api/go,vim,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,vim,visualstudiocode
 

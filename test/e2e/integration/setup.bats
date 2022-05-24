@@ -57,3 +57,26 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
+@test "We should be able to create a namespace for testing" {
+  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: apps
+  name: ${APP_NAMESPACE}
+EOF
+  runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete job --all"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete po --all"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should have a clean terraform namespace for testing" {
+  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=plan"
+
+  runit "kubectl -n ${NAMESPACE} delete job -l ${labels}"
+  [[ "$status" -eq 0 ]]
+}

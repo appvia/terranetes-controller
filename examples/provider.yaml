@@ -2,7 +2,7 @@
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Provider
 metadata:
-  name: default
+  name: aws
 spec:
   source: secret
   provider: aws
@@ -13,7 +13,7 @@ spec:
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Provider
 metadata:
-  name: default-irsa
+  name: aws-irsa
 spec:
   source: injected
   provider: aws
