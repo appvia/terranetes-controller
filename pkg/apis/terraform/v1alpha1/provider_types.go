@@ -64,7 +64,6 @@ type ProviderSpec struct {
 	// ProviderType defines the cloud provider which is being used, currently supported providers are
 	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=aws;gcp;azure
 	Provider ProviderType `json:"provider"`
 	// Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
 	// or using a managed identity. The currently supported values are secret and injected.
