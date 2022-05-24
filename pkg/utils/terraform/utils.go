@@ -43,7 +43,7 @@ terraform {
 var providerTF = `
 provider "{{ .Provider }}" {
 {{- if eq .Provider "azurerm" }}
-	features {}
+  features {}
 {{- end }}
 }
 `
