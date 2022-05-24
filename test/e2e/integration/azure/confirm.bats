@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../lib/helper
+load ../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -26,6 +26,6 @@ teardown() {
 }
 
 @test "We should be able to confirm the existence of the bucket" {
-  runit "aws s3 ls s3://${BUCKET}"
+  runit "echo hello world"
   [[ "$status" -eq 0 ]]
 }

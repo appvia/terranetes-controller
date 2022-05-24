@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../lib/helper
+load ../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -26,12 +26,12 @@ teardown() {
 }
 
 @test "We should be able to approve the terraform configuration" {
-  runit "kubectl -n ${APP_NAMESPACE} annotate configurations.terraform.appvia.io bucket \"terraform.appvia.io/apply\"=true --overwrite"
+  runit "kubectl -n ${APP_NAMESPACE} annotate configurations.terraform.appvia.io ${RESOURCE_NAME} \"terraform.appvia.io/apply\"=true --overwrite"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a job created in the terraform-system ready to run " {
-  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=apply"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
   retry 10 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
@@ -40,7 +40,7 @@ teardown() {
 }
 
 @test "We should have a job created in the application namespace ready to watch apply" {
-  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=apply"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
@@ -49,18 +49,18 @@ teardown() {
 }
 
 @test "We should have a configuration sucessfully applied" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have resources indicated in the status" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration bucket -o json" "jq -r '.status.resources' | grep -q '5'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '5'"
   [[ "$status" -eq 0 ]]
 }
 
@@ -70,12 +70,6 @@ teardown() {
 }
 
 @test "We should only have the keys specificied in the connection secret" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_ID"
-  [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_ARN"
-  [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_REGION"
-  [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_DOMAIN_NAME | grep -q null"
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.S3_BUCKET_NAME"
   [[ "$status" -eq 0 ]]
 }

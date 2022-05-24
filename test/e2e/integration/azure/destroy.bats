@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../lib/helper
+load ../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -26,12 +26,12 @@ teardown() {
 }
 
 @test "We should be able to delete the configuration" {
-  runit "kubectl -n ${APP_NAMESPACE} delete configuration bucket --wait=false"
+  runit "kubectl -n ${APP_NAMESPACE} delete configuration ${RESOURCE_NAME} --wait=false"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a job created in the application namespace to watch the destroy" {
-  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=destroy"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=destroy"
 
   # note: we don't watch the job here it has ownership references to the configuration which
   # causes an race between the check and the deletion
@@ -40,14 +40,14 @@ teardown() {
 }
 
 @test "We should have a job created in the terraform namespace to destroy the configuration" {
-  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=destroy"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=destroy"
 
   runit "kubectl -n ${NAMESPACE} get job -l ${labels} --show-labels" "grep -q 'destroy'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should not have configuration present in the application namespace" {
-  retry 10 "kubectl -n ${APP_NAMESPACE} get configuration bucket 2>&1" "grep -q NotFound"
+  retry 10 "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} 2>&1" "grep -q NotFound"
   [[ "$status" -eq 0 ]]
 }
 
@@ -59,6 +59,6 @@ teardown() {
 @test "We should have a confirmation the bucket have been deleted" {
   expected="The specified bucket does not exist"
 
-  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
+  runit "echo hello world"
   [[ "$status" -eq 0 ]]
 }
