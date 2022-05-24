@@ -37,8 +37,7 @@ EOF
 }
 
 run_bats() {
-  echo "Running unit: ${@}"
-
+  echo "Running units: ${@}"
   APP_NAMESPACE=${APP_NAMESPACE} \
   BUCKET=${BUCKET} \
   CLOUD=${CLOUD} \
@@ -60,11 +59,9 @@ run_checks() {
     "${UNITS}/${CLOUD}/destroy.bats"
   )
   echo "Running suite on: ${CLOUD^^}"
-  echo
-
   for filename in "${FILES[@]}"; do
-    if [[ -f "${filename}.bats" ]]; then
-      run_bats ${filename}.bats || exit 1
+    if [[ -f "${filename}" ]]; then
+      run_bats ${filename} || exit 1
     fi
   done
 }

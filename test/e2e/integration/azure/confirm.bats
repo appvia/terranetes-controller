@@ -25,6 +25,11 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
+@test "We should have resources indicated in the status" {
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '3'"
+  [[ "$status" -eq 0 ]]
+}
+
 @test "We should not have the application secret present" {
   runit "kubectl -n ${APP_NAMESPACE} get secret test"
   [[ "$status" -eq 0 ]]
