@@ -68,39 +68,38 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 // validate is called to ensure the configuration is valid and incline with current policies
-func (v *validator) validate(ctx context.Context, before, c *terraformv1alphav1.Configuration) error {
+func (v *validator) validate(ctx context.Context, before, configuration *terraformv1alphav1.Configuration) error {
 	creating := before == nil
 
 	// @step: let us check the provider
 	switch {
-	case c.Spec.ProviderRef == nil:
+	case configuration.Spec.ProviderRef == nil:
 		return errors.New("no spec.providerRef is defined")
-	case c.Spec.ProviderRef.Name == "":
+	case configuration.Spec.ProviderRef.Name == "":
 		return errors.New("spec.providerRef.name is empty")
-	case c.Spec.ProviderRef.Namespace == "":
+	case configuration.Spec.ProviderRef.Namespace == "":
 		return errors.New("spec.providerRef.namespace is empty")
 	}
 
 	// @step: perform some checks which are dependent on if the resource is being created or updated
 	switch creating {
 	case true:
-		if c.Spec.TerraformVersion != "" && !v.versioning {
+		if configuration.Spec.TerraformVersion != "" && !v.versioning {
 			return errors.New("spec.terraformVersion changes have been disabled")
 		}
 
 	default:
 		if !v.versioning {
 			switch {
-			case c.Spec.TerraformVersion == "":
+			case configuration.Spec.TerraformVersion == "":
 				break
-			case before.Spec.TerraformVersion == "" && c.Spec.TerraformVersion != "":
+			case before.Spec.TerraformVersion == "" && configuration.Spec.TerraformVersion != "":
 				return errors.New("spec.terraformVersion has been disabled and cannot be changed")
-			case before.Spec.TerraformVersion != c.Spec.TerraformVersion:
+			case before.Spec.TerraformVersion != configuration.Spec.TerraformVersion:
 				return errors.New("spec.terraformVersion has been disabled, version cannot be changed only removed")
 			}
 		}
 	}
-
 
 	// @step: grab the namespace of the configuration
 	namespace := &v1.Namespace{}
