@@ -85,6 +85,17 @@ type PolicyConstraint struct {
 	SkipChecks []string `json:"skipChecks,omitempty"`
 }
 
+// ExternalCheckNames returns the name of the external check names
+func (p *PolicyConstraint) ExternalCheckNames() []string {
+	var list []string
+
+	for _, x := range p.External {
+		list = append(list, x.Name)
+	}
+
+	return list
+}
+
 // ExternalCheck defines the definition for an external check - this comprises of the
 // source and any optional secret
 type ExternalCheck struct {
