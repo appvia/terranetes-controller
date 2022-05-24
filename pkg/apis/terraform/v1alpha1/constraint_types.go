@@ -45,8 +45,8 @@ type ModuleConstraint struct {
 	// be allowed to run.
 	// +kubebuilder:validation:Optional
 	Allowed []string `json:"allowed,omitempty"`
-	// Selector is the selector on the namespace or labels on the configuration. By leaving this
-	// fields empty you can implicitedly selecting all configurations.
+	// Selector is the selector on the namespace or labels on the configuration. By leaving
+	// this field empty you are implicitly selecting all configurations.
 	// +kubebuilder:validation:Optional
 	Selector *Selector `json:"selector,omitempty"`
 }
@@ -70,6 +70,11 @@ type PolicyConstraint struct {
 	// Please see https://www.checkov.io/5.Policy%20Index/terraform.html
 	// +kubebuilder:validation:Optional
 	Checks []string `json:"checks,omitempty"`
+	// External is a collection of external checks which should be included in the scan. Each
+	// of the external sources and retrieved and sourced into /run/policy/<NAME> where they can
+	// be included as part of the scan
+	// +kubebuilder:validation:Optional
+	External []ExternalCheck `json:"external,omitempty"`
 	// Selector is the selector on the namespace or labels on the configuration. By leaving this
 	// fields empty you can implicitedly selecting all configurations.
 	// +kubebuilder:validation:Optional
@@ -80,6 +85,17 @@ type PolicyConstraint struct {
 	SkipChecks []string `json:"skipChecks,omitempty"`
 }
 
+// ExternalCheckNames returns the name of the external check names
+func (p *PolicyConstraint) ExternalCheckNames() []string {
+	var list []string
+
+	for _, x := range p.External {
+		list = append(list, x.Name)
+	}
+
+	return list
+}
+
 // ExternalCheck defines the definition for an external check - this comprises of the
 // source and any optional secret
 type ExternalCheck struct {
@@ -87,7 +103,7 @@ type ExternalCheck struct {
 	// name when we source the code
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
-	// URL is the source external checks - this is usualluy a git repository. The notation
+	// URL is the source external checks - this is usually a git repository. The notation
 	// for this is https://github.com/hashicorp/go-getter
 	// +kubebuilder:validation:Required
 	URL string `json:"url,omitempty"`

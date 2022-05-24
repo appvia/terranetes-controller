@@ -676,7 +676,7 @@ terraform {
 
 		It("should add a verify-policy container to the job", func() {
 			list := &batchv1.JobList{}
-			expected := `--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --check check1  --soft-fail --output-file-path /run >/dev/null`
+			expected := `--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --check check1 --soft-fail --output-file-path /run >/dev/null`
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
@@ -728,7 +728,85 @@ terraform {
 
 		It("should have selected priority policy", func() {
 			list := &batchv1.JobList{}
-			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check priority  --soft-fail --output-file-path /run >/dev/null"
+			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check priority --soft-fail --output-file-path /run >/dev/null"
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			job := list.Items[0]
+
+			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
+			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
+			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
+			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
+			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+		})
+	})
+
+	When("we have external checks defined on the security policy", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			// @notes: we add a policy with and external check
+			external := fixtures.NewMatchAllPolicyConstraint("external")
+			external.Spec.Constraints.Checkov.Checks = []string{"check0"}
+			external.Spec.Constraints.Checkov.External = []terraformv1alphav1.ExternalCheck{
+				{
+					Name: "test",
+					URL:  "https://example.com//dir",
+					SecretRef: &v1.SecretReference{
+						Name: "test-secret",
+					},
+				},
+			}
+
+			Expect(ctrl.cc.Create(context.TODO(), external)).ToNot(HaveOccurred())
+
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should create a terraform plan job", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should have an init container retrieving the source", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+			Expect(len(list.Items[0].Spec.Template.Spec.InitContainers)).To(Equal(3))
+
+			source := list.Items[0].Spec.Template.Spec.InitContainers[2]
+			Expect(source.Name).To(Equal("policy-external-test"))
+			Expect(source.Command).To(Equal([]string{"/run/bin/step"}))
+			Expect(source.Args).To(Equal([]string{
+				"--comment=Retrieve external source for test",
+				"--command=/bin/mkdir -p /run/policy",
+				"--command=/run/bin/source --dest=/run/policy/test --source=https://example.com//dir",
+			}))
+			Expect(source.EnvFrom).To(Equal([]v1.EnvFromSource{
+				{
+					SecretRef: &v1.SecretEnvSource{
+						LocalObjectReference: v1.LocalObjectReference{Name: "test-secret"},
+						Optional:             nil,
+					},
+				},
+			}))
+			Expect(len(source.VolumeMounts)).To(Equal(1))
+			Expect(source.VolumeMounts[0].Name).To(Equal("run"))
+		})
+
+		It("should have updated the command line for checkov scan", func() {
+			list := &batchv1.JobList{}
+			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --external-checks-dir test --soft-fail --output-file-path /run >/dev/null"
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))

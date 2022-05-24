@@ -62,3 +62,8 @@ spec:
       # See: https://www.checkov.io/5.Policy%20Index/terraform.html
       skipChecks:
         - <NAME>
+      external:
+        - name:
+          url:
+          secretRef:
+

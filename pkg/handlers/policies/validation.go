@@ -42,66 +42,6 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 	return &validator{cc: cc}
 }
 
-// ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.ValidateUpdate(ctx, nil, obj)
-}
-
-// ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	o := newObj.(*terraformv1alphav1.Policy)
-
-	if o.Spec.Constraints != nil {
-		if o.Spec.Constraints.Modules != nil {
-			if o.Spec.Constraints.Modules.Selector != nil {
-				if o.Spec.Constraints.Modules.Selector.Namespace != nil {
-					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Modules.Selector.Namespace); err != nil {
-						return fmt.Errorf("spec.constraints.modules.selector.namespace is invalid, %v", err)
-					}
-				}
-
-				if o.Spec.Constraints.Modules.Selector.Resource != nil {
-					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Modules.Selector.Resource); err != nil {
-						return fmt.Errorf("spec.constraints.modules.selector.resource is invalid, %v", err)
-					}
-				}
-			}
-
-			// @step: ensure the regexes are valid
-			for i, x := range o.Spec.Constraints.Modules.Allowed {
-				if _, err := regexp.Compile(x); err != nil {
-					return fmt.Errorf("spec.constraints.modules.allowed[%d] is invalid, %v", i, err)
-				}
-			}
-		}
-
-		if o.Spec.Constraints.Checkov != nil {
-			if o.Spec.Constraints.Checkov.Selector != nil {
-
-				if o.Spec.Constraints.Checkov.Selector.Namespace != nil {
-					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Checkov.Selector.Namespace); err != nil {
-						return fmt.Errorf("spec.constraints.checkov.selector.namespace is invalid, %v", err)
-					}
-				}
-
-				if o.Spec.Constraints.Checkov.Selector.Resource != nil {
-					if _, err := metav1.LabelSelectorAsSelector(o.Spec.Constraints.Checkov.Selector.Resource); err != nil {
-						return fmt.Errorf("spec.constraints.checkov.selector.resource is invalid, %v", err)
-					}
-				}
-			}
-
-			if len(o.Spec.Constraints.Checkov.Checks) > 0 && len(o.Spec.Constraints.Checkov.SkipChecks) > 0 {
-				if utils.ContainsList(o.Spec.Constraints.Checkov.Checks, o.Spec.Constraints.Checkov.SkipChecks) {
-					return errors.New("spec.constraints.policy.skipChecks cannot contain checks from spec.constraints.policy.checks")
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 // ValidateDelete is called when a resource is being deleted
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	list := &terraformv1alphav1.ConfigurationList{}
@@ -131,6 +71,103 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 
 	if len(using) > 0 {
 		return fmt.Errorf("policy in use by configurations: %s", strings.Join(using, ", "))
+	}
+
+	return nil
+}
+
+// ValidateCreate is called when a new resource is created
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return v.ValidateUpdate(ctx, nil, obj)
+}
+
+// ValidateUpdate is called when a resource is being updated
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	o := newObj.(*terraformv1alphav1.Policy)
+
+	if err := validateCheckovConstraints(o); err != nil {
+		return err
+	}
+	if err := validateModuleConstraint(o); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateModuleConstraint ensures the constraints are valid
+func validateModuleConstraint(policy *terraformv1alphav1.Policy) error {
+	switch {
+	case policy.Spec.Constraints == nil, policy.Spec.Constraints.Modules == nil:
+		return nil
+	}
+
+	constraint := policy.Spec.Constraints.Modules
+
+	if constraint.Selector != nil {
+		if constraint.Selector.Namespace != nil {
+			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Namespace); err != nil {
+				return fmt.Errorf("spec.constraints.modules.selector.namespace is invalid, %v", err)
+			}
+		}
+
+		if constraint.Selector.Resource != nil {
+			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Resource); err != nil {
+				return fmt.Errorf("spec.constraints.modules.selector.resource is invalid, %v", err)
+			}
+		}
+	}
+
+	// @step: ensure the regexes are valid
+	for i, x := range constraint.Allowed {
+		if _, err := regexp.Compile(x); err != nil {
+			return fmt.Errorf("spec.constraints.modules.allowed[%d] is invalid, %v", i, err)
+		}
+	}
+
+	return nil
+}
+
+// validateCheckovConstraints ensures the constraints are valid
+func validateCheckovConstraints(policy *terraformv1alphav1.Policy) error {
+	switch {
+	case policy.Spec.Constraints == nil, policy.Spec.Constraints.Checkov == nil:
+		return nil
+	}
+
+	constraint := policy.Spec.Constraints.Checkov
+
+	if constraint.Selector != nil {
+		if constraint.Selector.Namespace != nil {
+			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Namespace); err != nil {
+				return fmt.Errorf("spec.constraints.checkov.selector.namespace is invalid, %v", err)
+			}
+		}
+
+		if constraint.Selector.Resource != nil {
+			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Resource); err != nil {
+				return fmt.Errorf("spec.constraints.checkov.selector.resource is invalid, %v", err)
+			}
+		}
+	}
+
+	if len(constraint.Checks) > 0 && len(constraint.SkipChecks) > 0 {
+		if utils.ContainsList(constraint.Checks, constraint.SkipChecks) {
+			return errors.New("spec.constraints.policy.skipChecks cannot contain checks from spec.constraints.policy.checks")
+		}
+	}
+
+	for i, external := range constraint.External {
+		switch {
+		case external.Name == "":
+			return fmt.Errorf("spec.constraints.checkov.external[%d].name cannot be empty", i)
+		case external.URL == "":
+			return fmt.Errorf("spec.constraints.checkov.external[%d].url cannot be empty", i)
+		case external.SecretRef != nil && external.SecretRef.Name == "":
+			return fmt.Errorf("spec.constraints.checkov.external[%d].secretRef.name cannot be empty", i)
+		case external.SecretRef != nil && external.SecretRef.Namespace != "":
+			return fmt.Errorf("spec.constraints.checkov.external[%d].secretRef.namespace should not be set", i)
+		}
 	}
 
 	return nil
