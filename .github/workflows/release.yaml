@@ -11,7 +11,7 @@ env:
 
 jobs:
   e2e:
-    uses: appvia/terraform-controller/.github/workflows/e2e.yaml
+    uses: appvia/terraform-controller/.github/workflows/e2e.yaml@master
 
   release:
     needs: e2e
