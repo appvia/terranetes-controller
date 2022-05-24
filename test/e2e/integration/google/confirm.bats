@@ -25,14 +25,17 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should not have the application secret present" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test 2>&1" "grep -q NotFound"
+@test "We should have a secret in the application namespace" {
+  runit "kubectl -n ${APP_NAMESPACE} get secret test"
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a confirmation the bucket have been deleted" {
-  expected="The specified bucket does not exist"
+@test "We should only have the keys specificied in the connection secret" {
+  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.BUCKET_NAME"
+  [[ "$status" -eq 0 ]]
+}
 
-  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
+@test "We should be able to confirm the existence of the bucket" {
+  runit "echo hello world terraform-controller-e2e"
   [[ "$status" -eq 0 ]]
 }

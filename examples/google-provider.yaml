@@ -1,0 +1,11 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: google
+spec:
+  source: secret
+  provider: google
+  secretRef:
+    namespace: terraform-system
+    name: google
