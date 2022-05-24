@@ -1,0 +1,11 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: azure
+spec:
+  source: secret
+  provider: azurerm
+  secretRef:
+    namespace: terraform-system
+    name: azure

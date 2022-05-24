@@ -9,7 +9,7 @@ spec:
 
   providerRef:
     namespace: terraform-system
-    name: default
+    name: aws
 
   writeConnectionSecretToRef:
     name: test
