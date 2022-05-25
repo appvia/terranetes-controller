@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -33,7 +33,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/modules/google?ref=develop
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/google?ref=develop
   providerRef:
     namespace: terraform-system
     name: google

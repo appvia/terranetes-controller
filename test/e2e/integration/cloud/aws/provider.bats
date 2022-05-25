@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../../lib/helper.bash
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -26,26 +26,26 @@ teardown() {
 }
 
 @test "We should be able to create a cloud credential" {
-  if kubectl -n ${NAMESPACE} get secret google; then
+  if kubectl -n ${NAMESPACE} get secret aws; then
     skip "Cloud credential already exists"
   fi
 
-  runit "kubectl -n ${NAMESPACE} create secret generic google --from-literal=GOOGLE_CREDENTIALS=$GOOGLE_CREDENTIALS --from-literal=GOOGLE_PROJECT=$GOOGLE_PROJECT"
+  runit "kubectl -n ${NAMESPACE} create secret generic aws --from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} --from-literal=AWS_REGION=${AWS_REGION} >/dev/null 2>&1"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get secret google"
+  runit "kubectl -n ${NAMESPACE} get secret aws"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to create a cloud provider" {
-  runit "kubectl -n ${NAMESPACE} apply -f examples/google-provider.yaml"
+  runit "kubectl -n ${NAMESPACE} apply -f examples/provider.yaml"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get provider google"
+  runit "kubectl -n ${NAMESPACE} get provider aws"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a healthy cloud provider" {
-  runit "kubectl -n ${NAMESPACE} get provider google -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
+  runit "kubectl -n ${NAMESPACE} get provider aws -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get provider google -o json" "jq -r '.status.conditions[0].status' | grep -q True"
+  runit "kubectl -n ${NAMESPACE} get provider aws -o json" "jq -r '.status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
 }

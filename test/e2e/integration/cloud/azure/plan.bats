@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -25,22 +25,27 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should have resources indicated in the status" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '3'"
+@test "We should be able to create a configuration" {
+cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Configuration
+metadata:
+  name: ${RESOURCE_NAME}
+spec:
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/azure?ref=develop
+  providerRef:
+    namespace: terraform-system
+    name: azure
+  writeConnectionSecretToRef:
+    name: test
+    keys:
+      - bucket_name
+  variables:
+    bucket: terraformcontrollere2e
+EOF
+  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
-}
-
-@test "We should not have the application secret present" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should only have the keys specificied in the connection secret" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test -o json" "jq -r .data.BUCKET_NAME"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should be able to confirm the existence of the bucket" {
-  runit "echo hello world terraformcontrollere2e"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
   [[ "$status" -eq 0 ]]
 }

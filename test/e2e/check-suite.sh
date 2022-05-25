@@ -19,7 +19,7 @@
 APP_NAMESPACE="apps"
 BATS_OPTIONS=${BATS_OPTIONS:-""}
 BUCKET=${BUCKET:-"terraform-controller-ci-bucket"}
-CLOUD="aws"
+CLOUD=""
 UNITS="test/e2e/integration"
 
 usage() {
@@ -41,28 +41,37 @@ run_bats() {
   APP_NAMESPACE=${APP_NAMESPACE} \
   BUCKET=${BUCKET} \
   CLOUD=${CLOUD} \
-  RESOURCE_NAME=bucket-${CLOUD} \
+  RESOURCE_NAME=bucket-${CLOUD:-"test"} \
   NAMESPACE="terraform-system" \
   bats ${BATS_OPTIONS} ${@} || exit 1
 }
 
 # run-checks runs a collection checks
 run_checks() {
-  local FILES=(
-    "${UNITS}/setup.bats"
-    "${UNITS}/${CLOUD}/provider.bats"
-    "${UNITS}/${CLOUD}/plan.bats"
+  local CLOUD_FILES=(
+    "${UNITS}/cloud/${CLOUD}/provider.bats"
+    "${UNITS}/cloud/${CLOUD}/plan.bats"
     "${UNITS}/plan.bats"
     "${UNITS}/apply.bats"
-    "${UNITS}/${CLOUD}/confirm.bats"
+    "${UNITS}/cloud/${CLOUD}/confirm.bats"
     "${UNITS}/destroy.bats"
-    "${UNITS}/${CLOUD}/destroy.bats"
+    "${UNITS}/cloud/${CLOUD}/destroy.bats"
   )
-  echo "Running suite on: ${CLOUD^^}"
-  for filename in "${FILES[@]}"; do
-    if [[ -f "${filename}" ]]; then
-      run_bats ${filename} || exit 1
-    fi
+  local CONSTRAINTS_FILES=(
+    "${UNITS}/constraints/setup.bats"
+    "${UNITS}/constraints/modules.bats"
+  )
+
+  # Run in the installation
+  run_bats "${UNITS}/setup.bats"
+  if [[ -n "${CLOUD}" ]]; then
+    echo "Running suite on: ${CLOUD^^}"
+    for x in "${CLOUD_FILES[@]}"; do
+      [[ -f "${x}" ]] && run_bats ${x} || exit 1
+    done
+  fi
+  for x in "${CONSTRAINTS_FILES[@]}"; do
+    [[ -f "${x}" ]] && run_bats ${x} || exit 1
   done
 }
 
@@ -81,6 +90,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ ${CLOUD} == "aws" ]] || [[ ${CLOUD} == "azure" ]] || [[ ${CLOUD} == "google" ]] || usage "Unknown cloud: ${CLOUD}"
+[[ ${CLOUD} == "aws" ]] || [[ ${CLOUD} == "azure" ]] || [[ ${CLOUD} == "google" ]] || [[ ${CLOUD} == "" ]] || usage "Unknown cloud: ${CLOUD}"
 
 run_checks

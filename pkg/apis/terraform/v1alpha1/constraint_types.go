@@ -76,7 +76,7 @@ type PolicyConstraint struct {
 	// +kubebuilder:validation:Optional
 	External []ExternalCheck `json:"external,omitempty"`
 	// Selector is the selector on the namespace or labels on the configuration. By leaving this
-	// fields empty you can implicitedly selecting all configurations.
+	// fields empty you can implicitly selecting all configurations.
 	// +kubebuilder:validation:Optional
 	Selector *Selector `json:"selector,omitempty"`
 	// SkipChecks is a collection of checkov checks which you can defined as skipped. The security

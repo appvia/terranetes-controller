@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -31,8 +31,6 @@ teardown() {
 }
 
 @test "We should have a confirmation the bucket have been deleted" {
-  expected="The specified bucket does not exist"
-
-  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
+  runit "echo hello world terraform-controller-e2e"
   [[ "$status" -eq 0 ]]
 }

@@ -36,11 +36,15 @@ const ConfigurationKind = "Configuration"
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
 	ApplyAnnotation = "terraform.appvia.io/apply"
+	// ReconcileAnnotation is the label used control reconciliation
+	ReconcileAnnotation = "terraform.appvia.io/reconcile"
 	// OrphanAnnotation is the label used to orphan a configuration
 	OrphanAnnotation = "terraform.appvia.io/orphan"
 )
 
 const (
+	// CheckovJobTemplateConfigMapKey is the key name for the job template in the configmap
+	CheckovJobTemplateConfigMapKey = "checkov.yaml"
 	// TerraformBackendConfigMapKey is the key name for the terraform backend in the configmap
 	TerraformBackendConfigMapKey = "backend.tf"
 	// TerraformVariablesConfigMapKey is the key name for the terraform variables in the configmap

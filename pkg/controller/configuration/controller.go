@@ -112,6 +112,18 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		For(&terraformv1alphav1.Configuration{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
+		// @note: we will avoid reconciliation on any resource where the annotation is set
+		WithEventFilter(&predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return !(e.ObjectNew.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+			GenericFunc: func(e event.GenericEvent) bool {
+				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+		}).
 		Watches(
 			// We use this it keep a local cache of all namespaces in the cluster
 			&source.Kind{Type: &v1.Namespace{}},
