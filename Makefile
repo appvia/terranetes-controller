@@ -61,8 +61,8 @@ check-api-sync:
 
 controller-gen:
 	@echo "--> Generating deepcopies, CRDs and webhooks"
-	@rm -rf charts/crds/
-	@mkdir -p charts/crds/
+	@rm -rf charts/terraform-controller/crds
+	@mkdir -p charts/terraform-controller/crds
 	@mkdir -p pkg/client
 	@go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 		paths=./pkg/apis/... \
