@@ -26,9 +26,9 @@ controller:
     # policy is image for policy (wip)
     policy: bridgecrew/checkov:2.0.1143
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:0.1.5
+    controller: quay.io/appvia/terraform-controller:v0.1.5
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:0.1.5
+    executor: quay.io/appvia/terraform-executor:v0.1.5
 
   # Allows you to overload the templates
   templates:
