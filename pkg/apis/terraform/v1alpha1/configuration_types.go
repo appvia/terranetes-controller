@@ -43,6 +43,8 @@ const (
 )
 
 const (
+	// CheckovJobTemplateConfigMapKey is the key name for the job template in the configmap
+	CheckovJobTemplateConfigMapKey = "checkov.yaml"
 	// TerraformBackendConfigMapKey is the key name for the terraform backend in the configmap
 	TerraformBackendConfigMapKey = "backend.tf"
 	// TerraformVariablesConfigMapKey is the key name for the terraform variables in the configmap
