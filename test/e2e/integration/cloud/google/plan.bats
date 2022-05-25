@@ -33,7 +33,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/google?ref=develop
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/google?ref=master
   providerRef:
     namespace: terraform-system
     name: google
