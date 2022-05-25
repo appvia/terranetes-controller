@@ -77,6 +77,14 @@ EOF
 @test "We should have a clean terraform namespace for testing" {
   labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=plan"
 
+  runit "kubectl delete policies.terraform.appvia.io --all"
+  [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} delete job -l ${labels}"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete job --all --wait=false"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete po --all --wait=false"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete ev --all --wait=false"
   [[ "$status" -eq 0 ]]
 }
