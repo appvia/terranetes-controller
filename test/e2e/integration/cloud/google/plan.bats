@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -33,31 +33,16 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
+  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/google?ref=develop
   providerRef:
     namespace: terraform-system
-    name: aws
+    name: google
   writeConnectionSecretToRef:
     name: test
     keys:
-      - s3_bucket_id
-      - s3_bucket_arn
-      - s3_bucket_region
+      - bucket_name
   variables:
-    unused: $(date +"%s")
-    bucket: ${BUCKET}
-    acl: private
-    versioning:
-      enabled: true
-    block_public_acls: true
-    block_public_policy: true
-    ignore_public_acls: true
-    restrict_public_buckets: true
-    server_side_encryption_configuration:
-      rule:
-        apply_server_side_encryption_by_default:
-          sse_algorithm: "aws:kms"
-        bucket_key_enabled: true
+    bucket: terraform-controller-e2e
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]

@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../../lib/helper.bash
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -25,27 +25,3 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should be able to create a configuration" {
-cat <<EOF > ${BATS_TMPDIR}/resource.yaml
----
-apiVersion: terraform.appvia.io/v1alpha1
-kind: Configuration
-metadata:
-  name: ${RESOURCE_NAME}
-spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/modules/azure?ref=develop
-  providerRef:
-    namespace: terraform-system
-    name: azure
-  writeConnectionSecretToRef:
-    name: test
-    keys:
-      - bucket_name
-  variables:
-    bucket: terraformcontrollere2e
-EOF
-  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
-  [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
-  [[ "$status" -eq 0 ]]
-}

@@ -36,6 +36,8 @@ const ConfigurationKind = "Configuration"
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
 	ApplyAnnotation = "terraform.appvia.io/apply"
+	// ReconcileAnnotation is the label used control reconciliation
+	ReconcileAnnotation = "terraform.appvia.io/reconcile"
 	// OrphanAnnotation is the label used to orphan a configuration
 	OrphanAnnotation = "terraform.appvia.io/orphan"
 )

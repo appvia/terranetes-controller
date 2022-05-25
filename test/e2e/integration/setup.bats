@@ -68,9 +68,9 @@ metadata:
 EOF
   runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete job --all"
+  runit "kubectl -n ${APP_NAMESPACE} delete job --all --wait=false"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete po --all"
+  runit "kubectl -n ${APP_NAMESPACE} delete po --all --wait=false"
   [[ "$status" -eq 0 ]]
 }
 
