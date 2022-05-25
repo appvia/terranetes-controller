@@ -60,10 +60,6 @@ run_checks() {
   local CONSTRAINTS_FILES=(
     "${UNITS}/constraints/setup.bats"
     "${UNITS}/constraints/modules.bats"
-    "${UNITS}/constraints/checkov.bats"
-    "${UNITS}/cloud/aws/provider.bats"
-    "${UNITS}/cloud/aws/plan.bats"
-    "${UNITS}/constraints/policy.bats"
   )
 
   # Run in the installation

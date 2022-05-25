@@ -71,7 +71,7 @@ spec:
                             type: object
                           type: array
                         selector:
-                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitedly selecting all configurations.
+                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitly selecting all configurations.
                           properties:
                             namespace:
                               description: Namespace is used to filter a configuration based on the namespace labels of where it exists
