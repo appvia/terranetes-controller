@@ -177,8 +177,8 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 	}
 }
 
-// ensureConfigurationSecrets is responsible for deleting any associated terraform state
-func (c *Controller) ensureConfigurationSecrets(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+// ensureConfigurationSecretsDeleted is responsible for deleting any associated terraform state
+func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {

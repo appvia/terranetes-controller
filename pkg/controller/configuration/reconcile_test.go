@@ -62,6 +62,15 @@ var _ = Describe("Configuration Controller", func() {
 	cfgNamespace := "apps"
 	defaultConditions := 5
 
+	verifyPolicyArguments := []string{
+		"--comment=Evaluating Against Security Policy",
+		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --soft-fail --output-file-path /run >/dev/null",
+		"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null",
+		"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null",
+		"--is-failure=/run/steps/terraform.failed",
+		"--wait-on=/run/steps/terraform.complete",
+	}
+
 	Setup := func(objects ...runtime.Object) {
 		cc = fake.NewFakeClientWithScheme(schema.GetScheme(), append([]runtime.Object{
 			fixtures.NewNamespace(cfgNamespace),
@@ -428,7 +437,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should indicate the failure on the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
 			Expect(cond.Message).To(Equal("Failed to find matching policy constraints"))
@@ -654,7 +663,7 @@ terraform {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			Setup(configuration)
 			constraint := fixtures.NewMatchAllPolicyConstraint("all")
-			constraint.Spec.Constraints.Checkov.Checks = []string{"check0, check1"}
+			constraint.Spec.Constraints.Checkov.Checks = []string{"check0", "check1"}
 			constraint.Spec.Constraints.Checkov.SkipChecks = nil
 
 			Expect(ctrl.cc.Create(context.TODO(), constraint)).ToNot(HaveOccurred())
@@ -676,7 +685,6 @@ terraform {
 
 		It("should add a verify-policy container to the job", func() {
 			list := &batchv1.JobList{}
-			expected := `--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --check check1 --soft-fail --output-file-path /run >/dev/null`
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
@@ -685,8 +693,22 @@ terraform {
 			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
 			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
 			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
-			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
-			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+			Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal(verifyPolicyArguments))
+			Expect(job.Spec.Template.Spec.Containers[1].VolumeMounts).To(HaveLen(3))
+			Expect(job.Spec.Template.Spec.Containers[1].VolumeMounts[0].Name).To(Equal("checkov"))
+			Expect(job.Spec.Template.Spec.Containers[1].VolumeMounts[0].MountPath).To(Equal("/run/checkov"))
+		})
+
+		It("should have a checkov configuration secret", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
+			Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\n  - check1"))
 		})
 	})
 
@@ -728,7 +750,6 @@ terraform {
 
 		It("should have selected priority policy", func() {
 			list := &batchv1.JobList{}
-			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check priority --soft-fail --output-file-path /run >/dev/null"
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
@@ -737,8 +758,19 @@ terraform {
 			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
 			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
 			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
-			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
-			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+			Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal(verifyPolicyArguments))
+		})
+
+		It("should have a checkov configuration secret", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
+			Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - priority"))
 		})
 	})
 
@@ -790,7 +822,7 @@ terraform {
 			Expect(source.Args).To(Equal([]string{
 				"--comment=Retrieve external source for test",
 				"--command=/bin/mkdir -p /run/policy",
-				"--command=/run/bin/source --dest=/run/policy/test --source=https://example.com//dir",
+				"--command=/bin/source --dest=/run/policy/test --source=https://example.com//dir",
 			}))
 			Expect(source.EnvFrom).To(Equal([]v1.EnvFromSource{
 				{
@@ -806,7 +838,6 @@ terraform {
 
 		It("should have updated the command line for checkov scan", func() {
 			list := &batchv1.JobList{}
-			expected := "--command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli --check check0 --external-checks-dir test --soft-fail --output-file-path /run >/dev/null"
 
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
@@ -815,8 +846,26 @@ terraform {
 			Expect(len(job.Spec.Template.Spec.Containers)).To(Equal(2))
 			Expect(job.Spec.Template.Spec.Containers[1].Name).To(Equal("verify-policy"))
 			Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
-			Expect(len(job.Spec.Template.Spec.Containers[1].Args)).To(Equal(6))
-			Expect(job.Spec.Template.Spec.Containers[1].Args[1]).To(Equal(expected))
+			Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal([]string{
+				"--comment=Evaluating Against Security Policy",
+				"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --soft-fail --output-file-path /run >/dev/null",
+				"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null",
+				"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null",
+				"--is-failure=/run/steps/terraform.failed",
+				"--wait-on=/run/steps/terraform.complete",
+			}))
+		})
+
+		It("should have a checkov configuration secret", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.JobNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
+			Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\nexternal-checks-dir:\n  - /run/policy/test"))
 		})
 	})
 

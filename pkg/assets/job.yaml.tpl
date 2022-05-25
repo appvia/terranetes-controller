@@ -45,6 +45,15 @@ spec:
               - key: variables.tfvars.json
                 path: variables.tfvars.json
               {{- end }}
+        {{- if and (.Policy) (eq .Stage "plan") }}
+        - name: checkov
+          secret :
+            secretName: {{ .Secrets.Config }}
+            optional: false
+            items:
+              - key: checkov.yaml
+                path: checkov.yaml
+        {{- end }}
 
       initContainers:
         - name: setup
@@ -102,7 +111,7 @@ spec:
           args:
             - --comment=Retrieve external source for {{ .Name }}
             - --command=/bin/mkdir -p /run/policy
-            - --command=/run/bin/source --dest=/run/policy/{{ .Name }} --source={{ .URL }}
+            - --command=/bin/source --dest=/run/policy/{{ .Name }} --source={{ .URL }}
           {{- if and (.SecretRef) (.SecretRef.Name) }}
           envFrom:
             - secretRef:
@@ -212,10 +221,7 @@ spec:
           - /run/bin/step
         args:
           - --comment=Evaluating Against Security Policy
-          {{ $checks := prefix "--check" .Policy.Checks }}
-          {{ $skips := prefix "--skip-check" .Policy.SkipChecks }}
-          {{ $external := prefix "--external-checks-dir" .Policy.ExternalCheckNames }}
-          - --command=/usr/local/bin/checkov --framework terraform_plan -f /run/plan.json -o json -o cli {{ $checks }}{{ $skips }}{{ $external }}--soft-fail --output-file-path /run >/dev/null
+          - --command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --soft-fail --output-file-path /run >/dev/null
           - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null
           - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null
           - --is-failure=/run/steps/terraform.failed
@@ -237,6 +243,8 @@ spec:
           capabilities:
             drop: [ALL]
         volumeMounts:
+          - name: checkov
+            mountPath: /run/checkov
           - name: run
             mountPath: /run
           - name: source
