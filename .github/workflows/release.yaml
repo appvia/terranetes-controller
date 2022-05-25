@@ -14,7 +14,7 @@ jobs:
     uses: appvia/terraform-controller/.github/workflows/e2e.yaml@master
     secrets: inherit
     with:
-      cloud: azure
+      cloud: aws
 
   e2e-azure:
     uses: appvia/terraform-controller/.github/workflows/e2e.yaml@master
