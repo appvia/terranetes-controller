@@ -47,6 +47,6 @@ teardown() {
 }
 
 @test "We should not have configuration present in the application namespace" {
-  retry 10 "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} 2>&1" "grep -q NotFound"
+  retry 50 "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} 2>&1" "grep -q NotFound"
   [[ "$status" -eq 0 ]]
 }
