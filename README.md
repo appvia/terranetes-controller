@@ -1,7 +1,3 @@
-<p align="right">
-  <img src="docs/images/cogs.png" width="130">
-<p>
-
 [![GPL license](https://img.shields.io/badge/License-GPL-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens) [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terraform-controller)](https://goreportcard.com/report/github.com/appvia/terraform-controller)
 
 # **TERRAFORM CONTROLLER**
@@ -39,7 +35,7 @@ The quickest way to get up the running is via the Helm chart.
 $ git clone git@github.com:appvia/terraform-controller.git
 $ cd terraform-controller
 # kind create cluster
-$ helm install -n terraform-system terraform-controller charts/ --create-namespace
+$ helm install -n terraform-system terraform-controller charts/terraform-controller --create-namespace
 $ kubectl -n terraform-system get po
 
 ```

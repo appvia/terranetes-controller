@@ -61,14 +61,14 @@ check-api-sync:
 
 controller-gen:
 	@echo "--> Generating deepcopies, CRDs and webhooks"
-	@rm -rf charts/crds/
-	@mkdir -p charts/crds/
+	@rm -rf charts/terraform-controller/crds
+	@mkdir -p charts/terraform-controller/crds
 	@mkdir -p pkg/client
 	@go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 		paths=./pkg/apis/... \
 		object:headerFile=hack/boilerplate.go.txt \
 		crd \
-		output:crd:dir=charts/crds \
+		output:crd:dir=charts/terraform-controller/crds \
 		webhook \
 		output:webhook:dir=deploy/webhooks
 	@./hack/patch-crd-gen.sh
@@ -89,7 +89,7 @@ schema-gen:
     -pkg register \
     -nometadata \
     -o pkg/register/assets.go \
-    -prefix deploy charts/crds deploy/webhooks
+    -prefix deploy charts/terraform-controller/crds deploy/webhooks
 	@$(MAKE) gofmt
 
 ### BUILD ###
