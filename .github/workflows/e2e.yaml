@@ -10,45 +10,101 @@ on:
   workflow_dispatch:
     inputs:
       cloud:
-        description: 'Cloud vendor to run against'
+        description: 'Cloud vendor'
         required: true
         default: 'aws'
         type: choice
         options:
-        - aws
-        - azure
-        - google
+          - aws
+          - azure
+          - google
 
 jobs:
-  e2e:
+  controller-image:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Install Requirements
-      run: |
-        sudo apt update -y
-        sudo apt install bats jq
-    - name: Install Kubectl
-      uses: azure/setup-kubectl@v2.0
-      with:
-        version: v1.23.0
-    - name: Install Kind
-      run: |
-        curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
-        chmod +x kind
-        kind create cluster
-    - name: Load Images
-      run: |
-        VERSION=ci make controller-kind
-    - name: E2E
-      run: |
-        test/e2e/check-suite.sh --cloud ${{ (github.event.inputs || inputs).cloud }}
-      env:
-        ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.E2E_ARM_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ secrets.E2E_ARM_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ secrets.E2E_ARM_TENANT_ID }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
-        AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: images/Dockerfile.controller
+          tags: quay.io/appvia/terraform-controller:ci
+          outputs: type=docker,dest=/tmp/controller-image.tar
+      - name: Save
+        uses: actions/upload-artifact@v2
+        with:
+          name: controller-image
+          path: /tmp/controller-image.tar
+          retention-days: 1
+
+  executor-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: images/Dockerfile.executor
+          tags: quay.io/appvia/terraform-executor:ci
+          outputs: type=docker,dest=/tmp/executor-image.tar
+      - name: Save
+        uses: actions/upload-artifact@v2
+        with:
+          name: executor-image
+          path: /tmp/executor-image.tar
+          retention-days: 1
+
+  e2e:
+    needs:
+      - controller-image
+      - executor-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Requirements
+        run: |
+          sudo apt update -y
+          sudo apt install bats jq
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v2.0
+        with:
+          version: v1.23.0
+      - name: Install Kind
+        run: |
+          curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
+          chmod +x kind
+          kind create cluster
+      - name: Retrieve Controller Image
+        uses: actions/download-artifact@v2
+        with:
+          name: controller-image
+          path: /tmp
+      - name: Retrieve Executor Image
+        uses: actions/download-artifact@v2
+        with:
+          name: executor-image
+          path: /tmp
+      - name: Load images
+        run: |
+          kind load image-archive /tmp/controller-image.tar
+          kind load image-archive /tmp/executor-image.tar
+      - name: Running E2E
+        run: |
+          test/e2e/check-suite.sh --cloud ${{ (github.event.inputs || inputs).cloud }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.E2E_ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.E2E_ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.E2E_ARM_TENANT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}

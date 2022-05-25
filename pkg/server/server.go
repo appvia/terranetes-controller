@@ -107,15 +107,16 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	if err := (&configuration.Controller{
-		EnableInfracosts:     (config.InfracostsSecretName != ""),
-		EnableWatchers:       config.EnableWatchers,
-		ExecutorImage:        config.ExecutorImage,
-		InfracostsImage:      config.InfracostsImage,
-		InfracostsSecretName: config.InfracostsSecretName,
-		JobNamespace:         config.Namespace,
-		JobTemplate:          config.JobTemplate,
-		PolicyImage:          config.PolicyImage,
-		TerraformImage:       config.TerraformImage,
+		EnableInfracosts:        (config.InfracostsSecretName != ""),
+		EnableTerraformVersions: config.EnableTerraformVersions,
+		EnableWatchers:          config.EnableWatchers,
+		ExecutorImage:           config.ExecutorImage,
+		InfracostsImage:         config.InfracostsImage,
+		InfracostsSecretName:    config.InfracostsSecretName,
+		JobNamespace:            config.Namespace,
+		JobTemplate:             config.JobTemplate,
+		PolicyImage:             config.PolicyImage,
+		TerraformImage:          config.TerraformImage,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)
 	}

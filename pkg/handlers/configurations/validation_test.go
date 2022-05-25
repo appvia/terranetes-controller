@@ -39,10 +39,59 @@ var _ = Describe("Configuration Validation", func() {
 	namespace := "default"
 	name := "aws"
 
+	When("updating an existing configuration", func() {
+		BeforeEach(func() {
+			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
+			v = &validator{cc: cc, versioning: true}
+
+			Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(namespace, name))).To(Succeed())
+		})
+
+		When("versioning is disabled", func() {
+			BeforeEach(func() {
+				v.versioning = false
+			})
+
+			When("trying to change the version of existing configuration", func() {
+				It("should failed to change the version of existing configuration", func() {
+					before := fixtures.NewValidBucketConfiguration(namespace, "test")
+					after := before.DeepCopy()
+					after.Spec.TerraformVersion = "v1.1.0"
+
+					err := v.ValidateUpdate(ctx, before, after)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("spec.terraformVersion has been disabled and cannot be changed"))
+				})
+
+				It("should not fail if version is being removed", func() {
+					before := fixtures.NewValidBucketConfiguration(namespace, "test")
+					after := before.DeepCopy()
+					after.Spec.TerraformVersion = ""
+
+					err := v.ValidateUpdate(ctx, before, after)
+					Expect(err).To(Succeed())
+				})
+
+				It("should not fail if version in the same prior to versioning disabled", func() {
+					before := fixtures.NewValidBucketConfiguration(namespace, "test")
+					before.Spec.TerraformVersion = "v1.1.9"
+					before.Spec.EnableAutoApproval = false
+
+					after := before.DeepCopy()
+					after.Spec.TerraformVersion = "v1.1.9"
+					after.Spec.EnableAutoApproval = true
+
+					err := v.ValidateUpdate(ctx, before, after)
+					Expect(err).To(Succeed())
+				})
+			})
+		})
+	})
+
 	When("creating a configuration", func() {
 		BeforeEach(func() {
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
-			v = &validator{cc: cc}
+			v = &validator{cc: cc, versioning: true}
 		})
 
 		When("we have a module constraint", func() {
@@ -61,7 +110,7 @@ var _ = Describe("Configuration Validation", func() {
 			It("should deny the configuration of the module", func() {
 				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("the configuration has been denied by policy"))
+				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
 			})
 		})
 
@@ -85,6 +134,42 @@ var _ = Describe("Configuration Validation", func() {
 
 			It("should allow the configuration of the module", func() {
 				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		When("we have two module constraints", func() {
+			BeforeEach(func() {
+				provider := fixtures.NewValidAWSProvider(namespace, name)
+				all := fixtures.NewPolicy("all")
+				all.Spec.Constraints = &terraformv1alphav1.Constraints{}
+				all.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"default.*"}}
+
+				allow := fixtures.NewPolicy("allow")
+				allow.Spec.Constraints = &terraformv1alphav1.Constraints{}
+				allow.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"allow.*"}}
+
+				Expect(cc.Create(ctx, all)).To(Succeed())
+				Expect(cc.Create(ctx, allow)).To(Succeed())
+				Expect(cc.Create(ctx, provider)).To(Succeed())
+			})
+
+			It("should fail with a constraint violation", func() {
+				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
+				configuration.Spec.Module = "allow"
+
+				Expect(cc.Delete(ctx, fixtures.NewPolicy("allow"))).To(Succeed())
+
+				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
+			})
+
+			It("should be allowed by the second policy", func() {
+				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
+				configuration.Spec.Module = "allow"
+				err := v.ValidateCreate(ctx, configuration)
+
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
@@ -192,6 +277,22 @@ var _ = Describe("Configuration Validation", func() {
 
 				err := v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).To(Succeed())
+			})
+		})
+
+		When("versioning is disabled on configurations", func() {
+			BeforeEach(func() {
+				v.versioning = false
+				Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(namespace, name))).To(Succeed())
+			})
+
+			It("should be denied due to versioning", func() {
+				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
+				configuration.Spec.TerraformVersion = "bad"
+				err := v.ValidateCreate(ctx, configuration)
+
+				Expect(err).ToNot(Succeed())
+				Expect(err.Error()).To(Equal("spec.terraformVersion changes have been disabled"))
 			})
 		})
 	})

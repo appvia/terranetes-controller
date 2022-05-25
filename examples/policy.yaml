@@ -5,6 +5,14 @@ metadata:
   name: permitted-modules
 spec:
   constraints:
+    selector:
+#      Leaving the selector blank indicates the policy is applied to all
+#      namespace:
+#        matchLabels: {}
+#        matchExpressions: []
+#      resource:
+#        matchLabels: {}
+#        matchExpressions: []
     modules:
       allowed:
         - "https://github.com/.*"
@@ -54,3 +62,8 @@ spec:
       # See: https://www.checkov.io/5.Policy%20Index/terraform.html
       skipChecks:
         - <NAME>
+      external:
+        - name:
+          url:
+          secretRef:
+

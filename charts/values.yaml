@@ -26,9 +26,9 @@ controller:
     # policy is image for policy (wip)
     policy: bridgecrew/checkov:2.0.1143
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:v0.1.3
+    controller: quay.io/appvia/terraform-controller:v0.1.4
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:v0.1.3
+    executor: quay.io/appvia/terraform-executor:v0.1.4
 
   # Allows you to overload the templates
   templates:
@@ -40,6 +40,9 @@ controller:
   # indicate we create the watcher jobs in user namespace, these allow users
   # to view the terraform output
   enableWatchers: true
+  # enableTerraformVersions indicates configurations are permitted to override
+  # the terraform version in their spec.
+  enableTerraformVersions: true
 
   # The default terraform version (or tag of the above image)
   webhooks:

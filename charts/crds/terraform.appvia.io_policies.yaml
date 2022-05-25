@@ -47,8 +47,31 @@ spec:
                           items:
                             type: string
                           type: array
+                        external:
+                          description: External is a collection of external checks which should be included in the scan. Each of the external sources and retrieved and sourced into /run/policy/<NAME> where they can be included as part of the scan
+                          items:
+                            description: ExternalCheck defines the definition for an external check - this comprises of the source and any optional secret
+                            properties:
+                              name:
+                                description: Name provides a arbitrary name to the checks - note, this name is used as the directory name when we source the code
+                                type: string
+                              secretRef:
+                                description: SecretRef is reference to secret which contains environment variables used by the source command to retrieve the code. This could be cloud credentials, ssh keys, git username and password etc
+                                properties:
+                                  name:
+                                    description: Name is unique within a namespace to reference a secret resource.
+                                    type: string
+                                  namespace:
+                                    description: Namespace defines the space within which the secret name must be unique.
+                                    type: string
+                                type: object
+                              url:
+                                description: URL is the source external checks - this is usually a git repository. The notation for this is https://github.com/hashicorp/go-getter
+                                type: string
+                            type: object
+                          type: array
                         selector:
-                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitedly selecting all configurations.
+                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitly selecting all configurations.
                           properties:
                             namespace:
                               description: Namespace is used to filter a configuration based on the namespace labels of where it exists
@@ -125,6 +148,70 @@ spec:
                           items:
                             type: string
                           type: array
+                        selector:
+                          description: Selector is the selector on the namespace or labels on the configuration. By leaving this field empty you are implicitly selecting all configurations.
+                          properties:
+                            namespace:
+                              description: Namespace is used to filter a configuration based on the namespace labels of where it exists
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the selector applies to.
+                                        type: string
+                                      operator:
+                                        description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                    required:
+                                      - key
+                                      - operator
+                                    type: object
+                                  type: array
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                            resource:
+                              description: Resource provides the ability to filter a configuration based on it's labels
+                              properties:
+                                matchExpressions:
+                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                                  items:
+                                    description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                                    properties:
+                                      key:
+                                        description: key is the label key that the selector applies to.
+                                        type: string
+                                      operator:
+                                        description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                                        type: string
+                                      values:
+                                        description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                                        items:
+                                          type: string
+                                        type: array
+                                    required:
+                                      - key
+                                      - operator
+                                    type: object
+                                  type: array
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                  type: object
+                              type: object
+                          type: object
                       type: object
                   type: object
                 defaults:

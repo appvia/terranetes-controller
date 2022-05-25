@@ -71,7 +71,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 				c.ensureJobTemplate(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
 				c.ensureTerraformConfigDeleted(configuration),
-				c.ensureConfigurationSecrets(configuration),
+				c.ensureConfigurationSecretsDeleted(configuration),
 				c.ensureConfigurationJobsDeleted(configuration),
 				finalizer.EnsureRemoved(configuration),
 			})

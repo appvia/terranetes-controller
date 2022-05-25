@@ -62,6 +62,8 @@ type Controller struct {
 	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// EnableTerraformVersions enables the use of the configuration's Terraform version
+	EnableTerraformVersions bool
 	// InfracostsImage is the image to use for all infracost jobs
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
@@ -99,7 +101,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc)),
+		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
 	)
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/mutate/%s/configurations", terraformv1alphav1.GroupName),
@@ -110,6 +112,18 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		For(&terraformv1alphav1.Configuration{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
+		// @note: we will avoid reconciliation on any resource where the annotation is set
+		WithEventFilter(&predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return !(e.ObjectNew.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+			GenericFunc: func(e event.GenericEvent) bool {
+				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+			},
+		}).
 		Watches(
 			// We use this it keep a local cache of all namespaces in the cluster
 			&source.Kind{Type: &v1.Namespace{}},

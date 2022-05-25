@@ -293,6 +293,8 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 // includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
+
 	backend := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
@@ -347,6 +349,27 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 			}
 		}
 
+		// @step: we need to find any matching policy which should be attached to this configuration.
+		policy, err := c.findMatchingPolicy(ctx, configuration, state.policies)
+		if err != nil {
+			policyCondition.Failed(err, "Failed to find matching policy constraints")
+
+			return reconcile.Result{}, err
+		}
+		if policy == nil {
+			delete(secret.Data, terraformv1alphav1.CheckovJobTemplateConfigMapKey)
+		} else {
+			state.checkovConstraint = policy
+
+			config, err := utils.Template(checkovPolicyTemplate, map[string]interface{}{"Policy": policy})
+			if err != nil {
+				cond.Failed(err, "Failed to parse the checkov policy template")
+
+				return reconcile.Result{}, err
+			}
+			secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey] = config
+		}
+
 		if err := kubernetes.CreateOrPatch(ctx, c.cc, secret); err != nil {
 			cond.Failed(err, "Failed to create or update the configuration secret")
 
@@ -364,14 +387,6 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		// @step: we need to find any matching policy which should be attached to this configuration.
-		policy, err := c.findMatchingPolicy(ctx, configuration, state.policies)
-		if err != nil {
-			cond.Failed(err, "Failed to find matching policy constraints")
-
-			return reconcile.Result{}, err
-		}
-		state.checkovConstraint = policy
 
 		switch {
 		// @note: this is effectively checking the status of plan condition - if the condition is True
@@ -389,7 +404,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			InfracostsSecret:      c.InfracostsSecretName,
 			Namespace:             c.JobNamespace,
 			PolicyImage:           c.PolicyImage,
-			PolicyConstraint:      policy,
+			PolicyConstraint:      state.checkovConstraint,
 			Template:              state.jobTemplate,
 			TerraformImage:        GetTerraformImage(configuration, c.TerraformImage),
 		}

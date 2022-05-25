@@ -19,7 +19,7 @@ GO_DIRS=cmd hack pkg
 SH_DIRS=.circleci hack
 ROOT_DIR=${PWD}
 UNAME := $(shell uname)
-LFLAGS ?= -X main.gitsha=${GIT_SHA} -X main.compiled=${BUILD_TIME}
+LFLAGS ?= -X version.Version=${VERSION} -X main.GitCommit=${GIT_SHA}
 VERSION ?= latest
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
@@ -124,7 +124,7 @@ test:
 
 controller-image:
 	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
-	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
+	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
 
 controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
@@ -145,7 +145,7 @@ controller-image-verify: install-trivy
 
 executor-image:
 	@echo "--> Compiling the terraform-executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
-	@docker build -t ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} -f images/Dockerfile.executor .
+	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} -f images/Dockerfile.executor .
 
 executor-image-kind: executor-image
 	@echo "--> Building and loading executor image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"

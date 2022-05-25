@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../lib/helper
+load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -48,17 +48,5 @@ teardown() {
 
 @test "We should not have configuration present in the application namespace" {
   retry 10 "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} 2>&1" "grep -q NotFound"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should not have the application secret present" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test 2>&1" "grep -q NotFound"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should have a confirmation the bucket have been deleted" {
-  expected="The specified bucket does not exist"
-
-  runit "aws s3 ls s3://${BUCKET} 2>&1" "grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }

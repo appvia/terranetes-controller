@@ -1,0 +1,20 @@
+metadata:
+  id: CKV2_CUSTOM_1000
+  name: Denied
+  category: GENERAL_SECURITY
+definition:
+  or:
+    - cond_type: attribute
+      operator: exists
+      resource_types:
+        - aws_s3_bucket
+    - cond_type: attribute
+      operator: exists
+      resource_types:
+        - azurerm_resource_group
+        - azurerm_storage_account
+        - azurerm_storage_container
+    - cond_type: attribute
+      operator: exists
+      resource_types:
+        - google_storage_bucket

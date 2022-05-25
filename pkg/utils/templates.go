@@ -18,18 +18,32 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 )
 
 // GetTxtFunc returns a defaults list of methods for text templating
 func GetTxtFunc() map[string]any {
-	funcs := sprig.TxtFuncMap()
-	funcs["prefix"] = Prefix
+	return sprig.TxtFuncMap()
+}
 
-	return funcs
+// Template is called to render a template
+func Template(main string, data interface{}) ([]byte, error) {
+	tpl, err := template.New("main").Funcs(GetTxtFunc()).Parse(main)
+	if err != nil {
+		return nil, err
+	}
+
+	b := &bytes.Buffer{}
+	if err := tpl.Execute(b, data); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }
 
 // Prefix is a hack to get prefixes to fix
