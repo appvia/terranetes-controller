@@ -68,7 +68,7 @@ controller-gen:
 		paths=./pkg/apis/... \
 		object:headerFile=hack/boilerplate.go.txt \
 		crd \
-		output:crd:dir=charts/crds \
+		output:crd:dir=charts/terraform-controller/crds \
 		webhook \
 		output:webhook:dir=deploy/webhooks
 	@./hack/patch-crd-gen.sh
@@ -89,7 +89,7 @@ schema-gen:
     -pkg register \
     -nometadata \
     -o pkg/register/assets.go \
-    -prefix deploy charts/crds deploy/webhooks
+    -prefix deploy charts/terraform-controller/crds deploy/webhooks
 	@$(MAKE) gofmt
 
 ### BUILD ###

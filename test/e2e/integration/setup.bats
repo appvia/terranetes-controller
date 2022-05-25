@@ -35,10 +35,10 @@ controller:
 EOF
 
   if ! helm -n ${NAMESPACE} ls | grep terraform-controller; then
-    runit "helm install terraform-controller charts/ -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
+    runit "helm install terraform-controller charts/terraform-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   else
-    runit "helm upgrade terraform-controller charts/ -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
+    runit "helm upgrade terraform-controller charts/terraform-controller -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   fi
 }
