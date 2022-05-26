@@ -2,8 +2,6 @@ name: Release
 
 on:
   push:
-    tags:
-    - "v*"
 
 env:
   REGISTRY: quay.io
