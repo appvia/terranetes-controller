@@ -4,17 +4,31 @@
 
 Terraform Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
-**DEVELOPERS**
+**FEATURES**
+---
 
-* Workflows are run outside developer namespace so credentials can be shared without being exposed.
-* Changes can be approved beforehand, following a plan and apply workflow.
-* Developers can view and debug the terraform workflows from their our namespaces.
+### DEVELOPERS
 
-**PLATFORM ENGINEERS**
+- [Keep Terraform Configuration simple to use](https://terranetes.appvia.io/terraform-controller/developer/configuration/)
+- [Filter and write specific Terraform outputs to a secret](https://terranetes.appvia.io/terraform-controller/developer/configuration/#connection-secret-reference)
+- [View full Terraform log output](https://terranetes.appvia.io/terraform-controller/developer/configuration/#viewing-the-changes)
+- [Approve changes before application, supporting plan and apply workflows](https://terranetes.appvia.io/terraform-controller/developer/configuration/#approving-a-plan)
+- [See cost estimates prior to creating resources](https://terranetes.appvia.io/terraform-controller/admin/costs/)
+- [Support private terraform module sources](https://terranetes.appvia.io/terraform-controller/developer/private/)
+- [Directly reference FluxCD sources](https://terranetes.appvia.io/terraform-controller/developer/flux/)
+- [ROADMAP] *Detect and raise alerts for drift on upstream configuration*
+- [ROADMAP] *Source Terraform Configuration variables from ConfigMaps and Secrets*
 
-* Place guardrails around which modules can be consumed.
-* Automatically inject environment specific configuration _(dev, prod, cost centres and so forth)_ into the module, based on labels.
-* Allow developers to see the associated costs to their configurations
+### PLATFORM ENGINEERS
+
+- [Keep cloud credentials secure](https://terranetes.appvia.io/terraform-controller/admin/providers/)
+  - Restrict credentials provider use via namespace and label selectors
+  - Don't expose credentials within a user's namespace
+- [Define Guardrails around use](https://terranetes.appvia.io/terraform-controller/admin/policy/)
+  - Restrict to known module sources
+  - Validate resource requests against Checkov policies
+  - Automatically inject default configuration based on labels
+- [ROADMAP] *Apply granular budget controls for namespaces*
 
 **DOCUMENTATION**
 ---
