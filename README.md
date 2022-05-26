@@ -4,6 +4,8 @@
 
 Terraform Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
+![Architecture](docs/images/architecture.jpg)
+
 **FEATURES**
 ---
 
