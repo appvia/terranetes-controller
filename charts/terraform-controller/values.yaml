@@ -1,6 +1,8 @@
 ---
 nameOverride: ""
+# Override the naming scheme and force to this name
 fullnameOverride: ""
+# The number of replicas for the controller
 replicaCount: 1
 
 controller:
@@ -82,7 +84,7 @@ securityContext:
   readOnlyRootFilesystem: true
   capabilities:
     drop:
-    - all
+      - all
 
 rbac:
   # Indicates we should create all the rbac
@@ -102,10 +104,7 @@ rbac:
     annotations: {}
 
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # These resources are applied to the controller
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -124,17 +123,17 @@ affinity:
         podAffinityTerm:
           labelSelector:
             matchExpressions:
-            - key: name
-              operator: In
-              values:
-              - controller
+              - key: name
+                operator: In
+                values:
+                  - controller
           topologyKey: failure-domain.beta.kubernetes.io/zone
       - weight: 95
         podAffinityTerm:
           labelSelector:
             matchExpressions:
-            - key: name
-              operator: In
-              values:
-              - controller
+              - key: name
+                operator: In
+                values:
+                  - controller
           topologyKey: kubernetes.io/hostname
