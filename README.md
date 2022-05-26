@@ -48,10 +48,10 @@ View the documentation at https://terranetes.appvia.io/terraform-controller
 The quickest way to get up the running is via the Helm chart.
 
 ```shell
-$ git clone git@github.com:appvia/terraform-controller.git
-$ cd terraform-controller
+$ helm repo add appvia https://terraform-controller.appvia.io
+$ helm repo update
 # kind create cluster
-$ helm install -n terraform-system terraform-controller charts/terraform-controller --create-namespace
+$ helm install -n terraform-system terraform-controller appvia/terraform-controller --create-namespace
 $ kubectl -n terraform-system get po
 
 ```
