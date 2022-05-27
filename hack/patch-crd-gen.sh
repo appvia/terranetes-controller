@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # This hack of a script can be deleted once the following issue has been fixed:
