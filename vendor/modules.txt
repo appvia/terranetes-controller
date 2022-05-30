@@ -390,6 +390,13 @@ github.com/golangci/revgrep
 # github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4
 ## explicit
 github.com/golangci/unconvert
+# github.com/google/gnostic v0.5.7-v3refs
+## explicit; go 1.12
+github.com/google/gnostic/compiler
+github.com/google/gnostic/extensions
+github.com/google/gnostic/jsonschema
+github.com/google/gnostic/openapiv2
+github.com/google/gnostic/openapiv3
 # github.com/google/go-cmp v0.5.7
 ## explicit; go 1.11
 github.com/google/go-cmp/cmp
@@ -421,12 +428,6 @@ github.com/google/uuid
 github.com/googleapis/gax-go/v2
 github.com/googleapis/gax-go/v2/apierror
 github.com/googleapis/gax-go/v2/apierror/internal/proto
-# github.com/googleapis/gnostic v0.5.5
-## explicit; go 1.12
-github.com/googleapis/gnostic/compiler
-github.com/googleapis/gnostic/extensions
-github.com/googleapis/gnostic/jsonschema
-github.com/googleapis/gnostic/openapiv2
 # github.com/gordonklaus/ineffassign v0.0.0-20210914165742-4cc7213b9bc8
 ## explicit; go 1.14
 github.com/gordonklaus/ineffassign/pkg/ineffassign
@@ -647,6 +648,9 @@ github.com/modern-go/reflect2
 github.com/moricho/tparallel
 github.com/moricho/tparallel/pkg/ssafunc
 github.com/moricho/tparallel/pkg/ssainstr
+# github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
+## explicit
+github.com/munnerz/goautoneg
 # github.com/nakabonne/nestif v0.3.1
 ## explicit; go 1.15
 github.com/nakabonne/nestif
@@ -667,16 +671,12 @@ github.com/nishanths/exhaustive
 # github.com/nishanths/predeclared v0.2.1
 ## explicit; go 1.14
 github.com/nishanths/predeclared/passes/predeclared
-# github.com/nxadm/tail v1.4.8
-## explicit; go 1.13
 # github.com/oklog/ulid v1.3.1
 ## explicit
 github.com/oklog/ulid
 # github.com/olekukonko/tablewriter v0.0.5
 ## explicit; go 1.12
 github.com/olekukonko/tablewriter
-# github.com/onsi/ginkgo v1.16.5
-## explicit; go 1.16
 # github.com/onsi/ginkgo/v2 v2.1.4
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
@@ -1016,7 +1016,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
+# golang.org/x/time v0.0.0-20220210224613-90d013bbcef8
 ## explicit
 golang.org/x/time/rate
 # golang.org/x/tools v0.1.10
@@ -1225,8 +1225,6 @@ gopkg.in/ini.v1
 # gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 ## explicit
 gopkg.in/op/go-logging.v1
-# gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
-## explicit
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
@@ -1272,7 +1270,7 @@ honnef.co/go/tools/staticcheck/fakexml
 honnef.co/go/tools/stylecheck
 honnef.co/go/tools/unused
 honnef.co/go/tools/unused/typemap
-# k8s.io/api v0.23.5
+# k8s.io/api v0.24.1
 ## explicit; go 1.16
 k8s.io/api/admission/v1
 k8s.io/api/admission/v1beta1
@@ -1326,7 +1324,7 @@ k8s.io/api/storage/v1beta1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
-# k8s.io/apimachinery v0.23.5
+# k8s.io/apimachinery v0.24.1
 ## explicit; go 1.16
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/errors
@@ -1374,7 +1372,7 @@ k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/client-go v0.23.5
+# k8s.io/client-go v0.24.1
 ## explicit; go 1.16
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
 k8s.io/client-go/applyconfigurations/admissionregistration/v1beta1
@@ -1469,10 +1467,10 @@ k8s.io/client-go/kubernetes/typed/storage/v1
 k8s.io/client-go/kubernetes/typed/storage/v1alpha1
 k8s.io/client-go/kubernetes/typed/storage/v1beta1
 k8s.io/client-go/metadata
+k8s.io/client-go/openapi
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/install
 k8s.io/client-go/pkg/apis/clientauthentication/v1
-k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
 k8s.io/client-go/pkg/apis/clientauthentication/v1beta1
 k8s.io/client-go/pkg/version
 k8s.io/client-go/plugin/pkg/client/auth/exec
@@ -1558,18 +1556,24 @@ k8s.io/klog/v2/internal/buffer
 k8s.io/klog/v2/internal/clock
 k8s.io/klog/v2/internal/serialize
 k8s.io/klog/v2/internal/severity
-# k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
+# k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42
 ## explicit; go 1.16
 k8s.io/kube-openapi/cmd/openapi-gen
 k8s.io/kube-openapi/cmd/openapi-gen/args
+k8s.io/kube-openapi/pkg/builder3/util
 k8s.io/kube-openapi/pkg/common
 k8s.io/kube-openapi/pkg/generators
 k8s.io/kube-openapi/pkg/generators/rules
+k8s.io/kube-openapi/pkg/handler3
+k8s.io/kube-openapi/pkg/internal/handler
+k8s.io/kube-openapi/pkg/openapiconv
 k8s.io/kube-openapi/pkg/schemaconv
+k8s.io/kube-openapi/pkg/schemamutation
+k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/sets
 k8s.io/kube-openapi/pkg/validation/spec
-# k8s.io/utils v0.0.0-20211116205334-6203023598ed
+# k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 ## explicit; go 1.12
 k8s.io/utils/buffer
 k8s.io/utils/clock
@@ -1578,6 +1582,7 @@ k8s.io/utils/integer
 k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/net
 k8s.io/utils/pointer
+k8s.io/utils/strings/slices
 k8s.io/utils/trace
 # mvdan.cc/editorconfig v0.2.0
 ## explicit; go 1.15
@@ -1659,8 +1664,8 @@ sigs.k8s.io/controller-tools/pkg/schemapatcher
 sigs.k8s.io/controller-tools/pkg/schemapatcher/internal/yaml
 sigs.k8s.io/controller-tools/pkg/version
 sigs.k8s.io/controller-tools/pkg/webhook
-# sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6
-## explicit; go 1.16
+# sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2
+## explicit; go 1.17
 sigs.k8s.io/json
 sigs.k8s.io/json/internal/golang/encoding/json
 # sigs.k8s.io/structured-merge-diff/v4 v4.2.1
