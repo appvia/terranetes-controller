@@ -667,16 +667,12 @@ github.com/nishanths/exhaustive
 # github.com/nishanths/predeclared v0.2.1
 ## explicit; go 1.14
 github.com/nishanths/predeclared/passes/predeclared
-# github.com/nxadm/tail v1.4.8
-## explicit; go 1.13
 # github.com/oklog/ulid v1.3.1
 ## explicit
 github.com/oklog/ulid
 # github.com/olekukonko/tablewriter v0.0.5
 ## explicit; go 1.12
 github.com/olekukonko/tablewriter
-# github.com/onsi/ginkgo v1.16.5
-## explicit; go 1.16
 # github.com/onsi/ginkgo/v2 v2.1.4
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
@@ -1225,15 +1221,13 @@ gopkg.in/ini.v1
 # gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 ## explicit
 gopkg.in/op/go-logging.v1
-# gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
-## explicit
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 ## explicit
 gopkg.in/yaml.v3
-# gotest.tools/gotestsum v1.8.0
+# gotest.tools/gotestsum v1.8.1
 ## explicit; go 1.13
 gotest.tools/gotestsum
 gotest.tools/gotestsum/cmd
