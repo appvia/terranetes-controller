@@ -1,6 +1,3 @@
-//go:build !aix
-// +build !aix
-
 package filewatcher
 
 import (
@@ -19,25 +16,18 @@ import (
 const maxDepth = 7
 
 type Event struct {
-	// PkgPath of the package that triggered the event.
-	PkgPath string
-	// Args will be appended to the command line args for 'go test'.
-	Args []string
-	// Debug runs the tests with delve.
-	Debug bool
-	// resume the Watch goroutine when this channel is closed. Used to block
-	// the Watch goroutine while tests are running.
-	resume chan struct{}
-	// reloadPaths will cause the watched path list to be reloaded, to watch
-	// new directories.
+	PkgPath     string
+	Debug       bool
+	resume      chan struct{}
 	reloadPaths bool
-	// useLastPath when true will use the PkgPath from the previous run.
-	useLastPath bool
 }
 
 // Watch dirs for filesystem events, and run tests when .go files are saved.
 // nolint: gocyclo
-func Watch(ctx context.Context, dirs []string, run func(Event) error) error {
+func Watch(dirs []string, run func(Event) error) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("failed to create file watcher: %w", err)
@@ -55,11 +45,9 @@ func Watch(ctx context.Context, dirs []string, run func(Event) error) error {
 	defer term.Reset()
 	go term.Monitor(ctx)
 
-	h := &fsEventHandler{last: time.Now(), fn: run}
+	h := &handler{last: time.Now(), fn: run}
 	for {
 		select {
-		case <-ctx.Done():
-			return nil
 		case <-timer.C:
 			return fmt.Errorf("exceeded idle timeout while watching files")
 
@@ -227,15 +215,15 @@ func handleDirCreated(watcher *fsnotify.Watcher, event fsnotify.Event) (handled 
 	return true
 }
 
-type fsEventHandler struct {
+type handler struct {
 	last     time.Time
 	lastPath string
 	fn       func(opts Event) error
 }
 
-var floodThreshold = 250 * time.Millisecond
+const floodThreshold = 250 * time.Millisecond
 
-func (h *fsEventHandler) handleEvent(event fsnotify.Event) error {
+func (h *handler) handleEvent(event fsnotify.Event) error {
 	if event.Op&(fsnotify.Write|fsnotify.Create) == 0 {
 		return nil
 	}
@@ -251,8 +239,8 @@ func (h *fsEventHandler) handleEvent(event fsnotify.Event) error {
 	return h.runTests(Event{PkgPath: "./" + filepath.Dir(event.Name)})
 }
 
-func (h *fsEventHandler) runTests(opts Event) error {
-	if opts.useLastPath {
+func (h *handler) runTests(opts Event) error {
+	if opts.PkgPath == "" {
 		opts.PkgPath = h.lastPath
 	}
 	fmt.Printf("\nRunning tests in %v\n", opts.PkgPath)

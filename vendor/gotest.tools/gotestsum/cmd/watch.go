@@ -13,11 +13,8 @@ import (
 )
 
 func runWatcher(opts *options) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	w := &watchRuns{opts: *opts}
-	return filewatcher.Watch(ctx, opts.packages, w.run)
+	return filewatcher.Watch(opts.packages, w.run)
 }
 
 type watchRuns struct {
@@ -43,11 +40,8 @@ func (w *watchRuns) run(event filewatcher.Event) error {
 		return nil
 	}
 
-	opts := w.opts // shallow copy opts
-	opts.packages = append([]string{}, opts.packages...)
-	opts.packages = append(opts.packages, event.PkgPath)
-	opts.packages = append(opts.packages, event.Args...)
-
+	opts := w.opts
+	opts.packages = []string{event.PkgPath}
 	var err error
 	if w.prevExec, err = runSingle(&opts); !IsExitCoder(err) {
 		return err
