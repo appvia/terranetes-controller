@@ -62,7 +62,7 @@ var _chartsTerraformControllerCrdsTerraformAppviaIo_configurationsYaml = []byte(
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
   name: configurations.terraform.appvia.io
 spec:
@@ -110,10 +110,10 @@ spec:
                   description: SCMAuth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: name is unique within a namespace to reference a secret resource.
                       type: string
                     namespace:
-                      description: Namespace defines the space within which the secret name must be unique.
+                      description: namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 enableAutoApproval:
@@ -263,12 +263,6 @@ spec:
       subresources:
         status: {}
   preserveUnknownFields: false
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 `)
 
 func chartsTerraformControllerCrdsTerraformAppviaIo_configurationsYamlBytes() ([]byte, error) {
@@ -290,7 +284,7 @@ var _chartsTerraformControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiVe
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
   name: policies.terraform.appvia.io
 spec:
@@ -347,10 +341,10 @@ spec:
                                 description: SecretRef is reference to secret which contains environment variables used by the source command to retrieve the code. This could be cloud credentials, ssh keys, git username and password etc
                                 properties:
                                   name:
-                                    description: Name is unique within a namespace to reference a secret resource.
+                                    description: name is unique within a namespace to reference a secret resource.
                                     type: string
                                   namespace:
-                                    description: Namespace defines the space within which the secret name must be unique.
+                                    description: namespace defines the space within which the secret name must be unique.
                                     type: string
                                 type: object
                               url:
@@ -646,12 +640,6 @@ spec:
       subresources:
         status: {}
   preserveUnknownFields: false
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 `)
 
 func chartsTerraformControllerCrdsTerraformAppviaIo_policiesYamlBytes() ([]byte, error) {
@@ -673,7 +661,7 @@ var _chartsTerraformControllerCrdsTerraformAppviaIo_providersYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
   name: providers.terraform.appvia.io
 spec:
@@ -720,10 +708,10 @@ spec:
                   description: 'SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret. The secret should include the environment variables required to by the terraform provider.'
                   properties:
                     name:
-                      description: Name is unique within a namespace to reference a secret resource.
+                      description: name is unique within a namespace to reference a secret resource.
                       type: string
                     namespace:
-                      description: Namespace defines the space within which the secret name must be unique.
+                      description: namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
                 selector:
@@ -887,12 +875,6 @@ spec:
       subresources:
         status: {}
   preserveUnknownFields: false
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 `)
 
 func chartsTerraformControllerCrdsTerraformAppviaIo_providersYamlBytes() ([]byte, error) {
