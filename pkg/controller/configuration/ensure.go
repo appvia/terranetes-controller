@@ -489,6 +489,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 // ensureCostStatus is responsible for updating the cost status post a plan
 func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+	labels := []string{configuration.GetNamespace(), configuration.GetName()}
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if !c.EnableInfracosts {
@@ -525,11 +526,24 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 				return reconcile.Result{}, err
 			}
 
+			var monthly, hourly float64
+
+			if v, ok := report["totalMonthlyCost"].(float64); ok {
+				monthly = v
+			}
+			if v, ok := report["totalHourlyCost"].(float64); ok {
+				hourly = v
+			}
+
 			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
 				Enabled: true,
-				Hourly:  fmt.Sprintf("$%v", report["totalHourlyCost"]),
-				Monthly: fmt.Sprintf("$%v", report["totalMonthlyCost"]),
+				Hourly:  fmt.Sprintf("$%v", hourly),
+				Monthly: fmt.Sprintf("$%v", monthly),
 			}
+
+			// @step: update the prometheus metrics
+			monthlyCostMetric.WithLabelValues(labels...).Set(monthly)
+			hourlyCostMetric.WithLabelValues(labels...).Set(hourly)
 		}
 
 		return reconcile.Result{}, nil
