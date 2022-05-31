@@ -26,12 +26,17 @@ teardown() {
 }
 
 @test "We should be able to deploy the helm chart" {
+  infracost=""
+  [[ -n "${INFRACOST_API_KEY}}" ]] && infracost="infracost-api"
+
   cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 1
 controller:
   images:
     controller: "quay.io/appvia/terraform-controller:ci"
     executor: "quay.io/appvia/terraform-executor:ci"
+  costs:
+    secret: ${infracost}
 EOF
 
   if ! helm -n ${NAMESPACE} ls | grep terraform-controller; then
@@ -86,5 +91,18 @@ EOF
   runit "kubectl -n ${APP_NAMESPACE} delete po --all --wait=false"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} delete ev --all --wait=false"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should be able to provision a secret with infracost api token" {
+  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+
+  if kubectl -n ${NAMESPACE} get secret infracost-api; then
+    skip "infracost token already exists"
+  fi
+
+  runit "kubectl -n ${NAMESPACE} create secret generic infracost-api --from-literal=INFRACOST_API_KEY=${INFRACOST_API_KEY}"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${NAMESPACE} get secret infracost-api"
   [[ "$status" -eq 0 ]]
 }
