@@ -11,7 +11,7 @@ require (
 	github.com/go-swagger/go-swagger v0.29.0
 	github.com/golangci/golangci-lint v1.45.2
 	github.com/gorilla/mux v1.8.0
-	github.com/hashicorp/go-getter v1.5.11
+	github.com/hashicorp/go-getter v1.6.1
 	github.com/jpillora/backoff v1.0.0
 	github.com/mikefarah/yq/v3 v3.0.0-20201202084205-8846255d1c37
 	github.com/mitchellh/gox v1.0.1
@@ -248,7 +248,7 @@ require (
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
+	golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
