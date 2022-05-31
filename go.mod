@@ -32,8 +32,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	mvdan.cc/sh/v3 v3.4.3
-	sigs.k8s.io/controller-runtime v0.12.1
-	sigs.k8s.io/controller-tools v0.8.0
+	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-tools v0.9.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -101,7 +101,7 @@ require (
 	github.com/go-toolsmith/strparse v1.0.0 // indirect
 	github.com/go-toolsmith/typep v1.0.2 // indirect
 	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
-	github.com/gobuffalo/flect v0.2.3 // indirect
+	github.com/gobuffalo/flect v0.2.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-yaml v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
