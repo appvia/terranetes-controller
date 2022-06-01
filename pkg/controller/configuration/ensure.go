@@ -312,6 +312,7 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 		secret.Labels = map[string]string{
 			terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
 			terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
+			terraformv1alphav1.ConfigurationUIDLabel:       string(configuration.GetUID()),
 		}
 
 		// @step: generate the terraform backend configuration - this creates a kubernetes terraform backend
@@ -769,6 +770,7 @@ func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Con
 			secret.Labels = map[string]string{
 				terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
 				terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
+				terraformv1alphav1.ConfigurationUIDLabel:       string(configuration.GetUID()),
 			}
 			secret.Data = make(map[string][]byte)
 
