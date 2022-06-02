@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -112,6 +113,20 @@ type WriteConnectionSecret struct {
 	Keys []string `json:"keys,omitempty"`
 }
 
+// ValueFromSource defines a value which is taken from a secret
+type ValueFromSource struct {
+	// Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
+	// not contained in the secret, we ignore the error
+	// +kubebuilder:validation:Optional
+	Optional bool `json:"optional,omitempty"`
+	// Key is the key in the secret which we should used for the value
+	// +kubebuilder:validation:Required
+	Key string `json:"key"`
+	// Secret is the name of the secret in the configuration namespace
+	// +kubebuilder:validation:Required
+	Secret string `json:"secret"`
+}
+
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
@@ -146,6 +161,10 @@ type ConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Variables *runtime.RawExtension `json:"variables,omitempty"`
+	// ValueFromSource is a collection of value from sources, where the source of the value is
+	// is taken from a secret
+	// +kubebuilder:validation:Optional
+	ValueFrom []ValueFromSource `json:"valueFrom,omitempty"`
 	// TerraformVersion provides the ability to override the default terraform version. Before
 	// changing this field its best to consult with platform administrator. As the
 	// value of this field is used to change the tag of the terraform container image.
@@ -210,6 +229,20 @@ func (c *Configuration) GetNamespacedName() types.NamespacedName {
 		Namespace: c.Namespace,
 		Name:      c.Name,
 	}
+}
+
+// GetVariables returns the variables for the configuration
+func (c *Configuration) GetVariables() (map[string]interface{}, error) {
+	if !c.HasVariables() {
+		return map[string]interface{}{}, nil
+	}
+
+	values := make(map[string]interface{})
+	if err := json.NewDecoder(bytes.NewReader(c.Spec.Variables.Raw)).Decode(&values); err != nil {
+		return nil, err
+	}
+
+	return values, nil
 }
 
 // HasVariables returns true if the configuration has variables
