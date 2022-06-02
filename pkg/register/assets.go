@@ -138,6 +138,25 @@ spec:
                 terraformVersion:
                   description: TerraformVersion provides the ability to override the default terraform version. Before changing this field its best to consult with platform administrator. As the value of this field is used to change the tag of the terraform container image.
                   type: string
+                valueFrom:
+                  description: ValueFromSource is a collection of value from sources, where the source of the value is is taken from a secret
+                  items:
+                    description: ValueFromSource defines a value which is taken from a secret
+                    properties:
+                      key:
+                        description: Key is the key in the secret which we should used for the value
+                        type: string
+                      optional:
+                        description: Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is not contained in the secret, we ignore the error
+                        type: boolean
+                      secret:
+                        description: Secret is the name of the secret in the configuration namespace
+                        type: string
+                    required:
+                      - key
+                      - secret
+                    type: object
+                  type: array
                 variables:
                   description: Variables provides the inputs for the terraform module itself. These are passed to the terraform executor and used to execute the plan, apply and destroy phases.
                   type: object
