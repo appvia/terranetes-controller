@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -228,6 +229,20 @@ func (c *Configuration) GetNamespacedName() types.NamespacedName {
 		Namespace: c.Namespace,
 		Name:      c.Name,
 	}
+}
+
+// GetVariables returns the variables for the configuration
+func (c *Configuration) GetVariables() (map[string]interface{}, error) {
+	if !c.HasVariables() {
+		return map[string]interface{}{}, nil
+	}
+
+	values := make(map[string]interface{})
+	if err := json.NewDecoder(bytes.NewReader(c.Spec.Variables.Raw)).Decode(&values); err != nil {
+		return nil, err
+	}
+
+	return values, nil
 }
 
 // HasVariables returns true if the configuration has variables

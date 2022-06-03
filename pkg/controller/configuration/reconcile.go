@@ -33,16 +33,18 @@ import (
 type state struct {
 	// auth is an optional secret which is used for authentication
 	auth *v1.Secret
+	// checkovConstraint is the policy constraint for this configuration
+	checkovConstraint *terraformv1alphav1.PolicyConstraint
 	// policies is a list of policies in the cluster
 	policies *terraformv1alphav1.PolicyList
 	// provider is the credentials provider to use
 	provider *terraformv1alphav1.Provider
-	// checkovConstraint is the polict constraint for this configuration
-	checkovConstraint *terraformv1alphav1.PolicyConstraint
 	// jobs is list of all jobs for this configuration and generation
 	jobs *batchv1.JobList
 	// jobTemplate is the template to use when rendering the job
 	jobTemplate []byte
+	// valueFrom is a map of keys to values
+	valueFrom map[string]string
 }
 
 // Reconcile is called to handle the reconciliation of the provider resource
@@ -58,7 +60,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	state := &state{}
+	state := &state{valueFrom: make(map[string]string)}
 
 	finalizer := controller.NewFinalizer(c.cc, controllerName)
 	if finalizer.IsDeletionCandidate(configuration) {
@@ -94,7 +96,9 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureJobsList(configuration, state),
 			c.ensureNoPreviousGeneration(configuration, state),
 			c.ensureInfracostsSecret(configuration),
+			c.ensureValueFromSecrets(configuration, state),
 			c.ensureJobTemplate(configuration, state),
+			c.ensureValueFromSecrets(configuration, state),
 			c.ensureAuthenticationSecret(configuration),
 			c.ensureProviderIsReady(configuration, state),
 			c.ensureGeneratedConfig(configuration, state),

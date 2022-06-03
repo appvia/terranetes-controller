@@ -83,6 +83,53 @@ func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Co
 	}
 }
 
+// ensureValueFromSecrets is responsible for checking any value from secrets are available
+func (c *Controller) ensureValueFromSecrets(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if len(configuration.Spec.ValueFrom) == 0 {
+			return reconcile.Result{}, nil
+		}
+
+		for i, x := range configuration.Spec.ValueFrom {
+			secret := &v1.Secret{}
+			secret.Namespace = configuration.Namespace
+			secret.Name = x.Secret
+
+			found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+			if err != nil {
+				cond.Failed(err, "Failed to retrieve the secret spec.valueFrom[%d]", i)
+
+				return reconcile.Result{}, err
+			}
+
+			// @step: we either error or move on if the secret is not found
+			switch {
+			case !found && !x.Optional:
+				cond.ActionRequired("Secret spec.valueFrom[%d] (%s/%s) does not exist", i, configuration.Namespace, secret.Name)
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+
+			case !found:
+				continue
+			}
+
+			// @step: we need to ensure the key is present in the secret
+			if (secret.Data == nil || len(secret.Data[x.Key]) == 0) && !x.Optional {
+				cond.ActionRequired("Secret spec.valueFrom[%d] (%s/%s) does not contain key: %q", i, configuration.Namespace, secret.Name, x.Key)
+
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+
+			if secret.Data != nil {
+				state.valueFrom[x.Key] = string(secret.Data[x.Key])
+			}
+		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureJobTemplate is used to verify the job template exists if we have been configured to override the template
 func (c *Controller) ensureJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
@@ -294,7 +341,6 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
-
 	backend := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
@@ -308,24 +354,21 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 
 			return reconcile.Result{}, err
 		}
-
 		secret.Labels = map[string]string{
 			terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
 			terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
 			terraformv1alphav1.ConfigurationUIDLabel:       string(configuration.GetUID()),
 		}
 
-		// @step: generate the terraform backend configuration - this creates a kubernetes terraform backend
-		// pointing at a secret
+		// @step: generate the terraform backend configuration - this creates a kubernetes terraform
+		// backend pointing at a secret
 		cfg, err := terraform.NewKubernetesBackend(c.JobNamespace, backend)
 		if err != nil {
 			cond.Failed(err, "Failed to generate the terraform backend configuration")
 
 			return reconcile.Result{}, err
 		}
-		secret.Data = map[string][]byte{
-			terraformv1alphav1.TerraformBackendConfigMapKey: cfg,
-		}
+		secret.Data = map[string][]byte{terraformv1alphav1.TerraformBackendConfigMapKey: cfg}
 
 		// @step: generate the provider for the terraform configuration
 		cfg, err = terraform.NewTerraformProvider(string(state.provider.Spec.Provider))
@@ -336,11 +379,30 @@ func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Con
 		}
 		secret.Data[terraformv1alphav1.TerraformProviderConfigMapKey] = cfg
 
-		// @step: if the any variables for this job lets create the variables configmap
-		if configuration.HasVariables() {
-			secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey] = configuration.Spec.Variables.Raw
-		} else {
+		// @step: we need to generate the value from the variables
+		variables, err := configuration.GetVariables()
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the variables for the configuration")
+
+			return reconcile.Result{}, err
+		}
+		for key, value := range state.valueFrom {
+			variables[key] = value
+		}
+
+		// @step: if the any variables for this job lets add them
+		switch len(variables) == 0 {
+		case true:
 			delete(secret.Data, terraformv1alphav1.TerraformVariablesConfigMapKey)
+
+		default:
+			encoded := &bytes.Buffer{}
+			if err := json.NewEncoder(encoded).Encode(&variables); err != nil {
+				cond.Failed(err, "Failed to encode the variables for the configuration")
+
+				return reconcile.Result{}, err
+			}
+			secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey] = encoded.Bytes()
 		}
 
 		// @step: copy any authentication details into the secret
