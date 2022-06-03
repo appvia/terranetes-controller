@@ -517,6 +517,186 @@ var _ = Describe("Configuration Controller", func() {
 		})
 	})
 
+	When("using values from the valueFrom field", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup()
+		})
+
+		When("the valueFrom field is a secret is missing and non optional", func() {
+			BeforeEach(func() {
+				configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					{Secret: "missing", Key: "key"},
+				}
+				Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the failure on the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Secret spec.valueFrom[0] (apps/missing) does not exist"))
+				Expect(cond.Detail).To(Equal(""))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("the secret is missing and optional", func() {
+			BeforeEach(func() {
+				configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					{Secret: "missing", Key: "key", Optional: true},
+				}
+				Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should have created a job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+		})
+
+		When("the key is missing and not optional", func() {
+			BeforeEach(func() {
+				secret := &v1.Secret{}
+				secret.Namespace = configuration.Namespace
+				secret.Name = "exists"
+
+				configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{{Secret: "exists", Key: "missing"}}
+				Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+				Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the failure on the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal(`Secret spec.valueFrom[0] (apps/exists) does not contain key: "missing"`))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("the key is missing and optional", func() {
+			BeforeEach(func() {
+				configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					{Secret: "missing", Key: "key", Optional: true},
+				}
+				Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should have created a job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should have created a job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+		})
+
+		When("the secret and key exist", func() {
+			BeforeEach(func() {
+				secret := &v1.Secret{}
+				secret.Namespace = configuration.Namespace
+				secret.Name = "exists"
+				secret.Data = map[string][]byte{"my": []byte("value")}
+
+				configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{{Secret: "exists", Key: "my"}}
+				Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+				Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the plan is in progress", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+			})
+
+			It("should have created a job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+			It("should have added the value to the configuration config", func() {
+				expected := "{\"my\":\"value\",\"name\":\"test\"}\n"
+
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.JobNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+
+				found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
+				Expect(string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])).To(Equal(expected))
+			})
+		})
+	})
+
 	When("terraform plan has not been provisioned", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
@@ -590,7 +770,7 @@ terraform {
 		})
 
 		It("should have the following variables in the config", func() {
-			expected := `{"name":"test"}`
+			expected := "{\"name\":\"test\"}\n"
 
 			secret := &v1.Secret{}
 			secret.Namespace = ctrl.JobNamespace
