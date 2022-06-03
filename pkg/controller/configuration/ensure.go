@@ -45,10 +45,10 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils/terraform"
 )
 
-// ensureInfracostsSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
+// ensureCostSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
 // the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
 // place guard around it
-func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+func (c *Controller) ensureCostSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -83,8 +83,8 @@ func (c *Controller) ensureInfracostsSecret(configuration *terraformv1alphav1.Co
 	}
 }
 
-// ensureValueFromSecrets is responsible for checking any value from secrets are available
-func (c *Controller) ensureValueFromSecrets(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+// ensureValueFromSecret is responsible for checking any value from secrets are available
+func (c *Controller) ensureValueFromSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -130,8 +130,8 @@ func (c *Controller) ensureValueFromSecrets(configuration *terraformv1alphav1.Co
 	}
 }
 
-// ensureJobTemplate is used to verify the job template exists if we have been configured to override the template
-func (c *Controller) ensureJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+// ensureCustomJobTemplate is used to verify the job template exists if we have been configured to override the template
+func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -242,9 +242,9 @@ func (c *Controller) ensureJobsList(configuration *terraformv1alphav1.Configurat
 	}
 }
 
-// ensureNoPreviousGeneration is responsible for ensuring there active jobs are running for this configuration, if so we act
+// ensureNoActivity is responsible for ensuring there active jobs are running for this configuration, if so we act
 // safely and wait for the job to finish
-func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list, found := filters.Jobs(state.jobs).
@@ -277,8 +277,8 @@ func (c *Controller) ensureNoPreviousGeneration(configuration *terraformv1alphav
 	}
 }
 
-// ensureProviderIsReady is responsible for ensuring the provider referenced by this configuration is ready
-func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+// ensureProviderReady is responsible for ensuring the provider referenced by this configuration is ready
+func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionProviderReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -336,9 +336,9 @@ func (c *Controller) ensureProviderIsReady(configuration *terraformv1alphav1.Con
 	}
 }
 
-// ensureGeneratedConfig is responsible in ensuring the terraform configuration is generated for this job. This
+// ensureJobConfiguraionSecret is responsible in ensuring the terraform configuration is generated for this job. This
 // includes the backend configuration and the variables which have been included in the configuration
-func (c *Controller) ensureGeneratedConfig(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureJobConfiguraionSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
 	backend := string(configuration.GetUID())
@@ -613,8 +613,8 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 	}
 }
 
-// ensureCheckovPolicy is responsible for checking the checkov results and refusing to continue if failed
-func (c *Controller) ensureCheckovPolicy(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+// ensurePolicyStatus is responsible for checking the checkov results and refusing to continue if failed
+func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -782,8 +782,8 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 	}
 }
 
-// ensureTerraformSecret is responsible for ensuring the jobs ran successfully
-func (c *Controller) ensureTerraformSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+// ensureConnectionSecret is responsible for ensuring the jobs ran successfully
+func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	name := configuration.GetTerraformStateSecretName()
 
