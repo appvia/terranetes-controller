@@ -82,7 +82,7 @@ jobs:
         run: |
           curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
           chmod +x kind
-          kind create cluster
+          kind create cluster --image kindest/node:v1.23.4
       - name: Retrieve Controller Image
         uses: actions/download-artifact@v2
         with:
@@ -108,3 +108,4 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.E2E_AWS_ACCESS_KEY_ID }}
           AWS_REGION: ${{ secrets.E2E_AWS_REGION }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}

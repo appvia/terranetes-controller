@@ -17,20 +17,7 @@
 
 package terraform
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"strconv"
-)
-
-// StateProperty is a output property
-type StateProperty struct {
-	// Value is the value of the property
-	Value interface{} `json:"value,omitempty"`
-	// Type is the type of property
-	Type string `json:"type,omitempty"`
-}
+import "fmt"
 
 // Resource represents a resource in the state
 type Resource struct {
@@ -42,38 +29,25 @@ type Resource struct {
 	Instances []map[string]interface{} `json:"instances,omitempty"`
 }
 
-// ToValue returns the value of the property
-func (s *StateProperty) ToValue() (string, error) {
-	if s.Value == nil {
-		return "", errors.New("value is nil")
+// OutputValue is a value of the terraform output
+type OutputValue struct {
+	// Value is the value of the output
+	Value interface{} `json:"value,omitempty"`
+}
+
+// String returns an string representation of the value
+func (o *OutputValue) String() string {
+	if o.Value == nil {
+		return ""
 	}
 
-	var value string
-
-	switch v := s.Value.(type) {
-	case string:
-		value = v
-	case int:
-		value = strconv.Itoa(v)
-	case float64:
-		value = fmt.Sprint(v)
-	case bool:
-		value = strconv.FormatBool(v)
-	default:
-		valueJSON, err := json.Marshal(v)
-		if err != nil {
-			return "", fmt.Errorf("cloud not convert %v to string", v)
-		}
-		value = string(valueJSON)
-	}
-
-	return value, nil
+	return fmt.Sprintf("%v", o.Value)
 }
 
 // State is the state of the terraform
 type State struct {
 	// Outputs are the terraform outputs
-	Outputs map[string]StateProperty `json:"outputs"`
+	Outputs map[string]OutputValue `json:"outputs"`
 	// Resources is a collection of resources in the state
 	Resources []Resource `json:"resources,omitempty"`
 	// TerraformVersion is the version of terraform used
