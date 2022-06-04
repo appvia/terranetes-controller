@@ -842,14 +842,7 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 						continue
 					}
 				}
-
-				value, err := v.ToValue()
-				if err != nil {
-					cond.Failed(err, "Failed to convert the terraform output to a value, key: %s, value: %v", k, v)
-
-					return reconcile.Result{}, err
-				}
-				secret.Data[strings.ToUpper(k)] = []byte(value)
+				secret.Data[strings.ToUpper(k)] = []byte(v.String())
 			}
 
 			// @step: create the terraform secret
