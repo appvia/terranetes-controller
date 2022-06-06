@@ -110,6 +110,14 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 			Parallelism:             pointer.Int32Ptr(1),
 			TTLSecondsAfterFinished: pointer.Int32Ptr(3600),
 			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
+						terraformv1alphav1.ConfigurationNameLabel:       r.configuration.Name,
+						terraformv1alphav1.ConfigurationStageLabel:      stage,
+						terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
+					},
+				},
 				Spec: v1.PodSpec{
 					RestartPolicy: v1.RestartPolicyOnFailure,
 					SecurityContext: &v1.PodSecurityContext{

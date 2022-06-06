@@ -42,7 +42,7 @@ teardown() {
 @test "We should have a job created in the application namespace ready to watch apply" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
-  runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
+  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
@@ -59,3 +59,9 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
+@test "We should be able to view the logs from the apply" {
+  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=apply -o json | jq -r '.items[0].metadata.name')
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q '\[build\] completed'"
+  [[ "$status" -eq 0 ]]
+}
