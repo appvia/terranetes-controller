@@ -31,7 +31,6 @@ jobs:
         run: make release-images
 
   release-helm:
-    needs: release-images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
