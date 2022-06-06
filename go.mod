@@ -32,7 +32,7 @@ require (
 	k8s.io/code-generator v0.24.1
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	mvdan.cc/sh/v3 v3.4.3
+	mvdan.cc/sh/v3 v3.5.1
 	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/controller-tools v0.9.0
 	sigs.k8s.io/yaml v1.3.0
