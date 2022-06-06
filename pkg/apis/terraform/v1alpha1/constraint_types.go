@@ -71,7 +71,7 @@ type PolicyConstraint struct {
 	// +kubebuilder:validation:Optional
 	Checks []string `json:"checks,omitempty"`
 	// External is a collection of external checks which should be included in the scan. Each
-	// of the external sources and retrieved and sourced into /run/policy/<NAME> where they can
+	// of the external sources and retrieved and sourced into /run/policy/NAME where they can
 	// be included as part of the scan
 	// +kubebuilder:validation:Optional
 	External []ExternalCheck `json:"external,omitempty"`
