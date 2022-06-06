@@ -13,6 +13,11 @@ spec:
   completions: 1
   parallelism: 1
   template:
+    metadata:
+      labels:
+        {{- range $key, $value := .Labels }}
+        {{ $key }}: "{{ $value }}"
+        {{- end }}
     spec:
       restartPolicy: OnFailure
       {{- if eq .Provider.Source "injected" }}
