@@ -48,19 +48,19 @@ var _ = Describe("Provider Validation", func() {
 
 	When("creating a provider", func() {
 		It("should not error when creating a valid provider", func() {
-			err := v.ValidateCreate(ctx, fixtures.NewValidAWSProvider("default", "test"))
+			err := v.ValidateCreate(ctx, fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test")))
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not error when updating a valid provider", func() {
-			err := v.ValidateUpdate(ctx, nil, fixtures.NewValidAWSProvider("default", "test"))
+			err := v.ValidateUpdate(ctx, nil, fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test")))
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	When("creating a provider with an incorrect provider", func() {
 		It("should throw error", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.Provider = "invalid"
 			msg := "spec.provider: invalid is not supported (must be aws,google,azurerm)"
 
@@ -76,7 +76,7 @@ var _ = Describe("Provider Validation", func() {
 
 	When("creating a provider with a secret", func() {
 		It("should throw error when no secret reference", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.SecretRef = nil
 			msg := "spec.secretRef: secret is required when source is secret"
 
@@ -90,7 +90,7 @@ var _ = Describe("Provider Validation", func() {
 		})
 
 		It("should throw error when no secret name in reference", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.SecretRef.Name = ""
 			msg := "spec.secretRef.name: name is required when source is secret"
 
@@ -104,7 +104,7 @@ var _ = Describe("Provider Validation", func() {
 		})
 
 		It("should throw error when no secret namespace in reference", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.SecretRef.Namespace = ""
 			msg := "spec.secretRef.namespace: namespace is required when source is secret"
 
@@ -120,7 +120,7 @@ var _ = Describe("Provider Validation", func() {
 
 	When("creating a provider with a injected identity", func() {
 		It("should throw error when no service account", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.Source = "injected"
 			policy.Spec.ServiceAccount = nil
 			msg := "spec.serviceAccount: serviceAccount is required when source is injected"
@@ -135,7 +135,7 @@ var _ = Describe("Provider Validation", func() {
 		})
 
 		It("should not throw an error when service account defined", func() {
-			policy := fixtures.NewValidAWSProvider("default", "test")
+			policy := fixtures.NewValidAWSProvider("test", fixtures.NewValidAWSProviderSecret("default", "test"))
 			policy.Spec.SecretRef.Name = ""
 			policy.Spec.Source = "injected"
 			policy.Spec.ServiceAccount = pointer.String("test")

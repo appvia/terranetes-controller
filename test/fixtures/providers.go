@@ -27,20 +27,25 @@ import (
 )
 
 // NewValidAWSProvider returns a valid provider for aws
-func NewValidAWSProvider(namespace, name string) *terraformv1alphav1.Provider {
-	return &terraformv1alphav1.Provider{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+func NewValidAWSProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
+	provider := &terraformv1alphav1.Provider{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: terraformv1alphav1.ProviderSpec{
-			Source:    terraformv1alphav1.SourceSecret,
-			Provider:  "aws",
-			SecretRef: &v1.SecretReference{Name: name, Namespace: namespace},
+			Source:   terraformv1alphav1.SourceSecret,
+			Provider: "aws",
 		},
 	}
+
+	if secret != nil {
+		provider.Spec.SecretRef = &v1.SecretReference{Name: secret.Name, Namespace: secret.Namespace}
+	}
+
+	return provider
 }
 
 // NewValidAWSNotReadyProvider returns a ready aws provider
-func NewValidAWSNotReadyProvider(namespace, name string) *terraformv1alphav1.Provider {
-	provider := NewValidAWSProvider(namespace, name)
+func NewValidAWSNotReadyProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
+	provider := NewValidAWSProvider(name, secret)
 	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultProviderConditions, provider)
 	provider.Status.GetCondition(corev1alphav1.ConditionReady).Status = metav1.ConditionFalse
 
@@ -48,8 +53,8 @@ func NewValidAWSNotReadyProvider(namespace, name string) *terraformv1alphav1.Pro
 }
 
 // NewValidAWSReadyProvider returns a ready aws provider
-func NewValidAWSReadyProvider(namespace, name string) *terraformv1alphav1.Provider {
-	provider := NewValidAWSProvider(namespace, name)
+func NewValidAWSReadyProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
+	provider := NewValidAWSProvider(name, secret)
 	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultProviderConditions, provider)
 	provider.Status.GetCondition(corev1alphav1.ConditionReady).Status = metav1.ConditionTrue
 

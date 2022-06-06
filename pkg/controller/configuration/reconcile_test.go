@@ -74,10 +74,11 @@ var _ = Describe("Configuration Controller", func() {
 	}
 
 	Setup := func(objects ...runtime.Object) {
+		secret := fixtures.NewValidAWSProviderSecret("default", "aws")
 		cc = fake.NewFakeClientWithScheme(schema.GetScheme(), append([]runtime.Object{
 			fixtures.NewNamespace(cfgNamespace),
-			fixtures.NewValidAWSReadyProvider("default", "aws"),
-			fixtures.NewValidAWSProviderSecret("default", "aws"),
+			fixtures.NewValidAWSReadyProvider("aws", secret),
+			secret,
 		}, objects...)...)
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
@@ -116,12 +117,12 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-			Expect(cond.Message).To(Equal("Provider referenced (default/does_not_exist) does not exist"))
+			Expect(cond.Message).To(Equal("Provider referenced \"does_not_exist\" does not exist"))
 		})
 
 		It("should have raised a event", func() {
 			Expect(recorder.Events).To(HaveLen(1))
-			Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced (default/does_not_exist) does not exist"))
+			Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced \"does_not_exist\" does not exist"))
 		})
 
 		It("should ask us to requeue", func() {
@@ -141,7 +142,7 @@ var _ = Describe("Configuration Controller", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.ProviderRef.Name = "not_ready"
-			Setup(configuration, fixtures.NewValidAWSNotReadyProvider("default", "not_ready"))
+			Setup(configuration, fixtures.NewValidAWSNotReadyProvider("not_ready", nil))
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
 
@@ -180,13 +181,13 @@ var _ = Describe("Configuration Controller", func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 				configuration.Spec.ProviderRef.Name = "policy"
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "true"},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -223,13 +224,13 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "policy"
 				configuration.Labels = map[string]string{"does_not_match": "true"}
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "false"},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -266,7 +267,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "policy"
 				configuration.Labels = map[string]string{"does_match": "true"}
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_match": "true"},
@@ -275,7 +276,7 @@ var _ = Describe("Configuration Controller", func() {
 						MatchLabels: map[string]string{"name": configuration.Namespace},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -490,7 +491,7 @@ var _ = Describe("Configuration Controller", func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.ProviderRef.Name = "injected"
 
-			provider := fixtures.NewValidAWSReadyProvider(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
+			provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name))
 			provider.Spec.Source = terraformv1alphav1.SourceInjected
 			provider.Spec.SecretRef = nil
 			provider.Spec.ServiceAccount = &serviceAccount

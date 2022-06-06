@@ -108,10 +108,7 @@ type Provider struct {
 
 // GetNamespacedName returns the namespaced name type
 func (p *Provider) GetNamespacedName() types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: p.Namespace,
-		Name:      p.Name,
-	}
+	return types.NamespacedName{Name: p.Name}
 }
 
 // ProviderStatus defines the observed state of a provider

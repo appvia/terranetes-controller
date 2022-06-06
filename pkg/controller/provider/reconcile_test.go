@@ -53,7 +53,7 @@ var _ = Describe("Provider Controller", func() {
 	var provider *terraformv1alphav1.Provider
 
 	validProvider := func() *terraformv1alphav1.Provider {
-		return fixtures.NewValidAWSProvider("default", "aws")
+		return fixtures.NewValidAWSProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
 	}
 
 	validProviderSecret := func() *v1.Secret {

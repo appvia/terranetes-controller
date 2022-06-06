@@ -279,12 +279,12 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, provider)
 		if err != nil {
-			cond.Failed(err, "Failed to retrieve the provider for the configuration: (%s/%s)", provider.Namespace, provider.Name)
+			cond.Failed(err, "Failed to retrieve the provider for the configuration: %q", provider.Name)
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			cond.ActionRequired("Provider referenced (%s/%s) does not exist", provider.Namespace, provider.Name)
+			cond.ActionRequired("Provider referenced %q does not exist", provider.Name)
 
 			return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
