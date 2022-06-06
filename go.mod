@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/client9/misspell v0.3.4
-	github.com/evanphx/json-patch v4.12.0+incompatible
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/go-bindata/go-bindata/v3 v3.1.3
 	github.com/go-swagger/go-swagger v0.29.0
