@@ -777,6 +777,7 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 		}
 
 		configuration.Status.Resources = state.CountResources()
+		configuration.Status.TerraformVersion = state.TerraformVersion
 
 		return reconcile.Result{}, nil
 	}
@@ -813,7 +814,7 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 		}
 
 		// @step: decode the terraform state (essentially just returning the uncompressed content)
-		state, err := terraform.DecodeState(ss.Data["tfstate"])
+		state, err := terraform.DecodeState(ss.Data[terraformv1alphav1.TerraformStateSecretKey])
 		if err != nil {
 			cond.Failed(err, "Failed to decode the terraform state")
 

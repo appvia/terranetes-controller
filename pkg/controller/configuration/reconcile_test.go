@@ -1373,4 +1373,86 @@ terraform {
 			Expect(rerr).To(BeNil())
 		})
 	})
+
+	When("terraform apply has been provisioned", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			// create two successful jobs
+			plan := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+
+			apply := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformApply)
+			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			apply.Status.Succeeded = 1
+
+			// create a fake terraform state
+			state := fixtures.NewTerraformState(configuration)
+			state.Namespace = "default"
+
+			Setup(configuration, plan, apply, state)
+		})
+
+		When("costs and policy is not enabled", func() {
+			BeforeEach(func() {
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the terraform apply has run", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Message).To(Equal("Terraform apply is complete"))
+			})
+
+			It("should a last reconcilation time on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.LastReconcile).ToNot(BeNil())
+				Expect(configuration.Status.LastReconcile.Time).ToNot(BeNil())
+				Expect(configuration.Status.LastReconcile.Generation).To(Equal(int64(0)))
+			})
+
+			It("should a last success reconcilation time on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.LastSuccess).ToNot(BeNil())
+				Expect(configuration.Status.LastSuccess.Time).ToNot(BeNil())
+				Expect(configuration.Status.LastSuccess.Generation).To(Equal(int64(0)))
+			})
+
+			It("should have a version on status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				// note this is a constant in the fixtures
+				Expect(configuration.Status.TerraformVersion).To(Equal("1.1.9"))
+			})
+
+			It("should have a resource count on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Resources).To(Equal(1))
+			})
+
+			It("should have created a secret containing the module output", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				secret := &v1.Secret{}
+				secret.Name = configuration.Spec.WriteConnectionSecretToRef.Name
+				secret.Namespace = configuration.Namespace
+
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).ToNot(BeNil())
+				Expect(secret.Data).To(HaveKey("TEST_OUTPUT"))
+				Expect(secret.Data["TEST_OUTPUT"]).To(Equal([]byte("test")))
+			})
+		})
+	})
 })
