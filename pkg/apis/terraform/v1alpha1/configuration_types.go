@@ -221,6 +221,10 @@ type ConfigurationStatus struct {
 	// This field is taken from the terraform state itself.
 	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
+	// TerraformVersion is the version of terraform which was last used to run this
+	// configuration
+	// +kubebuilder:validation:Optional
+	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 
 // GetNamespacedName returns the namespaced resource type

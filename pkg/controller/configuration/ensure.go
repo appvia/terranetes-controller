@@ -777,6 +777,7 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 		}
 
 		configuration.Status.Resources = state.CountResources()
+		configuration.Status.TerraformVersion = state.TerraformVersion
 
 		return reconcile.Result{}, nil
 	}
