@@ -100,7 +100,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureCustomJobTemplate(configuration, state),
 			c.ensureAuthenticationSecret(configuration),
 			c.ensureProviderReady(configuration, state),
-			c.ensureJobConfiguraionSecret(configuration, state),
+			c.ensureJobConfigurationSecret(configuration, state),
 			c.ensureTerraformPlan(configuration, state),
 			c.ensureCostStatus(configuration),
 			c.ensurePolicyStatus(configuration, state),
