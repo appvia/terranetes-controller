@@ -275,7 +275,6 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		provider := &terraformv1alphav1.Provider{}
-		provider.Namespace = configuration.Spec.ProviderRef.Namespace
 		provider.Name = configuration.Spec.ProviderRef.Name
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, provider)
