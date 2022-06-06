@@ -1597,8 +1597,8 @@ mvdan.cc/interfacer/check
 # mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b
 ## explicit
 mvdan.cc/lint
-# mvdan.cc/sh/v3 v3.4.3
-## explicit; go 1.16
+# mvdan.cc/sh/v3 v3.5.1
+## explicit; go 1.17
 mvdan.cc/sh/v3/cmd/shfmt
 mvdan.cc/sh/v3/fileutil
 mvdan.cc/sh/v3/syntax
