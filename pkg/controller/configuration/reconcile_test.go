@@ -1451,7 +1451,7 @@ terraform {
 				Expect(found).To(BeTrue())
 				Expect(secret.Data).ToNot(BeNil())
 				Expect(secret.Data).To(HaveKey("TEST_OUTPUT"))
-				Expect(secret.Data["TEST_OUTPUT"]).To(Equal("test"))
+				Expect(secret.Data["TEST_OUTPUT"]).To(Equal([]byte("test")))
 			})
 		})
 	})
