@@ -19,7 +19,6 @@ Terraform Controller manages the life cycles of a terraform resource, allowing d
 - [Support private terraform module sources](https://terranetes.appvia.io/terraform-controller/developer/private/)
 - [Directly reference FluxCD sources](https://terranetes.appvia.io/terraform-controller/developer/flux/)
 - [ROADMAP] *Detect and raise alerts for drift on upstream configuration*
-- [ROADMAP] *Source Terraform Configuration variables from ConfigMaps and Secrets*
 
 ### PLATFORM ENGINEERS
 
