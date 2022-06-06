@@ -349,7 +349,7 @@ spec:
                             type: string
                           type: array
                         external:
-                          description: External is a collection of external checks which should be included in the scan. Each of the external sources and retrieved and sourced into /run/policy/<NAME> where they can be included as part of the scan
+                          description: External is a collection of external checks which should be included in the scan. Each of the external sources and retrieved and sourced into /run/policy/NAME where they can be included as part of the scan
                           items:
                             description: ExternalCheck defines the definition for an external check - this comprises of the source and any optional secret
                             properties:
