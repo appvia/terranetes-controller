@@ -65,3 +65,8 @@ teardown() {
   runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q '\[build\] completed'"
   [[ "$status" -eq 0 ]]
 }
+
+@test "We should have the terraform version on the status" {
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.terraformVersion' | grep -q '[0-9]\+\.[0-9]\+\.[0-9]\+'"
+  [[ "$status" -eq 0 ]]
+}
