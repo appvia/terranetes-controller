@@ -240,3 +240,20 @@ clean:
 	@echo "--> Cleaning up the environment"
 	rm -rf ./bin 2>/dev/null
 	rm -rf ./release 2>/dev/null
+
+aws-credentials:
+	@echo "--> Generating AWS credentials"
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@kubectl -n terraform-system create secret generic aws \
+		--from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+		--from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+		--from-literal=AWS_REGION=${AWS_REGION}
+
+azure-credentials:
+	@echo "--> Creating Azure credentials"
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@kubectl -n terraform-system create secret generic azure \
+		--from-literal=ARM_CLIENT_ID=${ARM_CLIENT_ID} \
+		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
+		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
+		--from-literal=ARM_TENANT_ID=${ARM_TENANT_ID}

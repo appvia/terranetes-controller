@@ -4,11 +4,15 @@ name: terraform-controller
 description: Controller used to provision a terraform workflow within kubernetes
 type: application
 version: v0.2.2
-appVersion: v0.1.5
+appVersion: v0.1.6
 sources:
   - https://github.com/appvia/terraform-controller
   - https://github.com/appvia/terranetes
+  - https://terranetes.appvia.io
 maintainers:
   - name: Appvia
     email: info@appvia.io
     url: https://appvia.io
+  - name: Rohith
+    email: gambol99@gmail.com
+    url: https://github.com/gambol99
