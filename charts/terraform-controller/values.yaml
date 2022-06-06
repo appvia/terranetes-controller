@@ -26,11 +26,11 @@ controller:
     # image to use for infracost
     infracost: infracost/infracost:0.9.24
     # policy is image for policy (wip)
-    policy: bridgecrew/checkov:2.0.1143
+    policy: bridgecrew/checkov:2.0.1190
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:v0.1.5
+    controller: quay.io/appvia/terraform-controller:v0.1.6
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:v0.1.5
+    executor: quay.io/appvia/terraform-executor:v0.1.6
 
   # Allows you to overload the templates
   templates:
