@@ -336,9 +336,9 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 	}
 }
 
-// ensureJobConfiguraionSecret is responsible in ensuring the terraform configuration is generated for this job. This
+// ensureJobConfigurationSecret is responsible in ensuring the terraform configuration is generated for this job. This
 // includes the backend configuration and the variables which have been included in the configuration
-func (c *Controller) ensureJobConfiguraionSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
 	backend := string(configuration.GetUID())
