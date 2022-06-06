@@ -52,11 +52,10 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	original := resource.DeepCopyObject()
 	status := resource.GetCommonStatus()
 
-	if status.LastReconcile == nil {
-		status.LastReconcile = &corev1alphav1.LastReconcileStatus{}
+	status.LastReconcile = &corev1alphav1.LastReconcileStatus{
+		Generation: resource.GetGeneration(),
+		Time:       metav1.NewTime(time.Now()),
 	}
-	status.LastReconcile.Time = metav1.NewTime(time.Now())
-	status.LastReconcile.Generation = resource.GetGeneration()
 
 	// @here we are responsible for updating the transition times of the conditions where we
 	// see a drift. And updating the status of the resource overall
@@ -97,11 +96,10 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	cond := ConditionMgr(resource, corev1alphav1.ConditionReady, nil)
 	cond.Success("Resource ready")
 
-	if status.LastSuccess == nil {
-		status.LastSuccess = &corev1alphav1.LastReconcileStatus{}
+	status.LastSuccess = &corev1alphav1.LastReconcileStatus{
+		Generation: resource.GetGeneration(),
+		Time:       metav1.NewTime(time.Now()),
 	}
-	status.LastSuccess.Time = metav1.NewTime(time.Now())
-	status.LastSuccess.Generation = resource.GetGeneration()
 
 	return reconcile.Result{}, nil
 }
