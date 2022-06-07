@@ -1,6 +1,6 @@
 SHELL = /bin/sh -e
 AUTHOR_EMAIL=info@appvia.io
-REGISTRY=quay.io
+REGISTRY=ghcr.io
 REGISTRY_ORG=appvia
 APIS ?= $(shell find pkg/apis -name "v*" -type d | sed -e 's/pkg\/apis\///' | sort | tr '\n' ' ')
 BUILD_TIME=$(shell date '+%s')

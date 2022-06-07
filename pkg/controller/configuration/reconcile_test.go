@@ -87,7 +87,7 @@ var _ = Describe("Configuration Controller", func() {
 			recorder:         recorder,
 			EnableInfracosts: false,
 			EnableWatchers:   true,
-			ExecutorImage:    "quay.io/appvia/terraform-executor",
+			ExecutorImage:    "ghcr.io/appvia/terraform-executor",
 			InfracostsImage:  "infracosts/infracost:latest",
 			JobNamespace:     "default",
 			PolicyImage:      "bridgecrew/checkov:2.0.1140",

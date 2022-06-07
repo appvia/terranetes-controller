@@ -32,7 +32,7 @@ jobs:
         with:
           context: .
           file: images/Dockerfile.controller
-          tags: quay.io/appvia/terraform-controller:ci
+          tags: ghcr.io/appvia/terraform-controller:ci
           outputs: type=docker,dest=/tmp/controller-image.tar
       - name: Save
         uses: actions/upload-artifact@v2
@@ -53,7 +53,7 @@ jobs:
         with:
           context: .
           file: images/Dockerfile.executor
-          tags: quay.io/appvia/terraform-executor:ci
+          tags: ghcr.io/appvia/terraform-executor:ci
           outputs: type=docker,dest=/tmp/executor-image.tar
       - name: Save
         uses: actions/upload-artifact@v2

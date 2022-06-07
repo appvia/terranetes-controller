@@ -1,14 +1,10 @@
 ---
-name: Release
+name: Publish Tagged Images
 
 on:
   push:
     tags:
       - "v*"
-
-env:
-  REGISTRY: quay.io
-  REGISTRY_ORG: appvia
 
 jobs:
   e2e-aws:
@@ -23,23 +19,9 @@ jobs:
     with:
       cloud: azure
 
-  release-images:
+  release-tagged-images:
     needs:
       - e2e-aws
       - e2e-azure
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Get version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-      - name: Docker Login
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD quay.io
-      - name: Release Images
-        run: make release-images
-        env:
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
+    uses: appvia/terraform-controller/.github/workflows/publish-images.yaml@master
+    secrets: inherit
