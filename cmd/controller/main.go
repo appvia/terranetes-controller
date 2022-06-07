@@ -63,7 +63,7 @@ func main() {
 	flags.IntVar(&config.APIServerPort, "apiserver-port", 10080, "The port the apiserver should be listening on")
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
-	flags.StringVar(&config.ExecutorImage, "executor-image", "quay.io/appvia/terraform-executor:latest", "The image to use for the executor")
+	flags.StringVar(&config.ExecutorImage, "executor-image", "ghcr.io/appvia/terraform-executor:latest", "The image to use for the executor")
 	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:0.9.24", "The image to use for the infracosts")
 	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
