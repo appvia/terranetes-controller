@@ -1262,7 +1262,7 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# gotest.tools/gotestsum v1.8.0
+# gotest.tools/gotestsum v1.8.1
 ## explicit; go 1.13
 gotest.tools/gotestsum
 gotest.tools/gotestsum/cmd
