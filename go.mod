@@ -25,7 +25,7 @@ require (
 	github.com/tcnksm/ghr v0.14.0
 	github.com/tidwall/gjson v1.14.1
 	golang.org/x/tools v0.1.11-0.20220316014157-77aa08bb151a
-	gotest.tools/gotestsum v1.8.0
+	gotest.tools/gotestsum v1.8.1
 	k8s.io/api v0.24.1
 	k8s.io/apimachinery v0.24.1
 	k8s.io/client-go v0.24.1
