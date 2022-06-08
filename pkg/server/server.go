@@ -130,7 +130,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	if err := (&drift.Controller{
-		CheckInterval:  20 * time.Second,
+		CheckInterval:  config.DriftControllerInterval,
 		DriftInterval:  config.DriftInterval,
 		DriftThreshold: config.DriftThreshold,
 	}).Add(mgr); err != nil {

@@ -23,6 +23,8 @@ import "time"
 type Config struct {
 	// APIServerPort is the port to listen on
 	APIServerPort int
+	// DriftControllerInterval is the interval for the controller to check for drift
+	DriftControllerInterval time.Duration
 	// DriftInterval is the minimum interval between drift checks
 	DriftInterval time.Duration
 	// EnableWebhook enables the webhook registration

@@ -56,6 +56,7 @@ spec:
             {{- if .Values.controller.costs.secret }}
             - --cost-secret={{ .Values.controller.costs.secret }}
             {{- end }}
+            - --drift-controller-interval={{ .Values.controller.driftControllerInterval }}
             - --drift-interval={{ .Values.controller.driftInterval }}
             - --drift-threshold={{ .Values.controller.driftThreshold }}
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
