@@ -21,8 +21,9 @@ import (
 	"bytes"
 	"compress/gzip"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+
+	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 )
 
 var state = `

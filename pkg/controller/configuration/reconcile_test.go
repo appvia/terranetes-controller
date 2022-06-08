@@ -19,6 +19,7 @@ package configuration
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -32,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kfake "k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -80,7 +82,9 @@ var _ = Describe("Configuration Controller", func() {
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:               cc,
+			kc:               kfake.NewSimpleClientset(),
 			cache:            cache.New(5*time.Minute, 10*time.Minute),
+			driftCache:       cache.New(1*time.Hour, 5*time.Second),
 			recorder:         recorder,
 			EnableInfracosts: false,
 			EnableWatchers:   true,
@@ -361,7 +365,7 @@ var _ = Describe("Configuration Controller", func() {
 			cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-			Expect(cond.Message).To(Equal("Authentication secret (spec.scmAuth) does not exist"))
+			Expect(cond.Message).To(Equal("Authentication secret (spec.auth) does not exist"))
 		})
 
 		It("should not create any jobs", func() {
@@ -373,7 +377,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have raised a event", func() {
 			Expect(recorder.Events).To(HaveLen(1))
-			Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.scmAuth) does not exist"))
+			Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.auth) does not exist"))
 		})
 	})
 
@@ -832,9 +836,150 @@ terraform {
 			Expect(configuration.Annotations).To(HaveKey(terraformv1alphav1.ApplyAnnotation))
 		})
 
+		It("should have a out of sync status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.OutOfSync))
+		})
+
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
+		})
+	})
+
+	When("the configuration has drift detection annotated", func() {
+		When("the drift job has not been provisioned", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+
+				Setup(configuration)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+
+			It("should have created job for the terraform plan", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+			It("it should have the configuration labels", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+
+				labels := list.Items[0].GetLabels()
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNamespaceLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationGenerationLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationStageLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.DriftAnnotation))
+				Expect(labels[terraformv1alphav1.ConfigurationStageLabel]).To(Equal(terraformv1alphav1.StageTerraformPlan))
+				Expect(labels[terraformv1alphav1.ConfigurationNameLabel]).To(Equal(configuration.Name))
+				Expect(labels[terraformv1alphav1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
+				Expect(labels[terraformv1alphav1.DriftAnnotation]).To(Equal("true"))
+			})
+
+			It("should have created a watch job in the configuration namespace", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(configuration.Namespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+				Expect(len(list.Items[0].Spec.Template.Spec.Containers)).To(Equal(1))
+
+				container := list.Items[0].Spec.Template.Spec.Containers[0]
+				Expect(container.Name).To(Equal("watch"))
+				Expect(container.Command).To(Equal([]string{"sh"}))
+			})
+		})
+
+		When("when the drift job has already been run", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+
+				job := &batchv1.Job{}
+				job.Name = "test"
+				job.Namespace = ctrl.JobNamespace
+				job.Labels = map[string]string{
+					terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+					terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
+					terraformv1alphav1.ConfigurationNamespaceLabel:  configuration.Namespace,
+					terraformv1alphav1.ConfigurationStageLabel:      terraformv1alphav1.StageTerraformPlan,
+					terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.GetUID()),
+					terraformv1alphav1.DriftAnnotation:              "true",
+				}
+				Setup(configuration, job)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should not create another job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+		})
+
+		When("when the drift has changed", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "changed"}
+
+				job := &batchv1.Job{}
+				job.Name = "test"
+				job.Namespace = ctrl.JobNamespace
+				job.Labels = map[string]string{
+					terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+					terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
+					terraformv1alphav1.ConfigurationNamespaceLabel:  configuration.Namespace,
+					terraformv1alphav1.ConfigurationStageLabel:      terraformv1alphav1.StageTerraformPlan,
+					terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.GetUID()),
+					terraformv1alphav1.DriftAnnotation:              "true",
+				}
+				Setup(configuration, job)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+
+			It("should have an out of sync status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.OutOfSync))
+			})
+
+			It("should create another job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(2))
+			})
 		})
 	})
 
@@ -1437,6 +1582,12 @@ terraform {
 			It("should have a resource count on the status", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 				Expect(configuration.Status.Resources).To(Equal(1))
+			})
+
+			It("should have a in sync status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.InSync))
 			})
 
 			It("should have created a secret containing the module output", func() {

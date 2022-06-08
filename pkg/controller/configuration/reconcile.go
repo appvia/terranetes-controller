@@ -35,6 +35,8 @@ type state struct {
 	auth *v1.Secret
 	// checkovConstraint is the policy constraint for this configuration
 	checkovConstraint *terraformv1alphav1.PolicyConstraint
+	// hasDrift is a flag to indicate if the configuration has drift
+	hasDrift bool
 	// policies is a list of policies in the cluster
 	policies *terraformv1alphav1.PolicyList
 	// provider is the credentials provider to use
@@ -45,6 +47,8 @@ type state struct {
 	jobTemplate []byte
 	// valueFrom is a map of keys to values
 	valueFrom map[string]string
+	// tfstate is the secret containing the terraform state
+	tfstate *v1.Secret
 }
 
 // Reconcile is called to handle the reconciliation of the provider resource
@@ -66,8 +70,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	if finalizer.IsDeletionCandidate(configuration) {
 		result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 			[]controller.EnsureFunc{
-				c.ensurePoliciesList(configuration, state),
-				c.ensureJobsList(configuration, state),
+				c.ensureCapturedState(configuration, state),
 				c.ensureProviderReady(configuration, state),
 				c.ensureAuthenticationSecret(configuration),
 				c.ensureCustomJobTemplate(configuration, state),
@@ -92,21 +95,21 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{
 			finalizer.EnsurePresent(configuration),
-			c.ensurePoliciesList(configuration, state),
-			c.ensureJobsList(configuration, state),
+			c.ensureCapturedState(configuration, state),
 			c.ensureNoActivity(configuration, state),
 			c.ensureCostSecret(configuration),
 			c.ensureValueFromSecret(configuration, state),
-			c.ensureCustomJobTemplate(configuration, state),
 			c.ensureAuthenticationSecret(configuration),
+			c.ensureCustomJobTemplate(configuration, state),
 			c.ensureProviderReady(configuration, state),
 			c.ensureJobConfigurationSecret(configuration, state),
 			c.ensureTerraformPlan(configuration, state),
 			c.ensureCostStatus(configuration),
 			c.ensurePolicyStatus(configuration, state),
+			c.ensureDriftDetection(configuration, state),
 			c.ensureTerraformApply(configuration, state),
-			c.ensureTerraformStatus(configuration),
-			c.ensureConnectionSecret(configuration),
+			c.ensureConnectionSecret(configuration, state),
+			c.ensureTerraformStatus(configuration, state),
 		})
 	if err != nil {
 		log.WithError(err).Error("failed to reconcile the configuration resource")
