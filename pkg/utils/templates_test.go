@@ -18,28 +18,30 @@
 package utils
 
 import (
-	"bytes"
-	"text/template"
+	"testing"
 
-	"github.com/Masterminds/sprig/v3"
+	"github.com/stretchr/testify/assert"
 )
 
-// GetTxtFunc returns a defaults list of methods for text templating
-func GetTxtFunc() map[string]any {
-	return sprig.TxtFuncMap()
+func TestGetTxtFunc(t *testing.T) {
+	m := GetTxtFunc()
+	assert.NotNil(t, m)
 }
 
-// Template is called to render a template
-func Template(main string, data interface{}) ([]byte, error) {
-	tpl, err := template.New("main").Funcs(GetTxtFunc()).Parse(main)
-	if err != nil {
-		return nil, err
-	}
+func TestTemplate(t *testing.T) {
+	tmpl := `{{ .Hello }} {{ .World }}`
+	m, err := Template(tmpl, map[string]interface{}{
+		"Hello": "Hello", "World": "World",
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, m)
+	assert.Equal(t, "Hello World", string(m))
+}
 
-	b := &bytes.Buffer{}
-	if err := tpl.Execute(b, data); err != nil {
-		return nil, err
-	}
+func TestTemplateInvalid(t *testing.T) {
+	tmpl := `{{ .Hello }} {{ .World }`
 
-	return b.Bytes(), nil
+	m, err := Template(tmpl, map[string]interface{}{"Hello": "Hello"})
+	assert.Error(t, err)
+	assert.Empty(t, m)
 }
