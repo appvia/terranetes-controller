@@ -249,7 +249,7 @@ type ConfigurationStatus struct {
 	// This field is taken from the terraform state itself.
 	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
-	// ResourceStatus indicates the status of the resources and if the resoruces are insync with the
+	// ResourceStatus indicates the status of the resources and if the resources are insync with the
 	// configuration
 	ResourceStatus ResourceStatus `json:"resourceStatus,omitempty"`
 	// TerraformVersion is the version of terraform which was last used to run this

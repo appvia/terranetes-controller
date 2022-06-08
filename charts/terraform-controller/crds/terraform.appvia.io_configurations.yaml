@@ -219,7 +219,7 @@ spec:
                       type: string
                   type: object
                 resourceStatus:
-                  description: ResourceStatus indicates the status of the resources and if the resoruces are insync with the configuration
+                  description: ResourceStatus indicates the status of the resources and if the resources are insync with the configuration
                   type: string
                 resources:
                   description: Resources is the number of managed cloud resources which are currently under management. This field is taken from the terraform state itself.
