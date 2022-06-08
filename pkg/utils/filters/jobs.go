@@ -32,6 +32,7 @@ type Filter struct {
 	generation string
 	uid        string
 	list       *batchv1.JobList
+	labels     map[string]string
 	stage      string
 }
 
@@ -43,6 +44,19 @@ func Jobs(list *batchv1.JobList) *Filter {
 // WithName filters on the configuration name
 func (j *Filter) WithName(name string) *Filter {
 	j.name = name
+
+	return j
+}
+
+// WithLabel filters on the labels
+func (j *Filter) WithLabel(name, value string) *Filter {
+	if j.labels == nil {
+		j.labels = make(map[string]string)
+	}
+	if value == "" {
+		return j
+	}
+	j.labels[name] = value
 
 	return j
 }
@@ -111,6 +125,9 @@ func (j *Filter) String() string {
 	if j.uid != "" {
 		list = append(list, "uid="+j.uid)
 	}
+	for k, v := range j.labels {
+		list = append(list, "label="+k+":"+v)
+	}
 
 	return strings.Join(list, ",")
 }
@@ -136,6 +153,18 @@ func (j *Filter) List() (*batchv1.JobList, bool) {
 			continue
 		case j.uid != "" && labels[terraformv1alpha1.ConfigurationUIDLabel] != j.uid:
 			continue
+		case len(j.labels) > 0:
+			missing := func() bool {
+				for k, v := range j.labels {
+					if labels[k] != v {
+						return true
+					}
+				}
+				return false
+			}()
+			if missing {
+				continue
+			}
 		}
 
 		list.Items = append(list.Items, j.list.Items[i])

@@ -47,6 +47,13 @@ type EnsureRunner struct{}
 // RequeueImmediate should be used anywhere we wish an immediate / ASAP requeue to be performed
 var RequeueImmediate = reconcile.Result{RequeueAfter: 5 * time.Millisecond}
 
+// RequeueAfter is a helper function to return a requeue result with the given duration
+func RequeueAfter(d time.Duration) EnsureFunc {
+	return func(ctx context.Context) (reconcile.Result, error) {
+		return reconcile.Result{RequeueAfter: d}, nil
+	}
+}
+
 // Run is a generic handler for running the ensure methods
 func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Object, ensures []EnsureFunc) (result reconcile.Result, rerr error) {
 	original := resource.DeepCopyObject()

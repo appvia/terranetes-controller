@@ -147,6 +147,16 @@ func (c *Condition) IsComplete(generation int64) bool {
 	return c.Status == metav1.ConditionTrue && c.ObservedGeneration == generation
 }
 
+// IsFailed returns true if the resource has a failed state
+func (c *Condition) IsFailed(generation int64) bool {
+	return c.Reason == ReasonError && c.ObservedGeneration == generation
+}
+
+// InProgress returns true if the condition indicates the condition is in progress
+func (c *Condition) InProgress() bool {
+	return c.Reason == ReasonInProgress
+}
+
 // IsDeleting returns true if the condition is in status false and has a deleting/deleted reason
 // (i.e. deleting, deleted or error deleting)
 func (c *Condition) IsDeleting() bool {
@@ -158,6 +168,13 @@ func (c *Condition) IsDeleting() bool {
 
 // Conditions is a collection of condition
 type Conditions []Condition
+
+// HasCondition returns true if the condition is in the list
+func (s *CommonStatus) HasCondition(t ConditionType) bool {
+	c := s.GetCondition(t)
+
+	return c != nil
+}
 
 // GetCondition returns the current observed status of a specific element of this resource, or
 // nil if the condition does not exist

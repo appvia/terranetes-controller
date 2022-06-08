@@ -32,6 +32,17 @@ controller:
     # The terraform image used when running jobs
     executor: quay.io/appvia/terraform-executor:v0.1.6
 
+  # driftInterval is the minimum time to check for drift
+  driftInterval: 5h
+  # driftThreshold is the percentage of configurations which are permitted
+  # to run a drift detection at any one time
+  driftThreshold: 0.10
+  # driftControllerInterval is the interval the controller will use to requeue. On every iteration
+  # the configurations are checked and anyone who's last plan occurred longer than the driftInterval
+  # is up for a drift trigger. Its fine to have this low, it's the driftInterval and threshold which
+  # ultimately effective jobs running to check drift.
+  driftControllerInterval: 5m
+
   # Allows you to overload the templates
   templates:
     # is the name of config map holding a override to the job template

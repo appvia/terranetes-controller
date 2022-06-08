@@ -26,6 +26,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 
 	v1 "k8s.io/api/core/v1"
@@ -52,6 +53,9 @@ const controllerName = "configuration.terraform.appvia.io"
 type Controller struct {
 	// cc is the kubernetes client to the cluster
 	cc client.Client
+	// kc is a client kubernetes - this is required as the controller runtime client
+	// does not support subresources, check https://github.com/kubernetes-sigs/controller-runtime/pull/1922
+	kc kubernetes.Interface
 	// cache is a local cache of resources to make lookups faster
 	cache *cache.Cache
 	// recorder is the kubernetes event recorder
@@ -80,7 +84,13 @@ type Controller struct {
 
 // Add is called to setup the manager for the controller
 func (c *Controller) Add(mgr manager.Manager) error {
-	log.Info("adding the configuration controller")
+	log.WithFields(log.Fields{
+		"enable_costs":    c.EnableInfracosts,
+		"enable_watchers": c.EnableWatchers,
+		"namespace":       c.JobNamespace,
+		"policy_image":    c.PolicyImage,
+		"terraform_image": c.TerraformImage,
+	}).Info("adding the configuration controller")
 
 	switch {
 	case c.JobNamespace == "":
@@ -96,8 +106,14 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 
 	c.cc = mgr.GetClient()
-	c.cache = cache.New(3*time.Hour, 5*time.Minute)
+	c.cache = cache.New(12*time.Hour, 10*time.Minute)
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
+
+	kc, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	c.kc = kc
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
