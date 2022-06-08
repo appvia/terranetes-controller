@@ -18,9 +18,12 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -57,18 +60,36 @@ func (c *ConditionManager) GetCondition() *corev1alphav1.Condition {
 // transition is a helper method used to update the transition time. The method takes of a copy of the current
 // condition and then allows the handler to update. Before exiting it performs a comparison and if it's been update
 // it updates the transitions time
-func (c *ConditionManager) transition(cond *corev1alphav1.Condition, fn func()) {
+func (c *ConditionManager) transition(cond *corev1alphav1.Condition, methodFunc func()) {
 	original := *cond
-	fn()
+	methodFunc()
 
 	if !reflect.DeepEqual(original, *cond) {
 		cond.LastTransitionTime = metav1.Now()
 	}
 
+	logger := log.WithFields(log.Fields{
+		"kind":      strings.ToLower(c.resource.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind),
+		"name":      c.resource.GetName(),
+		"namespace": c.resource.GetNamespace(),
+	})
+
+	// @step: record the message on the logs
+	switch cond.Reason {
+	case corev1alphav1.ReasonDeleting:
+		logger.Info("resource is deleting")
+	case corev1alphav1.ReasonReady:
+		logger.Info("resource is ready")
+	case corev1alphav1.ReasonWarning, corev1alphav1.ReasonActionRequired:
+		logger.Warn(cond.Message)
+	case corev1alphav1.ReasonError:
+		logger.WithError(errors.New(cond.Detail)).Error(cond.Message)
+	}
+
+	// @step: create a kubernetes events from the condition
 	if c.recorder != nil {
-		// @note: we could limit this to just one event per condition and use the original as the trigger
-		switch {
-		case cond.Reason == corev1alphav1.ReasonActionRequired:
+		switch cond.Reason {
+		case corev1alphav1.ReasonActionRequired:
 			c.recorder.Event(c.resource, v1.EventTypeWarning, "Action Required", cond.Message)
 		}
 	}
