@@ -37,7 +37,7 @@ EOF
 }
 
 run_bats() {
-  echo "Running units: ${@}"
+  echo -e "Running units: ${@}\n"
   APP_NAMESPACE=${APP_NAMESPACE} \
   BUCKET=${BUCKET} \
   CLOUD=${CLOUD} \
@@ -55,6 +55,7 @@ run_checks() {
     "${UNITS}/costs.bats"
     "${UNITS}/apply.bats"
     "${UNITS}/cloud/${CLOUD}/confirm.bats"
+    "${UNITS}/drift.bats"
     "${UNITS}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/destroy.bats"
   )
@@ -66,7 +67,7 @@ run_checks() {
   # Run in the installation
   run_bats "${UNITS}/setup.bats"
   if [[ -n "${CLOUD}" ]]; then
-    echo "Running suite on: ${CLOUD^^}"
+    echo -e "Running suite on: ${CLOUD^^}\n"
     for x in "${CLOUD_FILES[@]}"; do
       [[ -f "${x}" ]] && run_bats ${x} || exit 1
     done
