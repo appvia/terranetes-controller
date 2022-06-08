@@ -6,26 +6,23 @@ A typical workflow for development would be to use Kind.
 # Create a new local cluster for testing
 $ kind create cluster
 
-# Make a copy of the helm values (note ./dev is intentionally ignored by .gitignore)
+# Create a values file for helm (note ./dev is intentionally ignored by .gitignore)
 $ mkdir -p dev
-$ cp charts/values.yaml dev/values.yaml
 
 # Use the following values
 $ vim dev/values.yaml
 ```
 
 ```YAML
----
-replicaCount: 1
 controller:
   costs:
     # Add this if you're testing infracost
     #secret: infracost
   images:
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:latest
+    controller: quay.io/appvia/terraform-controller:ci
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:latest
+    executor: quay.io/appvia/terraform-executor:ci
 ```
 
 ```shell
@@ -33,7 +30,7 @@ controller:
 $ make controller-kind
 
 # Change the values of the images to :latest in values.yaml
-$ helm install terraform-controller charts --create-namespace --values dev/values.yaml
+$ helm install terraform-controller charts/terraform-controller --create-namespace --values dev/values.yaml
 ```
 
 You can easily iterate locally by running `make controller-kind` again to build, load and restart.
