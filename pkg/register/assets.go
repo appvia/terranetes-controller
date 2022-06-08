@@ -81,11 +81,11 @@ spec:
         - jsonPath: .spec.writeConnectionSecretToRef.name
           name: Secret
           type: string
-        - jsonPath: .status.resources
-          name: Resources
-          type: string
         - jsonPath: .status.costs.monthly
           name: Estimated
+          type: string
+        - jsonPath: .status.resourceStatus
+          name: Synchronized
           type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
@@ -107,7 +107,7 @@ spec:
               description: ConfigurationSpec defines the desired state of a terraform
               properties:
                 auth:
-                  description: SCMAuth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
+                  description: Auth is used to configure any options required when the source of the terraform module is private or requires credentials to retrieve. This could be SSH keys or git user/pass or AWS credentials for an s3 bucket.
                   properties:
                     name:
                       description: name is unique within a namespace to reference a secret resource.
@@ -118,6 +118,9 @@ spec:
                   type: object
                 enableAutoApproval:
                   description: EnableAutoApproval when enabled indicates the configuration does not need to be manually approved. On a change to the configuration, the controller will automatically approve the configuration. Note it still needs to adhere to any checks or policies.
+                  type: boolean
+                enableDriftDetection:
+                  description: EnableDriftDetection when enabled run periodic reconciliation configurations looking for any drift between the expected and current state. If any drift is detected the status is changed and a kubernetes event raised.
                   type: boolean
                 module:
                   description: Module is the URL to the source of the terraform module. The format of the URL is a direct implementation of terraform's module reference. Please see the following repository for more details https://github.com/hashicorp/go-getter
@@ -248,6 +251,9 @@ spec:
                       description: Monthly is the monthly estimated cost of the configuration
                       type: string
                   type: object
+                driftTimestamp:
+                  description: DriftTimestamp is the timestamp of the last drift detection
+                  type: string
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:
@@ -272,9 +278,15 @@ spec:
                       format: date-time
                       type: string
                   type: object
+                resourceStatus:
+                  description: ResourceStatus indicates the status of the resources and if the resoruces are insync with the configuration
+                  type: string
                 resources:
                   description: Resources is the number of managed cloud resources which are currently under management. This field is taken from the terraform state itself.
                   type: integer
+                terraformVersion:
+                  description: TerraformVersion is the version of terraform which was last used to run this configuration
+                  type: string
               type: object
           type: object
       served: true
