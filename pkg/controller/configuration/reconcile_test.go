@@ -84,7 +84,6 @@ var _ = Describe("Configuration Controller", func() {
 			cc:               cc,
 			kc:               kfake.NewSimpleClientset(),
 			cache:            cache.New(5*time.Minute, 10*time.Minute),
-			driftCache:       cache.New(1*time.Hour, 5*time.Second),
 			recorder:         recorder,
 			EnableInfracosts: false,
 			EnableWatchers:   true,
@@ -839,7 +838,7 @@ terraform {
 		It("should have a out of sync status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.OutOfSync))
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
 		})
 
 		It("should ask us to requeue", func() {
@@ -971,7 +970,7 @@ terraform {
 			It("should have an out of sync status", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.OutOfSync))
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
 			})
 
 			It("should create another job", func() {
@@ -1587,7 +1586,7 @@ terraform {
 			It("should have a in sync status", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.InSync))
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesInSync))
 			})
 
 			It("should have created a secret containing the module output", func() {
