@@ -227,12 +227,6 @@ check: test
 	@$(MAKE) spelling
 	@$(MAKE) golangci-lint
 
-verify-circleci:
-	@echo "--> Verifying the circleci config"
-	@docker run -ti --rm -v ${PWD}:/workspace \
-		-w /workspace circleci/circleci-cli \
-		circleci config validate
-
 ### UTILITIES ###
 
 clean:
