@@ -31,6 +31,7 @@ import (
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/utils"
 	"github.com/appvia/terraform-controller/pkg/utils/filters"
+	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
 
 // handleHealth is http handler for the health endpoint
@@ -130,7 +131,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 			return false, nil
 		}
 
-		pod = findLatestPod(pods)
+		pod = kubernetes.FindLatestPod(pods)
 		switch pod.Status.Phase {
 		case v1.PodRunning, v1.PodSucceeded:
 			return true, nil
@@ -172,20 +173,4 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 	//nolint
 	w.Write([]byte("[build] completed\n"))
-}
-
-// findLatestPod returns the latest pod in the list
-func findLatestPod(list *v1.PodList) *v1.Pod {
-	var latest *v1.Pod
-	for i := 0; i < len(list.Items); i++ {
-		if latest == nil {
-			latest = &list.Items[i]
-			continue
-		}
-		if list.Items[i].CreationTimestamp.After(latest.CreationTimestamp.Time) {
-			latest = &list.Items[i]
-		}
-	}
-
-	return latest
 }
