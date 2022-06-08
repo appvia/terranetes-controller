@@ -30,7 +30,7 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have a job created in the terraform-system ready to run " {
+@test "We should have a job created in the terraform-system ready to run" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
   retry 50 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
