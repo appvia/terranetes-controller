@@ -23,6 +23,8 @@ import "time"
 type Config struct {
 	// APIServerPort is the port to listen on
 	APIServerPort int
+	// DriftInterval is the minimum interval between drift checks
+	DriftInterval time.Duration
 	// EnableWebhook enables the webhook registration
 	EnableWebhook bool
 	// EnableWatchers enables the creation of watcher jobs
@@ -37,6 +39,9 @@ type Config struct {
 	InfracostsImage string
 	// JobTemplate is the name of the configmap containing a template for the jobs
 	JobTemplate string
+	// DriftThreshold is the max number of drifts we are running to run - this prevents the
+	// controller from running many configurations at the same time
+	DriftThreshold float64
 	// MetricsPort is the port to listen on
 	MetricsPort int
 	// Namespace is namespace the controller is running
