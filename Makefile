@@ -113,9 +113,8 @@ step: golang
 
 test:
 	@echo "--> Running the tests"
-	@rm -rf cover.out
-	@mkdir -p ./test/results
-	@go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname -- -coverprofile=cover.out `go list ./... | egrep -v /test/crdtests/`
+	@rm -f cover.out || true
+	@go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname -- -coverprofile=cover.out ./...
 	@echo "--> Coverage: $(shell go tool cover -func=cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+')" || true
 
 ### IMAGES ###
@@ -227,12 +226,6 @@ check: test
 	@$(MAKE) shfmt
 	@$(MAKE) spelling
 	@$(MAKE) golangci-lint
-
-verify-circleci:
-	@echo "--> Verifying the circleci config"
-	@docker run -ti --rm -v ${PWD}:/workspace \
-		-w /workspace circleci/circleci-cli \
-		circleci config validate
 
 ### UTILITIES ###
 

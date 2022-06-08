@@ -19,7 +19,7 @@ jobs:
         with:
           go-version: '1.18.1'
       - name: Unit Tests
-        run: make check
+        run: make test
 
   dependencies:
     runs-on: ubuntu-latest
@@ -33,14 +33,18 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v2
         with:
           go-version: '1.18.1'
-      - uses: actions/checkout@v3
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --timeout 4m
+      - name: Linting
+        run: |
+          make check-gofmt
+          make shfmt
+          make spelling
+          make golangci-lint
 
   helm:
     runs-on: ubuntu-latest
