@@ -749,7 +749,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{}, nil
 
-		case configuration.NeedsApproval():
+		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
 			return reconcile.Result{}, controller.ErrIgnore
 		}
