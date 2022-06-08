@@ -37,6 +37,8 @@ const ConfigurationKind = "Configuration"
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
 	ApplyAnnotation = "terraform.appvia.io/apply"
+	// DriftAnnotation is the annotation used to mark a resource for drift detection
+	DriftAnnotation = "terraform.appvia.io/drift"
 	// ReconcileAnnotation is the label used control reconciliation
 	ReconcileAnnotation = "terraform.appvia.io/reconcile"
 	// OrphanAnnotation is the label used to orphan a configuration
@@ -135,7 +137,7 @@ type ValueFromSource struct {
 // ConfigurationSpec defines the desired state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationSpec struct {
-	// SCMAuth is used to configure any options required when the source of the terraform
+	// Auth is used to configure any options required when the source of the terraform
 	// module is private or requires credentials to retrieve. This could be SSH keys or git
 	// user/pass or AWS credentials for an s3 bucket.
 	// +kubebuilder:validation:Optional
@@ -145,6 +147,10 @@ type ConfigurationSpec struct {
 	// approve the configuration. Note it still needs to adhere to any checks or policies.
 	// +kubebuilder:validation:Optional
 	EnableAutoApproval bool `json:"enableAutoApproval,omitempty"`
+	// EnableDriftDetection when enabled run periodic reconciliation configurations looking
+	// for any drift between the expected and current state. If any drift is detected the
+	// status is changed and a kubernetes event raised.
+	EnableDriftDetection bool `json:"enableDriftDetection,omitempty"`
 	// Module is the URL to the source of the terraform module. The format of the URL is
 	// a direct implementation of terraform's module reference. Please see the following
 	// repository for more details https://github.com/hashicorp/go-getter
@@ -189,8 +195,8 @@ type ConfigurationSpec struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
-// +kubebuilder:printcolumn:name="Resources",type="string",JSONPath=".status.resources"
 // +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
+// +kubebuilder:printcolumn:name="Synchronized",type="string",JSONPath=".status.resourceStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Configuration struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -214,6 +220,20 @@ type CostStatus struct {
 	Monthly string `json:"monthly,omitempty"`
 }
 
+// ResourceStatus is the status of the resources
+type ResourceStatus string
+
+const (
+	// ResourcesInSync is the status when the configuration is in sync
+	ResourcesInSync ResourceStatus = "InSync"
+	// ResourcesOutOfSync is the status when the configuration is out of sync
+	ResourcesOutOfSync ResourceStatus = "OutOfSync"
+	// DestroyingResources is the status
+	DestroyingResources ResourceStatus = "OutOfSync"
+	// UnknownResourceStatus is the status when the configuration is unknown
+	UnknownResourceStatus ResourceStatus = ""
+)
+
 // ConfigurationStatus defines the observed state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
@@ -222,10 +242,16 @@ type ConfigurationStatus struct {
 	// when the integration has been configured by the administrator.
 	// +kubebuilder:validation:Optional
 	Costs *CostStatus `json:"costs,omitempty"`
+	// DriftTimestamp is the timestamp of the last drift detection
+	// +kubebuilder:validation:Optional
+	DriftTimestamp string `json:"driftTimestamp,omitempty"`
 	// Resources is the number of managed cloud resources which are currently under management.
 	// This field is taken from the terraform state itself.
 	// +kubebuilder:validation:Optional
 	Resources int `json:"resources,omitempty"`
+	// ResourceStatus indicates the status of the resources and if the resources are insync with the
+	// configuration
+	ResourceStatus ResourceStatus `json:"resourceStatus,omitempty"`
 	// TerraformVersion is the version of terraform which was last used to run this
 	// configuration
 	// +kubebuilder:validation:Optional

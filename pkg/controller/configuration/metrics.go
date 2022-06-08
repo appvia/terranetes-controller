@@ -42,4 +42,10 @@ var (
 			Help: "The monthly costs of a configuration currently in the system",
 		}, []string{"name", "namespace"},
 	)
+	inSyncMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "configuration_synchronized",
+			Help: "Indicates the resources from the configuration are in sync",
+		}, []string{"name", "namespace"},
+	)
 )

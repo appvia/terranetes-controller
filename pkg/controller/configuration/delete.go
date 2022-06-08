@@ -46,6 +46,8 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 			return reconcile.Result{}, nil
 		}
 
+		configuration.Status.ResourceStatus = terraformv1alphav1.DestroyingResources
+
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
 		secret.Namespace = c.JobNamespace
@@ -73,14 +75,13 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
-			DefaultServiceAccount: "terraform-executor",
-			EnableInfraCosts:      c.EnableInfracosts,
-			ExecutorImage:         c.ExecutorImage,
-			InfracostsImage:       c.InfracostsImage,
-			InfracostsSecret:      c.InfracostsSecretName,
-			Namespace:             c.JobNamespace,
-			Template:              state.jobTemplate,
-			TerraformImage:        GetTerraformImage(configuration, c.TerraformImage),
+			EnableInfraCosts: c.EnableInfracosts,
+			ExecutorImage:    c.ExecutorImage,
+			InfracostsImage:  c.InfracostsImage,
+			InfracostsSecret: c.InfracostsSecretName,
+			Namespace:        c.JobNamespace,
+			Template:         state.jobTemplate,
+			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")
