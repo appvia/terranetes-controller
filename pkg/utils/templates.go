@@ -19,8 +19,6 @@ package utils
 
 import (
 	"bytes"
-	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -44,22 +42,4 @@ func Template(main string, data interface{}) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
-}
-
-// Prefix is a hack to get prefixes to fix
-func Prefix(prefix string, e interface{}) string {
-	w := &strings.Builder{}
-
-	list, ok := e.([]string)
-	if !ok {
-		return ""
-	}
-
-	for _, line := range list {
-		for _, x := range strings.Split(line, ", ") {
-			w.WriteString(fmt.Sprintf("%s %s ", prefix, x))
-		}
-	}
-
-	return w.String()
 }

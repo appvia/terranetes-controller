@@ -35,7 +35,6 @@ metadata:
 spec:
   module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/azure?ref=master
   providerRef:
-    namespace: terraform-system
     name: azure
   writeConnectionSecretToRef:
     name: test

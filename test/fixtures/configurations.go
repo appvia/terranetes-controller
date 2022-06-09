@@ -31,11 +31,8 @@ func NewValidBucketConfiguration(namespace, name string) *terraformv1alphav1.Con
 	config.UID = types.UID("1234-122-1234-1234")
 	config.Name = name
 	config.Spec = terraformv1alphav1.ConfigurationSpec{
-		Module: "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git",
-		ProviderRef: &terraformv1alphav1.ProviderReference{
-			Namespace: "default",
-			Name:      "aws",
-		},
+		Module:      "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git",
+		ProviderRef: &terraformv1alphav1.ProviderReference{Name: "aws"},
 		Variables: &runtime.RawExtension{
 			Raw: []byte(`{"name": "test"}`),
 		},

@@ -77,8 +77,6 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 		return errors.New("no spec.providerRef is defined")
 	case configuration.Spec.ProviderRef.Name == "":
 		return errors.New("spec.providerRef.name is empty")
-	case configuration.Spec.ProviderRef.Namespace == "":
-		return errors.New("spec.providerRef.namespace is empty")
 	}
 
 	// @step: perform some checks which are dependent on if the resource is being created or updated
@@ -136,7 +134,6 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 // validateProvider is called to ensure the configuration is valid and inline with current provider policy
 func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alphav1.Configuration, namespace *v1.Namespace) error {
 	provider := &terraformv1alphav1.Provider{}
-	provider.Namespace = configuration.Spec.ProviderRef.Namespace
 	provider.Name = configuration.Spec.ProviderRef.Name
 
 	found, err := kubernetes.GetIfExists(ctx, cc, provider)

@@ -34,6 +34,7 @@ import (
 
 	"github.com/appvia/terraform-controller/pkg/apiserver"
 	"github.com/appvia/terraform-controller/pkg/controller/configuration"
+	"github.com/appvia/terraform-controller/pkg/controller/drift"
 	"github.com/appvia/terraform-controller/pkg/controller/policy"
 	"github.com/appvia/terraform-controller/pkg/controller/provider"
 	"github.com/appvia/terraform-controller/pkg/schema"
@@ -50,6 +51,13 @@ type Server struct {
 
 // New returns and starts a new server
 func New(cfg *rest.Config, config Config) (*Server, error) {
+	switch {
+	case config.DriftThreshold >= 1:
+		return nil, fmt.Errorf("drift threshold must be less than 1")
+	case config.DriftThreshold <= 0:
+		return nil, fmt.Errorf("drift threshold must be greater than 0")
+	}
+
 	cc, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -107,13 +115,13 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	if err := (&configuration.Controller{
+		ControllerNamespace:     config.Namespace,
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,
 		ExecutorImage:           config.ExecutorImage,
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
-		JobNamespace:            config.Namespace,
 		JobTemplate:             config.JobTemplate,
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,
@@ -121,7 +129,17 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)
 	}
 
-	if err := (&provider.Controller{}).Add(mgr); err != nil {
+	if err := (&drift.Controller{
+		CheckInterval:  config.DriftControllerInterval,
+		DriftInterval:  config.DriftInterval,
+		DriftThreshold: config.DriftThreshold,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the drift controller, error: %v", err)
+	}
+
+	if err := (&provider.Controller{
+		ControllerNamespace: config.Namespace,
+	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the provider controller, error: %v", err)
 	}
 

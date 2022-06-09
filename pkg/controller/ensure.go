@@ -47,16 +47,22 @@ type EnsureRunner struct{}
 // RequeueImmediate should be used anywhere we wish an immediate / ASAP requeue to be performed
 var RequeueImmediate = reconcile.Result{RequeueAfter: 5 * time.Millisecond}
 
+// RequeueAfter is a helper function to return a requeue result with the given duration
+func RequeueAfter(d time.Duration) EnsureFunc {
+	return func(ctx context.Context) (reconcile.Result, error) {
+		return reconcile.Result{RequeueAfter: d}, nil
+	}
+}
+
 // Run is a generic handler for running the ensure methods
 func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Object, ensures []EnsureFunc) (result reconcile.Result, rerr error) {
 	original := resource.DeepCopyObject()
 	status := resource.GetCommonStatus()
 
-	if status.LastReconcile == nil {
-		status.LastReconcile = &corev1alphav1.LastReconcileStatus{}
+	status.LastReconcile = &corev1alphav1.LastReconcileStatus{
+		Generation: resource.GetGeneration(),
+		Time:       metav1.NewTime(time.Now()),
 	}
-	status.LastReconcile.Time = metav1.NewTime(time.Now())
-	status.LastReconcile.Generation = resource.GetGeneration()
 
 	// @here we are responsible for updating the transition times of the conditions where we
 	// see a drift. And updating the status of the resource overall
@@ -97,11 +103,10 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	cond := ConditionMgr(resource, corev1alphav1.ConditionReady, nil)
 	cond.Success("Resource ready")
 
-	if status.LastSuccess == nil {
-		status.LastSuccess = &corev1alphav1.LastReconcileStatus{}
+	status.LastSuccess = &corev1alphav1.LastReconcileStatus{
+		Generation: resource.GetGeneration(),
+		Time:       metav1.NewTime(time.Now()),
 	}
-	status.LastSuccess.Time = metav1.NewTime(time.Now())
-	status.LastSuccess.Generation = resource.GetGeneration()
 
 	return reconcile.Result{}, nil
 }

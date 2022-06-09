@@ -34,8 +34,8 @@ metadata:
   name: ${RESOURCE_NAME}
 spec:
   module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
+  enableDriftDetection: true
   providerRef:
-    namespace: terraform-system
     name: aws
   writeConnectionSecretToRef:
     name: test

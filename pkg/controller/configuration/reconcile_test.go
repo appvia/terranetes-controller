@@ -19,6 +19,7 @@ package configuration
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -32,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kfake "k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -72,23 +74,25 @@ var _ = Describe("Configuration Controller", func() {
 	}
 
 	Setup := func(objects ...runtime.Object) {
+		secret := fixtures.NewValidAWSProviderSecret("default", "aws")
 		cc = fake.NewFakeClientWithScheme(schema.GetScheme(), append([]runtime.Object{
 			fixtures.NewNamespace(cfgNamespace),
-			fixtures.NewValidAWSReadyProvider("default", "aws"),
-			fixtures.NewValidAWSProviderSecret("default", "aws"),
+			fixtures.NewValidAWSReadyProvider("aws", secret),
+			secret,
 		}, objects...)...)
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
-			cc:               cc,
-			cache:            cache.New(5*time.Minute, 10*time.Minute),
-			recorder:         recorder,
-			EnableInfracosts: false,
-			EnableWatchers:   true,
-			ExecutorImage:    "quay.io/appvia/terraform-executor",
-			InfracostsImage:  "infracosts/infracost:latest",
-			JobNamespace:     "default",
-			PolicyImage:      "bridgecrew/checkov:2.0.1140",
-			TerraformImage:   "hashicorp/terraform:1.1.9",
+			cc:                  cc,
+			kc:                  kfake.NewSimpleClientset(),
+			cache:               cache.New(5*time.Minute, 10*time.Minute),
+			recorder:            recorder,
+			EnableInfracosts:    false,
+			EnableWatchers:      true,
+			ExecutorImage:       "quay.io/appvia/terraform-executor",
+			InfracostsImage:     "infracosts/infracost:latest",
+			ControllerNamespace: "default",
+			PolicyImage:         "bridgecrew/checkov:2.0.1140",
+			TerraformImage:      "hashicorp/terraform:1.1.9",
 		}
 		ctrl.cache.SetDefault(cfgNamespace, fixtures.NewNamespace(cfgNamespace))
 	}
@@ -113,12 +117,12 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-			Expect(cond.Message).To(Equal("Provider referenced (default/does_not_exist) does not exist"))
+			Expect(cond.Message).To(Equal("Provider referenced \"does_not_exist\" does not exist"))
 		})
 
 		It("should have raised a event", func() {
 			Expect(recorder.Events).To(HaveLen(1))
-			Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced (default/does_not_exist) does not exist"))
+			Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced \"does_not_exist\" does not exist"))
 		})
 
 		It("should ask us to requeue", func() {
@@ -129,7 +133,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
@@ -138,7 +142,7 @@ var _ = Describe("Configuration Controller", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.ProviderRef.Name = "not_ready"
-			Setup(configuration, fixtures.NewValidAWSNotReadyProvider("default", "not_ready"))
+			Setup(configuration, fixtures.NewValidAWSNotReadyProvider("not_ready", nil))
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
 
@@ -164,7 +168,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
@@ -177,13 +181,13 @@ var _ = Describe("Configuration Controller", func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 				configuration.Spec.ProviderRef.Name = "policy"
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "true"},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -207,7 +211,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should not create any jobs", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(0))
 			})
 		})
@@ -220,13 +224,13 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "policy"
 				configuration.Labels = map[string]string{"does_not_match": "true"}
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "false"},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -250,7 +254,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should not create any jobs", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(0))
 			})
 		})
@@ -263,7 +267,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "policy"
 				configuration.Labels = map[string]string{"does_match": "true"}
 
-				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_match": "true"},
@@ -272,7 +276,7 @@ var _ = Describe("Configuration Controller", func() {
 						MatchLabels: map[string]string{"name": configuration.Namespace},
 					},
 				}
-				secret := fixtures.NewValidAWSProviderSecret(configuration.Spec.ProviderRef.Namespace, configuration.Spec.ProviderRef.Name)
+				secret := fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name)
 
 				Setup(configuration, provider, secret)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -296,7 +300,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should create any jobs", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 		})
@@ -334,7 +338,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
@@ -361,19 +365,19 @@ var _ = Describe("Configuration Controller", func() {
 			cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
-			Expect(cond.Message).To(Equal("Authentication secret (spec.scmAuth) does not exist"))
+			Expect(cond.Message).To(Equal("Authentication secret (spec.auth) does not exist"))
 		})
 
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 
 		It("should have raised a event", func() {
 			Expect(recorder.Events).To(HaveLen(1))
-			Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.scmAuth) does not exist"))
+			Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.auth) does not exist"))
 		})
 	})
 
@@ -382,7 +386,7 @@ var _ = Describe("Configuration Controller", func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			secret := &v1.Secret{}
 			secret.Name = "token"
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 
 			Setup(configuration, secret)
 			ctrl.EnableInfracosts = true
@@ -413,7 +417,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
@@ -447,7 +451,7 @@ var _ = Describe("Configuration Controller", func() {
 		It("should not create any jobs", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(0))
 		})
 	})
@@ -467,14 +471,14 @@ var _ = Describe("Configuration Controller", func() {
 		It("should have created a plan job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("should be using the default service account", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal("terraform-executor"))
 		})
@@ -487,7 +491,7 @@ var _ = Describe("Configuration Controller", func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			configuration.Spec.ProviderRef.Name = "injected"
 
-			provider := fixtures.NewValidAWSReadyProvider(ctrl.JobNamespace, configuration.Spec.ProviderRef.Name)
+			provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
 			provider.Spec.Source = terraformv1alphav1.SourceInjected
 			provider.Spec.SecretRef = nil
 			provider.Spec.ServiceAccount = &serviceAccount
@@ -504,14 +508,14 @@ var _ = Describe("Configuration Controller", func() {
 		It("should have created a plan job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("should be using the custom provider identity", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal(serviceAccount))
 		})
@@ -550,7 +554,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should not create any jobs", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(0))
 			})
 		})
@@ -572,7 +576,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should have created a job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 		})
@@ -607,7 +611,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should not create any jobs", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(0))
 			})
 		})
@@ -629,7 +633,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should have created a job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 
@@ -641,7 +645,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should have created a job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 
@@ -677,7 +681,7 @@ var _ = Describe("Configuration Controller", func() {
 			It("should have created a job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 
@@ -685,7 +689,7 @@ var _ = Describe("Configuration Controller", func() {
 				expected := "{\"my\":\"value\",\"name\":\"test\"}\n"
 
 				secret := &v1.Secret{}
-				secret.Namespace = ctrl.JobNamespace
+				secret.Namespace = ctrl.ControllerNamespace
 				secret.Name = configuration.GetTerraformConfigSecretName()
 
 				found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
@@ -720,7 +724,7 @@ var _ = Describe("Configuration Controller", func() {
 
 		It("should have created the generated configuration secret", func() {
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
@@ -742,7 +746,7 @@ terraform {
 }
 `
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
@@ -757,7 +761,7 @@ terraform {
 		It("should have a provider.tf", func() {
 			expected := "\nprovider \"aws\" {\n}\n"
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
@@ -773,7 +777,7 @@ terraform {
 			expected := "{\"name\":\"test\"}\n"
 
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
@@ -797,13 +801,13 @@ terraform {
 		It("should have created job for the terraform plan", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("it should have the configuration labels", func() {
 			list := &batchv1.JobList{}
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 
 			labels := list.Items[0].GetLabels()
@@ -832,9 +836,150 @@ terraform {
 			Expect(configuration.Annotations).To(HaveKey(terraformv1alphav1.ApplyAnnotation))
 		})
 
+		It("should have a out of sync status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
+		})
+
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
+		})
+	})
+
+	When("the configuration has drift detection annotated", func() {
+		When("the drift job has not been provisioned", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+
+				Setup(configuration)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+
+			It("should have created job for the terraform plan", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+			It("it should have the configuration labels", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+
+				labels := list.Items[0].GetLabels()
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNamespaceLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationGenerationLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationStageLabel))
+				Expect(labels).To(HaveKey(terraformv1alphav1.DriftAnnotation))
+				Expect(labels[terraformv1alphav1.ConfigurationStageLabel]).To(Equal(terraformv1alphav1.StageTerraformPlan))
+				Expect(labels[terraformv1alphav1.ConfigurationNameLabel]).To(Equal(configuration.Name))
+				Expect(labels[terraformv1alphav1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
+				Expect(labels[terraformv1alphav1.DriftAnnotation]).To(Equal("true"))
+			})
+
+			It("should have created a watch job in the configuration namespace", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(configuration.Namespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+				Expect(len(list.Items[0].Spec.Template.Spec.Containers)).To(Equal(1))
+
+				container := list.Items[0].Spec.Template.Spec.Containers[0]
+				Expect(container.Name).To(Equal("watch"))
+				Expect(container.Command).To(Equal([]string{"sh"}))
+			})
+		})
+
+		When("when the drift job has already been run", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+
+				job := &batchv1.Job{}
+				job.Name = "test"
+				job.Namespace = ctrl.ControllerNamespace
+				job.Labels = map[string]string{
+					terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+					terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
+					terraformv1alphav1.ConfigurationNamespaceLabel:  configuration.Namespace,
+					terraformv1alphav1.ConfigurationStageLabel:      terraformv1alphav1.StageTerraformPlan,
+					terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.GetUID()),
+					terraformv1alphav1.DriftAnnotation:              "true",
+				}
+				Setup(configuration, job)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should not create another job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+		})
+
+		When("when the drift has changed", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				configuration.Spec.EnableAutoApproval = true
+				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "changed"}
+
+				job := &batchv1.Job{}
+				job.Name = "test"
+				job.Namespace = ctrl.ControllerNamespace
+				job.Labels = map[string]string{
+					terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+					terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
+					terraformv1alphav1.ConfigurationNamespaceLabel:  configuration.Namespace,
+					terraformv1alphav1.ConfigurationStageLabel:      terraformv1alphav1.StageTerraformPlan,
+					terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.GetUID()),
+					terraformv1alphav1.DriftAnnotation:              "true",
+				}
+				Setup(configuration, job)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+
+			It("should have an out of sync status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
+			})
+
+			It("should create another job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(2))
+			})
 		})
 	})
 
@@ -859,14 +1004,14 @@ terraform {
 		It("should create a terraform plan job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("should add a verify-policy container to the job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			job := list.Items[0]
 
@@ -881,7 +1026,7 @@ terraform {
 
 		It("should have a checkov configuration secret", func() {
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
@@ -924,14 +1069,14 @@ terraform {
 		It("should create a terraform plan job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("should have selected priority policy", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			job := list.Items[0]
 
@@ -943,7 +1088,7 @@ terraform {
 
 		It("should have a checkov configuration secret", func() {
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
@@ -985,14 +1130,14 @@ terraform {
 		It("should create a terraform plan job", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
 		It("should have an init container retrieving the source", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(len(list.Items[0].Spec.Template.Spec.InitContainers)).To(Equal(3))
 
@@ -1019,7 +1164,7 @@ terraform {
 		It("should have updated the command line for checkov scan", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			job := list.Items[0]
 
@@ -1038,7 +1183,7 @@ terraform {
 
 		It("should have a checkov configuration secret", func() {
 			secret := &v1.Secret{}
-			secret.Namespace = ctrl.JobNamespace
+			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
 
 			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
@@ -1057,12 +1202,12 @@ terraform {
 			// a fake security report
 			policy := fixtures.NewMatchAllPolicyConstraint("all")
 			policy.Spec.Constraints.Checkov.Checks = []string{"check0"}
-			plan := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			plan.Status.Succeeded = 1
 
 			report := &v1.Secret{}
-			report.Namespace = ctrl.JobNamespace
+			report.Namespace = ctrl.ControllerNamespace
 			report.Name = configuration.GetTerraformPolicySecretName()
 			report.Data = map[string][]byte{"results_json.json": []byte(`{"summary":{"failed": 1}}`)}
 
@@ -1072,7 +1217,7 @@ terraform {
 		When("the policy secret is missing", func() {
 			BeforeEach(func() {
 				report := &v1.Secret{}
-				report.Namespace = ctrl.JobNamespace
+				report.Namespace = ctrl.ControllerNamespace
 				report.Name = configuration.GetTerraformPolicySecretName()
 				ctrl.cc.Delete(context.TODO(), report)
 
@@ -1121,7 +1266,7 @@ terraform {
 			It("should have not create an apply job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 			})
 		})
@@ -1129,7 +1274,7 @@ terraform {
 		When("the policy contains no fails", func() {
 			BeforeEach(func() {
 				report := &v1.Secret{}
-				report.Namespace = ctrl.JobNamespace
+				report.Namespace = ctrl.ControllerNamespace
 				report.Name = configuration.GetTerraformPolicySecretName()
 
 				// @note: delete the old secret adding a passed one
@@ -1157,7 +1302,7 @@ terraform {
 			It("should have not create an apply job", func() {
 				list := &batchv1.JobList{}
 
-				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(2))
 			})
 		})
@@ -1178,7 +1323,7 @@ terraform {
 		It("should have created job for the terraform plan", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:1.1.9"))
 		})
@@ -1200,7 +1345,7 @@ terraform {
 		It("should have created job for the terraform plan", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(1))
 			Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:test"))
 		})
@@ -1213,7 +1358,7 @@ terraform {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			Setup(configuration)
 
-			cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+			cm := fixtures.NewJobTemplateConfigmap(ctrl.ControllerNamespace, templateName)
 			ctrl.JobTemplate = cm.Name
 
 			Expect(ctrl.cc.Create(context.TODO(), cm)).ToNot(HaveOccurred())
@@ -1221,7 +1366,7 @@ terraform {
 
 		When("the template is missing", func() {
 			BeforeEach(func() {
-				ctrl.cc.Delete(context.TODO(), fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName))
+				ctrl.cc.Delete(context.TODO(), fixtures.NewJobTemplateConfigmap(ctrl.ControllerNamespace, templateName))
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 			})
 
@@ -1248,8 +1393,8 @@ terraform {
 		When("the template does not have the correct key", func() {
 			BeforeEach(func() {
 				// @step: delete the old one and create a new one with missing keys
-				cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
-				invalid := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+				cm := fixtures.NewJobTemplateConfigmap(ctrl.ControllerNamespace, templateName)
+				invalid := fixtures.NewJobTemplateConfigmap(ctrl.ControllerNamespace, templateName)
 				invalid.Data = map[string]string{}
 
 				ctrl.cc.Delete(context.TODO(), cm)
@@ -1259,7 +1404,7 @@ terraform {
 			})
 
 			It("should have the template", func() {
-				cm := fixtures.NewJobTemplateConfigmap(ctrl.JobNamespace, templateName)
+				cm := fixtures.NewJobTemplateConfigmap(ctrl.ControllerNamespace, templateName)
 				req := types.NamespacedName{Namespace: cm.Namespace, Name: cm.Name}
 
 				Expect(ctrl.cc.Get(context.TODO(), req, &v1.ConfigMap{})).ToNot(HaveOccurred())
@@ -1309,7 +1454,7 @@ terraform {
 	When("terraform apply has not been provisoned", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-			plan := fixtures.NewTerraformJob(configuration, ctrl.JobNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{
 				{
 					Type:   batchv1.JobComplete,
@@ -1339,13 +1484,13 @@ terraform {
 		It("should have created job for the terraform apply", func() {
 			list := &batchv1.JobList{}
 
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 			Expect(len(list.Items)).To(Equal(2))
 		})
 
 		It("it should have the configuration labels", func() {
 			list := &batchv1.JobList{}
-			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.JobNamespace))).ToNot(HaveOccurred())
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 
 			labels := list.Items[0].GetLabels()
 			Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
@@ -1371,6 +1516,94 @@ terraform {
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
+		})
+	})
+
+	When("terraform apply has been provisioned", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			// create two successful jobs
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+
+			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformApply)
+			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			apply.Status.Succeeded = 1
+
+			// create a fake terraform state
+			state := fixtures.NewTerraformState(configuration)
+			state.Namespace = "default"
+
+			Setup(configuration, plan, apply, state)
+		})
+
+		When("costs and policy is not enabled", func() {
+			BeforeEach(func() {
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the terraform apply has run", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Message).To(Equal("Terraform apply is complete"))
+			})
+
+			It("should a last reconcilation time on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.LastReconcile).ToNot(BeNil())
+				Expect(configuration.Status.LastReconcile.Time).ToNot(BeNil())
+				Expect(configuration.Status.LastReconcile.Generation).To(Equal(int64(0)))
+			})
+
+			It("should a last success reconcilation time on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.LastSuccess).ToNot(BeNil())
+				Expect(configuration.Status.LastSuccess.Time).ToNot(BeNil())
+				Expect(configuration.Status.LastSuccess.Generation).To(Equal(int64(0)))
+			})
+
+			It("should have a version on status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				// note this is a constant in the fixtures
+				Expect(configuration.Status.TerraformVersion).To(Equal("1.1.9"))
+			})
+
+			It("should have a resource count on the status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Resources).To(Equal(1))
+			})
+
+			It("should have a in sync status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesInSync))
+			})
+
+			It("should have created a secret containing the module output", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				secret := &v1.Secret{}
+				secret.Name = configuration.Spec.WriteConnectionSecretToRef.Name
+				secret.Namespace = configuration.Namespace
+
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).ToNot(BeNil())
+				Expect(secret.Data).To(HaveKey("TEST_OUTPUT"))
+				Expect(secret.Data["TEST_OUTPUT"]).To(Equal([]byte("test")))
+			})
 		})
 	})
 })

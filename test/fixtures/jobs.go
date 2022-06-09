@@ -28,7 +28,7 @@ import (
 
 // NewTerraformJob returns a new terraform job
 func NewTerraformJob(configuration *terraformv1alphav1.Configuration, namespace, stage string) *batchv1.Job {
-	return &batchv1.Job{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configuration.Name + "-" + stage + "-1234",
 			Namespace: namespace,
@@ -42,4 +42,10 @@ func NewTerraformJob(configuration *terraformv1alphav1.Configuration, namespace,
 		},
 		Spec: batchv1.JobSpec{},
 	}
+
+	if configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation] != "" {
+		job.Labels[terraformv1alphav1.DriftAnnotation] = configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]
+	}
+
+	return job
 }

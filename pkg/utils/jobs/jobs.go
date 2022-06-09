@@ -34,10 +34,13 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
+// DefaultServiceAccount is the default service account to use for the job if no override is given
+const DefaultServiceAccount = "terraform-executor"
+
 // Options is the configuration for the render
 type Options struct {
-	// DefaultServiceAccount is the name of the service account to run the jobs under
-	DefaultServiceAccount string
+	// AdditionalLabels are additional labels added to the job
+	AdditionalLabels map[string]string
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
 	// ExecutorImage is the image to use for the terraform jobs
@@ -110,6 +113,14 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 			Parallelism:             pointer.Int32Ptr(1),
 			TTLSecondsAfterFinished: pointer.Int32Ptr(3600),
 			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
+						terraformv1alphav1.ConfigurationNameLabel:       r.configuration.Name,
+						terraformv1alphav1.ConfigurationStageLabel:      stage,
+						terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
+					},
+				},
 				Spec: v1.PodSpec{
 					RestartPolicy: v1.RestartPolicyOnFailure,
 					SecurityContext: &v1.PodSecurityContext{
@@ -163,13 +174,13 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,
-		"Labels": map[string]interface{}{
+		"Labels": utils.MergeStringMaps(map[string]string{
 			terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 			terraformv1alphav1.ConfigurationNameLabel:       r.configuration.GetName(),
 			terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
 			terraformv1alphav1.ConfigurationStageLabel:      stage,
 			terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
-		},
+		}, options.AdditionalLabels),
 		"Provider": map[string]interface{}{
 			"Name":           r.provider.Name,
 			"Namespace":      r.provider.Namespace,
@@ -181,7 +192,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		"EnableVariables":    r.configuration.HasVariables(),
 		"ImagePullPolicy":    "IfNotPresent",
 		"Policy":             options.PolicyConstraint,
-		"ServiceAccount":     options.DefaultServiceAccount,
+		"ServiceAccount":     DefaultServiceAccount,
 		"Stage":              stage,
 		"TerraformArguments": arguments,
 		"Configuration": map[string]interface{}{
