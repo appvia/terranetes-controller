@@ -23,5 +23,5 @@ jobs:
     needs:
       - e2e-aws
       - e2e-azure
-    uses: appvia/terraform-controller/.github/workflows/publish-images.yaml@master
+    uses: appvia/terraform-controller/.github/workflows/publish-images.yaml@ghcr
     secrets: inherit

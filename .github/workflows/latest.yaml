@@ -3,11 +3,11 @@ name: Publish Latest Assets
 
 on:
   push:
-    branches: [master]
+    branches: [ghcr]
 
 jobs:
   release-latest-images:
-    uses: appvia/terraform-controller/.github/workflows/publish-images.yaml@master
+    uses: appvia/terraform-controller/.github/workflows/publish-images.yaml@ghcr
     secrets: inherit
 
   release-helm-chart:
