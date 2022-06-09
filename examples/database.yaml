@@ -7,7 +7,6 @@ spec:
   module: github.com/terraform-aws-modules/terraform-aws-rds-aurora
 
   providerRef:
-    namespace: default
     name: aws
 
   writeConnectionSecretToRef:

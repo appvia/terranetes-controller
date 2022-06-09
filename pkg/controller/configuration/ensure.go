@@ -60,7 +60,7 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alphav1.Confi
 
 		// @step: retrieve a list of jobs
 		jobs := &batchv1.JobList{}
-		if err := c.cc.List(ctx, jobs, client.InNamespace(c.JobNamespace)); err != nil {
+		if err := c.cc.List(ctx, jobs, client.InNamespace(c.ControllerNamespace)); err != nil {
 			cond.Failed(err, "Failed to list the jobs in controller namespace")
 
 			return reconcile.Result{}, err
@@ -125,7 +125,7 @@ func (c *Controller) ensureCostSecret(configuration *terraformv1alphav1.Configur
 		}
 
 		secret := &v1.Secret{}
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 		secret.Name = c.InfracostsSecretName
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
@@ -210,7 +210,7 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 		}
 
 		cm := &v1.ConfigMap{}
-		cm.Namespace = c.JobNamespace
+		cm.Namespace = c.ControllerNamespace
 		cm.Name = c.JobTemplate
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, cm)
@@ -220,7 +220,7 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 			return reconcile.Result{}, err
 		}
 		if !found {
-			cond.ActionRequired("Custom job template (%s/%s) does not exists", c.JobNamespace, c.JobTemplate)
+			cond.ActionRequired("Custom job template (%s/%s) does not exists", c.ControllerNamespace, c.JobTemplate)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -228,7 +228,7 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 		template, found := cm.Data[terraformv1alphav1.TerraformJobTemplateConfigMapKey]
 		if !found {
 			cond.ActionRequired("Custom job template (%s/%s) does not contain the %q key",
-				c.JobNamespace, c.JobTemplate, terraformv1alphav1.TerraformJobTemplateConfigMapKey)
+				c.ControllerNamespace, c.JobTemplate, terraformv1alphav1.TerraformJobTemplateConfigMapKey)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -275,17 +275,16 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		provider := &terraformv1alphav1.Provider{}
-		provider.Namespace = configuration.Spec.ProviderRef.Namespace
 		provider.Name = configuration.Spec.ProviderRef.Name
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, provider)
 		if err != nil {
-			cond.Failed(err, "Failed to retrieve the provider for the configuration: (%s/%s)", provider.Namespace, provider.Name)
+			cond.Failed(err, "Failed to retrieve the provider for the configuration: %q", provider.Name)
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			cond.ActionRequired("Provider referenced (%s/%s) does not exist", provider.Namespace, provider.Name)
+			cond.ActionRequired("Provider referenced %q does not exist", provider.Name)
 
 			return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
@@ -337,7 +336,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		secret := &v1.Secret{}
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 		secret.Name = name
 
 		if _, err := kubernetes.GetIfExists(ctx, c.cc, secret); err != nil {
@@ -353,7 +352,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 		// @step: generate the terraform backend configuration - this creates a kubernetes terraform
 		// backend pointing at a secret
-		cfg, err := terraform.NewKubernetesBackend(c.JobNamespace, backend)
+		cfg, err := terraform.NewKubernetesBackend(c.ControllerNamespace, backend)
 		if err != nil {
 			cond.Failed(err, "Failed to generate the terraform backend configuration")
 
@@ -457,7 +456,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			ExecutorImage:    c.ExecutorImage,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
+			Namespace:        c.ControllerNamespace,
 			PolicyImage:      c.PolicyImage,
 			PolicyConstraint: state.checkovConstraint,
 			Template:         state.jobTemplate,
@@ -553,7 +552,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 		}
 
 		secret := &v1.Secret{}
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 		secret.Name = configuration.GetTerraformCostSecretName()
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
@@ -615,7 +614,7 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 
 		// @step: retrieve the uploaded scan
 		secret := &v1.Secret{}
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 		secret.Name = configuration.GetTerraformPolicySecretName()
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
@@ -625,7 +624,7 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 			return reconcile.Result{}, err
 		}
 		if !found {
-			cond.Warning("Failed to find the secret: (%s/%s) containing checkov scan", c.JobNamespace, configuration.GetTerraformPolicySecretName())
+			cond.Warning("Failed to find the secret: (%s/%s) containing checkov scan", c.ControllerNamespace, configuration.GetTerraformPolicySecretName())
 
 			return reconcile.Result{RequeueAfter: 10 * time.Minute}, nil
 		}
@@ -699,7 +698,7 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 		// @step: retrive a list of pods related to the job
 		pods := &v1.PodList{}
 		filters := client.MatchingLabels{"job-name": job.GetName()}
-		if err := c.cc.List(ctx, pods, client.InNamespace(c.JobNamespace), filters); err != nil {
+		if err := c.cc.List(ctx, pods, client.InNamespace(c.ControllerNamespace), filters); err != nil {
 			cond.Failed(err, "Failed to list the terraform plan pods")
 
 			return reconcile.Result{}, err
@@ -760,7 +759,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 			ExecutorImage:    c.ExecutorImage,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
+			Namespace:        c.ControllerNamespace,
 			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
@@ -829,16 +828,16 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 	return func(ctx context.Context) (reconcile.Result, error) {
 		secret := &v1.Secret{}
 		secret.Name = configuration.GetTerraformStateSecretName()
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
-			cond.Failed(err, "Failed to get terraform state secret (%s/%s)", c.JobNamespace, secret.Name)
+			cond.Failed(err, "Failed to get terraform state secret (%s/%s)", c.ControllerNamespace, secret.Name)
 
 			return reconcile.Result{}, err
 		}
 		if !found {
-			cond.Failed(nil, "Terraform state secret (%s/%s) not found", c.JobNamespace, secret.Name)
+			cond.Failed(nil, "Terraform state secret (%s/%s) not found", c.ControllerNamespace, secret.Name)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}

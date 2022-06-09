@@ -94,7 +94,7 @@ type ProviderSpec struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=providers,scope=Namespaced,categories={terraform}
+// +kubebuilder:resource:path=providers,scope=Cluster,categories={terraform}
 // +kubebuilder:printcolumn:name="Source",type="string",JSONPath=".spec.source"
 // +kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.provider"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -108,10 +108,7 @@ type Provider struct {
 
 // GetNamespacedName returns the namespaced name type
 func (p *Provider) GetNamespacedName() types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: p.Namespace,
-		Name:      p.Name,
-	}
+	return types.NamespacedName{Name: p.Name}
 }
 
 // ProviderStatus defines the observed state of a provider

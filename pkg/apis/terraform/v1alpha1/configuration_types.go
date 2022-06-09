@@ -102,8 +102,9 @@ type ProviderReference struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// Namespace is the namespace of the provider itself.
-	// +kubebuilder:validation:Required
-	Namespace string `json:"namespace"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:deprecatedversion:warning="namespace is a deprecated field for provider references"
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // WriteConnectionSecret defines the options around the secret produced by the terraform code

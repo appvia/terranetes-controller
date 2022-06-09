@@ -44,7 +44,7 @@ var _ = Describe("Configuration Validation", func() {
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
 			v = &validator{cc: cc, versioning: true}
 
-			Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(namespace, name))).To(Succeed())
+			Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))).To(Succeed())
 		})
 
 		When("versioning is disabled", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("we have a module constraint", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				policy := fixtures.NewPolicy("block")
 				policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
 				policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{
@@ -116,7 +116,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("no module constraint passes", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				policy := fixtures.NewPolicy("block")
 				policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
 				policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{
@@ -140,7 +140,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("we have two module constraints", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				all := fixtures.NewPolicy("all")
 				all.Spec.Constraints = &terraformv1alphav1.Constraints{}
 				all.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"default.*"}}
@@ -176,7 +176,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("provider namespace selectors do not match", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -202,7 +202,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("provider namespace selectors do match", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -226,7 +226,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("provider resource selectors do not match", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -252,7 +252,7 @@ var _ = Describe("Configuration Validation", func() {
 
 		When("provider resource selectors match", func() {
 			BeforeEach(func() {
-				provider := fixtures.NewValidAWSProvider(namespace, name)
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				provider.Spec.Selector = &terraformv1alphav1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -283,7 +283,7 @@ var _ = Describe("Configuration Validation", func() {
 		When("versioning is disabled on configurations", func() {
 			BeforeEach(func() {
 				v.versioning = false
-				Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(namespace, name))).To(Succeed())
+				Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))).To(Succeed())
 			})
 
 			It("should be denied due to versioning", func() {

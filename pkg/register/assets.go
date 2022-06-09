@@ -136,7 +136,6 @@ spec:
                       type: string
                   required:
                     - name
-                    - namespace
                   type: object
                 terraformVersion:
                   description: TerraformVersion provides the ability to override the default terraform version. Before changing this field its best to consult with platform administrator. As the value of this field is used to change the tag of the terraform container image.
@@ -704,7 +703,7 @@ spec:
     listKind: ProviderList
     plural: providers
     singular: provider
-  scope: Namespaced
+  scope: Cluster
   versions:
     - additionalPrinterColumns:
         - jsonPath: .spec.source

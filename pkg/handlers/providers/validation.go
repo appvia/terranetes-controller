@@ -19,6 +19,7 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -32,11 +33,13 @@ import (
 
 type validator struct {
 	cc client.Client
+	// jobNamespace is the namespace where static credentials should be provision.
+	jobNamespace string
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
-	return &validator{cc: cc}
+func NewValidator(cc client.Client, namespace string) admission.CustomValidator {
+	return &validator{cc: cc, jobNamespace: namespace}
 }
 
 // ValidateCreate is called when a new resource is created
@@ -70,19 +73,21 @@ func (v *validator) Validate(ctx context.Context, provider *terraformv1alphav1.P
 	case terraformv1alphav1.SourceSecret:
 		switch {
 		case provider.Spec.SecretRef == nil:
-			return fmt.Errorf("spec.secretRef: secret is required when source is secret")
+			return errors.New("spec.secretRef: secret is required when source is secret")
 		case provider.Spec.SecretRef.Name == "":
-			return fmt.Errorf("spec.secretRef.name: name is required when source is secret")
+			return errors.New("spec.secretRef.name: name is required when source is secret")
 		case provider.Spec.SecretRef.Namespace == "":
-			return fmt.Errorf("spec.secretRef.namespace: namespace is required when source is secret")
+			return errors.New("spec.secretRef.namespace: namespace is required when source is secret")
+		case provider.Spec.SecretRef.Namespace != v.jobNamespace:
+			return errors.New("spec.secretRef.namespace: must be in same namespace as the controller")
 		}
 
 	case terraformv1alphav1.SourceInjected:
 		switch {
 		case provider.Spec.ServiceAccount == nil:
-			return fmt.Errorf("spec.serviceAccount: serviceAccount is required when source is injected")
+			return errors.New("spec.serviceAccount: serviceAccount is required when source is injected")
 		case *provider.Spec.ServiceAccount == "":
-			return fmt.Errorf("spec.serviceAccount: serviceAccount is required when source is injected")
+			return errors.New("spec.serviceAccount: serviceAccount is required when source is injected")
 		}
 
 	default:

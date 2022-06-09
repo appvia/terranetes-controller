@@ -37,15 +37,15 @@ teardown() {
 }
 
 @test "We should be able to create a cloud provider" {
-  runit "kubectl -n ${NAMESPACE} apply -f examples/azure-provider.yaml"
+  runit "kubectl apply -f examples/azure-provider.yaml"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get provider azure"
+  runit "kubectl get provider azure"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a healthy cloud provider" {
-  runit "kubectl -n ${NAMESPACE} get provider azure -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
+  runit "kubectl get provider azure -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get provider azure -o json" "jq -r '.status.conditions[0].status' | grep -q True"
+  runit "kubectl get provider azure -o json" "jq -r '.status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
 }

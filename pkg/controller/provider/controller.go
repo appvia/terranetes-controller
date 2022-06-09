@@ -41,6 +41,8 @@ type Controller struct {
 	cc client.Client
 	// recorder is a event recorder
 	recorder record.EventRecorder
+	// ControllerNamespace is the namespace the controller lives
+	ControllerNamespace string
 }
 
 // Add is called to setup the manager for the controller
@@ -52,15 +54,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 
 	mgr.GetWebhookServer().Register(
 		fmt.Sprintf("/validate/%s/providers", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Provider{}, providers.NewValidator(c.cc)),
+		admission.WithCustomValidator(&terraformv1alphav1.Provider{}, providers.NewValidator(c.cc, c.ControllerNamespace)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terraformv1alphav1.Provider{}).
 		Named(controllerName).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: 10,
-		}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(c)
 }
