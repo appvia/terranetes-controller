@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -578,11 +579,15 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 
 			var monthly, hourly float64
 
-			if v, ok := report["totalMonthlyCost"].(float64); ok {
-				monthly = v
+			if v, ok := report["totalMonthlyCost"].(string); ok {
+				if x, err := strconv.ParseFloat(v, 64); err == nil {
+					monthly = x
+				}
 			}
-			if v, ok := report["totalHourlyCost"].(float64); ok {
-				hourly = v
+			if v, ok := report["totalHourlyCost"].(string); ok {
+				if x, err := strconv.ParseFloat(v, 64); err == nil {
+					hourly = x
+				}
 			}
 
 			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
