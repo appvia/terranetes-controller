@@ -137,7 +137,9 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the drift controller, error: %v", err)
 	}
 
-	if err := (&provider.Controller{}).Add(mgr); err != nil {
+	if err := (&provider.Controller{
+		ControllerNamespace: config.Namespace,
+	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the provider controller, error: %v", err)
 	}
 
