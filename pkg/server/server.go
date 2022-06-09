@@ -115,13 +115,13 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	if err := (&configuration.Controller{
+		ControllerNamespace:     config.Namespace,
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,
 		ExecutorImage:           config.ExecutorImage,
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
-		JobNamespace:            config.Namespace,
 		JobTemplate:             config.JobTemplate,
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,

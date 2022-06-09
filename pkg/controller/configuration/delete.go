@@ -50,7 +50,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
-		secret.Namespace = c.JobNamespace
+		secret.Namespace = c.ControllerNamespace
 		secret.Name = configuration.GetTerraformStateSecretName()
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
@@ -79,7 +79,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 			ExecutorImage:    c.ExecutorImage,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.JobNamespace,
+			Namespace:        c.ControllerNamespace,
 			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		})
@@ -132,7 +132,7 @@ func (c *Controller) ensureTerraformConfigDeleted(configuration *terraformv1alph
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		cm := &v1.ConfigMap{}
-		cm.Namespace = c.JobNamespace
+		cm.Namespace = c.ControllerNamespace
 		cm.Name = name
 
 		if err := kubernetes.DeleteIfExists(ctx, c.cc, cm); err != nil {
@@ -191,7 +191,7 @@ func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv
 
 		for _, name := range names {
 			secret := &v1.Secret{}
-			secret.Namespace = c.JobNamespace
+			secret.Namespace = c.ControllerNamespace
 			secret.Name = name
 
 			if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {

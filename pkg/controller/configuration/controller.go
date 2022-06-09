@@ -60,6 +60,8 @@ type Controller struct {
 	cache *cache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
+	// ControllerNamespace is the namespace where the runner is running
+	ControllerNamespace string
 	// EnableInfracosts enables the cost analytics via infracost
 	EnableInfracosts bool
 	// EnableWatchers indicates we should create watcher jobs in the user namespace
@@ -72,8 +74,6 @@ type Controller struct {
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
 	InfracostsSecretName string
-	// JobNamespace is the namespace where the runner is running
-	JobNamespace string
 	// JobTemplate is a custom override for the template to use
 	JobTemplate string
 	// PolicyImage is the image to use for all policy / checkov jobs
@@ -87,13 +87,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	log.WithFields(log.Fields{
 		"enable_costs":    c.EnableInfracosts,
 		"enable_watchers": c.EnableWatchers,
-		"namespace":       c.JobNamespace,
+		"namespace":       c.ControllerNamespace,
 		"policy_image":    c.PolicyImage,
 		"terraform_image": c.TerraformImage,
 	}).Info("adding the configuration controller")
 
 	switch {
-	case c.JobNamespace == "":
+	case c.ControllerNamespace == "":
 		return errors.New("job namespace is required")
 	case c.TerraformImage == "":
 		return errors.New("terraform image is required")
@@ -160,7 +160,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				return []ctrl.Request{
 					{NamespacedName: client.ObjectKey{
-						Namespace: c.JobNamespace,
+						Namespace: c.ControllerNamespace,
 						Name:      a.GetLabels()["job-name"],
 					}},
 				}
@@ -168,13 +168,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			// we only care about jobs in our namespace
 			builder.WithPredicates(predicate.Funcs{
 				GenericFunc: func(e event.GenericEvent) bool {
-					return e.Object.GetNamespace() == c.JobNamespace
+					return e.Object.GetNamespace() == c.ControllerNamespace
 				},
 				CreateFunc: func(e event.CreateEvent) bool {
-					return e.Object.GetNamespace() == c.JobNamespace
+					return e.Object.GetNamespace() == c.ControllerNamespace
 				},
 				UpdateFunc: func(e event.UpdateEvent) bool {
-					return e.ObjectNew.GetNamespace() == c.JobNamespace
+					return e.ObjectNew.GetNamespace() == c.ControllerNamespace
 				},
 				DeleteFunc: func(e event.DeleteEvent) bool {
 					return false

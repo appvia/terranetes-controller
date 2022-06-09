@@ -64,7 +64,7 @@ func GetTerraformImage(configuration *terraformv1alphav1.Configuration, image st
 
 // CreateWatcher is responsible for ensuring the logger is running in the application namespace
 func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv1alphav1.Configuration, stage string) error {
-	watcher := jobs.New(configuration, nil).NewJobWatch(c.JobNamespace, stage)
+	watcher := jobs.New(configuration, nil).NewJobWatch(c.ControllerNamespace, stage)
 
 	// @step: check if the logger has been created
 	found, err := kubernetes.GetIfExists(ctx, c.cc, watcher.DeepCopy())
