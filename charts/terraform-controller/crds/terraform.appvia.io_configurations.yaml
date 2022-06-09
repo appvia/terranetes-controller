@@ -71,6 +71,9 @@ spec:
                     name:
                       description: Name is the name of the provider which contains the credentials to use for this configuration.
                       type: string
+                    namespace:
+                      description: Namespace is the namespace of the provider itself.
+                      type: string
                   required:
                     - name
                   type: object
