@@ -84,6 +84,7 @@ require (
 	github.com/firefart/nonamedreturns v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fzipp/gocyclo v0.5.1 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-critic/go-critic v0.6.3 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/go-openapi/analysis v0.21.2 // indirect

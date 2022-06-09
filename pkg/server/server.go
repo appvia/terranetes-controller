@@ -37,7 +37,9 @@ import (
 	"github.com/appvia/terraform-controller/pkg/controller/drift"
 	"github.com/appvia/terraform-controller/pkg/controller/policy"
 	"github.com/appvia/terraform-controller/pkg/controller/provider"
+	"github.com/appvia/terraform-controller/pkg/register"
 	"github.com/appvia/terraform-controller/pkg/schema"
+	k8sutils "github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
 
 // Server is a wrapper around the services
@@ -61,6 +63,21 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	cc, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	// @step: lets register our own crds
+	if config.RegisterCRDs {
+		log.Info("registering the controller crds")
+
+		ca, err := k8sutils.NewExtentionsAPIClient(cfg)
+		if err != nil {
+			return nil, err
+		}
+		for _, x := range register.AssetNames() {
+			if err := k8sutils.ApplyCustomResourceRawDefinitions(context.Background(), ca, register.MustAsset(x)); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// @step: create the apiserver
