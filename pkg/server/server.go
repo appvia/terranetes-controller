@@ -40,8 +40,8 @@ import (
 	"github.com/appvia/terraform-controller/pkg/controller/provider"
 	"github.com/appvia/terraform-controller/pkg/register"
 	"github.com/appvia/terraform-controller/pkg/schema"
-	"github.com/appvia/terraform-controller/pkg/version"
 	k8sutils "github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terraform-controller/pkg/version"
 )
 
 // Server is a wrapper around the services
