@@ -30,9 +30,9 @@ controller:
     # policy is image for policy (wip)
     policy: bridgecrew/checkov:2.0.1190
     # is the controller image
-    controller: ghcr.io/appvia/terraform-controller:v0.2.1
+    controller: ghcr.io/appvia/terraform-controller:v0.2.2
     # The terraform image used when running jobs
-    executor: ghcr.io/appvia/terraform-executor:v0.2.1
+    executor: ghcr.io/appvia/terraform-executor:v0.2.2
 
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h
