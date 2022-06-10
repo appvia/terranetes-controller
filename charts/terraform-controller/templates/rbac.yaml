@@ -5,6 +5,18 @@ kind: ClusterRole
 metadata:
   name: {{ include "terraform-controller.fullname" . }}
 rules:
+  {{- if .Values.controller.registerCRDs }}
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+  {{- end }}
   - apiGroups:
       - ""
       - batch

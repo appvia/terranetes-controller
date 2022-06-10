@@ -50,6 +50,8 @@ type Config struct {
 	Namespace string
 	// PolicyImage is the image to use for policy
 	PolicyImage string
+	// RegisterCRDs indicated we register our crds
+	RegisterCRDs bool
 	// ResyncPeriod is the period to resync the controller manager
 	ResyncPeriod time.Duration
 	// TerraformImage is the image to use for terraform

@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -37,8 +38,10 @@ import (
 	"github.com/appvia/terraform-controller/pkg/controller/drift"
 	"github.com/appvia/terraform-controller/pkg/controller/policy"
 	"github.com/appvia/terraform-controller/pkg/controller/provider"
+	"github.com/appvia/terraform-controller/pkg/register"
 	"github.com/appvia/terraform-controller/pkg/schema"
 	"github.com/appvia/terraform-controller/pkg/version"
+	k8sutils "github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
 
 // Server is a wrapper around the services
@@ -67,6 +70,24 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	cc, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	// @step: lets register our own crds
+	if config.RegisterCRDs {
+		log.Info("registering the custom resources")
+		for _, path := range register.AssetNames() {
+			if !strings.HasPrefix(path, "charts/terraform-controller/crds/") {
+				continue
+			}
+
+			ca, err := k8sutils.NewExtentionsAPIClient(cfg)
+			if err != nil {
+				return nil, err
+			}
+			if err := k8sutils.ApplyCustomResourceRawDefinitions(context.Background(), ca, register.MustAsset(path)); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// @step: create the apiserver
