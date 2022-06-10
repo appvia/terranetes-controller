@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -67,14 +68,17 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	// @step: lets register our own crds
 	if config.RegisterCRDs {
-		log.Info("registering the controller crds")
+		log.Info("registering the custom resources")
+		for _, path := range register.AssetNames() {
+			if !strings.HasPrefix(path, "charts/terraform-controller/crds/") {
+				continue
+			}
 
-		ca, err := k8sutils.NewExtentionsAPIClient(cfg)
-		if err != nil {
-			return nil, err
-		}
-		for _, x := range register.AssetNames() {
-			if err := k8sutils.ApplyCustomResourceRawDefinitions(context.Background(), ca, register.MustAsset(x)); err != nil {
+			ca, err := k8sutils.NewExtentionsAPIClient(cfg)
+			if err != nil {
+				return nil, err
+			}
+			if err := k8sutils.ApplyCustomResourceRawDefinitions(context.Background(), ca, register.MustAsset(path)); err != nil {
 				return nil, err
 			}
 		}
