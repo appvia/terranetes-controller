@@ -50,6 +50,32 @@ var state = `
 }
 `
 
+var fakeCostsReport = `
+{
+	"totalHourlyCost": "0.01",
+  "totalMonthlyCost": "100.00"
+}
+`
+
+// NewCostsSecret returns a fake costs secret
+func NewCostsSecret(namespace, name string) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Name = name
+	secret.Namespace = namespace
+	secret.Data = map[string][]byte{"INFRACOST_API_KEY": []byte("api-key")}
+
+	return secret
+}
+
+// NewCostsReport returns a secret used to mock a cost report for a configuration
+func NewCostsReport(configuration *terraformv1alphav1.Configuration) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Name = configuration.GetTerraformCostSecretName()
+	secret.Data = map[string][]byte{"costs.json": []byte(fakeCostsReport)}
+
+	return secret
+}
+
 // NewTerraformState returns a fake state
 func NewTerraformState(configuration *terraformv1alphav1.Configuration) *v1.Secret {
 	encoded := &bytes.Buffer{}

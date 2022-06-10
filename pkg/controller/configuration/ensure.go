@@ -708,6 +708,9 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 
 			return reconcile.Result{}, err
 		}
+		if len(pods.Items) == 0 {
+			return reconcile.Result{}, nil
+		}
 
 		// @step: scan the logs for updates or changes
 		latest := kubernetes.FindLatestPod(pods)
