@@ -38,6 +38,7 @@ import (
 	"github.com/appvia/terraform-controller/pkg/controller/policy"
 	"github.com/appvia/terraform-controller/pkg/controller/provider"
 	"github.com/appvia/terraform-controller/pkg/schema"
+	"github.com/appvia/terraform-controller/pkg/version"
 )
 
 // Server is a wrapper around the services
@@ -57,6 +58,11 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	case config.DriftThreshold <= 0:
 		return nil, fmt.Errorf("drift threshold must be greater than 0")
 	}
+
+	log.WithFields(log.Fields{
+		"gitsha":  version.GitCommit,
+		"version": version.Version,
+	}).Info("starting the terraform controller")
 
 	cc, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
