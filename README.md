@@ -18,7 +18,7 @@ Terraform Controller manages the life cycles of a terraform resource, allowing d
 - [See cost estimates prior to creating resources](https://terranetes.appvia.io/terraform-controller/admin/costs/)
 - [Support private terraform module sources](https://terranetes.appvia.io/terraform-controller/developer/private/)
 - [Directly reference FluxCD sources](https://terranetes.appvia.io/terraform-controller/developer/flux/)
-- [ROADMAP] *Detect and raise alerts for drift on upstream configuration*
+- [Drift Detection](https://terranetes.appvia.io/terraform-controller/admin/drift/)
 
 ### PLATFORM ENGINEERS
 
