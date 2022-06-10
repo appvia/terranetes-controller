@@ -33,8 +33,8 @@ teardown() {
 replicaCount: 1
 controller:
   images:
-    controller: "quay.io/appvia/terraform-controller:ci"
-    executor: "quay.io/appvia/terraform-executor:ci"
+    controller: "ghcr.io/appvia/terraform-controller:ci"
+    executor: "ghcr.io/appvia/terraform-executor:ci"
   costs:
     secret: ${infracost}
 EOF

@@ -20,9 +20,9 @@ controller:
     #secret: infracost
   images:
     # is the controller image
-    controller: quay.io/appvia/terraform-controller:ci
+    controller: ghcr.io/appvia/terraform-controller:ci
     # The terraform image used when running jobs
-    executor: quay.io/appvia/terraform-executor:ci
+    executor: ghcr.io/appvia/terraform-executor:ci
 ```
 
 ```shell
