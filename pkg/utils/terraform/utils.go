@@ -23,6 +23,8 @@ import (
 	"encoding/json"
 	"io"
 	"text/template"
+
+	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
@@ -42,8 +44,8 @@ terraform {
 // providerTF is a template for a terraform provider
 var providerTF = `
 provider "{{ .Provider }}" {
-{{- if eq .Provider "azurerm" }}
-  features {}
+{{- if .Configuration }}
+  {{ .Configuration }}
 {{- end }}
 }
 `
@@ -74,20 +76,18 @@ func DecodeState(in []byte) (*State, error) {
 }
 
 // NewTerraformProvider generates a terraform provider configuration
-func NewTerraformProvider(provider string) ([]byte, error) {
-	tmpl, err := template.New("main").Parse(providerTF)
-	if err != nil {
-		return nil, err
+func NewTerraformProvider(provider string, configuration []byte) ([]byte, error) {
+	config := make(map[string]interface{})
+	if len(configuration) > 0 {
+		if err := json.NewDecoder(bytes.NewReader(configuration)).Decode(&config); err != nil {
+			return nil, err
+		}
 	}
 
-	render := &bytes.Buffer{}
-	if err := tmpl.Execute(render, map[string]string{
-		"Provider": provider,
-	}); err != nil {
-		return nil, err
-	}
-
-	return render.Bytes(), nil
+	return utils.Template(providerTF, map[string]interface{}{
+		"Configuration": configuration,
+		"Provider":      provider,
+	})
 }
 
 // NewKubernetesBackend creates a new kubernetes backend

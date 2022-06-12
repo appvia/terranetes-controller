@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -111,6 +112,10 @@ const (
 // ProviderSpec defines the desired state of a provider
 // +k8s:openapi-gen=true
 type ProviderSpec struct {
+	// Configuration is optional configuration to the provider. This is terraform provider specific.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Configuration *runtime.RawExtension `json:"configuration,omitempty"`
 	// ProviderType defines the cloud provider which is being used, currently supported providers are
 	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
