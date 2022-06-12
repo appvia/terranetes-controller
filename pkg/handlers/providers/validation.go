@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
 type validator struct {
@@ -59,14 +58,9 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 
 // Validate handles the generic validation of a provider
 func (v *validator) Validate(ctx context.Context, provider *terraformv1alphav1.Provider) error {
-	supported := []string{
-		string(terraformv1alphav1.AWSProviderType),
-		string(terraformv1alphav1.GCPProviderType),
-		string(terraformv1alphav1.AzureProviderType),
-	}
-
-	if !utils.Contains(string(provider.Spec.Provider), supported) {
-		return fmt.Errorf("spec.provider: %s is not supported (must be %s)", provider.Spec.Provider, strings.Join(supported, ","))
+	if !terraformv1alphav1.IsSupportedProviderType(provider.Spec.Provider) {
+		return fmt.Errorf("spec.provider: %s is not supported (must be %s)", provider.Spec.Provider,
+			strings.Join(terraformv1alphav1.SupportedProviderTypeList(), ","))
 	}
 
 	switch provider.Spec.Source {

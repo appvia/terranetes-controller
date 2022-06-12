@@ -40,13 +40,63 @@ var ProviderGVK = schema.GroupVersionKind{
 type ProviderType string
 
 const (
+	// AliCloudProviderType is the Alibaba Cloud provider type
+	AliCloudProviderType ProviderType = "alicloud"
 	// AzureProviderType is the Azure provider type
 	AzureProviderType ProviderType = "azurerm"
+	// AzureCloudStackProviderType is the Azure Cloud Stack provider type
+	AzureCloudStackProviderType ProviderType = "azurestack"
 	// AWSProviderType is the AWS provider type
 	AWSProviderType ProviderType = "aws"
+	// AzureActiveDirectoryProviderType is the Azure Active Directory provider type
+	AzureActiveDirectoryProviderType ProviderType = "azuread"
 	// GCPProviderType is the GCP provider type
 	GCPProviderType ProviderType = "google"
+	// GoogleWorkpspaceProviderType is the Google Workspace provider type
+	GoogleWorkpspaceProviderType ProviderType = "googleworkspace"
+	// KubernetesProviderType is the Kubernetes provider type
+	KubernetesProviderType ProviderType = "kubernetes"
+	// VaultProviderType is the Vault provider type
+	VaultProviderType ProviderType = "vault"
+	// VSphereProviderType is the VSphere provider type
+	VSphereProviderType ProviderType = "vsphere"
 )
+
+// SupportedProviderTypes returns the supported provider types
+var SupportedProviderTypes = []ProviderType{
+	AWSProviderType,
+	AliCloudProviderType,
+	AzureActiveDirectoryProviderType,
+	AzureCloudStackProviderType,
+	AzureProviderType,
+	GCPProviderType,
+	GoogleWorkpspaceProviderType,
+	KubernetesProviderType,
+	VSphereProviderType,
+	VaultProviderType,
+}
+
+// IsSupportedProviderType returns true if the provider type is supported
+func IsSupportedProviderType(providerType ProviderType) bool {
+	for _, x := range SupportedProviderTypes {
+		if x == providerType {
+			return true
+		}
+	}
+
+	return false
+}
+
+// SupportedProviderTypeList returns a list of supported provider types
+func SupportedProviderTypeList() []string {
+	var list []string
+
+	for _, x := range SupportedProviderTypes {
+		list = append(list, string(x))
+	}
+
+	return list
+}
 
 // SourceType is the type of source
 type SourceType string
