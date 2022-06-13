@@ -34,21 +34,39 @@ func TestNewTerraformProvider(t *testing.T) {
 		{
 			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
 				Provider:      terraformv1alphav1.AWSProviderType,
-				Configuration: `features: {}`,
+				Configuration: nil,
 			}},
-			Expected: "\nprovider \"aws\" {\n}\n",
+			Expected: "provider \"aws\" {\n}\n",
 		},
 		{
 			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
 				Provider:      terraformv1alphav1.AzureProviderType,
-				Configuration: &runtime.RawExtension{Raw: []byte(`{"features": ["hello", "dsds"]}`)},
+				Configuration: nil,
 			}},
-			Expected: "\nprovider \"azurerm\" {\n}\n",
+			Expected: "provider \"azurerm\" {\n  \n  features {}\n  \n}\n",
+		},
+		{
+			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
+				Provider:      terraformv1alphav1.AzureProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": {\"hello\": \"world\"}}")},
+			}},
+			Expected: "provider \"azurerm\" {\n  \n  features {\n    hello = \"world\"\n  }\n  \n}\n",
+		},
+		{
+			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
+				Provider:      terraformv1alphav1.AzureProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
+			}},
+			Expected: "provider \"azurerm\" {\n  \n  features = \"hello\"\n  \n}\n",
 		},
 	}
 
 	for _, c := range cases {
-		x, err := NewTerraformProvider(string(c.Provider.Spec.Provider), c.Provider.Spec.Configuration.Raw)
+		var raw []byte
+		if c.Provider.Spec.Configuration != nil {
+			raw = c.Provider.Spec.Configuration.Raw
+		}
+		x, err := NewTerraformProvider(string(c.Provider.Spec.Provider), raw)
 		assert.NoError(t, err)
 		assert.Equal(t, string(c.Expected), string(x))
 	}

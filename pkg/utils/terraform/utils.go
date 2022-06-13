@@ -24,6 +24,7 @@ import (
 	"io"
 	"text/template"
 
+	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
@@ -42,10 +43,9 @@ terraform {
 `
 
 // providerTF is a template for a terraform provider
-var providerTF = `
-provider "{{ .Provider }}" {
+var providerTF = `provider "{{ .Provider }}" {
 {{- if .Configuration }}
-  {{ .Configuration }}
+  {{ toHCL .Configuration | nindent 2 }}
 {{- end }}
 }
 `
@@ -77,6 +77,14 @@ func DecodeState(in []byte) (*State, error) {
 
 // NewTerraformProvider generates a terraform provider configuration
 func NewTerraformProvider(provider string, configuration []byte) ([]byte, error) {
+	// @step: azure requires the configuration for features
+	switch terraformv1alphav1.ProviderType(provider) {
+	case terraformv1alphav1.AzureProviderType:
+		if len(configuration) == 0 {
+			configuration = []byte(`{"features":{}}`)
+		}
+	}
+
 	config := make(map[string]interface{})
 	if len(configuration) > 0 {
 		if err := json.NewDecoder(bytes.NewReader(configuration)).Decode(&config); err != nil {
@@ -85,7 +93,7 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 	}
 
 	return utils.Template(providerTF, map[string]interface{}{
-		"Configuration": configuration,
+		"Configuration": config,
 		"Provider":      provider,
 	})
 }
