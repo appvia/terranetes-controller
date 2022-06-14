@@ -33,8 +33,8 @@ teardown() {
 replicaCount: 1
 controller:
   images:
-    controller: "ghcr.io/appvia/terraform-controller:ci"
-    executor: "ghcr.io/appvia/terraform-executor:ci"
+    controller: "ghcr.io/appvia/terraform-controller:${VERSION}"
+    executor: "ghcr.io/appvia/terraform-executor:${VERSION}"
   costs:
     secret: ${infracost}
 EOF
@@ -85,6 +85,8 @@ EOF
   runit "kubectl delete policies.terraform.appvia.io --all"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} delete job -l ${labels}"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${NAMESPACE} delete po -l terraform.appvia.io/configuration"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} delete job --all --wait=false"
   [[ "$status" -eq 0 ]]

@@ -21,11 +21,13 @@ BATS_OPTIONS=${BATS_OPTIONS:-""}
 BUCKET=${BUCKET:-"terraform-controller-ci-bucket"}
 CLOUD=""
 UNITS="test/e2e/integration"
+VERSION="ci"
 
 usage() {
   cat <<EOF
 Usage: $0 [options]
 --cloud <NAME>         Cloud provider name to run against (aws, azure, google, defaults: aws)
+--version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
 EOF
   if [[ -n "${@}" ]]; then
@@ -43,6 +45,7 @@ run_bats() {
   CLOUD=${CLOUD} \
   RESOURCE_NAME=bucket-${CLOUD:-"test"} \
   NAMESPACE="terraform-system" \
+  VERSION=${VERSION} \
   bats ${BATS_OPTIONS} ${@} || exit 1
 }
 
@@ -58,6 +61,7 @@ run_checks() {
     "${UNITS}/drift.bats"
     "${UNITS}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/destroy.bats"
+    "${UNITS}/private.bats"
   )
   local CONSTRAINTS_FILES=(
     "${UNITS}/constraints/setup.bats"
@@ -69,11 +73,15 @@ run_checks() {
   if [[ -n "${CLOUD}" ]]; then
     echo -e "Running suite on: ${CLOUD^^}\n"
     for x in "${CLOUD_FILES[@]}"; do
-      [[ -f "${x}" ]] && run_bats ${x} || exit 1
+      if [[ -f "${x}" ]]; then
+        run_bats ${x} || exit 1
+      fi
     done
   fi
   for x in "${CONSTRAINTS_FILES[@]}"; do
-    [[ -f "${x}" ]] && run_bats ${x} || exit 1
+    if [[ -f "${x}" ]]; then
+      run_bats ${x} || exit 1
+    fi
   done
 }
 
@@ -81,6 +89,10 @@ while [[ $# -gt 0 ]]; do
   case "${1}" in
     --cloud)
       CLOUD="${2}"
+      shift 2
+      ;;
+    --version)
+      VERSION="${2}"
       shift 2
       ;;
     --help)

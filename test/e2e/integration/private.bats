@@ -19,16 +19,44 @@ load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
+  [[ -n ${E2E_SSH_DEPLOYMENT_KEY}     ]] || skip "E2E_SSH_DEPLOYMENT_KEY not set"
 }
 
 teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should have a condition indicating the provider is ready" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider ready'"
+@test "We should be able to create a ssh key for authentication to a private repository" {
+  kubectl -n ${APP_NAMESPACE} get secret ssh && skip "ssh secret already exists"
+
+  cat <<EOF > ${BATS_TEST_DIRNAME}/ssh-key
+${E2E_SSH_DEPLOYMENT_KEY}
+EOF
+  runit "kubectl -n ${APP_NAMESPACE} create secret generic ssh --from-file=SSH_AUTH_KEY=${BATS_TEST_DIRNAME}/ssh-key"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[0].status' | grep -q 'True'"
+  runit "kubectl -n ${APP_NAMESPACE} get secret ssh"
+  [[ "$status" -eq 0 ]]
+  runit "rm -f ${BATS_TEST_DIRNAME}/ssh-key"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should be able to create a configuration from a private repository" {
+cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Configuration
+metadata:
+  name: ${RESOURCE_NAME}
+spec:
+  auth:
+    name: ssh
+  module: git::ssh://git@github.com/appvia/terraform-private-e2e?ref=main
+  providerRef:
+    name: $CLOUD
+EOF
+  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
   [[ "$status" -eq 0 ]]
 }
 
@@ -36,13 +64,6 @@ teardown() {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${NAMESPACE} get job -l ${labels}"
-  [[ "$status" -eq 0 ]]
-}
-
-@test "We should have a watcher job created in the configuration namespace" {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
-
-  runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels}"
   [[ "$status" -eq 0 ]]
 }
 
@@ -79,9 +100,9 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should be able to view the logs from the plan" {
-  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
+@test "We should be able to delete the configuration" {
+  runit "kubectl -n ${APP_NAMESPACE} delete configuration ${RESOURCE_NAME}"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q '\[build\] completed'"
+  runit "kubectl -n ${APP_NAMESPACE} delete po --all"
   [[ "$status" -eq 0 ]]
 }
