@@ -30,9 +30,9 @@ controller:
     # policy is image for policy (wip)
     policy: bridgecrew/checkov:2.0.1190
     # is the controller image
-    controller: ghcr.io/appvia/terraform-controller:v0.2.3
+    controller: ghcr.io/appvia/terraform-controller:v0.2.4
     # The terraform image used when running jobs
-    executor: ghcr.io/appvia/terraform-executor:v0.2.3
+    executor: ghcr.io/appvia/terraform-executor:v0.2.4
 
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h
@@ -82,10 +82,7 @@ networkPolicies:
 
 imagePullSecrets: []
 
-podAnnotations:
-  prometheus.io/port: "9090"
-  prometheus.io/scheme: "http"
-  prometheus.io/scrape: "true"
+podAnnotations: {}
 
 podSecurityContext:
   fsGroup: 65534
