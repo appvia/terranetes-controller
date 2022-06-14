@@ -61,6 +61,7 @@ run_checks() {
     "${UNITS}/drift.bats"
     "${UNITS}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/destroy.bats"
+    "${UNITS}/cloud/${CLOUD}/costs.bats"
     "${UNITS}/private.bats"
   )
   local CONSTRAINTS_FILES=(
