@@ -31,10 +31,6 @@ COPY --from=builder /usr/bin/kubectl /bin/kubectl
 COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/source /bin/source
 COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/step /bin/step
 
-COPY images/assets/config /home/controller/.ssh/config
-
-RUN adduser -G nobody controller -s /home/controller -u 1001 -s /sbin/nologin -D
-RUN chown -R controller:nobody /home/controller/.ssh && \
-    chmod 0700 /home/controller/.ssh
+COPY images/assets/ssh_config /etc/ssh/ssh_config
 
 USER 1001

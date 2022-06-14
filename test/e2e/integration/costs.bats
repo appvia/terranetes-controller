@@ -25,27 +25,25 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should have a secret in the terraform namespace containing the report" {
-  [[ ${INFRACOST_API_KEY} == "" ]] && skip "INFRACOST_API_KEY environment variable is missing"
+@test "We should have a token for the infracost api" {
+  [[ -n "$INFRACOST_TOKEN" ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ "$status" -eq 0 ]]
+}
 
+@test "We should have a secret in the terraform namespace containing the report" {
   UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
   [[ "$status" -eq 0 ]]
 
-  # costs-f894c878-df50-4d75-b75d-d041d22933c9
   runit "kubectl -n ${NAMESPACE} get secret costs-${UUID}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should see the cost integration is enabled" {
-  [[ ${INFRACOST_API_KEY} == "" ]] && skip "INFRACOST_API_KEY environment variable is missing"
-
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.enabled' | grep -q true"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should see the cost associated to the configuration" {
-  [[ ${INFRACOST_API_KEY} == "" ]] && skip "INFRACOST_API_KEY environment variable is missing"
-
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.monthly' | grep -q '\$0'"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.hourly' | grep -q '\$0'"

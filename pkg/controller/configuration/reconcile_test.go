@@ -445,8 +445,55 @@ var _ = Describe("Configuration Controller", func() {
 			})
 
 			It("should have raised a event", func() {
-				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events).ToNot(BeEmpty())
 				Expect(recorder.Events[0]).To(ContainSubstring("Authentication secret (spec.auth) does not exist"))
+			})
+		})
+
+		When("the authentication exists", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+
+				secret := &v1.Secret{}
+				secret.Name = "ssh"
+				secret.Namespace = configuration.Namespace
+				secret.Data = map[string][]byte{"SSH_AUTH_KEY": []byte("test")}
+				configuration.Spec.Auth = &v1.SecretReference{Name: secret.Name}
+
+				Setup(configuration, secret)
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the plan is in progress", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+			})
+
+			It("should have added the secret the job configuration secret", func() {
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).To(HaveKey("SSH_AUTH_KEY"))
+			})
+
+			It("should have created a job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
 			})
 		})
 	})
