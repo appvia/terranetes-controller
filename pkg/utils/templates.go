@@ -22,6 +22,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/rodaine/hclencoder"
 )
 
 // GetTxtFunc returns a defaults list of methods for text templating
@@ -29,9 +30,22 @@ func GetTxtFunc() map[string]any {
 	return sprig.TxtFuncMap()
 }
 
+// ToHCL converts the json to HCL format
+func ToHCL(data interface{}) (string, error) {
+	hcl, err := hclencoder.Encode(data)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hcl), nil
+}
+
 // Template is called to render a template
 func Template(main string, data interface{}) ([]byte, error) {
-	tpl, err := template.New("main").Funcs(GetTxtFunc()).Parse(main)
+	methods := GetTxtFunc()
+	methods["toHCL"] = ToHCL
+
+	tpl, err := template.New("main").Funcs(methods).Parse(main)
 	if err != nil {
 		return nil, err
 	}

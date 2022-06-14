@@ -362,7 +362,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 		secret.Data = map[string][]byte{terraformv1alphav1.TerraformBackendConfigMapKey: cfg}
 
 		// @step: generate the provider for the terraform configuration
-		cfg, err = terraform.NewTerraformProvider(string(state.provider.Spec.Provider))
+		cfg, err = terraform.NewTerraformProvider(string(state.provider.Spec.Provider), state.provider.GetConfiguration())
 		if err != nil {
 			cond.Failed(err, "Failed to generate the terraform provider configuration")
 

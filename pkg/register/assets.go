@@ -731,6 +731,10 @@ spec:
             spec:
               description: ProviderSpec defines the desired state of a provider
               properties:
+                configuration:
+                  description: Configuration is optional configuration to the provider. This is terraform provider specific.
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 provider:
                   description: ProviderType defines the cloud provider which is being used, currently supported providers are aws, google or azurerm.
                   type: string

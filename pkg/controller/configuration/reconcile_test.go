@@ -872,7 +872,7 @@ terraform {
 		})
 
 		It("should have a provider.tf", func() {
-			expected := "\nprovider \"aws\" {\n}\n"
+			expected := "provider \"aws\" {\n}\n"
 			secret := &v1.Secret{}
 			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()

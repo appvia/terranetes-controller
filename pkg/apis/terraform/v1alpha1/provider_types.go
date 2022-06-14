@@ -18,8 +18,11 @@
 package v1alpha1
 
 import (
+	"bytes"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -111,6 +114,10 @@ const (
 // ProviderSpec defines the desired state of a provider
 // +k8s:openapi-gen=true
 type ProviderSpec struct {
+	// Configuration is optional configuration to the provider. This is terraform provider specific.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Configuration *runtime.RawExtension `json:"configuration,omitempty"`
 	// ProviderType defines the cloud provider which is being used, currently supported providers are
 	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
@@ -133,6 +140,29 @@ type ProviderSpec struct {
 	// requirements for pod identity.
 	// +kubebuilder:validation:Optional
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+}
+
+// HasConfiguration returns true if the provider has custom configuration
+func (p *Provider) HasConfiguration() bool {
+	switch {
+	case p.Spec.Configuration == nil:
+		return false
+	case p.Spec.Configuration.Raw == nil, len(p.Spec.Configuration.Raw) <= 0:
+		return false
+	case bytes.Equal(p.Spec.Configuration.Raw, []byte("{}")):
+		return false
+	}
+
+	return true
+}
+
+// GetConfiguration returns the provider configuration is any
+func (p *Provider) GetConfiguration() []byte {
+	if !p.HasConfiguration() {
+		return nil
+	}
+
+	return p.Spec.Configuration.Raw
 }
 
 // +kubebuilder:webhook:name=providers.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/providers,verbs=create;update,groups="terraform.appvia.io",resources=providers,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1
