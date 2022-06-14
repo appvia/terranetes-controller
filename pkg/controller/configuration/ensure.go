@@ -242,7 +242,7 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 
 // ensureAuthenticationSecret is responsible for verifying that any secret which is referenced by the
 // configuration does exist
-func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -263,8 +263,10 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav
 		if !found {
 			cond.ActionRequired("Authentication secret (spec.auth) does not exist")
 
-			return reconcile.Result{}, controller.ErrIgnore
+			return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
+
+		state.auth = secret
 
 		return reconcile.Result{}, nil
 	}

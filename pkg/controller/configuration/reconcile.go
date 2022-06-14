@@ -72,7 +72,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			[]controller.EnsureFunc{
 				c.ensureCapturedState(configuration, state),
 				c.ensureProviderReady(configuration, state),
-				c.ensureAuthenticationSecret(configuration),
+				c.ensureAuthenticationSecret(configuration, state),
 				c.ensureCustomJobTemplate(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
 				c.ensureTerraformConfigDeleted(configuration),
@@ -99,7 +99,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureNoActivity(configuration, state),
 			c.ensureCostSecret(configuration),
 			c.ensureValueFromSecret(configuration, state),
-			c.ensureAuthenticationSecret(configuration),
+			c.ensureAuthenticationSecret(configuration, state),
 			c.ensureCustomJobTemplate(configuration, state),
 			c.ensureProviderReady(configuration, state),
 			c.ensureJobConfigurationSecret(configuration, state),
