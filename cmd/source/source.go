@@ -96,11 +96,21 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 			return fmt.Errorf("failed to read ssh key file: %v", err)
 		}
 		encoded := base64.StdEncoding.EncodeToString(data)
-		location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+		switch strings.Contains(source, "?") {
+		case true:
+			location = fmt.Sprintf("%s&sshkey=%s", source, encoded)
+		default:
+			location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+		}
 
 	case os.Getenv("SSH_AUTH_KEY") != "":
 		encoded := base64.StdEncoding.EncodeToString([]byte(os.Getenv("SSH_AUTH_KEY")))
-		location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+		switch strings.Contains(source, "?") {
+		case true:
+			location = fmt.Sprintf("%s&sshkey=%s", source, encoded)
+		default:
+			location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
+		}
 
 	case os.Getenv("GIT_USERNAME") != "" && os.Getenv("GIT_PASSWORD") != "":
 		filename := path.Join("${HOME}", ".git", "config")
