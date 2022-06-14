@@ -13,6 +13,7 @@ gcp-auth.json
 /release
 /secret.yml
 /values.yaml
+test/results/
 *.kubeconfig
 
 # Terraform Related

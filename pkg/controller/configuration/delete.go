@@ -125,20 +125,28 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 	}
 }
 
-// ensureTerraformConfigDeleted is responsible for deleting any associated terraform configuration configmap
-func (c *Controller) ensureTerraformConfigDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+// ensureConfigurationSecretsDeleted is responsible for deleting any associated terraform state
+func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
-	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		cm := &v1.ConfigMap{}
-		cm.Namespace = c.ControllerNamespace
-		cm.Name = name
+		names := []string{
+			configuration.GetTerraformConfigSecretName(),
+			configuration.GetTerraformCostSecretName(),
+			configuration.GetTerraformPolicySecretName(),
+			configuration.GetTerraformStateSecretName(),
+		}
 
-		if err := kubernetes.DeleteIfExists(ctx, c.cc, cm); err != nil {
-			cond.Failed(err, "Failed to delete the terraform configuration configmap")
+		for _, name := range names {
+			secret := &v1.Secret{}
+			secret.Namespace = c.ControllerNamespace
+			secret.Name = name
 
-			return reconcile.Result{}, err
+			if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {
+				cond.Failed(err, "Failed to delete the configuration secret (%s/%s)", secret.Namespace, secret.Name)
+
+				return reconcile.Result{}, err
+			}
 		}
 
 		return reconcile.Result{}, nil
@@ -169,33 +177,6 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 		for _, job := range list.Items {
 			if err := kubernetes.DeleteIfExists(ctx, c.cc, &job); err != nil {
 				cond.Failed(err, "Failed to delete the configuration job (%s/%s)", job.Namespace, job.Name)
-
-				return reconcile.Result{}, err
-			}
-		}
-
-		return reconcile.Result{}, nil
-	}
-}
-
-// ensureConfigurationSecretsDeleted is responsible for deleting any associated terraform state
-func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
-
-	return func(ctx context.Context) (reconcile.Result, error) {
-		names := []string{
-			configuration.GetTerraformStateSecretName(),
-			configuration.GetTerraformCostSecretName(),
-			configuration.GetTerraformPolicySecretName(),
-		}
-
-		for _, name := range names {
-			secret := &v1.Secret{}
-			secret.Namespace = c.ControllerNamespace
-			secret.Name = name
-
-			if err := kubernetes.DeleteIfExists(ctx, c.cc, secret); err != nil {
-				cond.Failed(err, "Failed to delete the configuration secret (%s/%s)", secret.Namespace, secret.Name)
 
 				return reconcile.Result{}, err
 			}
