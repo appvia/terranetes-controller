@@ -29,7 +29,7 @@ require (
 	golang.org/x/tools v0.1.11-0.20220316014157-77aa08bb151a
 	gotest.tools/gotestsum v1.8.1
 	k8s.io/api v0.24.1
-	k8s.io/apiextensions-apiserver v0.24.0
+	k8s.io/apiextensions-apiserver v0.24.1
 	k8s.io/apimachinery v0.24.1
 	k8s.io/client-go v0.24.1
 	k8s.io/code-generator v0.24.1
@@ -277,7 +277,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.3.1 // indirect
-	k8s.io/component-base v0.24.0 // indirect
+	k8s.io/component-base v0.24.1 // indirect
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	mvdan.cc/editorconfig v0.2.0 // indirect
