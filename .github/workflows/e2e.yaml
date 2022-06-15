@@ -74,6 +74,7 @@ jobs:
           retention-days: 1
 
   e2e:
+    if: always()
     needs:
       - controller-image
       - executor-image
