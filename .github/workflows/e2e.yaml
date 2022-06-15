@@ -4,23 +4,33 @@ on:
   workflow_call:
     inputs:
       cloud:
-        required: true
+        default: aws
+        required: false
+        type: string
+      version:
+        default: ci
+        required: false
         type: string
 
   workflow_dispatch:
     inputs:
       cloud:
-        description: 'Cloud vendor'
-        required: true
+        description: Cloud to run against
+        required: false
         default: 'aws'
         type: choice
         options:
           - aws
           - azure
           - google
+      version:
+        description: Version of controller to check against
+        required: false
+        default: ci
 
 jobs:
   controller-image:
+    if: (github.event.inputs || inputs).version == 'ci'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,6 +52,7 @@ jobs:
           retention-days: 1
 
   executor-image:
+    if: (github.event.inputs || inputs).version == 'ci'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -74,32 +85,41 @@ jobs:
         run: |
           sudo apt update -y
           sudo apt install bats jq
+
       - name: Install Kubectl
         uses: azure/setup-kubectl@v2.0
         with:
           version: v1.23.0
+
       - name: Install Kind
         run: |
           curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
           chmod +x kind
           kind create cluster --image kindest/node:v1.23.4
+
       - name: Retrieve Controller Image
+        if: (github.event.inputs || inputs).version == 'ci'
         uses: actions/download-artifact@v2
         with:
           name: controller-image
           path: /tmp
       - name: Retrieve Executor Image
+        if: (github.event.inputs || inputs).version == 'ci'
         uses: actions/download-artifact@v2
         with:
           name: executor-image
           path: /tmp
       - name: Load images
+        if: (github.event.inputs || inputs).version == 'ci'
         run: |
           kind load image-archive /tmp/controller-image.tar
           kind load image-archive /tmp/executor-image.tar
+
       - name: Running E2E
         run: |
-          test/e2e/check-suite.sh --cloud ${{ (github.event.inputs || inputs).cloud }}
+          test/e2e/check-suite.sh \
+            --cloud ${{ (github.event.inputs || inputs).cloud }} \
+            --version ${{ (github.event.inputs || inputs).version }}
         env:
           ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.E2E_ARM_CLIENT_SECRET }}
