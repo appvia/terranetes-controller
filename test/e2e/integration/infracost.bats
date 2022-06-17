@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-load ../../../lib/helper
+load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
@@ -25,28 +25,9 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should have a token for the infracost integration" {
-  [[ -n "$INFRACOST_TOKEN" ]] || touch ${BATS_PARENT_TMPNAME}.skip
-}
-
-@test "We should be able to create a configuration which costs money on aws" {
-  cat <<EOF > ${BATS_TMPDIR}/resource.yml
----
-apiVersion: terraform.appvia.io/v1alpha1
-kind: Configuration
-metadata:
-  name: compute
-spec:
-  module: https://github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v4.0.0
-  providerRef:
-    name: aws
-  variables:
-    unused: $(date +"%s")
-    name: instance0
-    instance_type: m5.8xlarge
-EOF
-  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yml"
-  [[ "$status" -eq 0 ]]
+@test "We should skip infracost when not running on aws cloud" {
+  [[ -z ${INFRACOST_API_KEY} ]] && touch ${BATS_PARENT_TMPNAME}.skip
+  [[ "${CLOUD}" == "aws" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
 @test "We should have a job created in the terraform-system running the plan" {
@@ -69,6 +50,16 @@ EOF
   runit "kubectl -n ${APP_NAMESPACE} get configuration compute -o json" "jq -r '.status.costs.enabled' | grep -q 'true'"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration compute -o json" "jq -r '.status.costs.monthly' | grep -q '^\$[0-9\.]*'"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should see infracost breakdown in the watcher logs" {
+  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
+  [[ "$status" -eq 0 ]]
+
+  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'EVALUATING THE COSTS'"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'OVERALL TOTAL'"
   [[ "$status" -eq 0 ]]
 }
 

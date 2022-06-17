@@ -25,42 +25,23 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should be able to create a configuration" {
-  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+@test "We should be able to create a configuration which costs money on aws" {
+  cat <<EOF > ${BATS_TMPDIR}/resource.yml
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Configuration
 metadata:
-  name: ${RESOURCE_NAME}
+  name: compute
 spec:
-  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
-  enableDriftDetection: true
+  module: https://github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v4.0.0
   providerRef:
     name: aws
-  writeConnectionSecretToRef:
-    name: test
-    keys:
-      - s3_bucket_id
-      - s3_bucket_arn
-      - s3_bucket_region
   variables:
     unused: $(date +"%s")
-    bucket: ${BUCKET}
-    acl: private
-    versioning:
-      enabled: true
-    block_public_acls: true
-    block_public_policy: true
-    ignore_public_acls: true
-    restrict_public_buckets: true
-    server_side_encryption_configuration:
-      rule:
-        apply_server_side_encryption_by_default:
-          sse_algorithm: "aws:kms"
-        bucket_key_enabled: true
+    name: instance0
+    instance_type: m5.8xlarge
 EOF
-  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
-  [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
+  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yml"
   [[ "$status" -eq 0 ]]
 }
+
