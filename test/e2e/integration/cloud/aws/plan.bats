@@ -26,7 +26,7 @@ teardown() {
 }
 
 @test "We should be able to create a configuration" {
-cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Configuration
