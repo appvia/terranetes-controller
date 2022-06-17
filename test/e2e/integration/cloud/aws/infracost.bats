@@ -25,6 +25,10 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
+@test "We should have a token for the infracost integration" {
+  [[ -z ${INFRACOST_API_KEY} ]] && touch ${BATS_PARENT_TMPNAME}.skip
+}
+
 @test "We should be able to create a configuration which costs money on aws" {
   cat <<EOF > ${BATS_TMPDIR}/resource.yml
 ---

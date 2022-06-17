@@ -65,15 +65,15 @@ func main() {
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
 	flags.StringVar(&config.ExecutorImage, "executor-image", "ghcr.io/appvia/terraform-executor:latest", "The image to use for the executor")
-	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:0.10.3", "The image to use for the infracosts")
+	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:latest", "The image to use for the infracosts")
 	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
-	flags.StringVar(&config.PolicyImage, "policy-image", "bridgecrew/checkov:2.0.1140", "The image to use for the policy")
+	flags.StringVar(&config.PolicyImage, "policy-image", "bridgecrew/checkov:latest", "The image to use for the policy")
 	flags.StringVar(&config.TLSAuthority, "tls-ca", "", "The filename to the ca certificate")
 	flags.StringVar(&config.TLSCert, "tls-cert", "tls.pem", "The name of the file containing the TLS certificate")
 	flags.StringVar(&config.TLSDir, "tls-dir", "", "The directory the certificates are held")
 	flags.StringVar(&config.TLSKey, "tls-key", "tls-key.pem", "The name of the file containing the TLS key")
-	flags.StringVar(&config.TerraformImage, "terraform-image", "hashicorp/terraform:v1.1.9", "The image to use for the terraform")
+	flags.StringVar(&config.TerraformImage, "terraform-image", "hashicorp/terraform:latest", "The image to use for the terraform")
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[error] %s\n", err)
