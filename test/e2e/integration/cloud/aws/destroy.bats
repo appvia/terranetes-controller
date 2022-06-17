@@ -25,11 +25,6 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should not have the application secret present" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret test 2>&1" "grep -q NotFound"
-  [[ "$status" -eq 0 ]]
-}
-
 @test "We should have a confirmation the bucket have been deleted" {
   expected="The specified bucket does not exist"
 

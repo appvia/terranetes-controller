@@ -26,7 +26,7 @@ teardown() {
 }
 
 @test "We should have a token for the infracost api" {
-  [[ -n "$INFRACOST_TOKEN" ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -z "$INFRACOST_API_KEY" ]] || touch ${BATS_PARENT_TMPNAME}.skip
   [[ "$status" -eq 0 ]]
 }
 
@@ -49,4 +49,3 @@ teardown() {
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.hourly' | grep -q '\$0'"
   [[ "$status" -eq 0 ]]
 }
-
