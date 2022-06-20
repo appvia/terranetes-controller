@@ -680,6 +680,19 @@ var _ = Describe("Configuration Controller", func() {
 				Expect(configuration.Status.Costs.Monthly).To(Equal("$100"))
 				Expect(configuration.Status.Costs.Hourly).To(Equal("$0.01"))
 			})
+
+			It("should have copied the secret into the configuration namespace", func() {
+				expected := "\n{\n\t\"totalHourlyCost\": \"0.01\",\n  \"totalMonthlyCost\": \"100.00\"\n}\n"
+				secret := &v1.Secret{}
+				secret.Namespace = configuration.Namespace
+				secret.Name = configuration.GetTerraformCostSecretName()
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).To(HaveKey("costs.json"))
+				Expect(string(secret.Data["costs.json"])).To(Equal(expected))
+			})
 		})
 	})
 
@@ -1447,6 +1460,17 @@ terraform {
 					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 					Expect(len(list.Items)).To(Equal(1))
 				})
+
+				It("should copied the report into the configuration namespace", func() {
+					secret := &v1.Secret{}
+					secret.Namespace = configuration.Namespace
+					secret.Name = configuration.GetTerraformPolicySecretName()
+					found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+					Expect(secret.Data).To(HaveKey("results_json.json"))
+					Expect(string(secret.Data["results_json.json"])).To(ContainSubstring("summary"))
+				})
 			})
 
 			When("policy report contains no failed checks", func() {
@@ -1482,6 +1506,17 @@ terraform {
 
 					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 					Expect(len(list.Items)).To(Equal(2))
+				})
+
+				It("should copied the report into the configuration namespace", func() {
+					secret := &v1.Secret{}
+					secret.Namespace = configuration.Namespace
+					secret.Name = configuration.GetTerraformPolicySecretName()
+					found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+					Expect(secret.Data).To(HaveKey("results_json.json"))
+					Expect(string(secret.Data["results_json.json"])).To(ContainSubstring("summary"))
 				})
 			})
 		})
