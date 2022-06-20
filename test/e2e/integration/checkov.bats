@@ -104,6 +104,15 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
+@test "We should have a copy the policy report in the configuration namespace" {
+  UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get secret policy-${UUID}"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} get secret policy-${UUID} -o json" "jq -r '.data.results_json.json'"
+  [[ "$status" -eq 0 ]]
+}
+
 @test "We should see the conditions indicate the configuration failed policy" {
   POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
   [[ "$status" -eq 0 ]]
