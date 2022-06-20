@@ -2,6 +2,7 @@
 *.orig
 .idea
 .vscode
+.vim
 gcp-auth.json
 /*.env
 #local dev artifacts

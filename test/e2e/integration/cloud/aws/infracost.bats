@@ -18,7 +18,7 @@
 load ../../../lib/helper
 
 setup() {
-  [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
+  [[ ! -f "${BATS_PARENT_TMPNAME}.skip" ]] || skip "skip remaining tests"
 }
 
 teardown() {
@@ -26,7 +26,8 @@ teardown() {
 }
 
 @test "We should have a token for the infracost integration" {
-  [[ -z ${INFRACOST_API_KEY} ]] && touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -z "${INFRACOST_API_KEY}" ]] && touch ${BATS_PARENT_TMPNAME}.skip
+  [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to create a configuration which costs money on aws" {
