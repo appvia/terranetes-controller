@@ -570,37 +570,65 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 			return reconcile.Result{}, nil
 		}
 
+		input := secret.Data["costs.json"]
+		if input == nil || len(input) == 0 {
+			return reconcile.Result{}, nil
+		}
+
 		// @step: parse the cost report json
-		if secret.Data["costs.json"] != nil {
-			report := make(map[string]interface{})
-			if err := json.NewDecoder(bytes.NewReader(secret.Data["costs.json"])).Decode(&report); err != nil {
-				cond.Failed(err, "Failed to decode the terraform costs report")
+		values := map[string]float64{
+			"totalMonthlyCost": 0,
+			"totalHourlyCost":  0,
+		}
+		for key := range values {
+			value := gjson.GetBytes(input, key)
+			if !value.Exists() {
+				cond.ActionRequired("Cost report does not include the %s value", key)
 
-				return reconcile.Result{}, err
+				return reconcile.Result{}, controller.ErrIgnore
 			}
 
-			var monthly, hourly float64
+			cost, err := strconv.ParseFloat(value.String(), 64)
+			if err != nil {
+				cond.ActionRequired("Cost report contains an include value: %q for item: %s", value.String(), key)
 
-			if v, ok := report["totalMonthlyCost"].(string); ok {
-				if x, err := strconv.ParseFloat(v, 64); err == nil {
-					monthly = x
-				}
+				return reconcile.Result{}, controller.ErrIgnore
 			}
-			if v, ok := report["totalHourlyCost"].(string); ok {
-				if x, err := strconv.ParseFloat(v, 64); err == nil {
-					hourly = x
-				}
-			}
+			values[key] = cost
+		}
 
-			configuration.Status.Costs = &terraformv1alphav1.CostStatus{
-				Enabled: true,
-				Hourly:  fmt.Sprintf("$%v", hourly),
-				Monthly: fmt.Sprintf("$%v", monthly),
-			}
+		configuration.Status.Costs = &terraformv1alphav1.CostStatus{
+			Enabled: true,
+			Hourly:  fmt.Sprintf("$%v", values["totalHourlyCost"]),
+			Monthly: fmt.Sprintf("$%v", values["totalMonthlyCost"]),
+		}
 
-			// @step: update the prometheus metrics
-			monthlyCostMetric.WithLabelValues(labels...).Set(monthly)
-			hourlyCostMetric.WithLabelValues(labels...).Set(hourly)
+		// @step: update the prometheus metrics
+		monthlyCostMetric.WithLabelValues(labels...).Set(values["totalMonthlyCost"])
+		hourlyCostMetric.WithLabelValues(labels...).Set(values["totalHourlyCost"])
+
+		// @step: copy the infracost report into the configuration namespace
+		copied := &v1.Secret{}
+		copied.Namespace = configuration.GetNamespace()
+		copied.Name = configuration.GetTerraformCostSecretName()
+		copied.Labels = map[string]string{
+			terraformv1alphav1.ConfigurationNameLabel: configuration.GetName(),
+			terraformv1alphav1.ConfigurationUIDLabel:  string(configuration.GetUID()),
+		}
+		copied.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: terraformv1alphav1.SchemeGroupVersion.String(),
+				Kind:       terraformv1alphav1.ConfigurationKind,
+				Name:       configuration.GetName(),
+				UID:        configuration.GetUID(),
+			},
+		}
+		copied.Data = secret.Data
+
+		if err := kubernetes.CreateOrForceUpdate(ctx, c.cc, copied); err != nil {
+			cond.Failed(err, "Failed to create or update the terraform costs secret")
+
+			return reconcile.Result{}, err
 		}
 
 		return reconcile.Result{}, nil
@@ -610,6 +638,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 // ensurePolicyStatus is responsible for checking the checkov results and refusing to continue if failed
 func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
+	key := "results_json.json"
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
@@ -637,7 +666,7 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 		}
 
 		// @step: retrieve summary from the report
-		checksFailed := gjson.GetBytes(secret.Data["results_json.json"], "summary.failed")
+		checksFailed := gjson.GetBytes(secret.Data[key], "summary.failed")
 		if !checksFailed.Exists() {
 			cond.Failed(errors.New("missing report"), "Security report does not contain a summary of finding, please contact platform administrator")
 
@@ -648,6 +677,30 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 			cond.Failed(errors.New("invalid resport"), "Security report failed summary is not numerical as expected, please contact platform administrator")
 
 			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		// @step: copy the report into the configuration namespace
+		copied := &v1.Secret{}
+		copied.Namespace = configuration.GetNamespace()
+		copied.Name = configuration.GetTerraformPolicySecretName()
+		copied.Labels = map[string]string{
+			terraformv1alphav1.ConfigurationNameLabel: configuration.GetName(),
+			terraformv1alphav1.ConfigurationUIDLabel:  string(configuration.GetUID()),
+		}
+		copied.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: terraformv1alphav1.SchemeGroupVersion.String(),
+				Kind:       terraformv1alphav1.ConfigurationKind,
+				Name:       configuration.GetName(),
+				UID:        configuration.GetUID(),
+			},
+		}
+		copied.Data = secret.Data
+
+		if err := kubernetes.CreateOrForceUpdate(ctx, c.cc, copied); err != nil {
+			cond.Failed(err, "Failed to create or update the terraform policy secret")
+
+			return reconcile.Result{}, err
 		}
 
 		if checksFailed.Int() > 0 {

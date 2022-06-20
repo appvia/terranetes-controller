@@ -55,7 +55,6 @@ run_checks() {
     "${UNITS}/cloud/${CLOUD}/provider.bats"
     "${UNITS}/cloud/${CLOUD}/plan.bats"
     "${UNITS}/plan.bats"
-    "${UNITS}/costs.bats"
     "${UNITS}/apply.bats"
     "${UNITS}/cloud/${CLOUD}/confirm.bats"
     "${UNITS}/drift.bats"
