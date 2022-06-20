@@ -30,7 +30,7 @@ require (
 	gotest.tools/gotestsum v1.8.1
 	k8s.io/api v0.24.1
 	k8s.io/apiextensions-apiserver v0.24.1
-	k8s.io/apimachinery v0.24.1
+	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v0.24.1
 	k8s.io/code-generator v0.24.1
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42
