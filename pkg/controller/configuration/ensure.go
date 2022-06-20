@@ -571,7 +571,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 		}
 
 		input := secret.Data["costs.json"]
-		if input == nil || len(input) == 0 {
+		if len(input) == 0 {
 			return reconcile.Result{}, nil
 		}
 
