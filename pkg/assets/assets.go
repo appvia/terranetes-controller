@@ -25,25 +25,6 @@ import (
 //go:embed *.yaml.tpl
 var policyFS embed.FS
 
-// AssetNames will get all the policy assets
-func AssetNames() []string {
-	var assets []string
-	// read current dir
-	d, err := policyFS.ReadDir(".")
-	if err != nil {
-		panic(fmt.Errorf("something wrong - this should have been tested first"))
-	}
-	for _, f := range d {
-		assets = append(assets, f.Name())
-	}
-	return assets
-}
-
-// Asset will get a policy file asset or an error if it doesn't exist
-func Asset(name string) ([]byte, error) {
-	return policyFS.ReadFile(name)
-}
-
 // MustAsset will return a single file name asset or panic
 func MustAsset(name string) []byte {
 	// normally for cross-OS we would use filepath lib, but due to
@@ -55,4 +36,39 @@ func MustAsset(name string) []byte {
 		panic(fmt.Errorf("embedded asset does not exist %s - %w", name, err))
 	}
 	return content
+}
+
+// AssetNames will get all the policy assets
+func AssetNames() []string {
+	return RecursiveAssetNames(".")
+}
+
+// RecursiveAssetNames will get all the policy assets
+func RecursiveAssetNames(path string) []string {
+	var assets []string
+
+	d, err := policyFS.ReadDir(path)
+	if err != nil {
+		panic(fmt.Errorf("something wrong - this should have been tested first"))
+	}
+
+	for _, f := range d {
+		switch {
+		case f.Type().IsRegular():
+			if path == "." {
+				assets = append(assets, f.Name())
+			} else {
+				assets = append(assets, fmt.Sprintf("%s/%s", path, f.Name()))
+			}
+		case f.Type().IsDir():
+			assets = append(assets, RecursiveAssetNames(f.Name())...)
+		}
+	}
+
+	return assets
+}
+
+// Asset will get a policy file asset or an error if it doesn't exist
+func Asset(name string) ([]byte, error) {
+	return policyFS.ReadFile(name)
 }

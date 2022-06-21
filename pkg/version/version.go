@@ -17,9 +17,16 @@
 
 package version
 
+import "fmt"
+
 var (
 	// Version is the current version of the application
 	Version = "0.0.1"
 	// GitCommit is the current commit of the application
 	GitCommit = "HEAD"
 )
+
+// GetVersion returns the current version of the application
+func GetVersion() string {
+	return fmt.Sprintf("%s (gitsha: %s)", Version, GitCommit)
+}
