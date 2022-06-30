@@ -1,0 +1,12 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: checkov
+spec:
+  constraints:
+    checkov:
+      # See: https://www.checkov.io/5.Policy%20Index/terraform.html
+      checks: []
+      # See: https://www.checkov.io/5.Policy%20Index/terraform.html
+      skipChecks: []
