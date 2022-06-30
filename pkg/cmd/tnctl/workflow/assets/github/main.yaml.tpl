@@ -163,14 +163,17 @@ jobs:
           api-key: {{ "${{" }} secrets.ORG_INFRACOST_API_KEY {{ "}}" }}
       - name: Checkout base branch
         uses: actions/checkout@v3
+        if: github.event_name == 'pull_request'
         with:
           ref: '{{ "${{" }} github.event.pull_request.base.ref {{ "}}" }}'
       - name: Generate Infracost cost estimate baseline
+        if: github.event_name == 'pull_request'
         run: |
           infracost breakdown --path=${TF_ROOT} \
             --format=json \
             --out-file=/tmp/infracost-base.json
       - name: Checkout PR branch
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@v3
       - name: Generate Infracost diff
         id: costs
