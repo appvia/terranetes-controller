@@ -35,6 +35,8 @@ import (
 type registry struct {
 	// hc is the http client
 	hc *http.Client
+	// endpoint is the registry endpoint
+	endpoint string
 	// baseURL is the registry baseURL
 	baseURL string
 	// namespace scopes the requests to namespace
@@ -59,7 +61,12 @@ func New(endpoint string) (search.Interface, error) {
 		namespace = strings.TrimPrefix(u.Path, "/")
 	}
 
-	return &registry{baseURL: baseURL, hc: &http.Client{}, namespace: namespace}, nil
+	return &registry{
+		baseURL:   baseURL,
+		endpoint:  endpoint,
+		hc:        &http.Client{},
+		namespace: namespace,
+	}, nil
 }
 
 //
@@ -78,7 +85,7 @@ func IsHandle(source string) bool {
 
 // Source returns the source of the registry
 func (r *registry) Source() string {
-	return r.baseURL
+	return r.endpoint
 }
 
 // Versions returns a lists of version for a specific module
@@ -178,7 +185,7 @@ func (r *registry) Find(ctx context.Context, query search.Query) ([]search.Modul
 				Name:         results.Modules[i].Name,
 				Namespace:    results.Modules[i].Namespace,
 				Provider:     results.Modules[i].Provider,
-				Registry:     r.baseURL,
+				Registry:     r.endpoint,
 				RegistryType: "TF",
 				Source:       source,
 				Version:      results.Modules[i].Version,
