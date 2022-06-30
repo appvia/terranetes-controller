@@ -34,6 +34,20 @@ import (
 // ConfigurationKind is the kind for a Configuration
 const ConfigurationKind = "Configuration"
 
+// NewConfiguration returns an empty configuration
+func NewConfiguration(namespace, name string) *Configuration {
+	return &Configuration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       ConfigurationKind,
+			APIVersion: SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+	}
+}
+
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
 	ApplyAnnotation = "terraform.appvia.io/apply"
@@ -43,6 +57,8 @@ const (
 	ReconcileAnnotation = "terraform.appvia.io/reconcile"
 	// OrphanAnnotation is the label used to orphan a configuration
 	OrphanAnnotation = "terraform.appvia.io/orphan"
+	// VersionAnnotation is the label used to hold the verion
+	VersionAnnotation = "terraform.appvia.io/version"
 )
 
 const (

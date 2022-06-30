@@ -19,7 +19,7 @@ GO_DIRS=cmd hack pkg
 SH_DIRS=.circleci hack
 ROOT_DIR=${PWD}
 UNAME := $(shell uname)
-LFLAGS ?= -X version.Version=${VERSION} -X main.GitCommit=${GIT_SHA}
+LFLAGS ?= -X version.Version=${VERSION} -X version.GitCommit=${GIT_SHA}
 VERSION ?= latest
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
@@ -94,12 +94,16 @@ schema-gen:
 
 ### BUILD ###
 
-build: controller source step
+build: controller source step tnctl
 	@echo "--> Compiling the project ($(VERSION))"
 
 controller: golang
 	@echo "--> Compiling the controller ($(VERSION))"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/controller cmd/controller/*.go
+
+tnctl: golang
+	@echo "--> Compiling the tnctl ($(VERSION))"
+	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/tnctl cmd/tnctl/*.go
 
 source: golang
 	@echo "--> Compiling the source binary ($(VERSION))"
