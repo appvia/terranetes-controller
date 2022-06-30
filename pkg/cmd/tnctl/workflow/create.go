@@ -248,27 +248,5 @@ func (o *ModuleCommand) askQuestions() error {
 		return err
 	}
 
-	var confirm string
-	err := survey.AskOne(&survey.Select{
-		Message: "Does your organization has a central policy repository?",
-		Help:    "Name of the central repository which contains your organizations security policies",
-		Options: []string{"Yes", "No"},
-		Default: "No"}, &confirm,
-	)
-	if err != nil {
-		return err
-	}
-
-	switch confirm {
-	case "Yes":
-		err := survey.AskOne(&survey.Input{
-			Message: "What is the name of the repository?",
-			Help:    "Is the of the repository in your organization containing the security policies",
-		}, &o.PolicySource)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
