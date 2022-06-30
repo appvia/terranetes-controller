@@ -95,9 +95,6 @@ jobs:
         with:
           output-file: README.md
           output-method: inject
-      - name: Checking for Drift
-        id: docs
-        run: git diff | tee | grep '^\+'
 
   code-security:
     name: Security Check
