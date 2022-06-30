@@ -91,6 +91,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
       - name: Generate Documentation
+        id: docs
         uses: terraform-docs/gh-actions@v1
         with:
           output-file: README.md
