@@ -72,6 +72,9 @@ func New(endpoint, token string) (search.Interface, error) {
 	if u.Path == "" {
 		return nil, errors.New("must must a user or organizations /user or /org")
 	}
+	if u.Scheme == "" {
+		endpoint = fmt.Sprintf("https://%s", endpoint)
+	}
 
 	// @step: create the http client
 	var hc *http.Client

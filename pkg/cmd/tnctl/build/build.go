@@ -21,17 +21,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
-	"github.com/hashicorp/go-getter"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/sjson"
@@ -120,12 +115,13 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	// @step: download the module
-	destination := fmt.Sprintf("%s/%s-%s", os.TempDir(), "tnctl-build", utils.Random(10))
+	destination := utils.TempDirName()
 	source := o.Source
 
-	if err := o.Download(ctx, source, destination); err != nil {
+	if err := utils.Download(ctx, source, destination); err != nil {
 		return err
 	}
+
 	o.Println("%s Successfully downloaded the terraform module: %s", cmd.IconGood, color.CyanString(o.Source))
 
 	defer func() {
@@ -242,63 +238,4 @@ func (o *Command) Run(ctx context.Context) error {
 	o.Println("%s", e)
 
 	return nil
-}
-
-// Download downloads the source to the destination
-func (o *Command) Download(ctx context.Context, source, destination string) error {
-	pwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	if strings.HasPrefix(source, "http") {
-		source = strings.TrimPrefix(source, "http://")
-		source = strings.TrimPrefix(source, "https://")
-	}
-
-	client := &getter.Client{
-		Ctx:       ctx,
-		Dst:       destination,
-		Detectors: []getter.Detector{new(getter.GitHubDetector), new(getter.GitDetector)},
-		Mode:      getter.ClientModeAny,
-		Options:   []getter.ClientOption{},
-		Pwd:       pwd,
-		Src:       source,
-	}
-
-	doneCh := make(chan struct{})
-	errCh := make(chan error, 1)
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		switch err := client.Get(); err {
-		case nil:
-			doneCh <- struct{}{}
-		default:
-			errCh <- err
-		}
-	}()
-
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
-	return func() error {
-		for {
-			select {
-			case <-ticker.C:
-				if size, err := utils.DirSize(destination); err == nil {
-					o.Println("Downloading %s", utils.ByteCountSI(size))
-				}
-			case <-sigCh:
-				return errors.New("received a signal, cancelling the download")
-			case <-ctx.Done():
-				return errors.New("download has timed out, cancelling the download")
-			case <-doneCh:
-				return nil
-			case err := <-errCh:
-				return fmt.Errorf("failed to download the source: %s", err)
-			}
-		}
-	}()
 }
