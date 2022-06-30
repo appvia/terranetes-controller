@@ -4,7 +4,7 @@ name: Review
 on:
   push:
     branches: [master, main]
-   pull_request:
+  pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
