@@ -2,7 +2,10 @@
 name: Review
 
 on:
+  push:
+    branches: [master, main]
   pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
   review:
