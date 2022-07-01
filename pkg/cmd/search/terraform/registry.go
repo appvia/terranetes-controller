@@ -184,6 +184,7 @@ func (r *registry) Find(ctx context.Context, query search.Query) ([]search.Modul
 				Downloads:    results.Modules[i].Downloads,
 				Name:         results.Modules[i].Name,
 				Namespace:    results.Modules[i].Namespace,
+				Private:      false,
 				Provider:     results.Modules[i].Provider,
 				Registry:     r.endpoint,
 				RegistryType: "TF",
