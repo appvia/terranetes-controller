@@ -59,26 +59,31 @@ func IsHandle(source string) bool {
 
 // New creates and returns a github client
 func New(endpoint, token string) (search.Interface, error) {
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	var cc *http.Client
-
 	switch {
 	case endpoint == "":
 		return nil, cmd.ErrMissingArgument("endpoint")
 	}
 
+	// @step: parse the endpoint
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	if u.Path == "" {
+		return nil, errors.New("must must a user or organizations /user or /org")
+	}
+
+	// @step: create the http client
+	var hc *http.Client
+
 	if token != "" {
 		auth := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-		cc = oauth2.NewClient(context.Background(), auth)
+		hc = oauth2.NewClient(context.Background(), auth)
 	}
 
 	return &ghClient{
 		endpoint:  endpoint,
-		gc:        githubcc.NewClient(cc),
+		gc:        githubcc.NewClient(hc),
 		namespace: strings.TrimPrefix(u.Path, "/"),
 		token:     token,
 	}, nil
@@ -97,24 +102,26 @@ func (r *ghClient) ResolveSource(ctx context.Context, module search.Module) (str
 // Find returns git repositories that match the given search term
 func (r *ghClient) Find(ctx context.Context, query search.Query) ([]search.Module, error) {
 	var modules []search.Module
-	var list []*githubcc.Repository
 
-	options := &githubcc.RepositoryListOptions{
-		ListOptions: githubcc.ListOptions{PerPage: 100},
+	// @step: we need to check if the user is an organization or user
+	user, resp, err := r.gc.Users.Get(ctx, r.namespace)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("%q not found", r.namespace)
 	}
 
-	// @step: retrieve all the results for the user
-	for {
-		results, pager, err := r.gc.Repositories.List(ctx, r.namespace, options)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, results...)
+	var list []*githubcc.Repository
 
-		if pager.NextPage == 0 {
-			break
-		}
-		options.Page = pager.NextPage
+	switch user.GetType() == "Organization" {
+	case true:
+		list, err = r.searchByOrganization(ctx, query)
+	default:
+		list, err = r.searchByUser(ctx, query)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	for i := 0; i < len(list); i++ {
@@ -175,6 +182,55 @@ func (r *ghClient) Versions(ctx context.Context, module search.Module) ([]string
 	}
 
 	return versions, nil
+}
+
+// searchByUser returns a list of repositories for the user
+func (r *ghClient) searchByUser(ctx context.Context, _ search.Query) ([]*githubcc.Repository, error) {
+	var list []*githubcc.Repository
+
+	options := &githubcc.RepositoryListOptions{
+		ListOptions: githubcc.ListOptions{PerPage: 100},
+	}
+
+	for {
+		results, pager, err := r.gc.Repositories.List(ctx, r.namespace, options)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, results...)
+
+		if pager.NextPage == 0 {
+			break
+		}
+		options.Page = pager.NextPage
+	}
+
+	return list, nil
+}
+
+// searchByOrganization returns a list of repositories in the organization
+func (r *ghClient) searchByOrganization(ctx context.Context, _ search.Query) ([]*githubcc.Repository, error) {
+	var list []*githubcc.Repository
+
+	options := &githubcc.RepositoryListByOrgOptions{
+		ListOptions: githubcc.ListOptions{PerPage: 100},
+		Type:        "all",
+	}
+
+	for {
+		results, pager, err := r.gc.Repositories.ListByOrg(ctx, r.namespace, options)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, results...)
+
+		if pager.NextPage == 0 {
+			break
+		}
+		options.Page = pager.NextPage
+	}
+
+	return list, nil
 }
 
 // containsTerms returns true if the given string is contained in the repository terms
