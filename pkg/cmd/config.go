@@ -52,5 +52,9 @@ func LoadConfig(filename string) (Config, error) {
 
 // ConfigPath returns the path to the config file
 func ConfigPath() string {
+	if os.Getenv("TNCTL_CONFIG") != "" {
+		return os.Getenv("TNCTL_CONFIG")
+	}
+
 	return filepath.Join(os.Getenv("HOME"), ".tnctl", "config.yaml")
 }
