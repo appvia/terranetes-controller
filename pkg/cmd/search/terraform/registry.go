@@ -55,10 +55,13 @@ func New(endpoint string) (search.Interface, error) {
 	baseURL := fmt.Sprintf("https://%s", u.Host)
 
 	if u.Path != "" {
-		if strings.Count(u.Path, "/") > 1 {
-			return nil, errors.New("invalid endpoint, supports only one path i.e. https://registry.terraform.io/PATH")
+		items := strings.Split(strings.TrimSuffix(u.Path, "/"), "/")
+
+		switch {
+		case len(items) != 3, items[1] != "namespaces":
+			return nil, errors.New("invalid endpoint, supports only one path i.e. https://registry.terraform.io/namespaces/NAME")
 		}
-		namespace = strings.TrimPrefix(u.Path, "/")
+		namespace = items[2]
 	}
 
 	return &registry{
