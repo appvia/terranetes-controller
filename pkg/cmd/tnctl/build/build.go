@@ -61,6 +61,9 @@ type Command struct {
 	cmd.Factory
 	// EnableDefaults indicates we keep variables with defaults in the configuration
 	EnableDefaults bool
+	// EnableSensitive prompts the user to place the variables in secrets when the
+	// variable is highlighted as 'sensitive' in the terraform module.
+	EnableSensitive bool
 	// Name is the name of the configuration
 	Name string
 	// Namespace is the namespace for the configuration
@@ -93,6 +96,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags.StringVar(&o.Name, "name", "test", "The name of the configuration resource")
 	flags.StringVar(&o.Namespace, "namespace", "default", "The namespace for the configuration")
 	flags.BoolVar(&o.EnableDefaults, "enable-defaults", true, "Indicates any defaults with values from the terraform module are included")
+	flags.BoolVar(&o.EnableSensitive, "enable-sensitive", true, "Indicates any sensitive variables from the module should be placed into secrets")
 	flags.BoolVar(&o.NoDelete, "no-delete", false, "Indicates we do not delete the temporary directory")
 	flags.StringVar(&o.Provider, "provider", "", "Name of the credentials provider to use")
 	flags.StringVar(&o.Source, "source", ".", "The path to the terraform module")
@@ -149,18 +153,35 @@ func (o *Command) Run(ctx context.Context) error {
 
 	data := []byte(`{}`)
 
+	var answer string
+
 	// @step: lets convert the variables to json
 	for _, variable := range module.Variables {
 		switch {
 		case variable.Default == nil && variable.Required:
 			switch {
 			case variable.Type == "string":
-				var answer string
-				question := survey.Input{
+				if (variable.Sensitive || strings.Contains(variable.Name, "password")) && o.EnableSensitive {
+					err := survey.AskOne(&survey.Input{
+						Message: fmt.Sprintf("Input %q is sensitive and should be in a secret, what will be the secret name?", variable.Name),
+						Help:    variable.Description,
+					}, &answer)
+					if err != nil {
+						return nil
+					}
+					vf := terraformv1alphav1.ValueFromSource{}
+					vf.Key = variable.Name
+					vf.Secret = answer
+					configuration.Spec.ValueFrom = append(configuration.Spec.ValueFrom, vf)
+
+					continue
+				}
+
+				err := survey.AskOne(&survey.Input{
 					Message: fmt.Sprintf("What should the value be for %q?", variable.Name),
 					Help:    variable.Description,
-				}
-				if err := survey.AskOne(&question, &answer, survey.WithKeepFilter(true)); err != nil {
+				}, &answer, survey.WithKeepFilter(true))
+				if err != nil {
 					return err
 				}
 				variable.Default = &answer
@@ -210,6 +231,11 @@ func (o *Command) Run(ctx context.Context) error {
 	e, err := yaml.JSONToYAML(m.Bytes())
 	if err != nil {
 		return err
+	}
+
+	// @step: check if the configuration has any valueFrom
+	if len(configuration.Spec.ValueFrom) > 0 {
+		o.Println("%s Note, the configuration references %d secrets (spec.valueFrom[]) which must be created", len(configuration.Spec.ValueFrom))
 	}
 
 	o.Println("---")
