@@ -148,12 +148,10 @@ jobs:
   code-costs:
     name: Cost Review
     needs: cost-token
-    if: needs.cost-token.outputs.enable_infracost == 'true'
+    if: needs.cost-token.outputs.enable_infracost == 'true' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       TF_ROOT: .
-    outputs:
-      security: {{ "${{" }} steps.costs.outcome {{ "}}" }}
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -163,24 +161,36 @@ jobs:
           api-key: {{ "${{" }} secrets.ORG_INFRACOST_API_KEY {{ "}}" }}
       - name: Checkout base branch
         uses: actions/checkout@v3
-        if: github.event_name == 'pull_request'
         with:
           ref: '{{ "${{" }} github.event.pull_request.base.ref {{ "}}" }}'
-      - name: Generate Infracost cost estimate baseline
-        if: github.event_name == 'pull_request'
+      - name: Checking for baseline files
+        id: baseline
+        run: |
+          if ls *.tf 2>/dev/null; then
+            echo "::set-output name=exists::true"
+          else
+            echo "::set-output name=exists::false"
+          fi
+      - name: Generate cost estimate baseline
+        if: steps.baseline.outputs.exists == 'true'
         run: |
           infracost breakdown --path=${TF_ROOT} \
             --format=json \
             --out-file=/tmp/infracost-base.json
       - name: Checkout PR branch
-        if: github.event_name == 'pull_request'
         uses: actions/checkout@v3
       - name: Generate Infracost diff
-        id: costs
+        if: steps.baseline.outputs.exists == 'true'
         run: |
           infracost diff --path=${TF_ROOT} \
             --format=json \
             --compare-to=/tmp/infracost-base.json \
+            --out-file=/tmp/infracost.json
+      - name: Generate Infracost Cost
+        if: steps.baseline.outputs.exists == 'false'
+        run: |
+          infracost breakdown --path=${TF_ROOT} \
+            --format=json \
             --out-file=/tmp/infracost.json
       - name: Post Infracost comment
         run: |
