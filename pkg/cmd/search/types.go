@@ -46,6 +46,8 @@ type Module struct {
 	Name string `json:"name"`
 	// Namespace is the module namespace
 	Namespace string `json:"namespace"`
+	// Private indicates if the repostory is private
+	Private bool
 	// Provider is the module provider
 	Provider string `json:"provider"`
 	// Registry is the registry the module is published to
