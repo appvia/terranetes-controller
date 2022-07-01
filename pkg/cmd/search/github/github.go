@@ -96,7 +96,10 @@ func (r *ghClient) Source() string {
 
 // ResolveSource returns the source of the given module
 func (r *ghClient) ResolveSource(ctx context.Context, module search.Module) (string, error) {
-	source := fmt.Sprintf("git::ssh://git@%s", strings.TrimPrefix(module.Source, "https://"))
+	source := module.Source
+	if module.Private {
+		source = fmt.Sprintf("git::ssh://git@%s", strings.TrimPrefix(module.Source, "https://"))
+	}
 
 	return fmt.Sprintf("%s?ref=%s", source, module.Version), nil
 }
@@ -143,6 +146,7 @@ func (r *ghClient) Find(ctx context.Context, query search.Query) ([]search.Modul
 			ID:           fmt.Sprintf("%d", list[i].GetID()),
 			Name:         list[i].GetName(),
 			Namespace:    list[i].GetOwner().GetLogin(),
+			Private:      list[i].GetPrivate(),
 			Registry:     r.endpoint,
 			RegistryType: "GH",
 			Source:       list[i].GetHTMLURL(),
