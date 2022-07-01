@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -207,10 +208,16 @@ func (o *Command) chooseModule(_ context.Context, responses []search.Response) (
 		return false
 	}
 
+	methods := sprig.TxtFuncMap()
+	for name, fn := range promptui.FuncMap {
+		methods[name] = fn
+	}
+
 	// @step: allow the user to select the module
 	templates := &promptui.SelectTemplates{
 		Label:    promptui.IconInitial + " Which resource do you want to provision?",
 		Active:   promptui.IconSelect + "[{{ .RegistryType }}] {{ .Namespace }}/{{ .Name | cyan }}",
+		FuncMap:  methods,
 		Inactive: " [{{ .RegistryType }}] {{ .Namespace }}/{{ .Name | cyan | faint }}",
 		Details: `
 {{ "Name:      " | faint | cyan }} {{ .Name }}
@@ -225,7 +232,7 @@ func (o *Command) chooseModule(_ context.Context, responses []search.Response) (
 {{ "Stars:     " | faint | cyan }} {{ .Stars }}
 {{- end }}
 
-{{ .Description }}
+{{ .Description | wrap 80 }}
   `}
 
 	prompt := promptui.Select{

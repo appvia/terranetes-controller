@@ -96,7 +96,9 @@ func (r *ghClient) Source() string {
 
 // ResolveSource returns the source of the given module
 func (r *ghClient) ResolveSource(ctx context.Context, module search.Module) (string, error) {
-	return fmt.Sprintf("%s?ref=%s", module.Source, module.Version), nil
+	source := fmt.Sprintf("git::ssh://git@%s", strings.TrimPrefix(module.Source, "https://"))
+
+	return fmt.Sprintf("%s?ref=%s", source, module.Version), nil
 }
 
 // Find returns git repositories that match the given search term
