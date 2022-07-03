@@ -16,6 +16,9 @@ controller:
   namespace: default
   # Indicates if the controller should register its own CRDs
   registerCRDs: true
+  # Executor secrets includes the following secrets in 'all' execution jobs. The secret is added
+  # as an environment variables (spec.envFrom) into the terraform container of the executor
+  executorSecrets: []
   # Configuration related to costs
   costs:
     # Name of the secret containing the infracost api token

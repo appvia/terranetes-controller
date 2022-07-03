@@ -63,6 +63,9 @@ spec:
             - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhook={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
+            {{- range .Values.controller.executorSecrets }}
+            - --executor-secret={{ . }}
+            {{- end }}
             - --infracost-image={{ .Values.controller.images.infracost }}
             - --metrics-port={{ .Values.controller.metricsPort }}
             - --policy-image={{ .Values.controller.images.policy }}
