@@ -21,6 +21,8 @@ import "time"
 
 // Config is the configuration for the controller
 type Config struct {
+	// ExecutorSecrets is a list of additional secrets to be added to the executor
+	ExecutorSecrets []string
 	// APIServerPort is the port to listen on
 	APIServerPort int
 	// DriftControllerInterval is the interval for the controller to check for drift
