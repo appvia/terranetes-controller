@@ -60,6 +60,10 @@ type Controller struct {
 	cache *cache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
+	// ExecutorSecrets is a collection of secrets which should be added to the
+	// executors job everytime - these are configured by the platform team on the
+	// cli options
+	ExecutorSecrets []string
 	// ControllerNamespace is the namespace where the runner is running
 	ControllerNamespace string
 	// EnableInfracosts enables the cost analytics via infracost
@@ -85,11 +89,12 @@ type Controller struct {
 // Add is called to setup the manager for the controller
 func (c *Controller) Add(mgr manager.Manager) error {
 	log.WithFields(log.Fields{
-		"enable_costs":    c.EnableInfracosts,
-		"enable_watchers": c.EnableWatchers,
-		"namespace":       c.ControllerNamespace,
-		"policy_image":    c.PolicyImage,
-		"terraform_image": c.TerraformImage,
+		"additional_secrets": len(c.ExecutorSecrets),
+		"enable_costs":       c.EnableInfracosts,
+		"enable_watchers":    c.EnableWatchers,
+		"namespace":          c.ControllerNamespace,
+		"policy_image":       c.PolicyImage,
+		"terraform_image":    c.TerraformImage,
 	}).Info("adding the configuration controller")
 
 	switch {
