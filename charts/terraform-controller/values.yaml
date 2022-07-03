@@ -64,7 +64,7 @@ controller:
     # enables the webhooks
     enabled: true
     # is the port the webhooks is running
-    port: 10081
+    port: 10250
     # creates the certificate authority
     ca: true
     # name of the file containing the certificate authority
