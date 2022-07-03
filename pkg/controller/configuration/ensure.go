@@ -457,11 +457,12 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			AdditionalLabels: map[string]string{terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]},
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
+			ExecutorSecrets:  c.ExecutorSecrets,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.ControllerNamespace,
-			PolicyImage:      c.PolicyImage,
 			PolicyConstraint: state.checkovConstraint,
+			PolicyImage:      c.PolicyImage,
 			Template:         state.jobTemplate,
 			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
 		}
@@ -820,6 +821,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
+			ExecutorSecrets:  c.ExecutorSecrets,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.ControllerNamespace,

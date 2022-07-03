@@ -874,6 +874,57 @@ var _ = Describe("Configuration Controller", func() {
 		})
 	})
 
+	// ADDITIONAL SECRETS
+	When("the controller has been configured with additional secrets", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			ctrl.ExecutorSecrets = []string{"secret1", "secret2"}
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should indicate the failure on the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Message).To(Equal("Provider ready"))
+		})
+
+		It("should have create a plan", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should have the additional secrets added", func() {
+			list := &batchv1.JobList{}
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+
+			job := list.Items[0]
+			Expect(job.Spec.Template.Spec.Containers).To(HaveLen(1))
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom).To(HaveLen(3))
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name).To(Equal("aws"))
+
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Name).To(Equal("secret1"))
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Optional).ToNot(BeNil())
+			Expect(*job.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Optional).To(BeTrue())
+
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[2].SecretRef.Name).To(Equal("secret2"))
+			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[2].SecretRef.Optional).ToNot(BeNil())
+			Expect(*job.Spec.Template.Spec.Containers[0].EnvFrom[2].SecretRef.Optional).To(BeTrue())
+		})
+	})
+
 	When("configuration has not yet run the terraform plan", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")

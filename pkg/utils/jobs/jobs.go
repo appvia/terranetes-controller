@@ -45,6 +45,8 @@ type Options struct {
 	EnableInfraCosts bool
 	// ExecutorImage is the image to use for the terraform jobs
 	ExecutorImage string
+	// ExecutorSecrets is a list of additional secrets to add to the job
+	ExecutorSecrets []string
 	// InfracostsImage is the image to use for infracosts
 	InfracostsImage string
 	// InfracostsSecret is the name of the secret contain the infracost token and url
@@ -190,6 +192,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		},
 		"EnableInfraCosts":   options.EnableInfraCosts,
 		"EnableVariables":    r.configuration.HasVariables(),
+		"ExecutorSecrets":    options.ExecutorSecrets,
 		"ImagePullPolicy":    "IfNotPresent",
 		"Policy":             options.PolicyConstraint,
 		"ServiceAccount":     DefaultServiceAccount,

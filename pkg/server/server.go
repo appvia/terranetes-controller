@@ -147,6 +147,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,
 		ExecutorImage:           config.ExecutorImage,
+		ExecutorSecrets:         config.ExecutorSecrets,
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
 		JobTemplate:             config.JobTemplate,

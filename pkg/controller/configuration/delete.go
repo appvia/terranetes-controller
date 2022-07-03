@@ -77,6 +77,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
+			ExecutorSecrets:  c.ExecutorSecrets,
 			InfracostsImage:  c.InfracostsImage,
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.ControllerNamespace,

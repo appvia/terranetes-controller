@@ -159,10 +159,15 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        {{- if eq .Provider.Source "secret" }}
         envFrom:
+        {{- if eq .Provider.Source "secret" }}
           - secretRef:
               name: {{ .Provider.SecretRef.Name }}
+        {{- end }}
+        {{- range .ExecutorSecrets }}
+          - secretRef:
+              name: {{ . }}
+              optional: true
         {{- end }}
         resources:
           limits:
