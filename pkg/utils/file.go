@@ -18,9 +18,15 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
+
+// TempDirName creates a temporary directory
+func TempDirName() string {
+	return filepath.Join(os.TempDir(), fmt.Sprintf("tnctl-%s", Random(10)))
+}
 
 // TouchFile is used to create a file
 func TouchFile(path string) error {
