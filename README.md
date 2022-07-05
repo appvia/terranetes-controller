@@ -4,6 +4,8 @@
 
 Terraform Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
+Documentation can be found at https://terranetes.appvia.io
+
 ![Architecture](docs/images/architecture.jpg)
 
 **FEATURES**
@@ -30,11 +32,6 @@ Terraform Controller manages the life cycles of a terraform resource, allowing d
   - Validate resource requests against Checkov policies
   - Automatically inject default configuration based on labels
 - [ROADMAP] *Apply granular budget controls for namespaces*
-
-**DOCUMENTATION**
----
-
-View the documentation at https://terranetes.appvia.io/terraform-controller
 
 **GETTING STARTED**
 ---
