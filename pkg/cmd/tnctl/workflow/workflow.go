@@ -37,7 +37,7 @@ to enforce, linting, validation, documentation generation
 and security scanning. Also when enabled the pipeline will
 also include a release.
 
-# Generate a pipeline for a terraform module
+Generate a pipeline for a terraform module
 $ tnctl workflow create PATH
 `
 

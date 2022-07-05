@@ -46,7 +46,7 @@ configuration to move into the apply stage. This command
 effectively changes the terraform.appvia.io/apply annotation
 from 'false' to 'true'.
 
-# Approve one or more configurations
+Approve one or more configurations
 $ tnctl approve NAME
 `
 

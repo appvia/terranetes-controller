@@ -56,6 +56,7 @@ func NewDocsCommand(factory cmd.Factory) *cobra.Command {
 		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.Root = cmd.Root()
+			o.Root.DisableAutoGenTag = true
 
 			return o.Run(cmd.Context())
 		},
@@ -73,8 +74,6 @@ func (o *DocsCommand) Run(ctx context.Context) error {
 		return err
 	}
 
-	o.Root.DisableAutoGenTag = true
-
 	return doc.GenMarkdownTreeCustom(o.Root, o.Directory,
 		func(filename string) string {
 			name := filepath.Base(filename)
@@ -85,7 +84,7 @@ func (o *DocsCommand) Run(ctx context.Context) error {
 		func(name string) string {
 			base := strings.TrimSuffix(name, filepath.Ext(name))
 
-			return strings.ToLower(base)
+			return fmt.Sprintf("../%s", strings.ToLower(base))
 		},
 	)
 }

@@ -47,7 +47,7 @@ module can be a local directory, a git repository, s3 bucket or
 so forth. As long as you have the credentials and required CLI
 binaries installed.
 
-# Generate a terraform configuration a Github repository
+Generate a terraform configuration a Github repository
 $ tnctl build github.com/terraform-aws-modules/terraform-aws-vpc
 `
 
