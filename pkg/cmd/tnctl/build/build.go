@@ -76,7 +76,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	o := &Command{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "build [SOURCE] [OPTIONS]",
+		Use:   "build SOURCE [OPTIONS]",
 		Short: "Can be used to package up the terraform module for consumption",
 		Long:  strings.TrimSuffix(longBuildHelp, "\n"),
 		Args:  cobra.ExactArgs(1),

@@ -38,7 +38,7 @@ func NewRemoveSourceCommand(factory cmd.Factory) *cobra.Command {
 	o := &RemoveSourceCommand{Factory: factory}
 
 	c := &cobra.Command{
-		Use:     "remove [SOURCE]",
+		Use:     "remove SOURCE",
 		Aliases: []string{"rm"},
 		Args:    cobra.ExactArgs(1),
 		Short:   "Removes a terraform module source to the configuration",

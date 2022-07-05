@@ -60,7 +60,7 @@ func NewCreateCommand(factory cmd.Factory) *cobra.Command {
 	options := &ModuleCommand{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "create [PATH] [options]",
+		Use:   "create PATH [OPTIONS]",
 		Short: "Generates a workflow used to lint, validate and publish the module",
 		Long:  strings.TrimSuffix(longModuleHelp, "\n"),
 		Args:  cobra.ExactArgs(1),

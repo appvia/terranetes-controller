@@ -55,7 +55,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	options := &Command{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "approve [NAME]",
+		Use:   "approve NAME",
 		Short: "Approves a terraform configuration for release",
 		Args:  cobra.MinimumNArgs(1),
 		Long:  strings.TrimPrefix(longDescription, "\n"),
