@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package config
+package generate
 
 import (
 	"github.com/spf13/cobra"
@@ -23,24 +23,19 @@ import (
 	"github.com/appvia/terraform-controller/pkg/cmd"
 )
 
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
-
 // NewCommand creates and returns a new command
 func NewCommand(factory cmd.Factory) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "config COMMAND",
-		Short: "Used to manage the CLI configuration",
+		Use:    "generate COMMAND",
+		Short:  "Used to generate one more resources",
+		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
 
 	c.AddCommand(
-		NewSourcesCommand(factory),
-		NewViewCommand(factory),
+		NewDocsCommand(factory),
 	)
 
 	return c

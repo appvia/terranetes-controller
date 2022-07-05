@@ -168,6 +168,9 @@ github.com/chzyer/readline
 ## explicit
 github.com/client9/misspell
 github.com/client9/misspell/cmd/misspell
+# github.com/cpuguy83/go-md2man/v2 v2.0.2
+## explicit; go 1.11
+github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/daixiang0/gci v0.3.3
 ## explicit; go 1.17
 github.com/daixiang0/gci/pkg/analyzer
@@ -633,7 +636,6 @@ github.com/leonklingele/grouper/pkg/analyzer/vars
 github.com/liggitt/tabwriter
 # github.com/lithammer/fuzzysearch v1.1.5
 ## explicit; go 1.15
-github.com/lithammer/fuzzysearch/fuzzy
 # github.com/lufeee/execinquery v1.2.1
 ## explicit; go 1.17
 github.com/lufeee/execinquery
@@ -865,6 +867,9 @@ github.com/rodaine/hclencoder
 # github.com/rogpeppe/go-internal v1.8.1
 ## explicit; go 1.16
 github.com/rogpeppe/go-internal/fmtsort
+# github.com/russross/blackfriday/v2 v2.1.0
+## explicit
+github.com/russross/blackfriday/v2
 # github.com/ryancurrah/gomodguard v1.2.3
 ## explicit; go 1.16
 github.com/ryancurrah/gomodguard
@@ -912,6 +917,7 @@ github.com/spf13/cast
 # github.com/spf13/cobra v1.5.0
 ## explicit; go 1.15
 github.com/spf13/cobra
+github.com/spf13/cobra/doc
 # github.com/spf13/jwalterweatherman v1.1.0
 ## explicit
 github.com/spf13/jwalterweatherman

@@ -55,7 +55,7 @@ func NewAddSourceCommand(factory cmd.Factory) *cobra.Command {
 	o := &AddSourceCommand{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "add [SOURCE]",
+		Use:   "add SOURCE",
 		Args:  cobra.ExactArgs(1),
 		Short: "Adds a terraform module source to the configuration",
 		Long:  strings.TrimPrefix(addSourceLong, "\n"),

@@ -38,7 +38,7 @@ and security scanning. Also when enabled the pipeline will
 also include a release.
 
 # Generate a pipeline for a terraform module
-$ tnctl workflow create <PATH>
+$ tnctl workflow create PATH
 `
 
 // NewCommand returns a new instance of the get command

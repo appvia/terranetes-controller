@@ -57,7 +57,7 @@ $ tnctl config sources add https://github.com/appvia
 
 For private repositories on Github you will need to export your token
 to the environment variable GITHUB_TOKEN.
-$ export GITHUB_TOKEN=<your-token>
+$ export GITHUB_TOKEN=TOKEN
 
 This command assumes credentials have already been setup. For the Terraform registry,
 nothing is required, but for private repositories on Github your environment must
@@ -84,7 +84,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	o := &Command{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "search [options]",
+		Use:   "search [OPTIONS]",
 		Short: "Searches for cloud resources to consume",
 		Long:  longSearchHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
