@@ -19,6 +19,24 @@ package cmd
 
 // Config is the configuration for the tnctl command
 type Config struct {
-	// Sources defines a list of sources used to search
+	// Workflow is the location of the workflow templates. This should point
+	// the git repository that contains the templates. It is assumed the user
+	// consuming these templates already has access the repository setup on
+	// the machine and able to clone.
+	// Example: https://github.com/appvia/terranetes-workflows. Note, if a
+	// ref=TAG is not set, we will query the repository for the latest tag
+	// (Github only)
+	Workflow string `json:"workflow,omitempty"`
+	// Sources defines a list of sources which the search command should
+	// search terraform modules from. Currently we support the public
+	// terraform registry and any Github user or organization.
 	Sources []string `json:"sources,omitempty" yaml:"sources,omitempty"`
+}
+
+// NewDefaultConfig returns a default configuration
+func NewDefaultConfig() *Config {
+	return &Config{
+		Workflow: "https://github.com/appvia/terranetes-workflows",
+		Sources:  []string{"https://registry.terraform.io"},
+	}
 }

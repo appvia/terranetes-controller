@@ -38,6 +38,32 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
+var longSearchHelp = `
+Searches the sources, determined by the configuration file (tnctl config view)
+for modules which match the required terms. Once selected the command will
+generate the Configuration CRD required to use the module as a source.
+
+At present we support using the Terraform registry and GitHub user / organizations
+as a source for terraform modules.
+
+# Add the terraform registry
+$ tnctl config sources add https://registry.terraform.io
+
+# Scope the terraform registry searches to a specific namespace
+$ tnctl config sources add https://registry.terraform.io/namespaces/appvia
+
+# Adding a GitHub user or organization
+$ tnctl config sources add https://github.com/appvia
+
+For private repositories on Github you will need to export your token
+to the environment variable GITHUB_TOKEN.
+$ export GITHUB_TOKEN=<your-token>
+
+This command assumes credentials have already been setup. For the Terraform registry,
+nothing is required, but for private repositories on Github your environment must
+already be setup to git clone the repository.
+`
+
 // Command returns the cobra command for the "build" sub-command.
 type Command struct {
 	cmd.Factory
@@ -59,7 +85,8 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "search [options]",
-		Short: "Searches a terraform registry for a module to consume",
+		Short: "Searches for cloud resources to consume",
+		Long:  longSearchHelp,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.Query = strings.Join(args, " ")
 
@@ -68,7 +95,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	}
 
 	flags := c.Flags()
-	flags.BoolVar(&o.EnableDefaults, "enable-defaults", true, "Indicates any defaults with values from the terraform module are included")
+	flags.BoolVar(&o.EnableDefaults, "enable-defaults", false, "Indicates any defaults with values from the terraform module are included")
 	flags.StringVarP(&o.Namespace, "namespace", "n", "", "The namespace within the source registry to scope the search")
 	flags.StringVarP(&o.Provider, "provider", "p", "", "Limit the search only to modules with the given provider")
 	flags.StringVarP(&o.Source, "source", "s", "", "Limit the scope of the search to a specific source")
@@ -168,11 +195,16 @@ func (o *Command) Run(ctx context.Context) error {
 	o.Println("%s Using terraform module: %s", cmd.IconGood, color.CyanString(reference))
 	o.Println("%s Source: %s", cmd.IconGood, color.CyanString(module.Registry))
 
+	provider := module.Provider
+	if provider == "" {
+		provider = o.Provider
+	}
+
 	return (&build.Command{
 		Factory:        o.Factory,
 		EnableDefaults: o.EnableDefaults,
 		Name:           module.Name,
-		Provider:       module.Provider,
+		Provider:       provider,
 		Source:         reference,
 	}).Run(ctx)
 }

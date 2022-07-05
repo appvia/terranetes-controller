@@ -15,29 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package assets
+package utils
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAsset(t *testing.T) {
-	a, err := Asset("github/main.yaml.tpl")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, a)
-}
-
-func TestMustAsset(t *testing.T) {
-	a := MustAsset("github/main.yaml.tpl")
-	assert.NotEmpty(t, a)
-}
-
-func TestAssetNames(t *testing.T) {
-	assert.NotEmpty(t, AssetNames())
-}
-
-func TestRecursiveAssetNames(t *testing.T) {
-	assert.NotEmpty(t, RecursiveAssetNames("github"))
+func TestTempDirName(t *testing.T) {
+	name := TempDirName()
+	assert.NotEmpty(t, name)
+	assert.True(t, strings.Contains(name, "tnctl-"))
 }
