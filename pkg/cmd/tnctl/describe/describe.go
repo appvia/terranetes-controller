@@ -51,10 +51,10 @@ terraform configurations, displaying in a human friendly format.
 The command also extracts any integration details which have been
 produced by infracosts or checkov scans.
 
-# Describe all configurations in a namespace
+Describe all configurations in a namespace
 $ tnctl describe -n apps
 
-# Describe a single configuration called 'test'
+Describe a single configuration called 'test'
 $ tnctl describe -n apps test
 `
 

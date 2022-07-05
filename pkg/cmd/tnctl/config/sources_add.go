@@ -32,10 +32,10 @@ Sources are the URL locations for terraform modules. By default if
 no sources are defined we use the public terraform registry. We currently
 support aggregating modules from any terraform registry and Github.
 
-# Add a terraform registry to the source
+Add a terraform registry to the source
 $ tnctl config sources add https://registry.terraform.io
 
-# Add a Github organization or user to the source
+Add a Github organization or user to the source
 $ tnctl config sources add github.com/appvia/terraform-controller
 
 Note, skipping the name github organization or user requires your GITHUB_TOKEN

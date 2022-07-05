@@ -46,13 +46,13 @@ generate the Configuration CRD required to use the module as a source.
 At present we support using the Terraform registry and GitHub user / organizations
 as a source for terraform modules.
 
-# Add the terraform registry
+Add the terraform registry
 $ tnctl config sources add https://registry.terraform.io
 
-# Scope the terraform registry searches to a specific namespace
+Scope the terraform registry searches to a specific namespace
 $ tnctl config sources add https://registry.terraform.io/namespaces/appvia
 
-# Adding a GitHub user or organization
+Adding a GitHub user or organization
 $ tnctl config sources add https://github.com/appvia
 
 For private repositories on Github you will need to export your token

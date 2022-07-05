@@ -37,7 +37,7 @@ Can be used to generate an opinionate pipeline for terraform modules.
 The module command will generate a Github actions pipeline, integrating
 linting, validating and security checks.
 
-# Generate a workflow for module
+Generate a workflow for module
 $ tnctl workflow create PATH
 `
 
