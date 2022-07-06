@@ -37,5 +37,5 @@ func TestHealthHandler(t *testing.T) {
 
 	svc.handleHealth(w, req)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
-	assert.Equal(t, "OK", w.Body.String())
+	assert.Equal(t, "OK\n", w.Body.String())
 }
