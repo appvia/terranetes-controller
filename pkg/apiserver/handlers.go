@@ -18,6 +18,7 @@
 package apiserver
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,10 +37,11 @@ import (
 
 // handleHealth is http handler for the health endpoint
 func (s *Server) handleHealth(w http.ResponseWriter, req *http.Request) {
-	_, _ = w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK\n"))
 }
 
 // handleBuilds is http handler for the logs endpoint
+//nolint:errcheck
 func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	values := map[string]string{
 		"generation": req.URL.Query().Get("generation"),
@@ -78,13 +80,13 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	// @step: try and find the pod running the terraform job: We have to assume also
 	// the pods hasn't been scheduled yet
 	w.Header().Set("Content-Type", "text/plain")
-	_, _ = w.Write([]byte("[info] waiting for the job to be scheduled\n"))
-	_, _ = w.Write([]byte(fmt.Sprintf("[info] watching build: %s, generation: %s for the job to be scheduled\n", values["name"], values["generation"])))
+
+	w.Write([]byte("[info] waiting for the job to be scheduled\n"))
+	w.Write([]byte(fmt.Sprintf("[info] watching build: %s, generation: %s for the job to be scheduled\n", values["name"], values["generation"])))
 
 	// @step: we query the jobs using the labels and find the latest job for the configuration at stage x, generation y. We then
 	// find the associated pods and stream the logs back to the caller
 	err := utils.RetryWithTimeout(req.Context(), 60*time.Second, 2*time.Second, func() (bool, error) {
-		//nolint
 		w.Write([]byte("."))
 
 		// @step: find the matching job
@@ -141,36 +143,47 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		log.WithFields(fields).WithError(err).Error("failed to find the pod")
-		//nolint
 		w.Write([]byte("[error] failed to find associated pod in time\n"))
 
 		return
 	}
 	log.WithFields(fields).WithField("pod", pod.Name).Debug("found the pod")
 
-	// @step: we iterate through the containers and retrieve all the logs
-	for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
-		// @step: find the latest pod in the list and retrieve the logs from the logs
-		stream, err := s.Client.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &v1.PodLogOptions{
-			Container: container.Name,
-			Follow:    true,
-		}).Stream(req.Context())
-		if err != nil {
-			log.WithFields(fields).WithError(err).Error("failed to stream the logs")
-			//nolint
-			w.Write([]byte("[error] failed to retrieve the logs\n"))
+	err = func() error {
+		for _, container := range append(pod.Spec.InitContainers, pod.Spec.Containers...) {
+			stream, err := s.Client.CoreV1().Pods(s.Namespace).GetLogs(pod.Name, &v1.PodLogOptions{
+				Container: container.Name,
+				Follow:    true,
+			}).Stream(req.Context())
+			if err != nil {
+				return err
+			}
 
-			return
+			// @step: we either copy or flush line by line the output
+			if flush, ok := w.(http.Flusher); !ok {
+				if _, err := io.Copy(w, stream); err != nil {
+					return err
+				}
+			} else {
+				scanner := bufio.NewScanner(stream)
+				for scanner.Scan() {
+					w.Write([]byte(fmt.Sprintf("%s\n", scanner.Text())))
+					flush.Flush()
+				}
+			}
+			stream.Close()
 		}
 
-		if _, err := io.Copy(w, stream); err != nil {
-			log.WithFields(fields).WithError(err).Error("failed to stream the logs")
+		return nil
+	}()
+	if err != nil {
+		log.WithFields(fields).WithError(err).Error("failed to stream the logs")
 
-			return
-		}
-		stream.Close()
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("[error] failed to retrieve the logs\n"))
+
+		return
 	}
 
-	//nolint
 	w.Write([]byte("[build] completed\n"))
 }
