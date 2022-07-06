@@ -19,7 +19,7 @@ GO_DIRS=cmd hack pkg
 SH_DIRS=.circleci hack
 ROOT_DIR=${PWD}
 UNAME := $(shell uname)
-LFLAGS ?= -X version.Version=${VERSION} -X version.GitCommit=${GIT_SHA}
+LFLAGS ?= -X github.com/appvia/terraform-controller/pkg/version.Version=${VERSION} -X github.com/appvia/terraform-controller/pkg/version.GitCommit=${GIT_SHA}
 VERSION ?= latest
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
