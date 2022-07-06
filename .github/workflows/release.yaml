@@ -25,3 +25,33 @@ jobs:
       - e2e-azure
     uses: ./.github/workflows/publish-images.yaml
     secrets: inherit
+
+  release:
+    needs:
+      - e2e-aws
+      - e2e-azure
+    name: Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.1'
+      - name: Build CLI
+        run: |
+          export VERSION=${GITHUB_REF##*/}
+          make release-cli
+      - name: Github Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          prerelease: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          file: |
+            release/tnctl-darwin-amd64
+            release/tnctl-darwin-arm64
+            release/tnctl-linux-amd64
+            release/tnctl-linux-arm64
+            release/tnctl-windows-amd64.exe
