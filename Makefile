@@ -4,6 +4,8 @@ REGISTRY=ghcr.io
 REGISTRY_ORG=appvia
 APIS ?= $(shell find pkg/apis -name "v*" -type d | sed -e 's/pkg\/apis\///' | sort | tr '\n' ' ')
 BUILD_TIME=$(shell date '+%s')
+CLI_PLATFORMS=darwin linux windows
+CLI_ARCHITECTURES=amd64 arm64
 CURRENT_TAG=$(shell git tag --points-at HEAD)
 DEPS=$(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 DOCKER_IMAGES ?= controller
@@ -181,6 +183,10 @@ release-images: images
 	@echo "--> Releasing docker images for controller and executor"
 	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
 	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
+
+release-cli: golang
+	@echo "--> Compiling static CLI binaries"
+	CGO_ENABLED=0 go run github.com/mitchellh/gox -parallel=4 -arch="${CLI_ARCHITECTURES}" -os="${CLI_PLATFORMS}" -ldflags "-w ${LFLAGS}" -output=./release/{{.Dir}}-{{.OS}}-{{.Arch}} ./cmd/tnctl
 
 ### CHECKING AND LINTING ###
 
