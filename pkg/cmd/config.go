@@ -26,6 +26,9 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils"
 )
 
+// ConfigPathEnvName is the name of the environment variable that holds the config path
+const ConfigPathEnvName = "TNCTL_CONFIG"
+
 // LoadConfig loads the config file returns a empty config if it doesn't exist
 func LoadConfig(filename string) (Config, error) {
 	config := Config{}
@@ -52,8 +55,8 @@ func LoadConfig(filename string) (Config, error) {
 
 // ConfigPath returns the path to the config file
 func ConfigPath() string {
-	if os.Getenv("TNCTL_CONFIG") != "" {
-		return os.Getenv("TNCTL_CONFIG")
+	if os.Getenv(ConfigPathEnvName) != "" {
+		return os.Getenv(ConfigPathEnvName)
 	}
 
 	return filepath.Join(os.Getenv("HOME"), ".tnctl", "config.yaml")
