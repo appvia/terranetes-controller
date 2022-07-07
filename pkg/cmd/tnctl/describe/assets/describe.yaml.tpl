@@ -69,9 +69,9 @@ Predicted Costs:
 {{ printf "%-36s%-14s%s" "Resources:" "Monthly" "Hourly" }}
 {{- range $index, $resource := .Cost.breakdown.resources }}
 {{- if $index }}
-├─ {{ printf "%-32s $%-12s $%s" $resource.name $resource.monthlyCost $resource.hourlyCost }}
+├─ {{ printf "%-32s $%-12s $%s" $resource.name (default "0.00" $resource.monthlyCost) (default "0.00" $resource.hourlyCost) }}
 {{- else }}
-└─ {{ printf "%-32s $%-12s $%s" $resource.name $resource.monthlyCost ($resource.hourlyCost | substr 0 5) }}
+└─ {{ printf "%-32s $%-12s $%s" $resource.name (default "0.00" $resource.monthlyCost) ((default "0.00" $resource.hourlyCost) | substr 0 5) }}
 {{- end }}
 {{- end }}
 
