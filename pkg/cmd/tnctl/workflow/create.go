@@ -39,6 +39,13 @@ linting, validating and security checks.
 
 Generate a workflow for module
 $ tnctl workflow create PATH
+
+You can override the location of the template via the configuration
+file ${HOME}/.tnctl/config.yaml (or TNCTL_CONFIG). Just add the
+following
+
+---
+workflow: URL
 `
 
 // ModuleCommand defines the command line options for the command
@@ -80,6 +87,14 @@ func NewCreateCommand(factory cmd.Factory) *cobra.Command {
 
 // Run is called to execute the action
 func (o *ModuleCommand) Run(ctx context.Context) error {
+	config, found, err := o.GetConfig()
+	if err != nil {
+		return err
+	}
+	if found && config.Workflow != "" {
+		o.Template = config.Workflow
+	}
+
 	switch {
 	case o.Source == "":
 		return cmd.ErrMissingArgument("source")
@@ -89,7 +104,7 @@ func (o *ModuleCommand) Run(ctx context.Context) error {
 	}
 
 	// @step: ensure the source directory exists
-	found, err := utils.DirExists(o.Source)
+	found, err = utils.DirExists(o.Source)
 	if err != nil {
 		return err
 	}
