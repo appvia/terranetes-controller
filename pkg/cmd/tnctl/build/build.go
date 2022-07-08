@@ -69,6 +69,8 @@ type Command struct {
 	Provider string
 	// Source is the source of the terraform module
 	Source string
+	// Secret is name of the secret to hold any sensitive variables
+	Secret string
 }
 
 // NewCommand returns a new instance of the get command
@@ -95,6 +97,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags.BoolVar(&o.NoDelete, "no-delete", false, "Indicates we do not delete the temporary directory")
 	flags.StringVar(&o.Provider, "provider", "", "Name of the credentials provider to use")
 	flags.StringVar(&o.Source, "source", ".", "The path to the terraform module")
+	flags.StringVar(&o.Secret, "secret", "", "Name of the secret any outputs from the resource are kept")
 
 	cmd.RegisterFlagCompletionFunc(c, "provider", cmd.AutoCompleteWithList([]string{"aws", "google", "azurerm", "vsphere"}))
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
@@ -216,6 +219,20 @@ func (o *Command) Run(ctx context.Context) error {
 		unstruct := &unstructured.Unstructured{Object: variables}
 		configuration.Spec.Variables = &runtime.RawExtension{
 			Object: unstruct,
+		}
+	}
+
+	// @step: ask about secrets if we have any outputs
+	if len(module.Outputs) > 0 && o.Secret == "" {
+		if err := survey.AskOne(&survey.Input{
+			Message: "What name should the cloud resource secrets be called?",
+			Help:    "This resource produces outputs which will be stored in the kubernetes secret",
+			Default: o.Name,
+		}, &o.Secret); err != nil {
+			return err
+		}
+		configuration.Spec.WriteConnectionSecretToRef = &terraformv1alphav1.WriteConnectionSecret{
+			Name: o.Secret,
 		}
 	}
 
