@@ -3,12 +3,18 @@ Namespace:    {{ .Object.metadata.namespace }}
 Created:      {{ .Object.metadata.creationTimestamp }}
 Status:       {{ default "Unknown" .Object.status.resourceStatus }}
 {{- if .Object.metadata.annotations }}
-Annotations:  {{ range $key, $value := .Object.metadata.annotations }}{{ $key }}: {{ $value }}{{- end }}
+Annotations:
+{{- range $key, $value := .Object.metadata.annotations }}
+{{- printf "%-28s %-20s" $key $value | nindent 14 }}
+{{- end }}
 {{- else }}
 Annotations:  None
 {{- end }}
 {{- if .Object.metadata.labels }}
-Labels:       {{ range $key, $value := .Object.metadata.labels }}{{ $key }}: {{ $value }}{{- end }}
+Labels:
+{{- range $key, $value := .Object.metadata.labels }}
+{{- printf "%-28s %-20s" $key $value | nindent 14 }}
+{{- end }}
 {{- else }}
 Labels:       None
 {{- end }}
@@ -66,12 +72,11 @@ Status:         Configuration has passed {{ .Policy.results.passed_checks | len 
 Predicted Costs:
 ===============
 {{- if ge (.Cost.breakdown.resources | len) 1 }}
-{{ printf "%-36s%-14s%s" "Resources:" "Monthly" "Hourly" }}
 {{- range $index, $resource := .Cost.breakdown.resources }}
 {{- if $index }}
-├─ {{ printf "%-32s $%-12s $%s" $resource.name (default "0.00" $resource.monthlyCost) (default "0.00" $resource.hourlyCost) }}
+├─ {{ printf "%-32s $%-5s $%s" $resource.name (default "0.00" $resource.monthlyCost) (default "0.00" $resource.hourlyCost) }}
 {{- else }}
-└─ {{ printf "%-32s $%-12s $%s" $resource.name (default "0.00" $resource.monthlyCost) ((default "0.00" $resource.hourlyCost) | substr 0 5) }}
+└─ {{ printf "%-32s $%-5s $%s" $resource.name (default "0.00" $resource.monthlyCost) ((default "0.00" $resource.hourlyCost) | substr 0 5) }}
 {{- end }}
 {{- end }}
 
