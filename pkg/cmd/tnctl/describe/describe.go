@@ -76,7 +76,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	}
 
 	flags := c.Flags()
-	flags.BoolVar(&options.ShowPassedChecks, "show-passed-checks", false, "Indicates we should show passed checks")
+	flags.BoolVar(&options.ShowPassedChecks, "show-passed-checks", true, "Indicates we should show passed checks")
 	flags.StringVarP(&options.Namespace, "namespace", "n", "", "Namespace of the resource/s")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
