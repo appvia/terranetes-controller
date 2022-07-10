@@ -1811,7 +1811,7 @@ terraform {
 			Expect(cond.Message).To(Equal("Terraform apply is complete"))
 		})
 
-		It("should a last reconcilation time on the status", func() {
+		It("should a last reconciliation time on the status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
 			Expect(configuration.Status.LastReconcile).ToNot(BeNil())
@@ -1819,7 +1819,7 @@ terraform {
 			Expect(configuration.Status.LastReconcile.Generation).To(Equal(int64(0)))
 		})
 
-		It("should a last success reconcilation time on the status", func() {
+		It("should a last success reconciliation time on the status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
 			Expect(configuration.Status.LastSuccess).ToNot(BeNil())
@@ -1856,6 +1856,67 @@ terraform {
 			Expect(secret.Data).ToNot(BeNil())
 			Expect(secret.Data).To(HaveKey("TEST_OUTPUT"))
 			Expect(secret.Data["TEST_OUTPUT"]).To(Equal([]byte("test")))
+		})
+	})
+
+	// SECRET KEY MAPPINGS
+	When("we have secret key mappings on the configuration", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Spec.WriteConnectionSecretToRef.Keys = []string{
+				"test_output:mysql_host",
+			}
+
+			// create two successful jobs
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+
+			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformApply)
+			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			apply.Status.Succeeded = 1
+
+			// create a fake terraform state
+			state := fixtures.NewTerraformState(configuration)
+			state.Namespace = "default"
+
+			Setup(configuration, plan, apply, state)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should indicate the terraform apply has run", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Message).To(Equal("Terraform apply is complete"))
+		})
+
+		It("should have a in resource status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesInSync))
+		})
+
+		It("should have created a secret containing the module output", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			secret := &v1.Secret{}
+			secret.Name = configuration.Spec.WriteConnectionSecretToRef.Name
+			secret.Namespace = configuration.Namespace
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).ToNot(BeNil())
+			Expect(secret.Data).To(HaveKey("MYSQL_HOST"))
+			Expect(secret.Data["MYSQL_HOST"]).To(Equal([]byte("test")))
 		})
 	})
 })

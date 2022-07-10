@@ -933,13 +933,26 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 				}
 				secret.Data = make(map[string][]byte)
 
+				mapping, err := configuration.Spec.WriteConnectionSecretToRef.KeysMap()
+				if err != nil {
+					cond.Failed(err, "Failed to parse the configuration connection secrets mapping")
+
+					return reconcile.Result{}, err
+				}
+
 				for k, v := range state.Outputs {
-					if len(configuration.Spec.WriteConnectionSecretToRef.Keys) > 0 {
-						if !utils.Contains(k, configuration.Spec.WriteConnectionSecretToRef.Keys) {
-							continue
+					if !configuration.Spec.WriteConnectionSecretToRef.HasKeys() {
+						secret.Data[strings.ToUpper(k)] = []byte(v.String())
+
+						continue
+					}
+
+					// @step: we check if the mapping exists and if so, add the mapping as expected
+					for key, value := range mapping {
+						if k == key {
+							secret.Data[strings.ToUpper(value)] = []byte(v.String())
 						}
 					}
-					secret.Data[strings.ToUpper(k)] = []byte(v.String())
 				}
 
 				// @step: create the terraform secret
