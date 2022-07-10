@@ -39,6 +39,67 @@ var _ = Describe("Configuration Validation", func() {
 	namespace := "default"
 	name := "aws"
 
+	When("we have a connection secret", func() {
+		var configuration *terraformv1alphav1.Configuration
+
+		BeforeEach(func() {
+			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
+			v = &validator{cc: cc, versioning: true}
+
+			Expect(cc.Create(ctx, fixtures.NewValidAWSReadyProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))).To(Succeed())
+		})
+
+		When("the connection contains invalid key", func() {
+			expected := "spec.writeConnectionSecretToRef.keys[0] contains invalid key: this:is:invalid, should be KEY:NEWNAME"
+
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(namespace, name)
+				configuration.Spec.WriteConnectionSecretToRef.Keys = []string{"this:is:invalid"}
+			})
+
+			It("should fail on creation", func() {
+				err := v.ValidateCreate(ctx, configuration)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
+			It("should fail on update", func() {
+				err := v.ValidateUpdate(ctx, nil, configuration)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+		})
+
+		When("the configuration keys are valid", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(namespace, name)
+				configuration.Spec.WriteConnectionSecretToRef.Keys = []string{"is:valid"}
+			})
+
+			It("should not faild", func() {
+				err := v.ValidateCreate(ctx, configuration)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = v.ValidateUpdate(ctx, nil, configuration)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		When("we have no configuration keys", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(namespace, name)
+			})
+
+			It("should not fail", func() {
+				err := v.ValidateCreate(ctx, configuration)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = v.ValidateUpdate(ctx, nil, configuration)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
 	When("updating an existing configuration", func() {
 		BeforeEach(func() {
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()

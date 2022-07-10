@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -99,6 +100,11 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 		}
 	}
 
+	// @step: check the configuration secret
+	if err := validateConnectionSecret(configuration); err != nil {
+		return err
+	}
+
 	// @step: grab the namespace of the configuration
 	namespace := &v1.Namespace{}
 	namespace.Name = configuration.Namespace
@@ -126,6 +132,24 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 	// @step: validate the configuration against all module constraints
 	if err := validateModuleConstriants(configuration, list, namespace); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateConnectionSecret checks if the secret is valid
+func validateConnectionSecret(configuration *terraformv1alphav1.Configuration) error {
+	switch {
+	case configuration.Spec.WriteConnectionSecretToRef == nil:
+		return nil
+	case configuration.Spec.WriteConnectionSecretToRef.Name == "":
+		return errors.New("spec.writeConnectionSecretToRef.name is empty")
+	}
+
+	for i, key := range configuration.Spec.WriteConnectionSecretToRef.Keys {
+		if strings.Contains(key, ":") && len(strings.Split(key, ":")) != 2 {
+			return fmt.Errorf("spec.writeConnectionSecretToRef.keys[%d] contains invalid key: %s, should be KEY:NEWNAME", i, key)
+		}
 	}
 
 	return nil

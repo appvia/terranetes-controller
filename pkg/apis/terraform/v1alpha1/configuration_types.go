@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,6 +136,36 @@ type WriteConnectionSecret struct {
 	// which keys we want from that output.
 	// +kubebuilder:validation:Optional
 	Keys []string `json:"keys,omitempty"`
+}
+
+// HasKeys returns true if the keys are not empty
+func (w *WriteConnectionSecret) HasKeys() bool {
+	return len(w.Keys) > 0
+}
+
+// KeysMap returns the map of keys to name
+func (w *WriteConnectionSecret) KeysMap() (map[string]string, error) {
+	if !w.HasKeys() {
+		return nil, nil
+	}
+
+	keys := make(map[string]string)
+
+	for _, x := range w.Keys {
+		switch {
+		case strings.Contains(x, ":"):
+			items := strings.Split(x, ":")
+			if len(items) != 2 {
+				return nil, fmt.Errorf("invalid key format %s, should be KEY:NEWNAME", x)
+			}
+			keys[items[0]] = items[1]
+
+		default:
+			keys[x] = x
+		}
+	}
+
+	return keys, nil
 }
 
 // ValueFromSource defines a value which is taken from a secret
