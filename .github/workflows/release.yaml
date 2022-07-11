@@ -49,7 +49,7 @@ jobs:
           generate_release_notes: true
           prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          file: |
+          files: |
             release/tnctl-darwin-amd64
             release/tnctl-darwin-arm64
             release/tnctl-linux-amd64
