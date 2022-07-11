@@ -2,6 +2,27 @@ apiVersion: v1
 entries:
   terraform-controller:
   - apiVersion: v2
+    appVersion: v0.2.7
+    created: "2022-07-11T09:30:15.226401502Z"
+    description: Controller used to provision a terraform workflow within kubernetes
+    digest: 056615e0d0b8a94dbc1da4048f0037206281bdebe66bd8e35621987416fcd72c
+    maintainers:
+    - email: info@appvia.io
+      name: Appvia
+      url: https://appvia.io
+    - email: gambol99@gmail.com
+      name: Rohith
+      url: https://github.com/gambol99
+    name: terraform-controller
+    sources:
+    - https://github.com/appvia/terraform-controller
+    - https://github.com/appvia/terranetes
+    - https://terranetes.appvia.io
+    type: application
+    urls:
+    - https://github.com/appvia/terraform-controller/releases/download/terraform-controller-v0.2.15/terraform-controller-v0.2.15.tgz
+    version: v0.2.15
+  - apiVersion: v2
     appVersion: v0.2.6
     created: "2022-07-06T10:16:20.785170312Z"
     description: Controller used to provision a terraform workflow within kubernetes
@@ -249,4 +270,4 @@ entries:
     urls:
     - https://github.com/appvia/terraform-controller/releases/download/terraform-controller-v0.2.1/terraform-controller-v0.2.1.tgz
     version: v0.2.1
-generated: "2022-07-06T10:16:20.785242312Z"
+generated: "2022-07-11T09:30:15.226578002Z"
