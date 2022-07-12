@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
 	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terraform-controller/pkg/cmd"
 	"github.com/appvia/terraform-controller/pkg/utils"
@@ -118,7 +119,13 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-	if condition.ObservedGeneration == configuration.GetGeneration() {
+	if condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alphav1.ReasonNotDetermined {
+		if condition.Reason == corev1alphav1.ReasonActionRequired {
+			if strings.Contains(condition.Message, "Waiting for terraform apply annotation") {
+				return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
+			}
+		}
+
 		return o.showLogs(ctx, terraformv1alphav1.StageTerraformApply, configuration)
 	}
 
