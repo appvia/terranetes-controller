@@ -167,7 +167,12 @@ func (o *Command) showLogs(ctx context.Context, stage string, configuration *ter
 		if err != nil {
 			return err
 		}
-		io.Copy(o.Stdout(), stream)
+		if _, err := io.Copy(o.Stdout(), stream); err != nil {
+			return err
+		}
+		if err := stream.Close(); err != nil {
+			return err
+		}
 	}
 
 	return nil
