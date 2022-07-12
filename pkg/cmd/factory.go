@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
@@ -39,6 +40,8 @@ type Factory interface {
 	GetConfigPath() string
 	// GetClient returns the client for the kubernetes api
 	GetClient() (client.Client, error)
+	// GetKubeClient returns the kubernetes client
+	GetKubeClient() (k8sclient.Interface, error)
 	// GetStreams returns the input and output streams for the command
 	GetStreams() genericclioptions.IOStreams
 	// Printf prints a message to the output stream
@@ -120,6 +123,16 @@ func (f *factory) Println(format string, a ...interface{}) {
 // Stdout returns the stdout io writer
 func (f *factory) Stdout() io.Writer {
 	return f.streams.Out
+}
+
+// GetKubeClient returns the kubernetes client
+func (f *factory) GetKubeClient() (k8sclient.Interface, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find kubeconfig: %v", err)
+	}
+
+	return k8sclient.NewForConfig(cfg)
 }
 
 // GetClient returns the client for the kubernetes api
