@@ -71,10 +71,12 @@ type Command struct {
 	EnableDefaults bool
 	// Provider is the module provider
 	Provider string
-	// Namespace is the module namespace
-	Namespace string
+	// Name is the name of the resource
+	Name string
 	// Source is the registry source
 	Source string
+	// SourceNamespace is the module namespace
+	SourceNamespace string
 	// Query is the registry query string
 	Query string
 }
@@ -96,7 +98,8 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	flags := c.Flags()
 	flags.BoolVar(&o.EnableDefaults, "enable-defaults", false, "Indicates any defaults with values from the terraform module are included")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "", "The namespace within the source registry to scope the search")
+	flags.StringVar(&o.Name, "name", "", "Is the name of the resource to create")
+	flags.StringVar(&o.SourceNamespace, "source-namespace", "", "The namespace within the source registry to scope the search")
 	flags.StringVarP(&o.Provider, "provider", "p", "", "Limit the search only to modules with the given provider")
 	flags.StringVarP(&o.Source, "source", "s", "", "Limit the scope of the search to a specific source")
 
@@ -122,8 +125,6 @@ func (o *Command) Run(ctx context.Context) error {
 	if !found || len(config.Sources) == 0 {
 		config.Sources = []string{"https://registry.terraform.io"}
 	}
-
-	o.Println("%s To skip any of the question, simply press enter", cmd.IconHelp)
 
 	// @step: ensure we have something to search for
 	if len(o.Query) == 0 {
@@ -180,6 +181,16 @@ func (o *Command) Run(ctx context.Context) error {
 
 	handler := handlers[module.Registry]
 
+	if o.Name == "" {
+		if err := survey.AskOne(&survey.Input{
+			Message: "What should the name of the configuration resource be?",
+			Help:    "This is the name of the configuration resource itself",
+			Default: module.Name,
+		}, &o.Name, survey.WithKeepFilter(true)); err != nil {
+			return err
+		}
+	}
+
 	// @step: allow the user to choose the version of the module
 	module, err = o.chooseModuleVersion(ctx, module, handler)
 	if err != nil {
@@ -203,7 +214,7 @@ func (o *Command) Run(ctx context.Context) error {
 	return (&build.Command{
 		Factory:        o.Factory,
 		EnableDefaults: o.EnableDefaults,
-		Name:           module.Name,
+		Name:           o.Name,
 		Provider:       provider,
 		Source:         reference,
 	}).Run(ctx)
@@ -327,7 +338,7 @@ func (o *Command) findModules(ctx context.Context, handlers map[string]search.In
 	results := make([]search.Response, 0)
 
 	query := search.Query{
-		Namespace: o.Namespace,
+		Namespace: o.SourceNamespace,
 		Provider:  o.Provider,
 		Query:     o.Query,
 	}

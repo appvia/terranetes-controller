@@ -33,6 +33,7 @@ import (
 	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/config"
 	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/describe"
 	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/generate"
+	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/logs"
 	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/search"
 	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/workflow"
 	"github.com/appvia/terraform-controller/pkg/version"
@@ -75,6 +76,7 @@ func New(factory cmd.Factory) *cobra.Command {
 		workflow.NewCommand(factory),
 		describe.NewCommand(factory),
 		generate.NewCommand(factory),
+		logs.NewCommand(factory),
 	)
 
 	flags := command.PersistentFlags()

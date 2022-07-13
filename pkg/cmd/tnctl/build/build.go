@@ -54,6 +54,10 @@ $ tnctl build github.com/terraform-aws-modules/terraform-aws-vpc
 // Command returns the cobra command for the "build" sub-command.
 type Command struct {
 	cmd.Factory
+	// EnableAutoApproval indicates we automatically approve the configuration
+	EnableAutoApproval bool
+	// EnableDriftDetection indicates we should detect drift in the configuration
+	EnableDriftDetection bool
 	// EnableDefaults indicates we keep variables with defaults in the configuration
 	EnableDefaults bool
 	// EnableSensitive prompts the user to place the variables in secrets when the
@@ -92,7 +96,9 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags := c.Flags()
 	flags.StringVar(&o.Name, "name", "test", "The name of the configuration resource")
 	flags.StringVar(&o.Namespace, "namespace", "default", "The namespace for the configuration")
+	flags.BoolVar(&o.EnableAutoApproval, "enable-auto-approval", false, "Automatically approve the configuration")
 	flags.BoolVar(&o.EnableDefaults, "enable-defaults", true, "Indicates any defaults with values from the terraform module are included")
+	flags.BoolVar(&o.EnableDriftDetection, "enable-drift-detection", true, "Detect drift in the configuration")
 	flags.BoolVar(&o.EnableSensitive, "enable-sensitive", true, "Indicates any sensitive variables from the module should be placed into secrets")
 	flags.BoolVar(&o.NoDelete, "no-delete", false, "Indicates we do not delete the temporary directory")
 	flags.StringVar(&o.Provider, "provider", "", "Name of the credentials provider to use")
@@ -145,8 +151,8 @@ func (o *Command) Run(ctx context.Context) error {
 		"terraform.appvia.io/source":  o.Source,
 		"terraform.appvia.io/version": version.Version,
 	}
-	configuration.Spec.EnableAutoApproval = false
-	configuration.Spec.EnableDriftDetection = true
+	configuration.Spec.EnableAutoApproval = o.EnableAutoApproval
+	configuration.Spec.EnableDriftDetection = o.EnableDriftDetection
 	configuration.Spec.ProviderRef = &terraformv1alphav1.ProviderReference{Name: o.Provider}
 	configuration.Spec.Module = source
 
