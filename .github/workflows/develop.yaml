@@ -1,0 +1,11 @@
+---
+name: Develop
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  release-latest-images:
+    uses: ./.github/workflows/images.yaml
+    secrets: inherit
