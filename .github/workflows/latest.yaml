@@ -7,13 +7,13 @@ on:
 
 jobs:
   release-latest-images:
-    uses: ./.github/workflows/publish-images.yaml
+    uses: ./.github/workflows/images.yaml
     secrets: inherit
 
   release-helm-chart:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Clone repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0

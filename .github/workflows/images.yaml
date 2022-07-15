@@ -24,15 +24,14 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3.0.2
-
+      - name: Clone repo
+        uses: actions/checkout@v3.0.2
       - name: Login to GitHub
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get image tag
         id: get_image_tag
         env:
@@ -43,8 +42,8 @@ jobs:
           else
             echo "::set-output name=image_tag::${GITHUB_REF##*/}"
           fi
-
-      - id: docker_meta
+      - name: Docker Metadata
+        id: docker_meta
         uses: docker/metadata-action@v4.0.1
         with:
           images: |
@@ -53,22 +52,19 @@ jobs:
             latest=auto
           tags: |
             type=raw,value=${{ steps.get_image_tag.outputs.image_tag }}
-
-      - name: Push image
+      - name: Build & Push
         uses: docker/build-push-action@v3.0.0
         with:
+          build-args: VERSION=${{ steps.get_image_tag.outputs.image_tag }}
           context: .
           file: "./images/Dockerfile.${{ matrix.image }}"
-          build-args: |
-            VERSION=${{ steps.get_image_tag.outputs.image_tag }}
-          tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           push: true
-
-      - uses: sigstore/cosign-installer@v2.3.0
-
+          tags: ${{ steps.docker_meta.outputs.tags }}
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v2.3.0
       - name: Sign image
-        run: cosign sign ${TAGS}
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
           COSIGN_EXPERIMENTAL: 1
+        run: cosign sign ${TAGS}
