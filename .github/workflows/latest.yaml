@@ -6,7 +6,7 @@ on:
     branches: [master]
 
 jobs:
-  release-latest-images:
+  latest-images:
     uses: ./.github/workflows/images.yaml
     secrets: inherit
 
