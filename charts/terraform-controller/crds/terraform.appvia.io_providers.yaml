@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: providers.terraform.appvia.io
 spec:
@@ -59,6 +59,7 @@ spec:
                       description: namespace defines the space within which the secret name must be unique.
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 selector:
                   description: Selector provider the ability to filter who can use this provider. If empty, all users in the cluster is permitted to use the provider. Otherrise you can specify a selector which can use namespace and resource labels
                   properties:
@@ -92,6 +93,7 @@ spec:
                           description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                           type: object
                       type: object
+                      x-kubernetes-map-type: atomic
                     resource:
                       description: Resource provides the ability to filter a configuration based on it's labels
                       properties:
@@ -122,12 +124,16 @@ spec:
                           description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                           type: object
                       type: object
+                      x-kubernetes-map-type: atomic
                   type: object
                 serviceAccount:
                   description: ServiceAccount is the name of a service account to use when the provider source is 'injected'. The service account should exist in the terraform controller namespace and be configure per cloud vendor requirements for pod identity.
                   type: string
                 source:
                   description: Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret or using a managed identity. The currently supported values are secret and injected.
+                  type: string
+                summary:
+                  description: Summary provides a human readable description of the provider
                   type: string
               required:
                 - provider
