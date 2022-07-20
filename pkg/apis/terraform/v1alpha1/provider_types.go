@@ -122,10 +122,6 @@ type ProviderSpec struct {
 	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
 	Provider ProviderType `json:"provider"`
-	// Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
-	// or using a managed identity. The currently supported values are secret and injected.
-	// +kubebuilder:validation:Required
-	Source SourceType `json:"source"`
 	// SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret.
 	// The secret should include the environment variables required to by the terraform provider.
 	// +kubebuilder:validation:Optional
@@ -140,6 +136,13 @@ type ProviderSpec struct {
 	// requirements for pod identity.
 	// +kubebuilder:validation:Optional
 	ServiceAccount *string `json:"serviceAccount,omitempty"`
+	// Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
+	// or using a managed identity. The currently supported values are secret and injected.
+	// +kubebuilder:validation:Required
+	Source SourceType `json:"source"`
+	// Summary provides a human readable description of the provider
+	// +kubebuilder:validation:Optional
+	Summary string `json:"summary,omitempty"`
 }
 
 // HasConfiguration returns true if the provider has custom configuration
