@@ -31,7 +31,7 @@ controller:
     # image to use for infracost
     infracost: infracost/infracost:0.10.7
     # policy is image for policy
-    policy: bridgecrew/checkov:2.0.1211
+    policy: bridgecrew/checkov:2.1.67
     # is the controller image
     controller: ghcr.io/appvia/terraform-controller:v0.2.8
     # The terraform image used when running jobs
