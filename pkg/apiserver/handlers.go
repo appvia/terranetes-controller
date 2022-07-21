@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -35,6 +36,21 @@ import (
 	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
 )
 
+var sanitizeRegEx = regexp.MustCompile(`^[a-zA-Z0-9\-\.\:]{1,64}$`)
+
+// validateInput checks the inputs parameter is valid
+func validateInput(name, value string) error {
+	switch {
+	case value == "":
+		return fmt.Errorf("%s is empty", name)
+
+	case !sanitizeRegEx.MatchString(value):
+		return fmt.Errorf("%s does not match input regex: %s", name, sanitizeRegEx)
+	}
+
+	return nil
+}
+
 // handleHealth is http handler for the health endpoint
 func (s *Server) handleHealth(w http.ResponseWriter, req *http.Request) {
 	_, _ = w.Write([]byte("OK\n"))
@@ -43,19 +59,23 @@ func (s *Server) handleHealth(w http.ResponseWriter, req *http.Request) {
 // handleBuilds is http handler for the logs endpoint
 //nolint:errcheck
 func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
-	values := map[string]string{
-		"generation": req.URL.Query().Get("generation"),
-		"name":       req.URL.Query().Get("name"),
-		"namespace":  req.URL.Query().Get("namespace"),
-		"stage":      req.URL.Query().Get("stage"),
-		"uid":        req.URL.Query().Get("uid"),
+	params := []string{
+		"generation",
+		"name",
+		"namespace",
+		"status",
+		"uid",
 	}
+	values := make(map[string]string)
+	for _, key := range params {
+		value := req.URL.Query().Get(key)
 
-	for _, v := range values {
-		if v == "" {
+		if err := validateInput(key, value); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
+		values[key] = value
 	}
 
 	fields := log.Fields{
