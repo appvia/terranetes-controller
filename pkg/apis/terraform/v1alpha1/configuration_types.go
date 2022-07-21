@@ -277,7 +277,7 @@ const (
 	// ResourcesOutOfSync is the status when the configuration is out of sync
 	ResourcesOutOfSync ResourceStatus = "OutOfSync"
 	// DestroyingResources is the status
-	DestroyingResources ResourceStatus = "OutOfSync"
+	DestroyingResources ResourceStatus = "Deleting"
 	// UnknownResourceStatus is the status when the configuration is unknown
 	UnknownResourceStatus ResourceStatus = ""
 )
