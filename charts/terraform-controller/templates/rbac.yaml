@@ -177,7 +177,13 @@ roleRef:
   kind: Role
   name: {{ include "terraform-controller.fullname" . }}-executor
 subjects:
+  {{- if .Values.rbac.enableExecutorServiceAccountPermissions }}
+  - kind: Group
+    name: system:serviceaccounts:{{ .Release.Namespace }}
+    apiGroup: rbac.authorization.k8s.io
+  {{- else }}
   - kind: ServiceAccount
     name: terraform-executor
     namespace: {{ .Release.Namespace }}
+  {{- end }}
 {{- end }}
