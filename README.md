@@ -1,4 +1,4 @@
-[![GPL license](https://img.shields.io/badge/License-GPL-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens) [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terraform-controller)](https://goreportcard.com/report/github.com/appvia/terraform-controller)
+[![GPL license](https://img.shields.io/badge/License-GPL-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens) [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terraform-controller)](https://goreportcard.com/report/github.com/appvia/terraform-controller) [![CodeQL](https://github.com/appvia/terraform-controller/actions/workflows/codeql.yml/badge.svg)](https://github.com/appvia/terraform-controller/actions/workflows/codeql.yml)
 
 # **TERRAFORM CONTROLLER**
 
