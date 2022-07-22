@@ -1,22 +1,30 @@
-{{- range .Value.providers }}
+{{ $namespace := .Release.Namespace }}
+{{- range $index, $provider := .Values.providers }}
+{{- $cloud := $provider.provider | required (printf ".Values.providers[%d].provider is required." $index) -}}
+{{- $name := $provider.name | required (printf ".Values.providers[%d].name is required." $index) -}}
+{{- $source := $provider.source | required (printf ".Values.providers[%d].source is required." $index) -}}
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Provider
 metadata:
-  name: {{ .name }}
+  name: {{ $name }}
   annotations:
-    {{- .annotations | nindent 4 }}
+    {{- range $key, $value := $provider.annotations }}
+    {{ $key }}: "{{ $value }}"
+    {{- end }}
   labels:
-    {{- .labels | nindent 4 }}
+    {{- range $key, $value := $provider.labels }}
+    {{ $key }}: "{{ $value }}"
+    {{- end }}
 spec:
-  source: {{ .source }}
-  provider: {{ .cloud }}
-  {{- if eq .source "secret" }}
+  source: {{ $source }}
+  provider: {{ $cloud }}
+  {{- if eq $provider.source "secret" }}
   secretRef:
-    namespace: {{ .Release.Namespace }}
-    name: {{ .secret }}
+    namespace: {{ $namespace }}
+    name: {{ $provider.secret }}
   {{- end }}
-  {{- if eq .source "injected" }}
-  serviceAccount: {{ .serviceAccount }}
+  {{- if eq $provider.source "injected" }}
+  serviceAccount: {{ $provider.serviceAccount }}
   {{- end }}
 {{- end }}
