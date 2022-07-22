@@ -33,15 +33,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/appvia/terraform-controller/pkg/apiserver"
-	"github.com/appvia/terraform-controller/pkg/controller/configuration"
-	"github.com/appvia/terraform-controller/pkg/controller/drift"
-	"github.com/appvia/terraform-controller/pkg/controller/policy"
-	"github.com/appvia/terraform-controller/pkg/controller/provider"
-	"github.com/appvia/terraform-controller/pkg/register"
-	"github.com/appvia/terraform-controller/pkg/schema"
-	k8sutils "github.com/appvia/terraform-controller/pkg/utils/kubernetes"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/apiserver"
+	"github.com/appvia/terranetes-controller/pkg/controller/configuration"
+	"github.com/appvia/terranetes-controller/pkg/controller/drift"
+	"github.com/appvia/terranetes-controller/pkg/controller/policy"
+	"github.com/appvia/terranetes-controller/pkg/controller/provider"
+	"github.com/appvia/terranetes-controller/pkg/register"
+	"github.com/appvia/terranetes-controller/pkg/schema"
+	k8sutils "github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 // Server is a wrapper around the services
@@ -65,7 +65,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	log.WithFields(log.Fields{
 		"gitsha":  version.GitCommit,
 		"version": version.Version,
-	}).Info("starting the terraform controller")
+	}).Info("starting the terranetes controller")
 
 	cc, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -76,7 +76,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	if config.RegisterCRDs {
 		log.Info("registering the custom resources")
 		for _, path := range register.AssetNames() {
-			if !strings.HasPrefix(path, "charts/terraform-controller/crds/") {
+			if !strings.HasPrefix(path, "charts/terranetes-controller/crds/") {
 				continue
 			}
 
@@ -98,7 +98,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	namespace := os.Getenv("KUBE_NAMESPACE")
 	if namespace == "" {
-		namespace = "terraform-system"
+		namespace = "terranetes-system"
 	}
 
 	hs := &http.Server{

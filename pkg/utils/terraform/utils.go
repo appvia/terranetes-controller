@@ -24,8 +24,8 @@ import (
 	"io"
 	"text/template"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/utils"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs

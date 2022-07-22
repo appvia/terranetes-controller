@@ -30,12 +30,12 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/cmd/search"
-	"github.com/appvia/terraform-controller/pkg/cmd/search/github"
-	"github.com/appvia/terraform-controller/pkg/cmd/search/terraform"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/build"
-	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd/search"
+	"github.com/appvia/terranetes-controller/pkg/cmd/search/github"
+	"github.com/appvia/terranetes-controller/pkg/cmd/search/terraform"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/build"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 var longSearchHelp = `

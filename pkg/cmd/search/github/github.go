@@ -29,9 +29,9 @@ import (
 	githubcc "github.com/google/go-github/v45/github"
 	"golang.org/x/oauth2"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/cmd/search"
-	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd/search"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 type ghClient struct {

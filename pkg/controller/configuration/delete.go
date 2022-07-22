@@ -27,12 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/controller"
-	"github.com/appvia/terraform-controller/pkg/utils/filters"
-	"github.com/appvia/terraform-controller/pkg/utils/jobs"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/utils/filters"
+	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 // ensureTerraformDestroy is responsible for deleting any associated terraform configuration

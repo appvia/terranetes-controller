@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 func TestJobTemplateParsable(t *testing.T) {

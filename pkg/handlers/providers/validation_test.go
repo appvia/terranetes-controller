@@ -27,8 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/appvia/terraform-controller/pkg/schema"
-	"github.com/appvia/terraform-controller/test/fixtures"
+	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
 func TestReconcile(t *testing.T) {

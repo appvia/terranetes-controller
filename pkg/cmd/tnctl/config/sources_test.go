@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 var _ = Describe("Sources Command", func() {

@@ -29,8 +29,8 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 type mutator struct {

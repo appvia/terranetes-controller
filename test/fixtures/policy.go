@@ -20,7 +20,7 @@ package fixtures
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // NewPolicy returns an empty policy

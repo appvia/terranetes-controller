@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 func TestNewCommand(t *testing.T) {

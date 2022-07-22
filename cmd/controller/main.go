@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/appvia/terraform-controller/pkg/server"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/server"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 func init() {

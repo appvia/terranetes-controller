@@ -20,7 +20,7 @@ package generate
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // NewCommand creates and returns a new command

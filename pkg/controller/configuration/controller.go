@@ -42,9 +42,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/handlers/configurations"
-	"github.com/appvia/terraform-controller/pkg/utils/policies"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/handlers/configurations"
+	"github.com/appvia/terranetes-controller/pkg/utils/policies"
 )
 
 const controllerName = "configuration.terraform.appvia.io"

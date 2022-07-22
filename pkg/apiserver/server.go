@@ -23,8 +23,8 @@ import (
 	"github.com/gorilla/mux"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/appvia/terraform-controller/pkg/apiserver/logging"
-	"github.com/appvia/terraform-controller/pkg/apiserver/recovery"
+	"github.com/appvia/terranetes-controller/pkg/apiserver/logging"
+	"github.com/appvia/terranetes-controller/pkg/apiserver/recovery"
 )
 
 // Server is the api server

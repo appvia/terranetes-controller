@@ -23,7 +23,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // ConfigPathEnvName is the name of the environment variable that holds the config path

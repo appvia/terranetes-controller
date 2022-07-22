@@ -22,7 +22,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 
-	terraformv1alpha1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // Filter provides a filter for jobs

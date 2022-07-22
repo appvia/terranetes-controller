@@ -21,7 +21,7 @@ GO_DIRS=cmd hack pkg
 SH_DIRS=.circleci hack
 ROOT_DIR=${PWD}
 UNAME := $(shell uname)
-LFLAGS ?= -X github.com/appvia/terraform-controller/pkg/version.Version=${VERSION} -X github.com/appvia/terraform-controller/pkg/version.GitCommit=${GIT_SHA}
+LFLAGS ?= -X github.com/appvia/terranetes-controller/pkg/version.Version=${VERSION} -X github.com/appvia/terranetes-controller/pkg/version.GitCommit=${GIT_SHA}
 VERSION ?= latest
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
@@ -63,14 +63,14 @@ check-api-sync:
 
 controller-gen:
 	@echo "--> Generating deepcopies, CRDs and webhooks"
-	@rm -rf charts/terraform-controller/crds
-	@mkdir -p charts/terraform-controller/crds
+	@rm -rf charts/terranetes-controller/crds
+	@mkdir -p charts/terranetes-controller/crds
 	@mkdir -p pkg/client
 	@go run sigs.k8s.io/controller-tools/cmd/controller-gen \
 		paths=./pkg/apis/... \
 		object:headerFile=hack/boilerplate.go.txt \
 		crd \
-		output:crd:dir=charts/terraform-controller/crds \
+		output:crd:dir=charts/terranetes-controller/crds \
 		webhook \
 		output:webhook:dir=deploy/webhooks
 	@./hack/patch-crd-gen.sh
@@ -81,8 +81,8 @@ register-gen:
 	@$(foreach api,$(APIS), \
 		echo "    $(api)" && go run k8s.io/code-generator/cmd/register-gen -h hack/boilerplate.go.txt \
 			--output-file-base zz_generated_register \
-			-i github.com/appvia/terraform-controller/pkg/apis/$(api) \
-			-p github.com/appvia/terraform-controller/pkg/apis/$(api); )
+			-i github.com/appvia/terranetes-controller/pkg/apis/$(api) \
+			-p github.com/appvia/terranetes-controller/pkg/apis/$(api); )
 
 schema-gen:
 	@echo "--> Generating Kubernetes assets"
@@ -91,7 +91,7 @@ schema-gen:
     -pkg register \
     -nometadata \
     -o pkg/register/assets.go \
-    -prefix deploy charts/terraform-controller/crds deploy/webhooks
+    -prefix deploy charts/terranetes-controller/crds deploy/webhooks
 	@$(MAKE) gofmt
 
 ### BUILD ###
@@ -128,38 +128,38 @@ test:
 # Terraform Controller image
 
 controller-image:
-	@echo "--> Compiling the terraform-controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
-	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} -f images/Dockerfile.controller .
+	@echo "--> Compiling the terranetes-controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
+	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION} -f images/Dockerfile.controller .
 
 controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
-	@kubectl -n terraform-system scale deployment terraform-controller --replicas=0 || true
-	@kubectl -n terraform-system delete job --all || true
+	@kubectl -n terranetes-system scale deployment terranetes-controller --replicas=0 || true
+	@kubectl -n terranetes-system delete job --all || true
 	@kubectl -n apps delete job --all || true
 	@kubectl -n apps delete po --all || true
 	@$(MAKE) VERSION=ci controller-image
 	@$(MAKE) VERSION=ci executor-image
-	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:ci
-	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:ci
-	@kubectl -n terraform-system scale deployment terraform-controller --replicas=1 || true
+	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:ci
+	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:ci
+	@kubectl -n terranetes-system scale deployment terranetes-controller --replicas=1 || true
 
 controller-image-verify: install-trivy
-	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}"
-	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION} for vulnerabilities"
-	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
+	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
+	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION} for vulnerabilities"
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}
 
 executor-image:
-	@echo "--> Compiling the terraform-executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
-	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} -f images/Dockerfile.executor .
+	@echo "--> Compiling the terranetes-executor server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
+	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} -f images/Dockerfile.executor .
 
 executor-image-kind: executor-image
-	@echo "--> Building and loading executor image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
-	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
+	@echo "--> Building and loading executor image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
+	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}
 
 executor-image-verify: install-trivy
-	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}"
-	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION} for vulnerabilities"
-	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
+	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
+	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} for vulnerabilities"
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}
 
 # Image management
 
@@ -177,12 +177,12 @@ verify-images: controller-image-verify executor-image-verify
 package:
 	@rm -rf ./release
 	@mkdir ./release
-	cd ./release && sha256sum * > terraform-controller.sha256sums
+	cd ./release && sha256sum * > terranetes-controller.sha256sums
 
 release-images: images
 	@echo "--> Releasing docker images for controller and executor"
-	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-controller:${VERSION}
-	@docker push ${REGISTRY}/${REGISTRY_ORG}/terraform-executor:${VERSION}
+	@docker push ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}
+	@docker push ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}
 
 release-cli: golang
 	@echo "--> Compiling static CLI binaries"
@@ -201,7 +201,7 @@ gofmt:
 	@echo "--> Running go fmt"
 	@go fmt $(shell go list ./... | grep -v /vendor/)
 	@echo "--> goimports assets"
-	@go run golang.org/x/tools/cmd/goimports -local github.com/appvia/terraform-controller -w -d $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+	@go run golang.org/x/tools/cmd/goimports -local github.com/appvia/terranetes-controller -w -d $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 format: gofmt
 
@@ -246,16 +246,16 @@ clean:
 
 aws-credentials:
 	@echo "--> Generating AWS credentials"
-	@kubectl create namespace terraform-system 2>/dev/null || true
-	@kubectl -n terraform-system create secret generic aws \
+	@kubectl create namespace terranetes-system 2>/dev/null || true
+	@kubectl -n terranetes-system create secret generic aws \
 		--from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		--from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		--from-literal=AWS_REGION=${AWS_REGION}
 
 azure-credentials:
 	@echo "--> Creating Azure credentials"
-	@kubectl create namespace terraform-system 2>/dev/null || true
-	@kubectl -n terraform-system create secret generic azure \
+	@kubectl create namespace terranetes-system 2>/dev/null || true
+	@kubectl -n terranetes-system create secret generic azure \
 		--from-literal=ARM_CLIENT_ID=${ARM_CLIENT_ID} \
 		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
 		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \

@@ -1,4 +1,4 @@
-module github.com/appvia/terraform-controller
+module github.com/appvia/terranetes-controller
 
 go 1.18
 

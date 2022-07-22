@@ -27,16 +27,16 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/approve"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/build"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/config"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/describe"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/generate"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/logs"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/search"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/workflow"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/approve"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/build"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/config"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/generate"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/logs"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/search"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/workflow"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 var longDescription = `

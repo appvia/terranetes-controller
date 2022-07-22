@@ -28,8 +28,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/appvia/terraform-controller/pkg/cmd/search"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/cmd/search"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 type registry struct {
