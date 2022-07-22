@@ -1,0 +1,19 @@
+{{- range $i, $o := .Values.policies }}
+{{- $name := $o.name | required (printf ".Values.policies[%d].name is required." $i) -}}
+{{- $constraint := $o.constraint | required (printf ".Values.policies[%d].constraint is required." $i) -}}
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: {{ $name }}
+  annotations:
+    {{- range $k, $v := $o.annotations }}
+    {{ $k }}: "{{ $v }}"
+    {{- end }}
+  labels:
+    {{- range $k, $v := $o.labels }}
+    {{ $k }}: "{{ $v }}"
+    {{- end }}
+spec:
+  constraints: {{ $constraint | toYaml | nindent 4 }}
+{{- end }}

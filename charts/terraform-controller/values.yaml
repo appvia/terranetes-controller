@@ -121,6 +121,17 @@ rbac:
     # annotations is a collection of annotations which should be added
     annotations: {}
 
+# Allows to you to control via the helm chart the deployment of a number of
+# security policy which govern what must be enforced in the controller and by
+# the consumers.
+policies:
+#  - name: permitted_modules
+#    labels: {}
+#    annotations: {}
+#    constraint:
+#      modules:
+#        allowed: []
+
 resources: {}
   # These resources are applied to the controller
   # limits:
