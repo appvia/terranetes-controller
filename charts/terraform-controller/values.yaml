@@ -100,6 +100,11 @@ securityContext:
       - all
 
 rbac:
+  # Indicates we allow all service account in the controller namespace the role of
+  # executor. This makes rolling out multiple providers backed to multiple services easier.
+  # Service account used by executors need access to read and write secrets and leases in the
+  # controller namespace (namely the controller-executor role)
+  enableExecutorServiceAccountPermissions: false
   # Indicates we should create all the rbac
   create: true
   # service account for the controller
