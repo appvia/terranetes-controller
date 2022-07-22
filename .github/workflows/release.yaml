@@ -23,7 +23,7 @@ jobs:
     needs:
       - e2e-aws
       - e2e-azure
-    uses: ./.github/workflows/publish-images.yaml
+    uses: ./.github/workflows/images.yaml
     secrets: inherit
 
   release:
