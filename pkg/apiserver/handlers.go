@@ -63,7 +63,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 		"generation",
 		"name",
 		"namespace",
-		"status",
+		"stage",
 		"uid",
 	}
 	values := make(map[string]string)
@@ -71,6 +71,8 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 		value := req.URL.Query().Get(key)
 
 		if err := validateInput(key, value); err != nil {
+			log.WithError(err).Error("received an invalid request")
+
 			w.WriteHeader(http.StatusBadRequest)
 
 			return
