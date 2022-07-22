@@ -118,6 +118,7 @@ func (c *Controller) ensureErrorDetection(configuration *terraformv1alphav1.Conf
 			}
 		}
 
-		return reconcile.Result{}, nil
+		// if we've entered this method we cannot move forward in the reconciliation process
+		return reconcile.Result{}, controller.ErrIgnore
 	}
 }
