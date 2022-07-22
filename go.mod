@@ -13,7 +13,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-bindata/go-bindata/v3 v3.1.3
 	github.com/go-swagger/go-swagger v0.29.0
-	github.com/golangci/golangci-lint v1.47.1
+	github.com/golangci/golangci-lint v1.47.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-getter v1.6.2
