@@ -99,6 +99,19 @@ securityContext:
     drop:
       - all
 
+# Allows to you deploy a number of providers into the clusters
+providers:
+#  - name: aws
+#    source: injected
+#    labels: {}
+#    annotations: {}
+#    # The cloud vendor this credentials is for
+#    provider: aws|google|azurerm
+#    # When using source secret we should have a secret name
+#    secret: NAME
+#    # When using source injected we should have a service account
+#    serviceAccount: SERV
+
 rbac:
   # Indicates we should create all the rbac
   create: true

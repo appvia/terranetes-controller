@@ -1,0 +1,22 @@
+{{- range .Value.providers }}
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: {{ .name }}
+  annotations:
+    {{- .annotations | nindent 4 }}
+  labels:
+    {{- .labels | nindent 4 }}
+spec:
+  source: {{ .source }}
+  provider: {{ .cloud }}
+  {{- if eq .source "secret" }}
+  secretRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .secret }}
+  {{- end }}
+  {{- if eq .source "injected" }}
+  serviceAccount: {{ .serviceAccount }}
+  {{- end }}
+{{- end }}
