@@ -58,7 +58,7 @@ const (
 	ReconcileAnnotation = "terraform.appvia.io/reconcile"
 	// OrphanAnnotation is the label used to orphan a configuration
 	OrphanAnnotation = "terraform.appvia.io/orphan"
-	// VersionAnnotation is the label used to hold the verion
+	// VersionAnnotation is the label used to hold the version
 	VersionAnnotation = "terraform.appvia.io/version"
 )
 
