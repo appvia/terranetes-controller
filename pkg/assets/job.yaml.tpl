@@ -9,7 +9,7 @@ metadata:
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
-  backoffLimit: 3
+  backoffLimit: 2
   completions: 1
   parallelism: 1
   template:
@@ -19,7 +19,8 @@ spec:
         {{ $key }}: "{{ $value }}"
         {{- end }}
     spec:
-      restartPolicy: OnFailure
+      # https://github.com/kubernetes/kubernetes/issues/74848
+      restartPolicy: Never
       {{- if eq .Provider.Source "injected" }}
       serviceAccountName: {{ .Provider.ServiceAccount }}
       {{- else }}
@@ -29,6 +30,8 @@ spec:
         runAsUser: 65534
         runAsGroup: 65534
         fsGroup: 65534
+      # retain the jobs for 6 hours
+      ttlSecondsAfterFinished: 28800
       volumes:
         # Used to hold the terraform module source code
         - name: source
@@ -128,7 +131,7 @@ spec:
         {{- end }}
         {{- end }}
       containers:
-      - name: terraform
+      - name: {{ .TerraformContainerName }}
         image: {{ .Images.Terraform }}
         imagePullPolicy: {{ .ImagePullPolicy }}
         workingDir: /data

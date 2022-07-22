@@ -95,7 +95,6 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configur
 
 		// @step: iterate the items, if running AND from another generation, we wait
 		for _, x := range list.Items {
-
 			if !jobs.IsComplete(&x) && !jobs.IsFailed(&x) {
 				if x.GetGeneration() != configuration.GetGeneration() {
 					log.WithFields(log.Fields{
@@ -103,7 +102,7 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configur
 						"name":       x.GetName(),
 						"namespace":  x.GetNamespace(),
 						"uid":        x.GetUID(),
-					}).Info("found a previous generation job, waiting for it to finish")
+					}).Info("found a generation already running, waiting to complete")
 
 					return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 				}
@@ -444,6 +443,10 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		// @note: the last plan failed for this generation - we do not run it again
+		case cond.GetCondition().IsFailed(configuration.GetGeneration()):
+			return reconcile.Result{}, controller.ErrIgnore
+
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
 			if !configuration.Spec.EnableDriftDetection || configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation] == "" {
 				// @note: this is effectively checking the status of plan condition - if the condition is True
@@ -532,7 +535,8 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 		case jobs.IsFailed(job):
 			cond.Failed(nil, "Terraform plan is failed")
-			return reconcile.Result{}, controller.ErrIgnore
+
+			return c.ensureErrorDetection(configuration, job, state)(ctx)
 
 		case jobs.IsActive(job):
 			cond.InProgress("Terraform plan is running")
@@ -876,7 +880,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		case jobs.IsFailed(job):
 			cond.Failed(nil, "Terraform apply has failed")
-			return reconcile.Result{}, controller.ErrIgnore
+
+			return c.ensureErrorDetection(configuration, job, state)(ctx)
 
 		case jobs.IsActive(job):
 			cond.InProgress("Terraform apply in progress")

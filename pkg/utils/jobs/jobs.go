@@ -37,6 +37,9 @@ import (
 // DefaultServiceAccount is the default service account to use for the job if no override is given
 const DefaultServiceAccount = "terraform-executor"
 
+// TerraformContainerName is the default name for the main terraform container
+const TerraformContainerName = "terraform"
+
 // Options is the configuration for the render
 type Options struct {
 	// AdditionalLabels are additional labels added to the job
@@ -190,14 +193,15 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"ServiceAccount": pointer.StringPtrDerefOr(r.provider.Spec.ServiceAccount, ""),
 			"Source":         string(r.provider.Spec.Source),
 		},
-		"EnableInfraCosts":   options.EnableInfraCosts,
-		"EnableVariables":    r.configuration.HasVariables(),
-		"ExecutorSecrets":    options.ExecutorSecrets,
-		"ImagePullPolicy":    "IfNotPresent",
-		"Policy":             options.PolicyConstraint,
-		"ServiceAccount":     DefaultServiceAccount,
-		"Stage":              stage,
-		"TerraformArguments": arguments,
+		"EnableInfraCosts":       options.EnableInfraCosts,
+		"EnableVariables":        r.configuration.HasVariables(),
+		"ExecutorSecrets":        options.ExecutorSecrets,
+		"ImagePullPolicy":        "IfNotPresent",
+		"Policy":                 options.PolicyConstraint,
+		"ServiceAccount":         DefaultServiceAccount,
+		"Stage":                  stage,
+		"TerraformArguments":     arguments,
+		"TerraformContainerName": TerraformContainerName,
 		"Configuration": map[string]interface{}{
 			"Generation": fmt.Sprintf("%d", r.configuration.GetGeneration()),
 			"Module":     r.configuration.Spec.Module,
