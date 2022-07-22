@@ -27,7 +27,9 @@ import (
 func TestErrorDetection(t *testing.T) {
 	for cloud, list := range Detectors {
 		for i, detector := range list {
-			assert.NoError(t, regexp.Compile(detector.Regexp), "failed to compile %s[%d]: %s", cloud, i, detector.Regexp)
+			re, err := regexp.Compile(detector.Regex)
+			assert.NoError(t, err, "failed to compile %s[%d]: %s", cloud, i, detector.Regex)
+			assert.NotNil(t, re)
 			assert.NotEmpty(t, detector.Message)
 		}
 	}
