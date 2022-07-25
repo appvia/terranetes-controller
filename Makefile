@@ -133,15 +133,15 @@ controller-image:
 
 controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
-	@kubectl -n terranetes-system scale deployment terranetes-controller --replicas=0 || true
-	@kubectl -n terranetes-system delete job --all || true
+	@kubectl -n terraform-system scale deployment terranetes-controller --replicas=0 || true
+	@kubectl -n terraform-system delete job --all || true
 	@kubectl -n apps delete job --all || true
 	@kubectl -n apps delete po --all || true
 	@$(MAKE) VERSION=ci controller-image
 	@$(MAKE) VERSION=ci executor-image
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:ci
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:ci
-	@kubectl -n terranetes-system scale deployment terranetes-controller --replicas=1 || true
+	@kubectl -n terraform-system scale deployment terranetes-controller --replicas=1 || true
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
@@ -246,16 +246,16 @@ clean:
 
 aws-credentials:
 	@echo "--> Generating AWS credentials"
-	@kubectl create namespace terranetes-system 2>/dev/null || true
-	@kubectl -n terranetes-system create secret generic aws \
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@kubectl -n terraform-system create secret generic aws \
 		--from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		--from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		--from-literal=AWS_REGION=${AWS_REGION}
 
 azure-credentials:
 	@echo "--> Creating Azure credentials"
-	@kubectl create namespace terranetes-system 2>/dev/null || true
-	@kubectl -n terranetes-system create secret generic azure \
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@kubectl -n terraform-system create secret generic azure \
 		--from-literal=ARM_CLIENT_ID=${ARM_CLIENT_ID} \
 		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
 		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \

@@ -98,7 +98,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	namespace := os.Getenv("KUBE_NAMESPACE")
 	if namespace == "" {
-		namespace = "terranetes-system"
+		namespace = "terraform-system"
 	}
 
 	hs := &http.Server{
