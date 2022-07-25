@@ -47,7 +47,7 @@ jobs:
         uses: docker/metadata-action@v4.0.1
         with:
           images: |
-            ghcr.io/appvia/terraform-${{ matrix.image }}
+            ghcr.io/appvia/terranetes-${{ matrix.image }}
           flavor: |
             latest=auto
           tags: |
