@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // DocsCommand contains the command options

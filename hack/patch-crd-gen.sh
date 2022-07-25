@@ -28,7 +28,7 @@ build_yq() {
 }
 
 add_preserveUnknownFields() {
-  for f in ./charts/terraform-controller/crds/*.yaml; do
+  for f in ./charts/terranetes-controller/crds/*.yaml; do
     "$YQ" write --inplace "$f" spec.preserveUnknownFields false
   done
 }

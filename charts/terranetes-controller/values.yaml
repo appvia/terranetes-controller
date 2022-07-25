@@ -17,7 +17,7 @@ controller:
   # Indicates if the controller should register its own CRDs
   registerCRDs: true
   # Executor secrets includes the following secrets in 'all' execution jobs. The secret is added
-  # as an environment variables (spec.envFrom) into the terraform container of the executor
+  # as an environment variables (spec.envFrom) into the terranetes container of the executor
   executorSecrets: []
   # Configuration related to costs
   costs:
@@ -33,9 +33,9 @@ controller:
     # policy is image for policy
     policy: bridgecrew/checkov:2.1.67
     # is the controller image
-    controller: ghcr.io/appvia/terraform-controller:v0.2.9
-    # The terraform image used when running jobs
-    executor: ghcr.io/appvia/terraform-executor:v0.2.9
+    controller: ghcr.io/appvia/terranetes-controller:v0.2.9
+    # The terranetes image used when running jobs
+    executor: ghcr.io/appvia/terranetes-executor:v0.2.9
 
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h

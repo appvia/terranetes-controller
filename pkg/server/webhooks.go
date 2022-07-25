@@ -27,10 +27,10 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/appvia/terraform-controller/pkg/register"
-	"github.com/appvia/terraform-controller/pkg/schema"
-	"github.com/appvia/terraform-controller/pkg/utils"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/register"
+	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 // registerWebhooks is responsible for registering the webhooks

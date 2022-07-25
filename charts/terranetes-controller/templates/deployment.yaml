@@ -2,14 +2,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
   labels:
-    {{- include "terraform-controller.labels" . | nindent 4 }}
+    {{- include "terranetes-controller.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "terraform-controller.selectorLabels" . | nindent 6 }}
+      {{- include "terranetes-controller.selectorLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -25,13 +25,13 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "terraform-controller.selectorLabels" . | nindent 8 }}
+        {{- include "terranetes-controller.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: terraform-controller
+      serviceAccountName: terranetes-controller
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.controller.webhooks.ca }}

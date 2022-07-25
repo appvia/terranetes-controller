@@ -11,15 +11,15 @@ ENV \
 
 RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kubectl
 
-COPY . /go/src/github.com/appvia/terraform-controller
+COPY . /go/src/github.com/appvia/terranetes-controller
 
 ENV CGO_ENABLED=0
 ENV VERSION=$VERSION
 
 RUN /usr/bin/kubectl version --client
 
-RUN cd /go/src/github.com/appvia/terraform-controller && make source
-RUN cd /go/src/github.com/appvia/terraform-controller && make step
+RUN cd /go/src/github.com/appvia/terranetes-controller && make source
+RUN cd /go/src/github.com/appvia/terranetes-controller && make step
 
 FROM alpine:3.15.4
 
@@ -28,8 +28,8 @@ RUN apk add ca-certificates curl unzip
 RUN apk add ca-certificates bash openssh git
 
 COPY --from=builder /usr/bin/kubectl /bin/kubectl
-COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/source /bin/source
-COPY --from=builder /go/src/github.com/appvia/terraform-controller/bin/step /bin/step
+COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/source /bin/source
+COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/step /bin/step
 
 COPY images/assets/ssh_config /etc/ssh/ssh_config
 

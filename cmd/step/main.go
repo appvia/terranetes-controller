@@ -31,8 +31,8 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"github.com/appvia/terraform-controller/pkg/utils"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 // Step represents a stage to run

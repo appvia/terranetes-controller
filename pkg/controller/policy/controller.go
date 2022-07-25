@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/handlers/policies"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/handlers/policies"
 )
 
 // Controller handles the reconciliation of the policy resource

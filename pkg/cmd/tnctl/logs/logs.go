@@ -28,11 +28,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/utils"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 var longLogsHelp = `

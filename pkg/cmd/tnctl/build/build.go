@@ -34,10 +34,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/utils"
-	"github.com/appvia/terraform-controller/pkg/version"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 var longBuildHelp = `

@@ -30,10 +30,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/utils"
-	"github.com/appvia/terraform-controller/pkg/utils/filters"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/filters"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 var sanitizeRegEx = regexp.MustCompile(`^[a-zA-Z0-9\-\.\:]{1,64}$`)

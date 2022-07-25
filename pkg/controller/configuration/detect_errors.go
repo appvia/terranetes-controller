@@ -29,12 +29,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/controller"
-	"github.com/appvia/terraform-controller/pkg/utils/jobs"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
-	"github.com/appvia/terraform-controller/pkg/utils/terraform"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 // ensureErrorDetection is helper used to try and detect by the configuration failed and

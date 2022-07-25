@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/appvia/terraform-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // Finalizable is an kubernetes resource api object that supports finalizers

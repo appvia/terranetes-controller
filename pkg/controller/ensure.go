@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 var (

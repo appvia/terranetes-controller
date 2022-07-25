@@ -20,7 +20,7 @@ package controller
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // Object provides a convenience wrapper around the object

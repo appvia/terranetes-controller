@@ -30,12 +30,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/controller"
-	"github.com/appvia/terraform-controller/pkg/schema"
-	controllertests "github.com/appvia/terraform-controller/test"
-	"github.com/appvia/terraform-controller/test/fixtures"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/schema"
+	controllertests "github.com/appvia/terranetes-controller/test"
+	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
 func TestReconcile(t *testing.T) {

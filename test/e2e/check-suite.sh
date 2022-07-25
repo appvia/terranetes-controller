@@ -18,7 +18,7 @@
 
 APP_NAMESPACE="apps"
 BATS_OPTIONS=${BATS_OPTIONS:-""}
-BUCKET=${BUCKET:-"terraform-controller-ci-bucket"}
+BUCKET=${BUCKET:-"terranetes-controller-ci-bucket"}
 CLOUD=""
 UNITS="test/e2e/integration"
 VERSION="ci"

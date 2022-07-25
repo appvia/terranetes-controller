@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"strings"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/utils/jobs"
-	"github.com/appvia/terraform-controller/pkg/utils/kubernetes"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 // checkovPolicyTemplate is the default template used to produce a checkov configuration

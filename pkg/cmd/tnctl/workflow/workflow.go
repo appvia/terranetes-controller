@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/appvia/terraform-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // Command represents the available get command options

@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/appvia/terraform-controller/pkg/server"
-	"github.com/appvia/terraform-controller/pkg/version"
+	"github.com/appvia/terranetes-controller/pkg/server"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 func init() {
@@ -39,7 +39,7 @@ var config server.Config
 
 func main() {
 	cmd := &cobra.Command{
-		Use:     "terraform-controller",
+		Use:     "terranetes-controller",
 		Short:   "Runs the terraform controller to managed workflows",
 		Version: version.Version,
 		RunE: func(cmd *cobra.Command, args []string) error {

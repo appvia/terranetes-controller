@@ -18,7 +18,7 @@
 package v1alpha1
 
 import (
-	corev1alphav1 "github.com/appvia/terraform-controller/pkg/apis/core/v1alpha1"
+	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // DefaultProviderConditions returns the default conditions for a provider

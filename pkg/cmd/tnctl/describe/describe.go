@@ -28,10 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terraform-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terraform-controller/pkg/cmd"
-	"github.com/appvia/terraform-controller/pkg/cmd/tnctl/describe/assets"
-	"github.com/appvia/terraform-controller/pkg/utils"
+	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe/assets"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // Command represents the available get command options

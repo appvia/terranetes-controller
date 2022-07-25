@@ -25,8 +25,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/appvia/terraform-controller/pkg/schema"
-	"github.com/appvia/terraform-controller/test/fixtures"
+	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
 func TestCreateOrForceUpdate(t *testing.T) {

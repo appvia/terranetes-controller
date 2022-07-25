@@ -33,7 +33,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/azure?ref=master
+  module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/azure?ref=master
   providerRef:
     name: azure
   writeConnectionSecretToRef:

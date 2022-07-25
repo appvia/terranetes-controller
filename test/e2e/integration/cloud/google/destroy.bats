@@ -31,6 +31,6 @@ teardown() {
 }
 
 @test "We should have a confirmation the bucket have been deleted" {
-  runit "echo hello world terraform-controller-e2e"
+  runit "echo hello world terranetes-controller-e2e"
   [[ "$status" -eq 0 ]]
 }
