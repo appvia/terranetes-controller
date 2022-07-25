@@ -33,17 +33,17 @@ teardown() {
 replicaCount: 1
 controller:
   images:
-    controller: "ghcr.io/appvia/terraform-controller:${VERSION}"
-    executor: "ghcr.io/appvia/terraform-executor:${VERSION}"
+    controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
+    executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
   costs:
     secret: ${infracost}
 EOF
 
   if ! helm -n ${NAMESPACE} ls | grep terraform-controller; then
-    runit "helm install terraform-controller charts/terraform-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
+    runit "helm install terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   else
-    runit "helm upgrade terraform-controller charts/terraform-controller -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
+    runit "helm upgrade terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   fi
 }
