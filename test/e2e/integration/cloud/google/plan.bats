@@ -33,7 +33,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/appvia/terraform-controller.git//test/e2e/assets/terraform/google?ref=master
+  module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/google?ref=master
   providerRef:
     name: google
   writeConnectionSecretToRef:
@@ -41,7 +41,7 @@ spec:
     keys:
       - bucket_name
   variables:
-    bucket: terraform-controller-e2e
+    bucket: terranetes-controller-e2e
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]

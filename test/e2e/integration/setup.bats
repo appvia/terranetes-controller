@@ -39,7 +39,7 @@ controller:
     secret: ${infracost}
 EOF
 
-  if ! helm -n ${NAMESPACE} ls | grep terraform-controller; then
+  if ! helm -n ${NAMESPACE} ls | grep terranetes-controller; then
     runit "helm install terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   else
@@ -57,7 +57,7 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should have the terraform-controller helm chart deployed" {
+@test "We should have the terranetes-controller helm chart deployed" {
   runit "helm ls -n ${NAMESPACE}" "grep -v deployed"
   [[ "$status" -eq 0 ]]
 }

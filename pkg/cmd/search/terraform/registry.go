@@ -102,7 +102,7 @@ func (r *registry) Versions(ctx context.Context, module search.Module) ([]string
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "terraform-controller/"+version.Version)
+	req.Header.Set("User-Agent", "terranetes-controller/"+version.Version)
 
 	resp, err := r.hc.Do(req)
 	if err != nil {
@@ -142,7 +142,7 @@ func (r *registry) ResolveSource(ctx context.Context, module search.Module) (str
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "terraform-controller/"+version.Version)
+	req.Header.Set("User-Agent", "terranetes-controller/"+version.Version)
 
 	resp, err := r.hc.Do(req)
 	if err != nil {
@@ -236,7 +236,7 @@ func (r *registry) search(ctx context.Context, query search.Query, offset int) (
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "terraform-controller/"+version.Version)
+	req.Header.Set("User-Agent", "terranetes-controller/"+version.Version)
 
 	resp, err := r.hc.Do(req)
 	if err != nil {

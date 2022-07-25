@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: controller
   labels:
-    {{- include "terraform-controller.labels" . | nindent 4 }}
+    {{- include "terranetes-controller.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -16,4 +16,4 @@ spec:
     targetPort: {{ .Values.controller.webhooks.port }}
   sessionAffinity: ClientIP
   selector:
-    app.kubernetes.io/name: {{ include "terraform-controller.name" . }}
+    app.kubernetes.io/name: {{ include "terranetes-controller.name" . }}

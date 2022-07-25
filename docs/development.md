@@ -20,7 +20,7 @@ controller:
     #secret: infracost
   images:
     # is the controller image
-    controller: ghcr.io/appvia/terraform-controller:ci
+    controller: ghcr.io/appvia/terranetes-controller:ci
     # The terraform image used when running jobs
     executor: ghcr.io/appvia/terraform-executor:ci
 ```
@@ -30,7 +30,7 @@ controller:
 $ make controller-kind
 
 # Change the values of the images to :latest in values.yaml
-$ helm install terraform-controller charts/terraform-controller --create-namespace --values dev/values.yaml
+$ helm install terranetes-controller charts/terranetes-controller --create-namespace --values dev/values.yaml
 ```
 
 You can easily iterate locally by running `make controller-kind` again to build, load and restart.

@@ -6,7 +6,7 @@ kind: Secret
 metadata:
   name: ca
   labels:
-    {{- include "terraform-controller.labels" . | nindent 4 }}
+    {{- include "terranetes-controller.labels" . | nindent 4 }}
 type: Opaque
 data:
 {{- if $secret }}
@@ -14,7 +14,7 @@ data:
   tls.pem: {{ index $secret.data "tls.pem" }}
   tls-key.pem: {{ index $secret.data "tls-key.pem" }}
 {{- else }}
-{{ $ca := genCA "terraform-controller" 7300 }}
+{{ $ca := genCA "terranetes-controller" 7300 }}
 {{ $dn := printf "controller.%s.svc.cluster.local" .Release.Namespace }}
 {{ $sn := printf "controller.%s.svc" .Release.Namespace }}
 {{ $server := genSignedCert "" (list "127.0.0.1") (list "localhost" "controller" $sn $dn) 3650 $ca }}

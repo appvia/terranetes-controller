@@ -3,7 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}-deny-all
+  name: {{ include "terranetes-controller.fullname" . }}-deny-all
 spec:
   podSelector: {}
   policyTypes:
@@ -12,7 +12,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}-apiserver
+  name: {{ include "terranetes-controller.fullname" . }}-apiserver
 spec:
   ingress:
     - from:
@@ -21,14 +21,14 @@ spec:
           port: {{ .Values.controller.port }}
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "terraform-controller.name" . }}
+      app.kubernetes.io/name: {{ include "terranetes-controller.name" . }}
   policyTypes:
     - Ingress
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}-webhooks
+  name: {{ include "terranetes-controller.fullname" . }}-webhooks
 spec:
   ingress:
     - from:
@@ -37,7 +37,7 @@ spec:
           port: {{ .Values.controller.webhooks.port }}
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "terraform-controller.name" . }}
+      app.kubernetes.io/name: {{ include "terranetes-controller.name" . }}
   policyTypes:
     - Ingress
 {{- end }}

@@ -3,7 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 rules:
   {{- if .Values.controller.registerCRDs }}
   - apiGroups:
@@ -78,20 +78,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: terraform-controller
+    name: terranetes-controller
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 rules:
   - apiGroups:
       - coordination.k8s.io
@@ -121,20 +121,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "terraform-controller.fullname" . }}
+  name: {{ include "terranetes-controller.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: terraform-controller
+    name: terranetes-controller
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "terraform-controller.fullname" . }}-executor
+  name: {{ include "terranetes-controller.fullname" . }}-executor
 rules:
   - apiGroups:
       - coordination.k8s.io
@@ -175,7 +175,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "terraform-controller.fullname" . }}-executor
+  name: {{ include "terranetes-controller.fullname" . }}-executor
 subjects:
   {{- if .Values.rbac.enableExecutorServiceAccountPermissions }}
   - kind: Group
