@@ -113,6 +113,49 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configur
 	}
 }
 
+// ensureCustomBackendTemplate is called to ensure that if configured the backend template for the terraform
+// is available and ready
+func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		if !c.HasBackendTemplate() {
+			return reconcile.Result{}, nil
+		}
+		reference := fmt.Sprintf("%s/%s", c.ControllerNamespace, c.BackendTemplate)
+
+		// @step: else we need to check for the secret and source it in for later
+		secret := &v1.Secret{}
+		secret.Namespace = c.ControllerNamespace
+		secret.Name = c.BackendTemplate
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the backend template secret")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.ActionRequired(fmt.Sprintf("Backend template secret %q not found, contact administrator", reference))
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		// @step: ensure we have the backend.tf key in the secret
+		backend, ok := secret.Data["backend.tf"]
+		if !ok || len(backend) == 0 {
+			cond.ActionRequired(fmt.Sprintf("Backend template secret %q does not contain the backend.tf key", reference))
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		// @step: update the template in the state
+		state.backendTemplate = string(backend)
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureCostSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
 // the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
 // place guard around it
@@ -333,7 +376,7 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
 	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
-	backend := string(configuration.GetUID())
+	suffix := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -354,7 +397,12 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 		// @step: generate the terraform backend configuration - this creates a kubernetes terraform
 		// backend pointing at a secret
-		cfg, err := terraform.NewKubernetesBackend(c.ControllerNamespace, backend)
+		cfg, err := terraform.NewKubernetesBackend(terraform.BackendOptions{
+			Configuration: configuration,
+			Namespace:     c.ControllerNamespace,
+			Suffix:        suffix,
+			Template:      state.backendTemplate,
+		})
 		if err != nil {
 			cond.Failed(err, "Failed to generate the terraform backend configuration")
 
@@ -457,17 +505,18 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
-			AdditionalLabels: map[string]string{terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]},
-			EnableInfraCosts: c.EnableInfracosts,
-			ExecutorImage:    c.ExecutorImage,
-			ExecutorSecrets:  c.ExecutorSecrets,
-			InfracostsImage:  c.InfracostsImage,
-			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.ControllerNamespace,
-			PolicyConstraint: state.checkovConstraint,
-			PolicyImage:      c.PolicyImage,
-			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			AdditionalLabels:   map[string]string{terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]},
+			EnableInfraCosts:   c.EnableInfracosts,
+			ExecutorImage:      c.ExecutorImage,
+			ExecutorSecrets:    c.ExecutorSecrets,
+			InfracostsImage:    c.InfracostsImage,
+			InfracostsSecret:   c.InfracostsSecretName,
+			Namespace:          c.ControllerNamespace,
+			PolicyConstraint:   state.checkovConstraint,
+			PolicyImage:        c.PolicyImage,
+			SaveTerraformState: c.HasBackendTemplate(),
+			Template:           state.jobTemplate,
+			TerraformImage:     GetTerraformImage(configuration, c.TerraformImage),
 		}
 
 		// @step: use the options to generate the job
@@ -823,14 +872,15 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			EnableInfraCosts: c.EnableInfracosts,
-			ExecutorImage:    c.ExecutorImage,
-			ExecutorSecrets:  c.ExecutorSecrets,
-			InfracostsImage:  c.InfracostsImage,
-			InfracostsSecret: c.InfracostsSecretName,
-			Namespace:        c.ControllerNamespace,
-			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			EnableInfraCosts:   c.EnableInfracosts,
+			ExecutorImage:      c.ExecutorImage,
+			ExecutorSecrets:    c.ExecutorSecrets,
+			InfracostsImage:    c.InfracostsImage,
+			InfracostsSecret:   c.InfracostsSecretName,
+			Namespace:          c.ControllerNamespace,
+			SaveTerraformState: c.HasBackendTemplate(),
+			Template:           state.jobTemplate,
+			TerraformImage:     GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")

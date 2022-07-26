@@ -31,21 +31,21 @@ import (
 // TerraformStateOutputsKey is the key for the terraform state outputs
 const TerraformStateOutputsKey = "outputs"
 
-// backendTF is responsible for creating the kubernetes backend terraform configuration
-var backendTF = `
+// KubernetesBackendTemplate is responsible for creating the kubernetes backend terraform configuration
+var KubernetesBackendTemplate = `
 terraform {
 	backend "kubernetes" {
 		in_cluster_config = true
-		namespace         = "{{ .Namespace }}"
-		secret_suffix     = "{{ .Suffix }}"
+		namespace         = "{{ .controller.namespace }}"
+		secret_suffix     = "{{ .controller.suffix }}"
 	}
 }
 `
 
 // providerTF is a template for a terraform provider
-var providerTF = `provider "{{ .Provider }}" {
-{{- if .Configuration }}
-  {{ toHCL .Configuration | nindent 2 }}
+var providerTF = `provider "{{ .provider }}" {
+{{- if .configuration }}
+  {{ toHCL .configuration | nindent 2 }}
 {{- end }}
 }
 `
@@ -93,22 +93,39 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 	}
 
 	return utils.Template(providerTF, map[string]interface{}{
-		"Configuration": config,
-		"Provider":      provider,
+		"configuration": config,
+		"provider":      provider,
 	})
 }
 
+// BackendOptions are the options used to generate the backend
+type BackendOptions struct {
+	// Configuration is a reference to the terraform configuration
+	Configuration *terraformv1alphav1.Configuration
+	// Namespace is a reference to the controller namespace
+	Namespace string
+	// Suffix is an expexted suffix for the terraform state
+	Suffix string
+	// Template is the golang template to use to generate the backend content
+	Template string
+}
+
 // NewKubernetesBackend creates a new kubernetes backend
-func NewKubernetesBackend(namespace, suffux string) ([]byte, error) {
-	tmpl, err := template.New("main").Parse(backendTF)
+func NewKubernetesBackend(options BackendOptions) ([]byte, error) {
+	tmpl, err := template.New("main").Parse(options.Template)
 	if err != nil {
 		return nil, err
 	}
 
 	render := &bytes.Buffer{}
-	if err := tmpl.Execute(render, map[string]string{
-		"Namespace": namespace,
-		"Suffix":    suffux,
+	if err := tmpl.Execute(render, map[string]interface{}{
+		"controller": map[string]interface{}{
+			"namespace": options.Namespace,
+			"suffix":    options.Suffix,
+		},
+		"configuration": options.Configuration,
+		"name":          options.Configuration.Name,
+		"namespace":     options.Configuration.Namespace,
 	}); err != nil {
 		return nil, err
 	}

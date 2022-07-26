@@ -60,6 +60,8 @@ type Options struct {
 	PolicyConstraint *terraformv1alphav1.PolicyConstraint
 	// PolicyImage is image to use for checkov
 	PolicyImage string
+	// SaveTerraformState indicates we should save the terraform state in a secret
+	SaveTerraformState bool
 	// Template is the source for the job template if overridden by the controller
 	Template []byte
 	// TerraformImage is the image to use for the terraform jobs
@@ -198,6 +200,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		"ExecutorSecrets":        options.ExecutorSecrets,
 		"ImagePullPolicy":        "IfNotPresent",
 		"Policy":                 options.PolicyConstraint,
+		"SaveTerraformState":     options.SaveTerraformState,
 		"ServiceAccount":         DefaultServiceAccount,
 		"Stage":                  stage,
 		"TerraformArguments":     arguments,
@@ -221,6 +224,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Infracosts":       options.InfracostsSecret,
 			"InfracostsReport": r.configuration.GetTerraformCostSecretName(),
 			"PolicyReport":     r.configuration.GetTerraformPolicySecretName(),
+			"TerraformState":   r.configuration.GetTerraformStateSecretName(),
 		},
 	}
 

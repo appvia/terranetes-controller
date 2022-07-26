@@ -145,6 +145,12 @@ spec:
           {{- end }}
           {{- if eq .Stage "apply" }}
           - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false
+          {{- if .SaveTerraformState }}
+          - --command=/bin/terraform state pull > /run/terraform.tfstate
+          - --command=/bin/gzip /run/terraform.tfstate
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(TERRAFORM_STATE_NAME) --ignore-not-found >/dev/null
+          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(TERRAFORM_STATE_NAME) --from-file=tfstate=/run/terraform.tfstate.gz >/dev/null
+          {{- end }}
           {{- end }}
           {{- if eq .Stage "destroy" }}
           - --command=/bin/terraform destroy {{ .TerraformArguments }} -auto-approve
@@ -162,6 +168,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: TERRAFORM_STATE_NAME
+            value: {{ .Secrets.TerraformState }}
         envFrom:
         {{- if eq .Provider.Source "secret" }}
           - secretRef:
