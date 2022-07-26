@@ -19,6 +19,10 @@ controller:
   # Executor secrets includes the following secrets in 'all' execution jobs. The secret is added
   # as an environment variables (spec.envFrom) into the terranetes container of the executor
   executorSecrets: []
+  # Overrides the default terraform state backend from Kubernetes secret to anything defined on the
+  # template. This value is the name of a secret in the controller namespace which contains a
+  # backend.tf key, holding a golang template to use for the terraform state
+  backendTemplate: ""
   # Configuration related to costs
   costs:
     # Name of the secret containing the infracost api token

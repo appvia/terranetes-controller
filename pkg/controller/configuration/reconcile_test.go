@@ -881,7 +881,7 @@ var _ = Describe("Configuration Controller", func() {
 			Setup(configuration)
 
 			ctrl.ExecutorSecrets = []string{"secret1", "secret2"}
-			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 4)
 		})
 
 		It("should have the conditions", func() {
@@ -1075,6 +1075,185 @@ terraform {
 		It("should ask us to requeue", func() {
 			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
 			Expect(rerr).To(BeNil())
+		})
+	})
+
+	// CUSTOM BACKEND TEMPLATE
+	When("using a custom backend template", func() {
+		When("the template is not present", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				Setup(configuration)
+				ctrl.BackendTemplate = "not_there"
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the configuration failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Backend template secret \"default/not_there\" not found, contact administrator"))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("the template is present but missing required keys", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				backend := fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "missing_key")
+				delete(backend.Data, "backend.tf")
+				Setup(configuration, backend)
+				ctrl.BackendTemplate = "missing_key"
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the configuration failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Backend template secret \"default/missing_key\" does not contain the backend.tf key"))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("the template is present but missing required key is empty", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				backend := fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "missing_key")
+				backend.Data["backend.tf"] = []byte("")
+				Setup(configuration, backend)
+				ctrl.BackendTemplate = "missing_key"
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the configuration failed", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Backend template secret \"default/missing_key\" does not contain the backend.tf key"))
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		When("the template is present, valid and plan has not been run", func() {
+			BeforeEach(func() {
+				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+				backend := fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "backend-s3")
+				Setup(configuration, backend)
+				ctrl.BackendTemplate = "backend-s3"
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+			})
+
+			It("should have the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+			})
+
+			It("should indicate the provider is ready", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Message).To(Equal("Provider ready"))
+			})
+
+			It("should have created the generated configuration secret", func() {
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+
+				Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
+				Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+			})
+
+			It("should have create a terraform backend configuration", func() {
+				expected := `
+terraform {
+  backend "s3" {
+    bucket     = "terranetes-controller-state"
+    key        = "cluster_one/apps/bucket"
+    region     = "eu-west-2"
+    access_key = "AWS_ACCESS_KEY_ID"
+    secret_key = "AWS_SECRET_ACCESS_KEY"
+  }
+}
+`
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+
+				found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+
+				backend := string(secret.Data[terraformv1alphav1.TerraformBackendConfigMapKey])
+				Expect(backend).ToNot(BeZero())
+				Expect(backend).To(Equal(expected))
+			})
+
+			It("should indicate the terraform plan is running", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+
+			It("should have created job for the terraform plan", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
 		})
 	})
 

@@ -143,6 +143,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	if err := (&configuration.Controller{
 		ControllerNamespace:     config.Namespace,
+		BackendTemplate:         config.BackendTemplate,
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,

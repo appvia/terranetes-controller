@@ -60,20 +60,23 @@ type Controller struct {
 	cache *cache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
-	// ExecutorSecrets is a collection of secrets which should be added to the
-	// executors job everytime - these are configured by the platform team on the
-	// cli options
-	ExecutorSecrets []string
 	// ControllerNamespace is the namespace where the runner is running
 	ControllerNamespace string
+	// BackendTemplate is the name of the secret in the controller namespace which holds a
+	// template used to generate the state backend
+	BackendTemplate string
 	// EnableInfracosts enables the cost analytics via infracost
 	EnableInfracosts bool
+	// EnableTerraformVersions enables the use of the configuration's Terraform version
+	EnableTerraformVersions bool
 	// EnableWatchers indicates we should create watcher jobs in the user namespace
 	EnableWatchers bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
-	// EnableTerraformVersions enables the use of the configuration's Terraform version
-	EnableTerraformVersions bool
+	// ExecutorSecrets is a collection of secrets which should be added to the
+	// executors job everytime - these are configured by the platform team on the
+	// cli options
+	ExecutorSecrets []string
 	// InfracostsImage is the image to use for all infracost jobs
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
@@ -86,10 +89,16 @@ type Controller struct {
 	TerraformImage string
 }
 
+// HasBackendTemplate returns true if the configuration has a backend template
+func (c *Controller) HasBackendTemplate() bool {
+	return c.BackendTemplate != ""
+}
+
 // Add is called to setup the manager for the controller
 func (c *Controller) Add(mgr manager.Manager) error {
 	log.WithFields(log.Fields{
 		"additional_secrets": len(c.ExecutorSecrets),
+		"backend":            c.BackendTemplate,
 		"enable_costs":       c.EnableInfracosts,
 		"enable_watchers":    c.EnableWatchers,
 		"namespace":          c.ControllerNamespace,

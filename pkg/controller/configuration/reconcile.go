@@ -28,6 +28,7 @@ import (
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 type state struct {
@@ -37,6 +38,9 @@ type state struct {
 	checkovConstraint *terraformv1alphav1.PolicyConstraint
 	// hasDrift is a flag to indicate if the configuration has drift
 	hasDrift bool
+	// backendTemplate is the template to use for the terraform state backend.
+	// We always default this to the kubernetes backend
+	backendTemplate string
 	// policies is a list of policies in the cluster
 	policies *terraformv1alphav1.PolicyList
 	// provider is the credentials provider to use
@@ -64,13 +68,14 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	state := &state{valueFrom: make(map[string]string)}
+	state := &state{valueFrom: make(map[string]string), backendTemplate: terraform.KubernetesBackendTemplate}
 
 	finalizer := controller.NewFinalizer(c.cc, controllerName)
 	if finalizer.IsDeletionCandidate(configuration) {
 		result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 			[]controller.EnsureFunc{
 				c.ensureCapturedState(configuration, state),
+				c.ensureCustomBackendTemplate(configuration, state),
 				c.ensureProviderReady(configuration, state),
 				c.ensureAuthenticationSecret(configuration, state),
 				c.ensureCustomJobTemplate(configuration, state),
@@ -96,6 +101,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			finalizer.EnsurePresent(configuration),
 			c.ensureCapturedState(configuration, state),
 			c.ensureNoActivity(configuration, state),
+			c.ensureCustomBackendTemplate(configuration, state),
 			c.ensureCostSecret(configuration),
 			c.ensureValueFromSecret(configuration, state),
 			c.ensureAuthenticationSecret(configuration, state),

@@ -57,6 +57,30 @@ var fakeCostsReport = `
 }
 `
 
+var fakeBackendTemplate = `
+terraform {
+  backend "s3" {
+    bucket     = "terranetes-controller-state"
+    key        = "cluster_one/{{ .namespace }}/{{ .name }}"
+    region     = "eu-west-2"
+    access_key = "AWS_ACCESS_KEY_ID"
+    secret_key = "AWS_SECRET_ACCESS_KEY"
+  }
+}
+`
+
+// NewBackendTemplateSecret returns a fake backend template secret
+func NewBackendTemplateSecret(namespace, name string) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Name = name
+	secret.Namespace = namespace
+	secret.Data = map[string][]byte{
+		"backend.tf": []byte(fakeBackendTemplate),
+	}
+
+	return secret
+}
+
 // NewCostsSecret returns a fake costs secret
 func NewCostsSecret(namespace, name string) *v1.Secret {
 	secret := &v1.Secret{}

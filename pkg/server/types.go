@@ -21,14 +21,19 @@ import "time"
 
 // Config is the configuration for the controller
 type Config struct {
-	// ExecutorSecrets is a list of additional secrets to be added to the executor
-	ExecutorSecrets []string
 	// APIServerPort is the port to listen on
 	APIServerPort int
+	// BackendTemplate is the name of a secret in the controller namespace which
+	// contains an optional template to use for the backend state - unless this
+	// is set we use the default backend state i.e. kubernetes state
+	BackendTemplate string
 	// DriftControllerInterval is the interval for the controller to check for drift
 	DriftControllerInterval time.Duration
 	// DriftInterval is the minimum interval between drift checks
 	DriftInterval time.Duration
+	// DriftThreshold is the max number of drifts we are running to run - this prevents the
+	// controller from running many configurations at the same time
+	DriftThreshold float64
 	// EnableWebhook enables the webhook registration
 	EnableWebhook bool
 	// EnableWatchers enables the creation of watcher jobs
@@ -37,15 +42,14 @@ type Config struct {
 	EnableTerraformVersions bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// ExecutorSecrets is a list of additional secrets to be added to the executor
+	ExecutorSecrets []string
 	// InfracostsSecretName is the name of the secret that contains the cost token and endpoint
 	InfracostsSecretName string
 	// InfracostsImage is the image to use for infracosts
 	InfracostsImage string
 	// JobTemplate is the name of the configmap containing a template for the jobs
 	JobTemplate string
-	// DriftThreshold is the max number of drifts we are running to run - this prevents the
-	// controller from running many configurations at the same time
-	DriftThreshold float64
 	// MetricsPort is the port to listen on
 	MetricsPort int
 	// Namespace is namespace the controller is running
