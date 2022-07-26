@@ -102,6 +102,7 @@ securityContext:
 # Allows to you deploy a number of providers into the clusters
 providers:
 #  - name: aws
+#    summary: A summary for this provider
 #    source: injected
 #    labels: {}
 #    annotations: {}
