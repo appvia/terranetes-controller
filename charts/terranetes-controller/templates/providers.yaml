@@ -17,6 +17,9 @@ metadata:
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
+  {{- if $provider.summary }}
+  summary: {{ $provider.summary }}
+  {{- end }}
   source: {{ $source }}
   provider: {{ $cloud }}
   {{- if eq $provider.source "secret" }}
