@@ -1,8 +1,8 @@
 [![GPL license](https://img.shields.io/badge/License-GPL-blue.svg)](http://perso.crans.org/besson/LICENSE.html) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens) [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terranetes-controller)](https://goreportcard.com/report/github.com/appvia/terranetes-controller) [![CodeQL](https://github.com/appvia/terranetes-controller/actions/workflows/codeql.yml/badge.svg)](https://github.com/appvia/terranetes-controller/actions/workflows/codeql.yml)
 
-# **TERRANETES CONTROLLER**
+# **TERRAFORM CONTROLLER**
 
-Terranetes Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
+The Terraform Controller (aka Terranetes controller) manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
 Documentation can be found at https://terranetes.appvia.io
 
