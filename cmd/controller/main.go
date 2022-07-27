@@ -41,7 +41,7 @@ func main() {
 	cmd := &cobra.Command{
 		Use:     "terranetes-controller",
 		Short:   "Runs the terraform controller to managed workflows",
-		Version: version.Version,
+		Version: version.GetVersion(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if v, _ := cmd.Flags().GetBool("verbose"); v {
 				log.SetLevel(log.DebugLevel)
