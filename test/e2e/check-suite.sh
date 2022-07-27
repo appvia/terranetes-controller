@@ -21,12 +21,14 @@ BATS_OPTIONS=${BATS_OPTIONS:-""}
 BUCKET=${BUCKET:-"terranetes-controller-ci-bucket"}
 CLOUD=""
 UNITS="test/e2e/integration"
+USE_CHART="false"
 VERSION="ci"
 
 usage() {
   cat <<EOF
 Usage: $0 [options]
 --cloud <NAME>         Cloud provider name to run against (aws, azure, google, defaults: aws)
+--use-chart            Indicates we use the chart instead of using the local directory
 --version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
 EOF
@@ -45,6 +47,7 @@ run_bats() {
   CLOUD=${CLOUD} \
   RESOURCE_NAME=bucket-${CLOUD:-"test"} \
   NAMESPACE="terraform-system" \
+  USE_CHART=${USE_CHART} \
   VERSION=${VERSION} \
   bats ${BATS_OPTIONS} ${@} || exit 1
 }
@@ -92,6 +95,10 @@ while [[ $# -gt 0 ]]; do
     --cloud)
       CLOUD="${2}"
       shift 2
+      ;;
+    --use-chart)
+      USE_CHART=true
+      shift
       ;;
     --version)
       VERSION="${2}"

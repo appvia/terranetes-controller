@@ -28,6 +28,7 @@ teardown() {
 @test "We should be able to deploy the helm chart" {
   infracost=""
   [[ -n "${INFRACOST_API_KEY}}" ]] && infracost="infracost-api"
+  [[ "${USE_CHART}" == "true" ]] && skip "skipping local chart deployment"
 
   cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 1
@@ -46,6 +47,25 @@ EOF
     runit "helm upgrade terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
     [[ "$status" -eq 0 ]]
   fi
+}
+
+@test "We should deploy the controller from the official helm chart" {
+  infracost=""
+  [[ -n "${INFRACOST_API_KEY}}" ]] && infracost="infracost-api"
+  [[ "${USE_CHART}" == "false" ]] && skip "skipping helm chart deployment"
+
+  cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
+controller:
+  costs:
+    secret: ${infracost}
+EOF
+
+  runit "helm repo add appvia https://terranetes-controller.appvia.io"
+  [[ "$status" -eq 0 ]]
+  runit "helm repo update"
+  [[ "$status" -eq 0 ]]
+  runit "helm install terranetes-controller appvia/terranetes-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
+  [[ "$status" -eq 0 ]]
 }
 
 @test "We should see the custom resource types" {

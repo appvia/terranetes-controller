@@ -7,6 +7,10 @@ on:
         default: aws
         required: false
         type: string
+      use_helm:
+        default: false
+        required: false
+        type: boolean
       version:
         default: ci
         required: false
@@ -23,6 +27,11 @@ on:
           - aws
           - azure
           - google
+      use_helm:
+        description: Indicates we install the controller via official helm chart
+        required: false
+        type: boolean
+        default: false
       version:
         description: Version of controller to check against
         required: false
@@ -131,3 +140,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
           E2E_SSH_DEPLOYMENT_KEY: ${{ secrets.E2E_SSH_DEPLOYMENT_KEY }}
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+          USE_CHART: ${{ (github.event.inputs || inputs).use_helm }}
