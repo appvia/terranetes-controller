@@ -129,6 +129,7 @@ jobs:
         run: |
           test/e2e/check-suite.sh \
             --cloud ${{ (github.event.inputs || inputs).cloud }} \
+            --use-chart=${{ (github.event.inputs || inputs).use_helm }} \
             --version ${{ (github.event.inputs || inputs).version }}
         env:
           ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
@@ -140,4 +141,3 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
           E2E_SSH_DEPLOYMENT_KEY: ${{ secrets.E2E_SSH_DEPLOYMENT_KEY }}
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
-          USE_CHART: ${{ (github.event.inputs || inputs).use_helm }}
