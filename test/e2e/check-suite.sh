@@ -28,7 +28,7 @@ usage() {
   cat <<EOF
 Usage: $0 [options]
 --cloud <NAME>         Cloud provider name to run against (aws, azure, google, defaults: aws)
---use-chart            Indicates we use the chart instead of using the local directory
+--use-chart <BOOLEAN>  Indicates we use the chart instead of using the local directory (defaults: ${USE_CHART})
 --version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
 EOF
@@ -97,8 +97,8 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --use-chart)
-      USE_CHART=true
-      shift
+      USE_CHART="${2}"
+      shift 2
       ;;
     --version)
       VERSION="${2}"

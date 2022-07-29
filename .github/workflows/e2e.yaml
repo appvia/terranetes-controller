@@ -129,7 +129,7 @@ jobs:
         run: |
           test/e2e/check-suite.sh \
             --cloud ${{ (github.event.inputs || inputs).cloud }} \
-            --use-chart=${{ (github.event.inputs || inputs).use_helm }} \
+            --use-chart ${{ (github.event.inputs || inputs).use_helm }} \
             --version ${{ (github.event.inputs || inputs).version }}
         env:
           ARM_CLIENT_ID: ${{ secrets.E2E_ARM_CLIENT_ID }}
