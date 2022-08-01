@@ -246,6 +246,8 @@ func (r *ghClient) searchByOrganization(ctx context.Context, _ search.Query) ([]
 func containsTerms(query string, repostory *githubcc.Repository) bool {
 	terms := strings.ToLower(strings.ReplaceAll(repostory.GetDescription(), ",", " "))
 	terms = terms + " " + strings.ToLower(strings.Join(repostory.Topics, " "))
+	terms = terms + " " + strings.ToLower(strings.ReplaceAll(repostory.GetName(), "-", " "))
+
 	lower := strings.ToLower(query)
 
 	return utils.ContainsList(strings.Split(lower, " "), strings.Split(terms, " "))
