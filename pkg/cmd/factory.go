@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -81,6 +82,11 @@ func NewFactoryWithClient(cc client.Client, streams genericclioptions.IOStreams)
 func (f *factory) SaveConfig(config Config) error {
 	encoded, err := yaml.Marshal(&config)
 	if err != nil {
+		return err
+	}
+
+	// @step: ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0755); err != nil {
 		return err
 	}
 

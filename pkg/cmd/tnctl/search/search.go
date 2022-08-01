@@ -20,6 +20,7 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -124,6 +125,10 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 	if !found || len(config.Sources) == 0 {
 		config.Sources = []string{"https://registry.terraform.io"}
+	}
+
+	if o.Source != "" && !utils.Contains(o.Source, config.Sources) {
+		return fmt.Errorf("source %q not found in configuration", o.Source)
 	}
 
 	// @step: ensure we have something to search for
