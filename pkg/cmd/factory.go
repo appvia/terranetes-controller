@@ -86,11 +86,11 @@ func (f *factory) SaveConfig(config Config) error {
 	}
 
 	// @step: ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0750); err != nil {
 		return err
 	}
 
-	return os.WriteFile(ConfigPath(), encoded, 0644)
+	return os.WriteFile(ConfigPath(), encoded, 0640)
 }
 
 // GetConfig returns true if we have a cli configuration file
