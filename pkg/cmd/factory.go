@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -84,7 +85,12 @@ func (f *factory) SaveConfig(config Config) error {
 		return err
 	}
 
-	return os.WriteFile(ConfigPath(), encoded, 0644)
+	// @step: ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0750); err != nil {
+		return err
+	}
+
+	return os.WriteFile(ConfigPath(), encoded, 0640)
 }
 
 // GetConfig returns true if we have a cli configuration file
