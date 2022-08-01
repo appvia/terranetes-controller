@@ -19,6 +19,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -53,9 +54,7 @@ func (o *ListSourcesCommand) Run(ctx context.Context) error {
 		return err
 	}
 	if !found {
-		o.Println("No configuration found at %q", o.GetConfigPath())
-
-		return nil
+		return fmt.Errorf("no configuration found at %q", o.GetConfigPath())
 	}
 
 	o.Println("You currently have the following sources active")
