@@ -16,4 +16,4 @@ metadata:
     {{- end }}
 spec:
   constraints: {{ $constraint | toYaml | nindent 4 }}
-{{- end }}
+{{ end }}

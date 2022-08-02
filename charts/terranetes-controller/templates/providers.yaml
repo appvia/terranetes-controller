@@ -30,4 +30,4 @@ spec:
   {{- if eq $provider.source "injected" }}
   serviceAccount: {{ $provider.serviceAccount }}
   {{- end }}
-{{- end }}
+{{ end }}
