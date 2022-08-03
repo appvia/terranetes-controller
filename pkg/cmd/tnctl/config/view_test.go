@@ -46,16 +46,15 @@ var _ = Describe("View Command", func() {
 	BeforeEach(func() {
 		var err error
 
-		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
-		factory, err = cmd.NewFactory(streams)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(factory).NotTo(BeNil())
-
 		tempfile, err = os.CreateTemp(os.TempDir(), "config-view.XXXXX")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(tempfile).NotTo(BeNil())
-
 		os.Setenv(cmd.ConfigPathEnvName, tempfile.Name())
+
+		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
+		factory, err = cmd.NewFactory(cmd.WithStreams(streams))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(factory).NotTo(BeNil())
 
 		c = NewViewCommand(factory)
 	})
@@ -72,7 +71,7 @@ var _ = Describe("View Command", func() {
 
 		It("should return an error", func() {
 			Expect(rerr).ToNot(HaveOccurred())
-			Expect(stdout.String()).To(ContainSubstring("No configuration found at"))
+			Expect(stdout.String()).To(ContainSubstring("No configuration found"))
 		})
 	})
 

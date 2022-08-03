@@ -28,7 +28,7 @@ import (
 
 func TestNew(t *testing.T) {
 	streams := genericclioptions.IOStreams{}
-	factory, err := cmd.NewFactory(streams)
+	factory, err := cmd.NewFactory(cmd.WithStreams(streams))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 

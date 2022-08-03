@@ -18,27 +18,25 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/yaml"
 
 	"github.com/appvia/terranetes-controller/pkg/schema"
-	"github.com/appvia/terranetes-controller/pkg/utils"
 )
+
+// ErrNoConfigurationProvider is returned when no configuration provider is defined
+var ErrNoConfigurationProvider = errors.New("no configuration provider defined")
 
 // Factory is the interface that wraps the CLI
 type Factory interface {
 	// GetConfig returns the config for the cli if available
 	GetConfig() (Config, bool, error)
-	// GetConfigPath returns the path to the configuration file
-	GetConfigPath() string
 	// GetClient returns the client for the kubernetes api
 	GetClient() (client.Client, error)
 	// GetKubeClient returns the kubernetes client
@@ -50,7 +48,7 @@ type Factory interface {
 	// Println prints a message to the output stream
 	Println(format string, a ...interface{})
 	// SaveConfig saves the configuration to the file
-	SaveConfig(Config) error
+	SaveConfig(config Config) error
 	// Stdout returns the stdout io writer
 	Stdout() io.Writer
 }
@@ -58,60 +56,61 @@ type Factory interface {
 type factory struct {
 	// cc is the kubernetes runtime client
 	cc client.Client
+	// cfg is the configuration provider
+	cfg ConfigInterface
 	// streams is the input and output streams for the command
 	streams genericclioptions.IOStreams
 }
 
+// OptionFunc is the function type for the option function
+type OptionFunc func(f *factory)
+
 // NewFactory creates and returns a factory for the cli
-func NewFactory(streams genericclioptions.IOStreams) (Factory, error) {
-	return &factory{
-		cc:      nil,
-		streams: streams,
-	}, nil
+func NewFactory(options ...OptionFunc) (Factory, error) {
+	f := &factory{}
+	for _, x := range options {
+		x(f)
+	}
+
+	if f.cfg == nil {
+		f.cfg = NewFileConfiguration(ConfigPath())
+	}
+
+	return f, nil
 }
 
 // NewFactoryWithClient creates and returns a factory for the cli
 func NewFactoryWithClient(cc client.Client, streams genericclioptions.IOStreams) (Factory, error) {
-	return &factory{
-		cc:      cc,
-		streams: streams,
-	}, nil
+	return NewFactory(WithClient(cc), WithStreams(streams))
+}
+
+// GetConfig returns the config for the cli if available
+func (f *factory) GetConfig() (Config, bool, error) {
+	if f.cfg == nil {
+		return Config{}, false, ErrNoConfigurationProvider
+	}
+
+	if found, err := f.cfg.HasConfig(); err != nil {
+		return Config{}, false, err
+	} else if !found {
+		return Config{}, false, nil
+	}
+
+	cfg, err := f.cfg.GetConfig()
+	if err != nil {
+		return Config{}, false, err
+	}
+
+	return cfg, true, nil
 }
 
 // SaveConfig saves the configuration to the file
 func (f *factory) SaveConfig(config Config) error {
-	encoded, err := yaml.Marshal(&config)
-	if err != nil {
-		return err
+	if f.cfg == nil {
+		return ErrNoConfigurationProvider
 	}
 
-	// @step: ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0750); err != nil {
-		return err
-	}
-
-	return os.WriteFile(ConfigPath(), encoded, 0640)
-}
-
-// GetConfig returns true if we have a cli configuration file
-func (f *factory) GetConfig() (Config, bool, error) {
-	if exists, err := utils.FileExists(ConfigPath()); err != nil {
-		return Config{}, false, err
-	} else if !exists {
-		return Config{}, false, nil
-	}
-
-	config, err := LoadConfig(ConfigPath())
-	if err != nil {
-		return Config{}, false, err
-	}
-
-	return config, true, nil
-}
-
-// GetConfigPath returns the path to the configuration file
-func (f *factory) GetConfigPath() string {
-	return ConfigPath()
+	return f.cfg.SaveConfig(config)
 }
 
 // Printf prints a message to the output stream

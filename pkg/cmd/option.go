@@ -15,22 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package config
+package cmd
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-
-	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestNewCommand(t *testing.T) {
-	factory, err := cmd.NewFactory(cmd.WithStreams(genericclioptions.NewTestIOStreamsDiscard()))
-	assert.NoError(t, err)
-	assert.NotNil(t, factory)
+// WithClient sets the kubernetes client
+func WithClient(client client.Client) OptionFunc {
+	return func(f *factory) {
+		f.cc = client
+	}
+}
 
-	c := NewCommand(factory)
-	assert.NotNil(t, c)
+// WithConfiguration sets the configuration provider
+func WithConfiguration(config ConfigInterface) OptionFunc {
+	return func(f *factory) {
+		f.cfg = config
+	}
+}
+
+// WithStreams sets the stream
+func WithStreams(stream genericclioptions.IOStreams) OptionFunc {
+	return func(f *factory) {
+		f.streams = stream
+	}
 }

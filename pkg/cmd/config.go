@@ -29,11 +29,46 @@ import (
 // ConfigPathEnvName is the name of the environment variable that holds the config path
 const ConfigPathEnvName = "TNCTL_CONFIG"
 
-// LoadConfig loads the config file returns a empty config if it doesn't exist
-func LoadConfig(filename string) (Config, error) {
+type fileConfig struct {
+	path string
+}
+
+// NewFileConfiguration creates and returns a file configuration
+func NewFileConfiguration(filename string) ConfigInterface {
+	return &fileConfig{path: filename}
+}
+
+// HasConfig returns if the configuration file exists
+func (f *fileConfig) HasConfig() (bool, error) {
+	if exists, err := utils.FileExists(f.path); err != nil {
+		return false, err
+	} else if !exists {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// SaveConfig saves the configuration to the file
+func (f *fileConfig) SaveConfig(config Config) error {
+	encoded, err := yaml.Marshal(&config)
+	if err != nil {
+		return err
+	}
+
+	// @step: ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(f.path), 0750); err != nil {
+		return err
+	}
+
+	return os.WriteFile(f.path, encoded, 0640)
+}
+
+// GetConfig returns the configuration
+func (f *fileConfig) GetConfig() (Config, error) {
 	config := Config{}
 
-	found, err := utils.FileExists(filename)
+	found, err := utils.FileExists(f.path)
 	if err != nil {
 		return config, err
 	}
@@ -41,7 +76,7 @@ func LoadConfig(filename string) (Config, error) {
 		return config, nil
 	}
 
-	in, err := os.ReadFile(filename)
+	in, err := os.ReadFile(f.path)
 	if err != nil {
 		return config, err
 	}
@@ -51,13 +86,4 @@ func LoadConfig(filename string) (Config, error) {
 	}
 
 	return config, nil
-}
-
-// ConfigPath returns the path to the config file
-func ConfigPath() string {
-	if os.Getenv(ConfigPathEnvName) != "" {
-		return os.Getenv(ConfigPathEnvName)
-	}
-
-	return filepath.Join(os.Getenv("HOME"), ".tnctl", "config.yaml")
 }
