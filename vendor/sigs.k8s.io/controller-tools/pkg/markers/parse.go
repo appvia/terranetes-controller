@@ -84,8 +84,6 @@ const (
 	InvalidType ArgumentType = iota
 	// IntType is an int
 	IntType
-	// NumberType is a float64
-	NumberType
 	// StringType is a string
 	StringType
 	// BoolType is a bool
@@ -129,8 +127,6 @@ func (a Argument) typeString(out *strings.Builder) {
 		out.WriteString("<invalid>")
 	case IntType:
 		out.WriteString("int")
-	case NumberType:
-		out.WriteString("float64")
 	case StringType:
 		out.WriteString("string")
 	case BoolType:
@@ -184,8 +180,6 @@ func makeSliceType(itemType Argument) (reflect.Type, error) {
 	switch itemType.Type {
 	case IntType:
 		itemReflectedType = reflect.TypeOf(int(0))
-	case NumberType:
-		itemReflectedType = reflect.TypeOf(float64(0))
 	case StringType:
 		itemReflectedType = reflect.TypeOf("")
 	case BoolType:
@@ -221,8 +215,6 @@ func makeMapType(itemType Argument) (reflect.Type, error) {
 	switch itemType.Type {
 	case IntType:
 		itemReflectedType = reflect.TypeOf(int(0))
-	case NumberType:
-		itemReflectedType = reflect.TypeOf(float64(0))
 	case StringType:
 		itemReflectedType = reflect.TypeOf("")
 	case BoolType:
@@ -354,12 +346,8 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		if nextTok == '-' {
 			nextTok = subScanner.Scan()
 		}
-
 		if nextTok == sc.Int {
 			return &Argument{Type: IntType}
-		}
-		if nextTok == sc.Float {
-			return &Argument{Type: NumberType}
 		}
 	}
 
@@ -483,7 +471,7 @@ func (a *Argument) parseMap(scanner *sc.Scanner, raw string, out reflect.Value) 
 func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inSlice bool) {
 	// nolint:gocyclo
 	if a.Type == InvalidType {
-		scanner.Error(scanner, "cannot parse invalid type")
+		scanner.Error(scanner, fmt.Sprintf("cannot parse invalid type"))
 		return
 	}
 	if a.Pointer {
@@ -497,32 +485,6 @@ func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inS
 		// consume everything else
 		for tok := scanner.Scan(); tok != sc.EOF; tok = scanner.Scan() {
 		}
-	case NumberType:
-		nextChar := scanner.Peek()
-		isNegative := false
-		if nextChar == '-' {
-			isNegative = true
-			scanner.Scan() // eat the '-'
-		}
-
-		tok := scanner.Scan()
-		if tok != sc.Float && tok != sc.Int {
-			scanner.Error(scanner, fmt.Sprintf("expected integer or float, got %q", scanner.TokenText()))
-			return
-		}
-
-		text := scanner.TokenText()
-		if isNegative {
-			text = "-" + text
-		}
-
-		val, err := strconv.ParseFloat(text, 64)
-		if err != nil {
-			scanner.Error(scanner, fmt.Sprintf("unable to parse number: %v", err))
-			return
-		}
-
-		castAndSet(out, reflect.ValueOf(val))
 	case IntType:
 		nextChar := scanner.Peek()
 		isNegative := false
@@ -635,8 +597,6 @@ func ArgumentFromType(rawType reflect.Type) (Argument, error) {
 		arg.Type = StringType
 	case reflect.Int, reflect.Int32: // NB(directxman12): all ints in kubernetes are int32, so explicitly support that
 		arg.Type = IntType
-	case reflect.Float64:
-		arg.Type = NumberType
 	case reflect.Bool:
 		arg.Type = BoolType
 	case reflect.Slice:
@@ -795,7 +755,7 @@ func (d *Definition) loadFields() error {
 func parserScanner(raw string, err func(*sc.Scanner, string)) *sc.Scanner {
 	scanner := &sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(raw))
-	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
+	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
 	scanner.Error = err
 
 	return scanner
