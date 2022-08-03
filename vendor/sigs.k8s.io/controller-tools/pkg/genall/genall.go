@@ -17,14 +17,13 @@ limitations under the License.
 package genall
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
 	"golang.org/x/tools/go/packages"
-	rawyaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -121,22 +120,10 @@ type GenerationContext struct {
 	InputRule
 }
 
-// WriteYAMLOptions implements the Options Pattern for WriteYAML.
-type WriteYAMLOptions struct {
-	transform func(obj map[string]interface{}) error
-}
-
-// WithTransform applies a transformation to objects just before writing them.
-func WithTransform(transform func(obj map[string]interface{}) error) *WriteYAMLOptions {
-	return &WriteYAMLOptions{
-		transform: transform,
-	}
-}
-
 // WriteYAML writes the given objects out, serialized as YAML, using the
 // context's OutputRule.  Objects are written as separate documents, separated
 // from each other by `---` (as per the YAML spec).
-func (g GenerationContext) WriteYAML(itemPath string, objs []interface{}, options ...*WriteYAMLOptions) error {
+func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error {
 	out, err := g.Open(nil, itemPath)
 	if err != nil {
 		return err
@@ -144,7 +131,7 @@ func (g GenerationContext) WriteYAML(itemPath string, objs []interface{}, option
 	defer out.Close()
 
 	for _, obj := range objs {
-		yamlContent, err := yamlMarshal(obj, options...)
+		yamlContent, err := yaml.Marshal(obj)
 		if err != nil {
 			return err
 		}
@@ -158,41 +145,6 @@ func (g GenerationContext) WriteYAML(itemPath string, objs []interface{}, option
 	}
 
 	return nil
-}
-
-// yamlMarshal is based on sigs.k8s.io/yaml.Marshal, but allows for transforming the final data before writing.
-func yamlMarshal(o interface{}, options ...*WriteYAMLOptions) ([]byte, error) {
-	j, err := json.Marshal(o)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling into JSON: %v", err)
-	}
-
-	return yamlJSONToYAMLWithFilter(j, options...)
-}
-
-// yamlJSONToYAMLWithFilter is based on sigs.k8s.io/yaml.JSONToYAML, but allows for transforming the final data before writing.
-func yamlJSONToYAMLWithFilter(j []byte, options ...*WriteYAMLOptions) ([]byte, error) {
-	// Convert the JSON to an object.
-	var jsonObj map[string]interface{}
-	// We are using yaml.Unmarshal here (instead of json.Unmarshal) because the
-	// Go JSON library doesn't try to pick the right number type (int, float,
-	// etc.) when unmarshalling to interface{}, it just picks float64
-	// universally. go-yaml does go through the effort of picking the right
-	// number type, so we can preserve number type throughout this process.
-	if err := rawyaml.Unmarshal(j, &jsonObj); err != nil {
-		return nil, err
-	}
-
-	for _, option := range options {
-		if option.transform != nil {
-			if err := option.transform(jsonObj); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// Marshal this object into YAML.
-	return rawyaml.Marshal(jsonObj)
 }
 
 // ReadFile reads the given boilerplate artifact using the context's InputRule.
