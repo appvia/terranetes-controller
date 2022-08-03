@@ -28,27 +28,20 @@ import (
 )
 
 func TestNewFactory(t *testing.T) {
-	factory, err := NewFactory(genericclioptions.IOStreams{})
+	factory, err := NewFactory(WithStreams(genericclioptions.IOStreams{}))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 }
 
 func TestGetStreams(t *testing.T) {
-	factory, err := NewFactory(genericclioptions.IOStreams{Out: os.Stdout})
+	factory, err := NewFactory(WithStreams(genericclioptions.IOStreams{Out: os.Stdout}))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 	assert.NotNil(t, factory.GetStreams())
 }
 
-func TestGetConfigPath(t *testing.T) {
-	factory, err := NewFactory(genericclioptions.IOStreams{Out: os.Stdout})
-	assert.NoError(t, err)
-	assert.NotNil(t, factory)
-	assert.NotEmpty(t, factory.GetConfigPath())
-}
-
 func TestStdout(t *testing.T) {
-	factory, err := NewFactory(genericclioptions.IOStreams{Out: os.Stdout})
+	factory, err := NewFactory(WithStreams(genericclioptions.IOStreams{Out: os.Stdout}))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 	assert.NotNil(t, factory.Stdout())
@@ -56,7 +49,7 @@ func TestStdout(t *testing.T) {
 
 func TestPrintln(t *testing.T) {
 	b := &bytes.Buffer{}
-	factory, err := NewFactory(genericclioptions.IOStreams{Out: b})
+	factory, err := NewFactory(WithStreams(genericclioptions.IOStreams{Out: b}))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 
@@ -66,7 +59,7 @@ func TestPrintln(t *testing.T) {
 
 func TestPrintf(t *testing.T) {
 	b := &bytes.Buffer{}
-	factory, err := NewFactory(genericclioptions.IOStreams{Out: b})
+	factory, err := NewFactory(WithStreams(genericclioptions.IOStreams{Out: b}))
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 

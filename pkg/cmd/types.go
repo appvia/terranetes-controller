@@ -33,6 +33,16 @@ type Config struct {
 	Sources []string `json:"sources,omitempty" yaml:"sources,omitempty"`
 }
 
+// ConfigInterface is the interface that must be implemented by the config struct
+type ConfigInterface interface {
+	// GetConfig returns the config for the cli if available
+	GetConfig() (Config, error)
+	// HasConfig return true if the config has been defined
+	HasConfig() (bool, error)
+	// SaveConfig saves the configuration to the file
+	SaveConfig(Config) error
+}
+
 // NewDefaultConfig returns a default configuration
 func NewDefaultConfig() *Config {
 	return &Config{

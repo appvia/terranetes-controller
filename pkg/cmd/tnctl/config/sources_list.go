@@ -54,7 +54,7 @@ func (o *ListSourcesCommand) Run(ctx context.Context) error {
 		return err
 	}
 	if !found {
-		return fmt.Errorf("no configuration found at %q", o.GetConfigPath())
+		return fmt.Errorf("no configuration found")
 	}
 
 	o.Println("You currently have the following sources active")

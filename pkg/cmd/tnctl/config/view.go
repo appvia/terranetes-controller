@@ -53,7 +53,7 @@ func (o *ViewCommand) Run(ctx context.Context) error {
 		return err
 	}
 	if !found {
-		o.Println("No configuration found at %q", o.GetConfigPath())
+		o.Println("No configuration found")
 
 		return nil
 	}

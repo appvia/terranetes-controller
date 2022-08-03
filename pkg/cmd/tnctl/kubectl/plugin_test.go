@@ -40,7 +40,7 @@ var _ = Describe("Plugin Command", func() {
 	BeforeEach(func() {
 		var err error
 		streams, _, _, _ = genericclioptions.NewTestIOStreams()
-		factory, err = cmd.NewFactory(streams)
+		factory, err = cmd.NewFactory(cmd.WithStreams(streams))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(factory).NotTo(BeNil())
 

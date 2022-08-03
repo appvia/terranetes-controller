@@ -39,16 +39,19 @@ var _ = Describe("Sources Command", func() {
 
 	BeforeEach(func() {
 		var err error
-		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
-		factory, err = cmd.NewFactory(streams)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(factory).NotTo(BeNil())
 
 		configFile, err = os.CreateTemp(os.TempDir(), "config-sources.XXXXX")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(configFile).NotTo(BeNil())
 		Expect(configFile.Close()).To(Succeed())
-		os.Setenv(cmd.ConfigPathEnvName, configFile.Name())
+
+		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
+		factory, err = cmd.NewFactory(
+			cmd.WithStreams(streams),
+			cmd.WithConfiguration(cmd.NewFileConfiguration(configFile.Name())),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(factory).NotTo(BeNil())
 
 		c = NewSourcesCommand(factory)
 	})
@@ -75,7 +78,7 @@ var _ = Describe("Sources Command", func() {
 				content, err := os.ReadFile(configFile.Name())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(content).ToNot(BeEmpty())
-				Expect(string(content)).To(Equal("sources:\n- https://foo\n"))
+				Expect(string(content)).To(Equal("workflow: \"\"\nsources:\n- https://foo\n"))
 				Expect(stdout.String()).To(ContainSubstring("Successfully saved configuration"))
 			})
 		})
@@ -92,7 +95,7 @@ var _ = Describe("Sources Command", func() {
 				content, err := os.ReadFile(configFile.Name())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(content).ToNot(BeEmpty())
-				Expect(string(content)).To(Equal("sources:\n- https://foo\n"))
+				Expect(string(content)).To(Equal("workflow: \"\"\nsources:\n- https://foo\n"))
 				Expect(stdout.String()).To(ContainSubstring("Successfully saved configuration"))
 			})
 		})
@@ -129,7 +132,7 @@ var _ = Describe("Sources Command", func() {
 			content, err := os.ReadFile(configFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(content).ToNot(BeEmpty())
-			Expect(string(content)).To(Equal("{}\n"))
+			Expect(string(content)).To(Equal("workflow: \"\"\n"))
 			Expect(stdout.String()).To(ContainSubstring("Successfully saved configuration"))
 		})
 	})
@@ -149,7 +152,7 @@ var _ = Describe("Sources Command", func() {
 
 			It("should show missing config", func() {
 				Expect(rerr).To(HaveOccurred())
-				Expect(rerr.Error()).To(ContainSubstring("no configuration found at"))
+				Expect(rerr.Error()).To(ContainSubstring("no configuration found"))
 			})
 		})
 

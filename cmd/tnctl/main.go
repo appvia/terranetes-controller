@@ -35,7 +35,10 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	factory, err := cmd.NewFactory(streams)
+	factory, err := cmd.NewFactory(
+		cmd.WithConfiguration(cmd.NewFileConfiguration(cmd.ConfigPath())),
+		cmd.WithStreams(streams),
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[Error]: %v\n", err)
 		os.Exit(1)

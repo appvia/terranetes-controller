@@ -30,7 +30,7 @@ import (
 func TestNewCommand(t *testing.T) {
 	streams, _, _, _ := genericclioptions.NewTestIOStreams()
 
-	factory, err := cmd.NewFactory(streams)
+	factory, err := cmd.NewFactory(cmd.WithStreams(streams))
 	require.NoError(t, err)
 	require.NotNil(t, factory)
 

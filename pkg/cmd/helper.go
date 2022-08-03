@@ -20,6 +20,8 @@ package cmd
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -99,4 +101,13 @@ func AutoCompleteNamespaces(factory Factory) AutoCompletionFunc {
 
 		return namespaces, cobra.ShellCompDirectiveNoFileComp
 	}
+}
+
+// ConfigPath returns the path to the config file
+func ConfigPath() string {
+	if os.Getenv(ConfigPathEnvName) != "" {
+		return os.Getenv(ConfigPathEnvName)
+	}
+
+	return filepath.Join(os.Getenv("HOME"), ".tnctl", "config.yaml")
 }
