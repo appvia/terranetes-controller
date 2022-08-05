@@ -54,7 +54,10 @@ var _ = Describe("Approve Command", func() {
 	BeforeEach(func() {
 		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
 		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
-		factory, _ = cmd.NewFactoryWithClient(cc, streams)
+		factory, _ = cmd.NewFactory(
+			cmd.WithClient(cc),
+			cmd.WithStreams(streams),
+		)
 		command = &Command{Factory: factory}
 		command.Names = []string{"test"}
 		command.Namespace = "default"
