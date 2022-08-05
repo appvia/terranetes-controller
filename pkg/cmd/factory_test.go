@@ -68,7 +68,10 @@ func TestPrintf(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
-	factory, err := NewFactoryWithClient(fake.NewClientBuilder().Build(), genericclioptions.IOStreams{})
+	factory, err := NewFactory(
+		WithClient(fake.NewClientBuilder().Build()),
+		WithStreams(genericclioptions.IOStreams{}),
+	)
 	assert.NoError(t, err)
 	assert.NotNil(t, factory)
 
