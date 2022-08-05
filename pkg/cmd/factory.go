@@ -25,9 +25,9 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
 // ErrNoConfigurationProvider is returned when no configuration provider is defined
@@ -79,11 +79,6 @@ func NewFactory(options ...OptionFunc) (Factory, error) {
 	return f, nil
 }
 
-// NewFactoryWithClient creates and returns a factory for the cli
-func NewFactoryWithClient(cc client.Client, streams genericclioptions.IOStreams) (Factory, error) {
-	return NewFactory(WithClient(cc), WithStreams(streams))
-}
-
 // GetConfig returns the config for the cli if available
 func (f *factory) GetConfig() (Config, bool, error) {
 	if f.cfg == nil {
@@ -132,28 +127,20 @@ func (f *factory) Stdout() io.Writer {
 
 // GetKubeClient returns the kubernetes client
 func (f *factory) GetKubeClient() (k8sclient.Interface, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find kubeconfig: %v", err)
-	}
-
-	return k8sclient.NewForConfig(cfg)
+	return kubernetes.NewKubeClient()
 }
 
 // GetClient returns the client for the kubernetes api
 func (f *factory) GetClient() (client.Client, error) {
-	if f.cc == nil {
-		cfg, err := config.GetConfig()
-		if err != nil {
-			return nil, fmt.Errorf("failed to find kubeconfig: %v", err)
-		}
-
-		cc, err := client.New(cfg, client.Options{Scheme: schema.GetScheme()})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create kubernetes client: %v", err)
-		}
-		f.cc = cc
+	if f.cc != nil {
+		return f.cc, nil
 	}
+
+	cc, err := kubernetes.NewRuntimeClient(schema.GetScheme())
+	if err != nil {
+		return nil, err
+	}
+	f.cc = cc
 
 	return f.cc, nil
 }
