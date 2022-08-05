@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/tcnksm/ghr v0.14.0
 	github.com/tidwall/gjson v1.14.2
-	github.com/tidwall/sjson v1.2.4
+	github.com/tidwall/sjson v1.2.5
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/tools v0.1.12
 	gopkg.in/yaml.v2 v2.4.0
