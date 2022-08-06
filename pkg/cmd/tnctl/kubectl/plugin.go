@@ -31,11 +31,17 @@ import (
 )
 
 var longPluginHelp = `
-This command is used to integrate the tnctl command as a kubectl plugin. It
-effectively generates a series of shortcuts that are called from kubectl.
+This command is used to integrate the tnctl command as a kubectl
+plugin. It effectively generates a series of shortcuts that are
+called from kubectl. You need to ensure the scripts this command
+generates are included your $PATH, long with the location of the
+tnctl command.
 
 # Create the kubectl plugins (defaults to ${HOME}/bin)
 $ tnctl kubectl plugin
+
+# Place the plugins scripts in another directory
+$ tnctl kubectl plugin -d ${GOPATH}/bin
 `
 
 var pluginTemplate = `#!/bin/env sh
