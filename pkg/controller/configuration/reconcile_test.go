@@ -68,8 +68,8 @@ var _ = Describe("Configuration Controller", func() {
 		"--comment=Evaluating Against Security Policy",
 		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null",
 		"--command=/bin/cat /run/results_cli.txt",
-		"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null",
-		"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null",
+		"--namespace=$(KUBE_NAMESPACE)",
+		"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
 		"--is-failure=/run/steps/terraform.failed",
 		"--wait-on=/run/steps/terraform.complete",
 	}
@@ -1595,8 +1595,8 @@ terraform {
 					"--comment=Evaluating Against Security Policy",
 					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null",
 					"--command=/bin/cat /run/results_cli.txt",
-					"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null",
-					"--command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null",
+					"--namespace=$(KUBE_NAMESPACE)",
+					"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
 					"--is-failure=/run/steps/terraform.failed",
 					"--wait-on=/run/steps/terraform.complete",
 				}))
