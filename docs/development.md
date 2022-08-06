@@ -37,7 +37,7 @@ You can easily iterate locally by running `make controller-kind` again to build,
 
 ### Running off the terminal
 
-You can also run the controller locally connecting to a remote Kubernetes cluster. Here we are using kind again, but the controller will pick up whatever your current KUBE_CONFIG is defined as. Note, you'll need to apply the CRDs separately: `kubectl apply -f charts/crds`
+You can also run the controller locally connecting to a remote Kubernetes cluster. Here we are using kind again, but the controller will pick up whatever your current KUBE_CONFIG is defined as. Note, you'll need to apply the CRDs separately: `kubectl apply -f charts/terranetes-controller/crds`
 
 ```shell
 # Create a new local cluster for testing
@@ -63,11 +63,51 @@ You can run the entire test suite via `make check`. All the tools "should" be in
 
 ### Running the E2E
 
-Located in `test/e2e`, there is a group of bats tests which is used to check the full E2E. You need to have a kind cluster running, the aws cli and either have the `aws` secret configured for a provider in `terraform-system` already created or export AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION into the environment; you can take a look [here](test/e2e/integration/provider.bats).
+Located in `test/e2e`, there is a group of bats tests which is used to check the full E2E. You need to have a kind cluster running and a number of secrets in your environment.
 
-To run the e2e: `BUCKET=<NAME_OF_S3_BUCKET> test/e2e/check-suite.sh`.
+The following secrets always required, regardless of cloud
 
-Please remove all the checks [here](e2e/test/integration).
+* INFRACOST_API_KEY - containing the infracost cost api key from `infracost register`
+
+For AWS i.e. `check-suite.sh --cloud aws` you will need the following environment variables.
+
+* AWS_REGION
+* AWS_ACCESS_KEY_ID
+* AWS_SECRET_ACCESS_KEY
+
+For Azure i.e `check-suite.sh --cloud azure`
+
+* ARM_CLIENT_ID
+* ARM_CLIENT_SECRET
+* ARM_SUBSCRIPTION_ID
+* ARM_TENANT_ID
+* ARM_APP_ID
+* ARM_APP_NAME
+
+You can use the following template
+
+```shell
+export INFRACOST_API_KEY=
+
+# Required by AWS
+export AWS_REGION=""
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
+
+# Required by Azure (review terraform provider credentials for details on the fields)
+export ARM_APP_ID=""
+export ARM_APP_NAME=""
+export ARM_CLIENT_ID=""
+export ARM_CLIENT_SECRET=""
+export ARM_SUBSCRIPTION_ID=""
+export ARM_TENANT_ID=""
+```
+
+1. Copy the above file and place into dev/credentials.sh _(note the dev/ folder is ignored by .gitignore)_.
+2. Before running the E2E source the environment variables in via `source dev/credentials.sh`.
+3. To run the e2e: `BUCKET=<NAME_OF_S3_BUCKET> test/e2e/check-suite.sh --cloud <aws|azure>`.
+
+Please review all the checks [here](e2e/test/integration).
 
 ### Components
 
