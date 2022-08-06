@@ -26,7 +26,8 @@ import (
 // NewCommand creates and returns a new command
 func NewCommand(factory cmd.Factory) *cobra.Command {
 	c := &cobra.Command{
-		Use: "kubectl COMMAND",
+		Use:   "kubectl COMMAND",
+		Short: "Kubectl plugin related commands",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
