@@ -75,7 +75,6 @@ spec:
             - --command=/bin/mkdir -p /run/steps
             - --command=/bin/cp /run/config/* /data
             - --command=/bin/cp /bin/step /run/bin/step
-            - --command=/bin/cp /bin/kubectl /run/bin/kubectl
             - --command=/bin/source --dest=/data --source={{ .Configuration.Module }}
           {{- if .Secrets.Config }}
           envFrom:
@@ -146,10 +145,11 @@ spec:
           {{- if eq .Stage "apply" }}
           - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false
           {{- if .SaveTerraformState }}
-          - --command=/bin/terraform state pull > /run/terraform.tfstate
-          - --command=/bin/gzip /run/terraform.tfstate
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(TERRAFORM_STATE_NAME) --ignore-not-found >/dev/null
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(TERRAFORM_STATE_NAME) --from-file=tfstate=/run/terraform.tfstate.gz >/dev/null
+          - --command=/bin/terraform state pull > /run/tfstate
+          - --command=/bin/gzip /run/tfstate
+          - --command=/bin/mv /run/tfstate.gz /run/tfstate
+          - --namespace=$(KUBE_NAMESPACE)
+          - --upload=$(TERRAFORM_STATE_NAME)=/run/tfstate
           {{- end }}
           {{- end }}
           {{- if eq .Stage "destroy" }}
@@ -206,8 +206,8 @@ spec:
           - --comment=Evaluating the costs
           - --command=/usr/bin/infracost breakdown --path /run/plan.json
           - --command=/usr/bin/infracost breakdown --path /run/plan.json --format json > /run/costs.json
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(COST_REPORT_NAME) --ignore-not-found >/dev/null
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(COST_REPORT_NAME) --from-file=/run/costs.json >/dev/null
+          - --namespace=$(KUBE_NAMESPACE)
+          - --upload=$(COST_REPORT_NAME)=/run/costs.json
           - --is-failure=/run/steps/terraform.failed
           - --timeout=5m
           - --wait-on=/run/steps/terraform.complete
@@ -244,8 +244,8 @@ spec:
           - --comment=Evaluating Against Security Policy
           - --command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
           - --command=/bin/cat /run/results_cli.txt
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) delete secret $(POLICY_REPORT_NAME) --ignore-not-found >/dev/null
-          - --command=/run/bin/kubectl -n $(KUBE_NAMESPACE) create secret generic $(POLICY_REPORT_NAME) --from-file=/run/results_json.json >/dev/null
+          - --namespace=$(KUBE_NAMESPACE)
+          - --upload=$(POLICY_REPORT_NAME)=/run/results_json.json
           - --is-failure=/run/steps/terraform.failed
           - --wait-on=/run/steps/terraform.complete
         env:
