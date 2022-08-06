@@ -24,38 +24,20 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/version"
 )
-
-// Step represents a stage to run
-type Step struct {
-	// Commands is the commands and arguments to run
-	Commands []string
-	// Comment adds a banner to the stage
-	Comment string
-	// UploadFile is file to upload on success of the command
-
-	// ErrorFile is the path to a file which is created when the command failed
-	ErrorFile string
-	// FailureFile is the path to a file indicating failure
-	FailureFile string
-	// Shell is the shell to execute the command in
-	Shell string
-	// SuccessFile is the path to a file which is created when the command ran successfully
-	SuccessFile string
-	// Timeout is the max time to wait on file before considering the run a failure
-	Timeout time.Duration
-	// WaitFile is the path to a file which is wait for to run
-	WaitFile string
-}
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
@@ -82,9 +64,11 @@ func main() {
 	flags.DurationVar(&step.Timeout, "timeout", 30*time.Second, "Timeout for wait-on file to appear")
 	flags.StringVar(&step.Comment, "comment", "", "Adds a banner before executing the step")
 	flags.StringVar(&step.ErrorFile, "on-error", "", "The path to a file to indicate we have failed")
+	flags.StringVar(&step.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "Namespace to upload any secrets")
 	flags.StringVar(&step.SuccessFile, "on-success", "", "The path of the file used to indicate the step was successful")
 	flags.StringVarP(&step.Shell, "shell", "s", "/bin/sh", "The shell to execute the command in")
 	flags.StringVar(&step.FailureFile, "is-failure", "", "The path of the file used to indicate failure above")
+	flags.StringSliceVarP(&step.UploadFile, "upload", "u", []string{}, "Upload file as a kubernetes secret")
 	flags.StringVar(&step.WaitFile, "wait-on", "", "The path to a file to indicate this step can be run")
 	flags.StringSliceVarP(&step.Commands, "command", "c", []string{}, "Command to execute")
 
@@ -97,8 +81,17 @@ func main() {
 
 // Run is called to implement the action
 func Run(ctx context.Context, step Step) error {
-	if len(step.Commands) == 0 {
-		return errors.New("no commands defined")
+	if err := step.IsValid(); err != nil {
+		return err
+	}
+
+	var cc client.Client
+	if len(step.UploadFile) > 0 {
+		ci, err := kubernetes.NewRuntimeClient(nil)
+		if err != nil {
+			return err
+		}
+		cc = ci
 	}
 
 	if step.Comment != "" {
@@ -181,6 +174,20 @@ func Run(ctx context.Context, step Step) error {
 	}
 	log.Info("successfully executed the step")
 
+	// @step: upload any files as kubernetes secrets
+	for name, path := range step.UploadKeyPairs() {
+		err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
+			if err := uploadSecret(ctx, cc, step.Namespace, name, path); err == nil {
+				return true, nil
+			}
+
+			return false, nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	// @step: everything was good - lets touch the file
 	if step.SuccessFile != "" {
 		if err := utils.TouchFile(step.SuccessFile); err != nil {
@@ -191,4 +198,42 @@ func Run(ctx context.Context, step Step) error {
 	}
 
 	return nil
+}
+
+// uploadSecret is used to create a kubernetes secret from a file
+func uploadSecret(ctx context.Context, cc client.Client, namespace, name, path string) error {
+	if found, err := utils.FileExists(path); err != nil {
+		return err
+	} else if !found {
+		return fmt.Errorf("file %s does not exist", path)
+	}
+
+	// @step: read in the content of the file
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	secret := &v1.Secret{}
+	secret.Namespace = namespace
+	secret.Name = name
+
+	found, err := kubernetes.GetIfExists(ctx, cc, secret)
+	if err != nil {
+		return err
+	}
+	original := secret.DeepCopy()
+
+	// @step: define the secret
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+	secret.Data[filepath.Base(path)] = content
+
+	// @step: create or update the secret
+	if !found {
+		return cc.Create(ctx, secret)
+	}
+
+	return cc.Patch(ctx, secret, client.MergeFrom(original))
 }
