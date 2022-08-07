@@ -353,7 +353,7 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 			namespace := value.(*v1.Namespace)
 
 			// @step: ensure we have match the selector of the provider - i.e our namespace and resource labels must match
-			match, err := utils.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
+			match, err := kubernetes.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
 			if err != nil {
 				cond.Failed(err, "Failed to check against the provider policy")
 
