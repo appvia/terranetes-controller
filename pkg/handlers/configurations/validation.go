@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
@@ -168,7 +167,7 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 		return nil
 	}
 
-	matched, err := utils.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
+	matched, err := kubernetes.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
 	if err != nil {
 		return err
 	}
@@ -194,7 +193,7 @@ func validateModuleConstriants(
 			continue
 		}
 		if x.Spec.Constraints.Modules.Selector != nil {
-			matched, err := utils.IsSelectorMatch(*x.Spec.Constraints.Modules.Selector, configuration.GetLabels(), namespace.GetLabels())
+			matched, err := kubernetes.IsSelectorMatch(*x.Spec.Constraints.Modules.Selector, configuration.GetLabels(), namespace.GetLabels())
 			if err != nil {
 				return err
 			} else if !matched {
