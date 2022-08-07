@@ -239,6 +239,14 @@ check: test
 
 ### UTILITIES ###
 
+trigger-aws-e2e:
+	@echo "--> Triggering the e2e tests on develop branch (AWS)"
+	@gh workflow run e2e.yaml --ref develop -f cloud=aws -f use_helm=false -f version=ci
+
+trigger-azure-e2e:
+	@echo "--> Triggering the e2e tests on develop branch (Azure)"
+	@gh workflow run e2e.yaml --ref develop -f cloud=azure -f use_helm=false -f version=ci
+
 clean:
 	@echo "--> Cleaning up the environment"
 	rm -rf ./bin 2>/dev/null
