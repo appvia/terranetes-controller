@@ -24,7 +24,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestNewFactory(t *testing.T) {
@@ -65,17 +64,4 @@ func TestPrintf(t *testing.T) {
 
 	factory.Printf("Hello %s", "World")
 	assert.Equal(t, "Hello World", b.String())
-}
-
-func TestGetClient(t *testing.T) {
-	factory, err := NewFactory(
-		WithClient(fake.NewClientBuilder().Build()),
-		WithStreams(genericclioptions.IOStreams{}),
-	)
-	assert.NoError(t, err)
-	assert.NotNil(t, factory)
-
-	cc, err := factory.GetClient()
-	assert.NoError(t, err)
-	assert.NotNil(t, cc)
 }
