@@ -68,6 +68,18 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	defer func() {
+		var status float64
+		if configuration.Status.GetCommonStatus().IsFailed() {
+			status = 1
+		}
+
+		statusMetric.WithLabelValues(
+			configuration.Name,
+			configuration.Namespace,
+		).Set(status)
+	}()
+
 	state := &state{valueFrom: make(map[string]string), backendTemplate: terraform.KubernetesBackendTemplate}
 
 	finalizer := controller.NewFinalizer(c.cc, controllerName)

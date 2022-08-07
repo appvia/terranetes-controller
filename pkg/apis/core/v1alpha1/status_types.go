@@ -124,6 +124,20 @@ func (s *CommonStatus) GetCommonStatus() *CommonStatus {
 	return s
 }
 
+// IsFailed returns true if the status of any of the conditions is in error
+func (s *CommonStatus) IsFailed() bool {
+	for _, c := range s.Conditions {
+		if c.Status == metav1.ConditionFalse {
+			switch c.Reason {
+			case ReasonError, ReasonErrorDeleting, ReasonWarning, ReasonActionRequired:
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // CommonStatusAware is implemented by any Wayfinder resource which has the standard Wayfinder common status
 // implementation
 // +kubebuilder:object:generate=false
