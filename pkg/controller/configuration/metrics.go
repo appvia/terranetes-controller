@@ -30,6 +30,12 @@ func init() {
 }
 
 var (
+	statusMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "configuration_status",
+			Help: "Indicates the status of the configuration, 0 = OK, 1 = Error",
+		}, []string{"name", "namespace"},
+	)
 	hourlyCostMetric = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "configuration_hourly_cost_total",
