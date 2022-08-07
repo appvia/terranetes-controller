@@ -15,41 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package template
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestToHCL(t *testing.T) {
-	cases := []struct {
-		Data     interface{}
-		Expected string
-	}{
-		{
-			Data:     map[string]interface{}{},
-			Expected: "\n",
-		},
-		{
-			Data:     map[string]interface{}{"features": map[string]interface{}{}},
-			Expected: "features {}\n",
-		},
-		{
-			Data: map[string]interface{}{"features": map[string]interface{}{
-				"hello": "world",
-				"test":  []string{"a", "b", "c"},
-			}},
-			Expected: "features {\n  hello = \"world\"\n\n  test = [\n    \"a\",\n    \"b\",\n    \"c\",\n  ]\n}\n",
-		},
-	}
-	for _, c := range cases {
-		m, err := ToHCL(c.Data)
-		assert.NoError(t, err)
-		assert.Equal(t, string(c.Expected), string(m))
-	}
-}
 
 func TestGetTxtFunc(t *testing.T) {
 	m := GetTxtFunc()
@@ -58,7 +30,7 @@ func TestGetTxtFunc(t *testing.T) {
 
 func TestTemplate(t *testing.T) {
 	tmpl := `{{ .Hello }} {{ .World }}`
-	m, err := Template(tmpl, map[string]interface{}{
+	m, err := New(tmpl, map[string]interface{}{
 		"Hello": "Hello", "World": "World",
 	})
 	assert.NoError(t, err)
@@ -69,7 +41,7 @@ func TestTemplate(t *testing.T) {
 func TestTemplateInvalid(t *testing.T) {
 	tmpl := `{{ .Hello }} {{ .World }`
 
-	m, err := Template(tmpl, map[string]interface{}{"Hello": "Hello"})
+	m, err := New(tmpl, map[string]interface{}{"Hello": "Hello"})
 	assert.Error(t, err)
 	assert.Empty(t, m)
 }

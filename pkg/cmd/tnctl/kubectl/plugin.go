@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/appvia/terranetes-controller/pkg/cmd"
-	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 var longPluginHelp = `
@@ -97,7 +97,7 @@ func (o *PluginCommand) Run(ctx context.Context) error {
 	for _, name := range commands {
 		path := filepath.Join(o.Directory, fmt.Sprintf("kubectl-tnctl-%s", name))
 
-		content, err := utils.Template(pluginTemplate, map[string]interface{}{"Command": name})
+		content, err := template.New(pluginTemplate, map[string]interface{}{"Command": name})
 		if err != nil {
 			return err
 		}

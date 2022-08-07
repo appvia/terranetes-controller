@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"text/template"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -32,6 +31,7 @@ import (
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 // DefaultServiceAccount is the default service account to use for the job if no override is given
@@ -229,18 +229,13 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	}
 
 	// @step: create the template and render
-	render := &bytes.Buffer{}
-	tmpl, err := template.New("main").Funcs(utils.GetTxtFunc()).Parse(string(options.Template))
+	render, err := terraform.Template(string(options.Template), params)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = tmpl.Execute(render, params); err != nil {
-		return nil, err
-	}
-
 	// @step: parse into a batch job
-	encoded, err := yaml.YAMLToJSON(render.Bytes())
+	encoded, err := yaml.YAMLToJSON(render)
 	if err != nil {
 		return nil, err
 	}
