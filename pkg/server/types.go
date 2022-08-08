@@ -34,6 +34,10 @@ type Config struct {
 	// DriftThreshold is the max number of drifts we are running to run - this prevents the
 	// controller from running many configurations at the same time
 	DriftThreshold float64
+	// EnableContextInjection indicates the controller should always inject the context
+	// into the terraform variables - i.e. namespace and name under a terraform variable
+	// called 'terranetes'
+	EnableContextInjection bool
 	// EnableWebhook enables the webhook registration
 	EnableWebhook bool
 	// EnableWatchers enables the creation of watcher jobs

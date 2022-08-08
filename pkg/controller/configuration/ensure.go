@@ -430,6 +430,14 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			variables[key] = value
 		}
 
+		// @step: should we inject the context?
+		if c.EnableContextInjection {
+			variables["terranetes"] = map[string]interface{}{
+				"name":      configuration.Name,
+				"namespace": configuration.Namespace,
+			}
+		}
+
 		// @step: if the any variables for this job lets add them
 		switch len(variables) == 0 {
 		case true:
