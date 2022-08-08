@@ -65,7 +65,15 @@ controller:
   # enableTerraformVersions indicates configurations are permitted to override
   # the terraform version in their spec.
   enableTerraformVersions: true
-
+  # enableContextInjection indicates the controller should add the terranetes
+  # map variable into all configurations. This adds a varaible called 'terraform'
+  # terranetes:
+  #   namespace: ""
+  #   name: ""
+  #   labels {}
+  # into the terraform variables of every module. Note, this doesn't mean you have
+  # to use it, but if you do the variables are there.
+  enableContextInjection: false
   # The default terraform version (or tag of the above image)
   webhooks:
     # enables the webhooks
