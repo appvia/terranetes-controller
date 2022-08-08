@@ -1078,6 +1078,55 @@ terraform {
 		})
 	})
 
+	// CONTEXT INJECTION
+	When("using a context injection", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			ctrl.EnableContextInjection = true
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 4)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should have create a plan", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+		})
+
+		It("should have create job configuration secret", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.ControllerNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+		})
+
+		It("should have included the additional context variables", func() {
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.ControllerNamespace
+			secret.Name = configuration.GetTerraformConfigSecretName()
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+
+			expected := "{\"name\":\"test\",\"terranetes\":{\"name\":\"bucket\",\"namespace\":\"apps\"}}\n"
+
+			Expect(string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])).To(Equal(expected))
+		})
+	})
+
 	// CUSTOM BACKEND TEMPLATE
 	When("using a custom backend template", func() {
 		When("the template is not present", func() {

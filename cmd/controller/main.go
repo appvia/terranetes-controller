@@ -54,6 +54,7 @@ func main() {
 	flags := cmd.Flags()
 	flags.Bool("verbose", false, "Enable verbose logging")
 	flags.StringVar(&config.BackendTemplate, "backend-template", "", "Name of secret in the controller namespace containing a template for the terraform state")
+	flags.BoolVar(&config.EnableContextInjection, "enable-context-injection", false, "Indicates the controller should inject Configuration context into the terraform variables")
 	flags.BoolVar(&config.EnableTerraformVersions, "enable-terraform-versions", true, "Indicates the terraform version can be overridden by configurations")
 	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuration namespaces")
 	flags.BoolVar(&config.EnableWebhook, "enable-webhook", true, "Indicates we should register the webhooks")

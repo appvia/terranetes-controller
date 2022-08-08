@@ -64,6 +64,6 @@ teardown() {
 }
 
 @test "We should be able to destroy the aws configuration for costs" {
-  runit "kubectl -n ${APP_NAMESPACE} delete -f ${BATS_TMPDIR}/resource.yml --wait=false"
+  runit "kubectl -n ${APP_NAMESPACE} delete -f ${BATS_TMPDIR}/resource.yml"
   [[ "$status" -eq 0 ]]
 }

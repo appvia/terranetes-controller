@@ -65,6 +65,10 @@ type Controller struct {
 	// BackendTemplate is the name of the secret in the controller namespace which holds a
 	// template used to generate the state backend
 	BackendTemplate string
+	// EnableContextInjection enables the injection of the context into the terraform configuration
+	// variables. This means we shall inject an number of default variables into the configuration
+	// such as namespace, name and labels
+	EnableContextInjection bool
 	// EnableInfracosts enables the cost analytics via infracost
 	EnableInfracosts bool
 	// EnableTerraformVersions enables the use of the configuration's Terraform version
