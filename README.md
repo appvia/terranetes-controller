@@ -4,8 +4,6 @@
 
 The Terraform Controller (aka Terranetes controller) manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
-## Why another terraform controller?
-
 There's a number of open source controllers you could use that will run Terraform in Kubernetes. All of them deliver the developer outcome, however, none address the "consequences" of delivering that outcome in the first place; the risks, costs, security implications, the general lack of checks and balances. What sets the Terranetes controller apart is its opinion we first enable the platform team to deliver the outcome in a safe environment before it can be self-served by developers. Providing platform engineers with all the knobs, dials and levers to control and mitigate those risks is the key differentiator for Terranetes controller.
 
 Documentation can be found at https://terranetes.appvia.io
