@@ -32,7 +32,7 @@ Usage: $0 [options]
 --version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
 EOF
-  if [[ -n "${@}" ]]; then
+  if [[ -n "${*}" ]]; then
     echo "Error: ${1}"
     exit 1
   fi
@@ -41,7 +41,7 @@ EOF
 }
 
 run_bats() {
-  echo -e "Running units: ${@}\n"
+  echo -e "Running units: ${*}\n"
   APP_NAMESPACE=${APP_NAMESPACE} \
   BUCKET=${BUCKET} \
   CLOUD=${CLOUD} \
@@ -49,7 +49,7 @@ run_bats() {
   NAMESPACE="terraform-system" \
   USE_CHART=${USE_CHART} \
   VERSION=${VERSION} \
-  bats ${BATS_OPTIONS} ${@} || exit 1
+  bats "${BATS_OPTIONS}" "${@}" || exit 1
 }
 
 # run-checks runs a collection checks
@@ -79,13 +79,13 @@ run_checks() {
     echo -e "Running suite on: ${CLOUD^^}\n"
     for x in "${CLOUD_FILES[@]}"; do
       if [[ -f "${x}" ]]; then
-        run_bats ${x} || exit 1
+        run_bats "${x}" || exit 1
       fi
     done
   fi
   for x in "${CONSTRAINTS_FILES[@]}"; do
     if [[ -f "${x}" ]]; then
-      run_bats ${x} || exit 1
+      run_bats "${x}" || exit 1
     fi
   done
 }

@@ -239,6 +239,10 @@ check: test
 
 ### UTILITIES ###
 
+controller-logs:
+	@echo "--> Watching the controller logs"
+	@while true; do kubectl -n terraform-system logs -f -l app.kubernetes.io/instance=terranetes-controller || true; sleep 1; done
+
 trigger-aws-e2e:
 	@echo "--> Triggering the e2e tests on develop branch (AWS)"
 	@gh workflow run e2e.yaml --ref develop -f cloud=aws -f use_helm=false -f version=ci

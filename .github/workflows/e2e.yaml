@@ -1,3 +1,4 @@
+---
 name: E2E
 
 on:
@@ -100,7 +101,6 @@ jobs:
         uses: azure/setup-kubectl@v2.0
         with:
           version: v1.23.0
-
       - name: Install Kind
         run: |
           curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
@@ -124,6 +124,10 @@ jobs:
         run: |
           kind load image-archive /tmp/controller-image.tar
           kind load image-archive /tmp/executor-image.tar
+
+      - name: Watch Controller Logs
+        run: make controller-logs &
+        continue-on-error: true
 
       - name: Running E2E
         run: |
