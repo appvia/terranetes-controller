@@ -50,7 +50,7 @@ Secret:         None
 
 Checkov Security Policy:
 =======================
-Status:         Configuration has passed {{ .Policy.results.passed_checks | len }} and failed on {{ .Policy.results.failed_checks | len }} checks.
+Status:        Configuration has passed {{ .Policy.results.passed_checks | len }} and failed on {{ .Policy.results.failed_checks | len }} checks.
 {{ range $check := .Policy.results.failed_checks }}
 {{ printf "%-15s%s" $check.check_id "FAILED" }}
 ├─ Name:       {{ $check.check_name }}
