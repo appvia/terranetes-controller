@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -75,6 +76,8 @@ type Command struct {
 	Source string
 	// Secret is name of the secret to hold any sensitive variables
 	Secret string
+	// Writer is the writer to use for output
+	Writer io.Writer
 }
 
 // NewCommand returns a new instance of the get command
@@ -121,6 +124,11 @@ func (o *Command) Run(ctx context.Context) error {
 		return cmd.ErrMissingArgument("source")
 	case o.Provider == "":
 		o.Provider = "NEEDS_VALUE"
+	}
+
+	// @step: default the writer to stdout
+	if o.Writer == nil {
+		o.Writer = o.Stdout()
 	}
 
 	// @step: download the module
@@ -257,8 +265,8 @@ func (o *Command) Run(ctx context.Context) error {
 		o.Println("%s Note, the configuration references %d secrets (spec.valueFrom[]) which must be created", len(configuration.Spec.ValueFrom))
 	}
 
-	o.Println("---")
-	o.Println("%s", e)
+	fmt.Fprintf(o.Writer, "---\n")
+	fmt.Fprintf(o.Writer, "%s", e)
 
 	return nil
 }
