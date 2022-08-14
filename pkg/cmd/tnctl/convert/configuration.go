@@ -91,7 +91,7 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 	// @step: filter and fix up the source
 	source := configuration.Spec.Module
 	switch {
-	case strings.Contains(source, "github.com") && !strings.HasPrefix(source, "https://"):
+	case strings.Contains(source, "github.com") && strings.HasPrefix(source, "https://"):
 		source = strings.TrimPrefix(source, "https://")
 	}
 
