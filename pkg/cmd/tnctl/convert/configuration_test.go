@@ -130,7 +130,7 @@ var _ = Describe("Convert Configuration Command", func() {
 
 			It("should output the converted configuration", func() {
 				expected := `module "main" {
-  source = "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0"
 
   acl = "private"
   block_public_acls = true
