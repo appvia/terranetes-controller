@@ -22,10 +22,8 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
-	"text/template"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
@@ -92,7 +90,7 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 		}
 	}
 
-	return utils.Template(providerTF, map[string]interface{}{
+	return Template(providerTF, map[string]interface{}{
 		"configuration": config,
 		"provider":      provider,
 	})
@@ -112,13 +110,7 @@ type BackendOptions struct {
 
 // NewKubernetesBackend creates a new kubernetes backend
 func NewKubernetesBackend(options BackendOptions) ([]byte, error) {
-	tmpl, err := template.New("main").Parse(options.Template)
-	if err != nil {
-		return nil, err
-	}
-
-	render := &bytes.Buffer{}
-	if err := tmpl.Execute(render, map[string]interface{}{
+	params := map[string]interface{}{
 		"controller": map[string]interface{}{
 			"namespace": options.Namespace,
 			"suffix":    options.Suffix,
@@ -126,9 +118,7 @@ func NewKubernetesBackend(options BackendOptions) ([]byte, error) {
 		"configuration": options.Configuration,
 		"name":          options.Configuration.Name,
 		"namespace":     options.Configuration.Namespace,
-	}); err != nil {
-		return nil, err
 	}
 
-	return render.Bytes(), nil
+	return Template(options.Template, params)
 }

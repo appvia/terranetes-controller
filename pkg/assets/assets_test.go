@@ -21,9 +21,8 @@ import (
 	"html/template"
 	"testing"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 func TestJobTemplateParsable(t *testing.T) {
@@ -31,7 +30,7 @@ func TestJobTemplateParsable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tl)
 
-	tpl, err := template.New("main").Funcs(utils.GetTxtFunc()).Parse(string(tl))
+	tpl, err := template.New("main").Funcs(template.FuncMap(sprig.TxtFuncMap())).Parse(string(tl))
 	assert.NoError(t, err)
 	assert.NotNil(t, tpl)
 }
