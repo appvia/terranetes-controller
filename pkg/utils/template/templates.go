@@ -15,14 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package template
 
 import (
 	"bytes"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/rodaine/hclencoder"
 )
 
 // GetTxtFunc returns a defaults list of methods for text templating
@@ -30,30 +29,28 @@ func GetTxtFunc() map[string]any {
 	return sprig.TxtFuncMap()
 }
 
-// ToHCL converts the json to HCL format
-func ToHCL(data interface{}) (string, error) {
-	hcl, err := hclencoder.Encode(data)
-	if err != nil {
-		return "", err
+// NewWithFuncs renders a template with custom methods
+func NewWithFuncs(tpl string, methods template.FuncMap, params interface{}) ([]byte, error) {
+	funcs := GetTxtFunc()
+
+	for key, method := range methods {
+		funcs[key] = method
 	}
 
-	return string(hcl), nil
-}
-
-// Template is called to render a template
-func Template(main string, data interface{}) ([]byte, error) {
-	methods := GetTxtFunc()
-	methods["toHCL"] = ToHCL
-
-	tpl, err := template.New("main").Funcs(methods).Parse(main)
+	tm, err := template.New("main").Funcs(funcs).Parse(tpl)
 	if err != nil {
 		return nil, err
 	}
 
 	b := &bytes.Buffer{}
-	if err := tpl.Execute(b, data); err != nil {
+	if err := tm.Execute(b, params); err != nil {
 		return nil, err
 	}
 
 	return b.Bytes(), nil
+}
+
+// New is called to render a template
+func New(tpl string, data interface{}) ([]byte, error) {
+	return NewWithFuncs(tpl, nil, data)
 }

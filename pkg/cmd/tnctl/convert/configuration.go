@@ -32,7 +32,7 @@ import (
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
-	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 // ConfigurationCommand are the options for the command
@@ -106,7 +106,7 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 		}
 	}
 
-	tmpl, err := utils.Template(moduleTemplate, map[string]interface{}{
+	tmpl, err := terraform.Template(moduleTemplate, map[string]interface{}{
 		"source":    source,
 		"variables": variables,
 	})
