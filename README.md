@@ -33,7 +33,6 @@ Documentation can be found at https://terranetes.appvia.io
   - Restrict to known module sources
   - Validate resource requests against Checkov policies
   - Automatically inject default configuration based on labels
-- [ROADMAP] *Apply granular budget controls for namespaces*
 
 **GETTING STARTED**
 ---
