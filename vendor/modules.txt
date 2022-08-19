@@ -448,6 +448,9 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/go-github v17.0.0+incompatible
 ## explicit
 github.com/google/go-github/github
+# github.com/google/go-github/v39 v39.2.0
+## explicit; go 1.16
+github.com/google/go-github/v39/github
 # github.com/google/go-github/v45 v45.2.0
 ## explicit; go 1.17
 github.com/google/go-github/v45/github
@@ -965,7 +968,7 @@ github.com/subosito/gotenv
 # github.com/sylvia7788/contextcheck v1.0.4
 ## explicit; go 1.15
 github.com/sylvia7788/contextcheck
-# github.com/tcnksm/ghr v0.14.0
+# github.com/tcnksm/ghr v0.15.0
 ## explicit; go 1.16
 github.com/tcnksm/ghr
 # github.com/tcnksm/go-gitconfig v0.1.2
