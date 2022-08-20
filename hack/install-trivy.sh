@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # Copyright (C) 2021  Appvia Ltd <info@appvia.io>
 #
@@ -18,7 +18,7 @@
 
 ${TRACE:+set -x}
 
-VERSION="0.16.0"
+VERSION="${VERSION:-"0.31.2"}"
 TRIVY=$(which trivy 2>/dev/null)
 
 [[ -n ${TRIVY} ]] && exit
@@ -36,10 +36,12 @@ esac
 
 URL="https://github.com/aquasecurity/trivy/releases/download/v${VERSION}/${FILE}"
 
-if ! curl -sL ${URL} -o /tmp/trivy.tar.gz; then
+if ! curl -sL "${URL}" -o /tmp/trivy.tar.gz; then
   echo "[error] failed to download trivy release: ${VERSION}"
   exit 1
 fi
+
+mkdir -p bin
 
 if ! tar zxf /tmp/trivy.tar.gz -C bin/ trivy; then
   echo "[error] failed to untar the release"

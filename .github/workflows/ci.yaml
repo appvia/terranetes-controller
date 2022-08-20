@@ -101,7 +101,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build Image
-        run: make controller-image
+        run: VERSION=${{ github.sha }} make controller-image
+      - name: Verify Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/appvia/terranetes-controller:${{ github.sha }}
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
   executor-image:
     runs-on: ubuntu-latest
@@ -109,4 +115,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build Image
-        run: make executor-image
+        run: VERSION=${{ github.sha }} make executor-image
+      - name: Verify Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/appvia/terranetes-executor:${{ github.sha }}
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
