@@ -286,7 +286,7 @@ spec:
         envFrom
           - secretRef:
               name: {{ .Secrets.Policy }}
-              optional: false
+              optional: true
         {{- end }}
         securityContext:
           capabilities:
