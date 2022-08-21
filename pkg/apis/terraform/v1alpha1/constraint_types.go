@@ -85,7 +85,7 @@ type PolicyConstraint struct {
 	SkipChecks []string `json:"skipChecks,omitempty"`
 	// Source indicates an external source for the checkov configurations
 	// +kubebuilder:validation:Optional
-	Source *ExternalSource `json:"externalSource,omitempty"`
+	Source *ExternalSource `json:"source,omitempty"`
 }
 
 // ExternalCheckNames returns the name of the external check names
