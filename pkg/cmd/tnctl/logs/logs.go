@@ -71,7 +71,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags := c.Flags()
 	flags.BoolVarP(&o.Follow, "follow", "f", false, "follow the logs")
 	flags.StringVar(&o.Name, "name", "", "Is the name of the resource to create")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "", "The namespace of the resource")
+	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace of the resource")
 	flags.StringVar(&o.Stage, "stage", "", "Selects the stage to show logs for, else defaults to the condition")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
