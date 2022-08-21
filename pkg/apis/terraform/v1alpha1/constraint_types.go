@@ -101,9 +101,8 @@ func (p *PolicyConstraint) ExternalCheckNames() []string {
 
 // ExternalSource is a external source for the checkov configuration
 type ExternalSource struct {
-	// Configuration is the configuration to use within the source directory, defaulting
-	// to the checkov CLI default of .checkov.yaml
-	// +kubebuilder:validation:Optional
+	// Configuration is the configuration to use within the source directory
+	// +kubebuilder:validation:Required
 	Configuration string `json:"configuration,omitempty"`
 	// URL is the source external checks - this is usually a git repository. The notation
 	// for this is https://github.com/hashicorp/go-getter
