@@ -83,6 +83,9 @@ type PolicyConstraint struct {
 	// scan will ignore any failures on these checks.
 	// +kubebuilder:validation:Optional
 	SkipChecks []string `json:"skipChecks,omitempty"`
+	// Source indicates an external source for the checkov configurations
+	// +kubebuilder:validation:Optional
+	Source *ExternalSource `json:"externalSource,omitempty"`
 }
 
 // ExternalCheckNames returns the name of the external check names
@@ -94,6 +97,23 @@ func (p *PolicyConstraint) ExternalCheckNames() []string {
 	}
 
 	return list
+}
+
+// ExternalSource is a external source for the checkov configuration
+type ExternalSource struct {
+	// Configuration is the configuration to use within the source directory, defaulting
+	// to the checkov CLI default of .checkov.yaml
+	// +kubebuilder:validation:Optional
+	Configuration string `json:"configuration,omitempty"`
+	// URL is the source external checks - this is usually a git repository. The notation
+	// for this is https://github.com/hashicorp/go-getter
+	// +kubebuilder:validation:Required
+	URL string `json:"url,omitempty"`
+	// SecretRef is reference to secret which contains environment variables used by the source
+	// command to retrieve the code. This could be cloud credentials, ssh keys, git username
+	// and password etc
+	// +kubebuilder:validation:Optional
+	SecretRef *v1.SecretReference `json:"secretRef,omitempty"`
 }
 
 // ExternalCheck defines the definition for an external check - this comprises of the

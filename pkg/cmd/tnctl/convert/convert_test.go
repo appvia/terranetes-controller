@@ -20,9 +20,10 @@ package convert
 import (
 	"testing"
 
-	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 func TestNewCommand(t *testing.T) {
