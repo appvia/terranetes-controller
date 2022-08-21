@@ -384,27 +384,6 @@ spec:
                                 type: string
                             type: object
                           type: array
-                        externalSource:
-                          description: Source indicates an external source for the checkov configurations
-                          properties:
-                            configuration:
-                              description: Configuration is the configuration to use within the source directory, defaulting to the checkov CLI default of .checkov.yaml
-                              type: string
-                            secretRef:
-                              description: SecretRef is reference to secret which contains environment variables used by the source command to retrieve the code. This could be cloud credentials, ssh keys, git username and password etc
-                              properties:
-                                name:
-                                  description: name is unique within a namespace to reference a secret resource.
-                                  type: string
-                                namespace:
-                                  description: namespace defines the space within which the secret name must be unique.
-                                  type: string
-                              type: object
-                              x-kubernetes-map-type: atomic
-                            url:
-                              description: URL is the source external checks - this is usually a git repository. The notation for this is https://github.com/hashicorp/go-getter
-                              type: string
-                          type: object
                         selector:
                           description: Selector is the selector on the namespace or labels on the configuration. By leaving this fields empty you can implicitly selecting all configurations.
                           properties:
@@ -476,6 +455,27 @@ spec:
                           items:
                             type: string
                           type: array
+                        source:
+                          description: Source indicates an external source for the checkov configurations
+                          properties:
+                            configuration:
+                              description: Configuration is the configuration to use within the source directory, defaulting to the checkov CLI default of .checkov.yaml
+                              type: string
+                            secretRef:
+                              description: SecretRef is reference to secret which contains environment variables used by the source command to retrieve the code. This could be cloud credentials, ssh keys, git username and password etc
+                              properties:
+                                name:
+                                  description: name is unique within a namespace to reference a secret resource.
+                                  type: string
+                                namespace:
+                                  description: namespace defines the space within which the secret name must be unique.
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            url:
+                              description: URL is the source external checks - this is usually a git repository. The notation for this is https://github.com/hashicorp/go-getter
+                              type: string
+                          type: object
                       type: object
                     modules:
                       description: Modules provides the ability to control the source for all terraform modules. Allowing platform teams to control where the modules can be downloaded from.
