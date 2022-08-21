@@ -157,6 +157,18 @@ func validateCheckovConstraints(policy *terraformv1alphav1.Policy) error {
 		}
 	}
 
+	if constraint.Source != nil {
+		if len(constraint.SkipChecks) > 0 {
+			return errors.New("spec.constraints.policy.skipChecks cannot be used with spec.constraints.policy.source")
+		}
+		if len(constraint.Checks) > 0 {
+			return errors.New("spec.constraints.policy.checks cannot be used with spec.constraints.policy.source")
+		}
+		if constraint.Source.URL == "" {
+			return errors.New("spec.constraints.policy.source.url is required")
+		}
+	}
+
 	for i, external := range constraint.External {
 		switch {
 		case external.Name == "":

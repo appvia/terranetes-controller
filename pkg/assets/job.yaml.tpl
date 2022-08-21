@@ -106,6 +106,25 @@ spec:
               mountPath: /data
 
         {{- if and (.Policy) (eq .Stage "plan") }}
+        {{- if .Policy.Source }}
+        - name: policy-source
+          image: {{ .Images.Executor }}
+          imagePullPolicy: {{ .ImagePullPolicy }}
+          workingDir: /run
+          command:
+            - /run/bin/step
+          args:
+            - --comment=Retrieve policy source
+            - --command=/bin/source --dest=/run/checkov --source={{ .Policy.Source.URL }}
+          {{- if and (.Policy.Source.SecretRef) (.Policy.Source.SecretRef.Name) }}
+          envFrom:
+            - secretRef
+                name: {{ .Policy.Source.SecretRef.Name }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+
+        {{- if and (.Policy) (eq .Stage "plan") }}
         {{- $image := .Images.Executor }}
         {{- $imagePullPolicy := .ImagePullPolicy }}
         {{- range .Policy.External }}
@@ -242,7 +261,15 @@ spec:
           - /run/bin/step
         args:
           - --comment=Evaluating Against Security Policy
+          {{- if not .Policy.Source }}
           - --command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
+          {{- end }}
+          {{- if and (.Policy.Source) (.Policy.Source.Configuration) }}
+          - --command=/usr/local/bin/checkov --config /run/checkov/{{ .Policy.Source.Configuration }} -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
+          {{- end }}
+          {{- if and (.Policy.Source) (not .Policy.Source.Configuration) }}
+          - --command=/usr/local/bin/checkov --config /run/checkov/.checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
+          {{- end }}
           - --command=/bin/cat /run/results_cli.txt
           - --namespace=$(KUBE_NAMESPACE)
           - --upload=$(POLICY_REPORT_NAME)=/run/results_json.json
