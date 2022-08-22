@@ -8,7 +8,7 @@ jobs:
   push-image:
     strategy:
       matrix:
-        image: ['controller', 'executor']
+        image: ['controller', 'executor', 'cli']
     runs-on: ubuntu-latest
     permissions:
       actions: none
