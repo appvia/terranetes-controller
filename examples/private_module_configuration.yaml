@@ -1,0 +1,27 @@
+---
+#
+# Create a secret containing the SSH key used to clone the repository. Alternatively
+# you can use the command: kubectl -n NAMESPACE create secret generic ssh-key --from-file=SSH_KEY_AUTH=FILE_PATH
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ssh-key
+data:
+  SSH_KEY_AUTH: BASE64_SSH_KEY
+type: Opaque
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Configuration
+metadata:
+  name: private-module
+spec:
+  # Reference to the terraform module. If you want to extract a specific
+  # folder within the repository you can use git::ssh://git@github.com/ORG/REPO//FOLDER/PATH?ref=<TAG|COMMIT|BRANCH>
+  module: git::ssh://git@github.com/ORG/REPOSITORY?ref=<TAG|BRANCH|COMMIT>
+  # Reference to the authentication secret from above
+  auth:
+    name: ssh-key
+  providerRef:
+    name: aws
+  variables: {}
