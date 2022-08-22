@@ -125,7 +125,7 @@ spec:
               mountPath: /run
         {{- end }}
 
-        {{- if and (.Policy) (eq .Stage "plan") }}
+        {{- if and (.Policy) (not .Policy.Source) (eq .Stage "plan") }}
         {{- $image := .Images.Executor }}
         {{- $imagePullPolicy := .ImagePullPolicy }}
         {{- range .Policy.External }}
@@ -255,11 +255,14 @@ spec:
       {{- end }}
 
       {{- if and (.Policy) (eq .Stage "plan") }}
-      {{- $config := "/run/checkov/checkov.yaml" }}
-      {{- if .Policy.Source }}
-      {{- $config = printf "%s/%s" "/run/checkov" .Policy.Source.Configuration }}
+      {{- $configfile := "/run/checkov/checkov.yaml" }}
+      {{- $options := "--framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path" }}
+      {{- if .EnableVariables }}
+      {{- $options = printf "%s --var-file /data/variables.tfvars.json" $options }}
       {{- end }}
-
+      {{- if .Policy.Source }}
+      {{- $configfile = printf "%s/%s" "/run/checkov" .Policy.Source.Configuration }}
+      {{- end }}
       - name: verify-policy
         image: {{ .Images.Policy }}
         imagePullPolicy: {{ .ImagePullPolicy }}
@@ -268,7 +271,7 @@ spec:
           - /run/bin/step
         args:
           - --comment=Evaluating Against Security Policy
-          - --command=/usr/local/bin/checkov --config {{ $config }} {{ .PolicyOptions}} --soft-fail -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
+          - --command=/usr/local/bin/checkov --config {{ $configfile }} {{ $options }} >/dev/null
           - --command=/bin/cat /run/results_cli.txt
           - --namespace=$(KUBE_NAMESPACE)
           - --upload=$(POLICY_REPORT_NAME)=/run/results_json.json
