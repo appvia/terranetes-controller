@@ -43,6 +43,17 @@ func TestToHCL(t *testing.T) {
 			}},
 			Expected: "features {\n  hello = \"world\"\n\n  test = [\n    \"a\",\n    \"b\",\n    \"c\",\n  ]\n}\n",
 		},
+		{
+			Data: map[string]interface{}{"features": map[string]interface{}{
+				"hello": "world",
+				"test":  []string{"a", "b", "c"},
+				"check": map[string]interface{}{
+					"test": []string{"hello"},
+					"map":  map[string]string{"a": "b"},
+				},
+			}},
+			Expected: "features {\n  check {\n    map {\n      a = \"b\"\n    }\n\n    test = [\"hello\"]\n  }\n\n  hello = \"world\"\n\n  test = [\n    \"a\",\n    \"b\",\n    \"c\",\n  ]\n}\n",
+		},
 	}
 	for _, c := range cases {
 		m, err := ToHCL(c.Data)
