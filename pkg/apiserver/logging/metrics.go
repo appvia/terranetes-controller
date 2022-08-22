@@ -18,31 +18,22 @@
 package logging
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/felixge/httpsnoop"
-	log "github.com/sirupsen/logrus"
-
-	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-// Logger returns the middleware method for the router
-func Logger() mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			m := httpsnoop.CaptureMetrics(next, w, req)
-
-			// @step: capture the metrics
-			httpCounter.WithLabelValues(fmt.Sprintf("%d", m.Code)).Inc()
-
-			log.WithFields(log.Fields{
-				"bytes":    m.Written,
-				"ip":       req.RemoteAddr,
-				"method":   req.Method,
-				"response": m.Code,
-				"time":     m.Duration,
-			}).Info("received api request")
-		})
-	}
+func init() {
+	metrics.Registry.MustRegister(
+		httpCounter,
+	)
 }
+
+var (
+	httpCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Is the total number of requests per method processed",
+		},
+		[]string{"status"},
+	)
+)
