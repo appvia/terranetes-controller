@@ -125,7 +125,14 @@ test:
 
 ### IMAGES ###
 
-# Terraform Controller image
+cli-image:
+	@echo "--> Compiling the cli image ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION}"
+	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION} -f images/Dockerfile.cli .
+
+cli-image-verify: install-trivy
+	@echo "--> Verifying cli server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION}"
+	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION} for vulnerabilities"
+	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION}
 
 controller-image:
 	@echo "--> Compiling the terranetes-controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
@@ -166,10 +173,10 @@ executor-image-verify: install-trivy
 install-trivy:
 	@hack/install-trivy.sh
 
-images: controller-image executor-image
+images: controller-image executor-image cli-image
 	@echo "--> Building the Images"
 
-verify-images: controller-image-verify executor-image-verify
+verify-images: controller-image-verify executor-image-verify cli-image-verify
 	@echo "--> Verifying the Images"
 
 ### RELEASE PACKAGING ###
