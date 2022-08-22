@@ -459,7 +459,7 @@ spec:
                           description: Source indicates an external source for the checkov configurations
                           properties:
                             configuration:
-                              description: Configuration is the configuration to use within the source directory, defaulting to the checkov CLI default of .checkov.yaml
+                              description: Configuration is the configuration to use within the source directory
                               type: string
                             secretRef:
                               description: SecretRef is reference to secret which contains environment variables used by the source command to retrieve the code. This could be cloud credentials, ssh keys, git username and password etc

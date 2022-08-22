@@ -178,6 +178,11 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		arguments = fmt.Sprintf("--var-file %s", terraformv1alphav1.TerraformVariablesConfigMapKey)
 	}
 
+	policyOptions := []string{"--framework terraform_plan"}
+	if r.configuration.HasVariables() {
+		policyOptions = append(policyOptions, "--var-file", "/data/"+terraformv1alphav1.TerraformVariablesConfigMapKey)
+	}
+
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,
@@ -200,6 +205,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		"ExecutorSecrets":        options.ExecutorSecrets,
 		"ImagePullPolicy":        "IfNotPresent",
 		"Policy":                 options.PolicyConstraint,
+		"PolicyOptions":          strings.Join(policyOptions, " "),
 		"SaveTerraformState":     options.SaveTerraformState,
 		"ServiceAccount":         DefaultServiceAccount,
 		"Stage":                  stage,

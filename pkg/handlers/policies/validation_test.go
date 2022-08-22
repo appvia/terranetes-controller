@@ -185,7 +185,7 @@ var _ = Describe("Policy Validation", func() {
 			},
 			{
 				CheckName: "it should fail when source and checks are defined",
-				Expected:  "spec.constraints.policy.checks cannot be used with spec.constraints.policy.source",
+				Expected:  "spec.constraints.checkov.checks cannot be used with spec.constraints.checkov.source",
 				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
 					policy.Source = &terraformv1alphav1.ExternalSource{}
 					policy.Checks = []string{"hello"}
@@ -193,7 +193,7 @@ var _ = Describe("Policy Validation", func() {
 			},
 			{
 				CheckName: "it should fail when source and skips are defined",
-				Expected:  "spec.constraints.policy.skipChecks cannot be used with spec.constraints.policy.source",
+				Expected:  "spec.constraints.checkov.skipChecks cannot be used with spec.constraints.checkov.source",
 				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
 					policy.Source = &terraformv1alphav1.ExternalSource{}
 					policy.SkipChecks = []string{"hello"}
@@ -201,9 +201,16 @@ var _ = Describe("Policy Validation", func() {
 			},
 			{
 				CheckName: "it should fail when source url is not defined",
-				Expected:  "spec.constraints.policy.source.url is required",
+				Expected:  "spec.constraints.checkov.source.url is required",
 				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Source = &terraformv1alphav1.ExternalSource{}
+					policy.Source = &terraformv1alphav1.ExternalSource{Configuration: "test"}
+				},
+			},
+			{
+				CheckName: "it should fail when source name is not defined",
+				Expected:  "spec.constraints.checkov.source.configuration is required",
+				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
+					policy.Source = &terraformv1alphav1.ExternalSource{URL: "test"}
 				},
 			},
 		}
