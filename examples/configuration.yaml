@@ -4,8 +4,31 @@ kind: Configuration
 metadata:
   name: bucket
 spec:
-  # ssh git::ssh://git@example.com/foo/bar
+  ## Using a public repository
   module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
+  ##
+  ## If you need to use a private git repository, use the git format as below
+  ##
+  # module: git::ssh://git@github.com/ORG/REPOSITORY?ref=<TAG|BRANCH|COMMIT>
+  ##
+  ## For private repositories we need credentials. Assuming the source is git you can use the
+  ## command: $ kubectl -n NAMESPACE create secret generic ssh-key --from-file=SSH_KEY_AUTH=ida.rsa
+  ## to push the private key and then reference secret in the auth as below
+  #
+  # auth:
+  #   name: ssh-key
+  #
+  ## All module references have the ability to extract specific folders from within the source. Similar
+  ## to terraform module syntax use the '//PATH/TO/DIRECTORY. Lets assume you wish to extract modules/bucket from
+  ## a repository github.com/appvia/terraform, the module source would look like
+  #
+  # module: https://github.com/appvia/terraform//modules/bucket?ref=<TAG|COMMIT|BRANCH>
+  #
+  ## The syntax is the same regardless of the protocol, so a private git repository for the same example
+  ## above would look like
+  #
+  # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
+  #
 
   providerRef:
     name: aws
