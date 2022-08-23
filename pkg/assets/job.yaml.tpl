@@ -256,7 +256,7 @@ spec:
 
       {{- if and (.Policy) (eq .Stage "plan") }}
       {{- $configfile := "/run/checkov/checkov.yaml" }}
-      {{- $options := "--framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path" }}
+      {{- $options := "--framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run" }}
       {{- if .Policy.Source }}
       {{- $configfile = printf "%s/%s" "/run/checkov" .Policy.Source.Configuration }}
       {{- end }}

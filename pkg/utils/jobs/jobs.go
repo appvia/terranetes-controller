@@ -174,6 +174,10 @@ func (r *Render) NewTerraformDestroy(options Options) (*batchv1.Job, error) {
 func (r *Render) createTerraformFromTemplate(options Options, stage string) (*batchv1.Job, error) {
 	var arguments string
 
+	if r.configuration.HasVariables() {
+		arguments = fmt.Sprintf("--var-file %s", terraformv1alphav1.TerraformVariablesConfigMapKey)
+	}
+
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,

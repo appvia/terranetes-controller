@@ -66,7 +66,7 @@ var _ = Describe("Configuration Controller", func() {
 
 	verifyPolicyArguments := []string{
 		"--comment=Evaluating Against Security Policy",
-		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path >/dev/null",
+		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
 		"--command=/bin/cat /run/results_cli.txt",
 		"--namespace=$(KUBE_NAMESPACE)",
 		"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -1029,6 +1029,37 @@ terraform {
 			Expect(len(list.Items)).To(Equal(1))
 		})
 
+		It("should have a terraform container", func() {
+			list := &batchv1.JobList{}
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(1))
+
+			expected := []string{
+				"--comment=Executing Terraform",
+				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false",
+				"--command=/bin/terraform show -json /run/plan.out > /run/plan.json",
+				"--on-error=/run/steps/terraform.failed",
+				"--on-success=/run/steps/terraform.complete",
+			}
+			job := list.Items[0]
+			container := job.Spec.Template.Spec.Containers[0]
+
+			Expect(container.Name).To(Equal("terraform"))
+			Expect(container.Command).To(Equal([]string{"/run/bin/step"}))
+			Expect(container.Args).To(Equal(expected))
+
+			Expect(len(container.EnvFrom)).To(Equal(1))
+			Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
+			Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
+
+			Expect(len(container.Env)).To(Equal(5))
+			Expect(container.Env[4].Name).To(Equal("TERRAFORM_STATE_NAME"))
+			Expect(container.Env[4].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+
+			Expect(container.VolumeMounts[0].Name).To(Equal("run"))
+			Expect(container.VolumeMounts[1].Name).To(Equal("source"))
+		})
+
 		It("it should have the configuration labels", func() {
 			list := &batchv1.JobList{}
 			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
@@ -1517,7 +1548,7 @@ terraform {
 
 			expected := []string{
 				"--comment=Evaluating Against Security Policy",
-				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path >/dev/null",
+				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
 				"--command=/bin/cat /run/results_cli.txt",
 				"--namespace=$(KUBE_NAMESPACE)",
 				"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -1723,7 +1754,7 @@ terraform {
 				Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
 				Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal([]string{
 					"--comment=Evaluating Against Security Policy",
-					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path >/dev/null",
+					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
 					"--command=/bin/cat /run/results_cli.txt",
 					"--namespace=$(KUBE_NAMESPACE)",
 					"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -2051,6 +2082,36 @@ terraform {
 
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(2))
+			})
+
+			It("should have a terraform container", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(2))
+
+				expected := []string{
+					"--comment=Executing Terraform",
+					"--command=/bin/terraform apply --var-file variables.tfvars.json -auto-approve -lock=false",
+					"--on-error=/run/steps/terraform.failed",
+					"--on-success=/run/steps/terraform.complete",
+				}
+				job := list.Items[0]
+				container := job.Spec.Template.Spec.Containers[0]
+
+				Expect(container.Name).To(Equal("terraform"))
+				Expect(container.Command).To(Equal([]string{"/run/bin/step"}))
+				Expect(container.Args).To(Equal(expected))
+
+				Expect(len(container.EnvFrom)).To(Equal(1))
+				Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
+				Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
+
+				Expect(len(container.Env)).To(Equal(5))
+				Expect(container.Env[4].Name).To(Equal("TERRAFORM_STATE_NAME"))
+				Expect(container.Env[4].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+
+				Expect(container.VolumeMounts[0].Name).To(Equal("run"))
+				Expect(container.VolumeMounts[1].Name).To(Equal("source"))
 			})
 
 			It("it should have the configuration labels", func() {
