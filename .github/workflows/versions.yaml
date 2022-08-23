@@ -27,7 +27,7 @@ jobs:
       - name: Retrieving ${{ matrix.name }} Release
         run: curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
       - name: Install YQ
-        run: apt install yq
+        run: sudo apt install yq
       - name: Patch Helm Chart
         run: |
           yq write charts/terranetes-controller/values.yaml \
