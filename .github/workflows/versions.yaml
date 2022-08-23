@@ -27,11 +27,17 @@ jobs:
       - name: Retrieving ${{ matrix.name }} Release
         run: curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
       - name: Install YQ
-        run: sudo apt install yq
+        env:
+          BINARY: yq_linux_amd64
+          VERSION: v4.27.2
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
       - name: Patch Helm Chart
         run: |
-          yq write charts/terranetes-controller/values.yaml \
-            ${{ matrix.values }} ${{ matrix.image }}:$(cat /tmp/release.latest)
+          VERSION=$(cat /tmp/release.latest)
+          yq -i "${{ matrix.value }} = ${{ matrix.repository }}:${VERSION}" \
+            charts/terranetes-controller/values.yaml  \
       - name: Raise Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
