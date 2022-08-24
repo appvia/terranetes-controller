@@ -4,7 +4,6 @@ nameOverride: ""
 fullnameOverride: ""
 # The number of replicas for the controller
 replicaCount: 1
-
 controller:
   # Is the port the builds apis
   port: 10080
@@ -33,14 +32,13 @@ controller:
     # is the default image to use for terraform operations
     terraform: hashicorp/terraform:1.2.5
     # image to use for infracost
-    infracost: infracost/infracost:0.10.10
+    infracost: infracost/infracost:v0.10.10
     # policy is image for policy
     policy: bridgecrew/checkov:2.1.137
     # is the controller image
     controller: ghcr.io/appvia/terranetes-controller:v0.3.7
     # The terranetes image used when running jobs
     executor: ghcr.io/appvia/terranetes-executor:v0.3.7
-
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h
   # driftThreshold is the percentage of configurations which are permitted
@@ -51,12 +49,10 @@ controller:
   # is up for a drift trigger. Its fine to have this low, it's the driftInterval and threshold which
   # ultimately effective jobs running to check drift.
   driftControllerInterval: 5m
-
   # Allows you to overload the templates
   templates:
     # is the name of config map holding a override to the job template
     job: ""
-
   # is the image pull policy
   imagePullPolicy: IfNotPresent
   # indicate we create the watcher jobs in user namespace, these allow users
@@ -90,27 +86,21 @@ controller:
     tlsDir: /certs
     # name of the file containing the tls private key
     tlsKey: tls-key.pem
-
 networkPolicies:
   # Indicates we should create the network policies
   enabled: true
-
 imagePullSecrets: []
-
 podAnnotations: {}
-
 podSecurityContext:
   fsGroup: 65534
   runAsNonRoot: true
   runAsUser: 65534
-
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
     drop:
       - all
-
 # Allows to you deploy a number of providers into the clusters
 providers:
 #  - name: aws
@@ -124,7 +114,6 @@ providers:
 #    secret: NAME
 #    # When using source injected we should have a service account
 #    serviceAccount: SERV
-
 rbac:
   # Indicates we allow all service account in the controller namespace the role of
   # executor. This makes rolling out multiple providers backed to multiple services easier.
@@ -139,14 +128,12 @@ rbac:
     create: true
     # annotations is a collection of annotations which should be added
     annotations: {}
-
   # Configuration for the terraform executor service account
   executor:
     # indicates we should create the terraform-executor service account
     create: true
     # annotations is a collection of annotations which should be added
     annotations: {}
-
 # Allows to you to control via the helm chart the deployment of a number of
 # security policy which govern what must be enforced in the controller and by
 # the consumers.
@@ -157,20 +144,17 @@ policies:
 #    constraint:
 #      modules:
 #        allowed: []
-
 resources: {}
-  # These resources are applied to the controller
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# These resources are applied to the controller
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
 
 nodeSelector: {}
-
 tolerations: []
-
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
