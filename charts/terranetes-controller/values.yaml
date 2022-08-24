@@ -37,9 +37,9 @@ controller:
     # policy is image for policy
     policy: bridgecrew/checkov:2.1.137
     # is the controller image
-    controller: ghcr.io/appvia/terranetes-controller:v0.3.7
+    controller: ghcr.io/appvia/terranetes-controller:v0.3.8
     # The terranetes image used when running jobs
-    executor: ghcr.io/appvia/terranetes-executor:v0.3.7
+    executor: ghcr.io/appvia/terranetes-executor:v0.3.8
 
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h
