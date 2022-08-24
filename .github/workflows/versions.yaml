@@ -32,7 +32,7 @@ jobs:
           VERSION: v4.27.2
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq
-          sudo chmod +x /usr/bin/y
+          sudo chmod +x /usr/bin/yq
       - name: Patch Helm Chart
         run: |
           export VERSION=$(cat /tmp/release.latest)
