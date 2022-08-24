@@ -32,15 +32,16 @@ jobs:
           VERSION: v4.27.2
         run: |
           sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
       - name: Patch Helm Chart
         run: |
-          export VERSION="${{ matrix.repository }}:$(cat /tmp/release.latest)"
-          yq e '.${{ matrix.value }} = strenv(VERSION)' -i charts/terranetes-controller/values.yaml
+          export VERSION=$(cat /tmp/release.latest)
+          export IMAGE="${{ matrix.repository }}:${VERSION##v}"
+          yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
       - name: Raise Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
           branch: develop
+          branch-suffix: timestamp
           title: '[IMAGES] - ${{ matrix.name }} Image Update'
           body: |
             Updating the ${{ matrix.name }} image in the helm values to
