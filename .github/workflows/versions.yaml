@@ -36,8 +36,7 @@ jobs:
       - name: Patch Helm Chart
         run: |
           VERSION=$(cat /tmp/release.latest)
-          yq -i "${{ matrix.value }} = ${{ matrix.repository }}:${VERSION}" \
-            charts/terranetes-controller/values.yaml  \
+          yq e "${{ matrix.value }} = ${{ matrix.repository }}:${VERSION}" -i charts/terranetes-controller/values.yaml
       - name: Raise Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
