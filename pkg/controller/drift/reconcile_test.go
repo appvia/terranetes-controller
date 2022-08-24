@@ -153,7 +153,34 @@ var _ = Describe("Drift Controller", func() {
 			{
 				Name: "we have multiple configuration in drift already",
 				Before: func(ctrl *Controller) {
-					for i := 0; i < 20; i++ {
+					for i := 0; i < 10; i++ {
+						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-config", i))
+						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Spec.EnableDriftDetection = true
+
+						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+						cond.Reason = corev1alphav1.ReasonInProgress
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+						cond.Reason = corev1alphav1.ReasonComplete
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						ctrl.cc.Create(ctx, configuration)
+					}
+				},
+			},
+			{
+				Name: "we have a small drift threshold",
+				Before: func(ctrl *Controller) {
+					ctrl.DriftThreshold = 0.01
+
+					for i := 0; i < 9; i++ {
 						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-config", i))
 						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
 						configuration.Spec.EnableDriftDetection = true
@@ -174,6 +201,56 @@ var _ = Describe("Drift Controller", func() {
 						ctrl.cc.Create(ctx, configuration)
 					}
 				},
+				ShouldDrift: true,
+			},
+			{
+				Name: "we have multiple configuration in different states",
+				Before: func(ctrl *Controller) {
+					// @step: we create x configuration not running
+					for i := 0; i < 7; i++ {
+						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d-notrunning", i))
+						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Spec.EnableDriftDetection = true
+
+						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+						cond.Reason = corev1alphav1.ReasonComplete
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+						cond.Reason = corev1alphav1.ReasonComplete
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						ctrl.cc.Create(ctx, configuration)
+					}
+
+					// @step: we create x configuration running
+					for i := 0; i < 2; i++ {
+						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-running", i))
+						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Spec.EnableDriftDetection = true
+
+						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+						cond.Reason = corev1alphav1.ReasonInProgress
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+						cond.Reason = corev1alphav1.ReasonComplete
+						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
+						cond.ObservedGeneration = configuration.GetGeneration()
+						cond.Status = metav1.ConditionTrue
+
+						ctrl.cc.Create(ctx, configuration)
+					}
+				},
+				ShouldDrift: false,
 			},
 			{
 				Name:        "configuration should trigger a drift detection",
