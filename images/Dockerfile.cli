@@ -1,0 +1,22 @@
+FROM golang:1.18 AS builder
+
+ARG VERSION=latest
+ARG LFLAGS
+
+COPY . /go/src/github.com/appvia/terranetes-controller
+
+ENV \
+  CGO_ENABLED=0 \
+  VERSION=$VERSION
+
+RUN cd /go/src/github.com/appvia/terranetes-controller && make tnctl
+
+FROM alpine:3.16
+
+RUN apk add ca-certificates
+
+COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/tnctl /bin/tnctl
+
+USER 65534
+
+ENTRYPOINT ["/bin/tnctl"]

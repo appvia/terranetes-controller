@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -56,13 +57,16 @@ $ tnctl config sources add https://registry.terraform.io/namespaces/appvia
 Adding a GitHub user or organization
 $ tnctl config sources add https://github.com/appvia
 
+Write the generated output to a file
+$ tnctl search -o filename
+
 For private repositories on Github you will need to export your token
 to the environment variable GITHUB_TOKEN.
 $ export GITHUB_TOKEN=TOKEN
 
-This command assumes credentials have already been setup. For the Terraform registry,
-nothing is required, but for private repositories on Github your environment must
-already be setup to git clone the repository.
+This command assumes credentials have already been setup. For the Terraform
+registry, nothing is required, but for private repositories on Github your
+environment must already be setup to git clone the repository.
 `
 
 // Command returns the cobra command for the "build" sub-command.
@@ -70,6 +74,9 @@ type Command struct {
 	cmd.Factory
 	// EnableDefaults indicates if any defaults with values from the terraform module are included
 	EnableDefaults bool
+	// Filename is a name where to write the generated configuration, else
+	// we default to printing to screen
+	Filename string
 	// Provider is the module provider
 	Provider string
 	// Name is the name of the resource
@@ -80,11 +87,13 @@ type Command struct {
 	SourceNamespace string
 	// Query is the registry query string
 	Query string
+	// Writer is the writer to use for output
+	Writer io.Writer
 }
 
 // NewCommand returns a new instance of the get command
 func NewCommand(factory cmd.Factory) *cobra.Command {
-	o := &Command{Factory: factory}
+	o := &Command{Factory: factory, Writer: factory.Stdout()}
 
 	c := &cobra.Command{
 		Use:   "search [OPTIONS]",
@@ -103,6 +112,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags.StringVar(&o.SourceNamespace, "source-namespace", "", "The namespace within the source registry to scope the search")
 	flags.StringVarP(&o.Provider, "provider", "p", "", "Limit the search only to modules with the given provider")
 	flags.StringVarP(&o.Source, "source", "s", "", "Limit the scope of the search to a specific source")
+	flags.StringVarP(&o.Filename, "output", "o", "", "Optional filename to write the generated configuration (defaults: stdout)")
 
 	cmd.RegisterFlagCompletionFunc(c, "provider", cmd.AutoCompleteWithList([]string{"aws", "azurerm", "google", "vsphere"}))
 	cmd.RegisterFlagCompletionFunc(c, "source", func(cmd *cobra.Command, args []string, flagValue string) ([]string, cobra.ShellCompDirective) {
@@ -118,7 +128,9 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 }
 
 // Run implements the command action
-func (o *Command) Run(ctx context.Context) error {
+func (o *Command) Run(ctx context.Context) (err error) {
+	var file *os.File
+
 	config, found, err := o.GetConfig()
 	if err != nil {
 		return err
@@ -126,9 +138,19 @@ func (o *Command) Run(ctx context.Context) error {
 	if !found || len(config.Sources) == 0 {
 		config.Sources = []string{"https://registry.terraform.io"}
 	}
-
 	if o.Source != "" && !utils.Contains(o.Source, config.Sources) {
 		return fmt.Errorf("source %q not found in configuration", o.Source)
+	}
+
+	// @step: open the configuration file if defined
+	o.Writer = o.Stdout()
+
+	if o.Filename != "" {
+		file, err = os.OpenFile(o.Filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0640)
+		if err != nil {
+			return err
+		}
+		o.Writer = file
 	}
 
 	// @step: ensure we have something to search for
@@ -216,13 +238,26 @@ func (o *Command) Run(ctx context.Context) error {
 		provider = o.Provider
 	}
 
-	return (&build.Command{
+	err = (&build.Command{
 		Factory:        o.Factory,
 		EnableDefaults: o.EnableDefaults,
 		Name:           o.Name,
 		Provider:       provider,
 		Source:         reference,
+		Writer:         o.Writer,
 	}).Run(ctx)
+	if err != nil {
+		return err
+	}
+
+	if file != nil {
+		if err := file.Close(); err != nil {
+			return err
+		}
+		o.Println("%s Configuration written to: %s", cmd.IconGood, color.CyanString(o.Filename))
+	}
+
+	return nil
 }
 
 // chooseModule prompts the users to select the module to use

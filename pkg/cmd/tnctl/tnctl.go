@@ -31,6 +31,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/approve"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/build"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/config"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/convert"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/generate"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/kubectl"
@@ -75,6 +76,7 @@ func New(factory cmd.Factory) *cobra.Command {
 		build.NewCommand(factory),
 		kubectl.NewCommand(factory),
 		search.NewCommand(factory),
+		convert.NewCommand(factory),
 		workflow.NewCommand(factory),
 		describe.NewCommand(factory),
 		generate.NewCommand(factory),

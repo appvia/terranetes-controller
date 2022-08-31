@@ -18,6 +18,7 @@
 package logging
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/felixge/httpsnoop"
@@ -31,6 +32,9 @@ func Logger() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			m := httpsnoop.CaptureMetrics(next, w, req)
+
+			// @step: capture the metrics
+			httpCounter.WithLabelValues(fmt.Sprintf("%d", m.Code)).Inc()
 
 			log.WithFields(log.Fields{
 				"bytes":    m.Written,

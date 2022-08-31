@@ -71,13 +71,14 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags := c.Flags()
 	flags.BoolVarP(&o.Follow, "follow", "f", false, "follow the logs")
 	flags.StringVar(&o.Name, "name", "", "Is the name of the resource to create")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "", "The namespace of the resource")
+	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace of the resource")
 	flags.StringVar(&o.Stage, "stage", "", "Selects the stage to show logs for, else defaults to the condition")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
 	cmd.RegisterFlagCompletionFunc(c, "stage", cmd.AutoCompleteWithList([]string{
-		terraformv1alphav1.StageTerraformPlan,
 		terraformv1alphav1.StageTerraformApply,
+		terraformv1alphav1.StageTerraformDestroy,
+		terraformv1alphav1.StageTerraformPlan,
 	}))
 
 	return c
@@ -91,10 +92,11 @@ func (o *Command) Run(ctx context.Context) error {
 	case o.Namespace == "":
 		return cmd.ErrMissingArgument("namespace")
 	case o.Stage != "" && !utils.Contains(o.Stage, []string{
-		terraformv1alphav1.StageTerraformPlan,
 		terraformv1alphav1.StageTerraformApply,
+		terraformv1alphav1.StageTerraformDestroy,
+		terraformv1alphav1.StageTerraformPlan,
 	}):
-		return errors.New("invalid stage (must be one of: plan, apply)")
+		return errors.New("invalid stage (must be one of: plan, apply or destroy)")
 	}
 
 	cc, err := o.GetClient()
@@ -118,6 +120,10 @@ func (o *Command) Run(ctx context.Context) error {
 		return o.showLogs(ctx, o.Stage, configuration)
 	}
 
+	if !configuration.CreationTimestamp.IsZero() {
+		return o.showLogs(ctx, terraformv1alphav1.StageTerraformDestroy, configuration)
+	}
+
 	condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
 	if condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alphav1.ReasonNotDetermined {
 		if condition.Reason == corev1alphav1.ReasonActionRequired {
@@ -134,7 +140,7 @@ func (o *Command) Run(ctx context.Context) error {
 		return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
 	}
 
-	return errors.New("neither plan or apply have been run for this configuration")
+	return errors.New("neither plan, apply or destroy have been run for this configuration")
 }
 
 // showLogs is a helper function to show the logs for all the containers under a build

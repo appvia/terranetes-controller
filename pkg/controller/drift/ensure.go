@@ -20,6 +20,7 @@ package drift
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -33,6 +34,8 @@ import (
 // ensureConfigurationReadyForDrift is responsible for checking the configuration is ready for drift
 func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
 	return func(ctx context.Context) (reconcile.Result, error) {
+		var totalRunning int
+
 		list := &terraformv1alphav1.ConfigurationList{}
 		if err := c.cc.List(ctx, list, client.InNamespace("")); err != nil {
 			log.WithError(err).Error("failed to retrieve a list of configurations in cluster")
@@ -40,54 +43,78 @@ func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1
 			return reconcile.Result{}, err
 		}
 
-		// @step: count the number of configuration with a drift annotation
-		var count float64
-		for _, configuration := range list.Items {
-			if configuration.Annotations[terraformv1alphav1.DriftAnnotation] != "" {
-				count++
+		// @step: retrieve the total number of Configurations which are current running - i.e.
+		// they have a plan or apply which are in-progress
+		for _, x := range list.Items {
+			switch {
+			case len(x.Status.Conditions) == 0:
+				continue
+
+			case x.Status.HasCondition(terraformv1alphav1.ConditionTerraformPlan):
+				if x.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).InProgress() {
+					totalRunning++
+				}
+
+			case x.Status.HasCondition(terraformv1alphav1.ConditionTerraformApply):
+				if x.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).InProgress() {
+					totalRunning++
+				}
 			}
 		}
-		// is the percentage of configurations running a drift now
-		running := count / float64(len(list.Items))
+		// totalAllowed is the max configurations permitted to run at any one
+		// time, based on the threshold
+		totalAllowed := int(math.Ceil(float64(len(list.Items)) * c.DriftThreshold))
 
 		switch {
 		// can't really happen due the the predicate - but better safe than sorry; if not enabled or deleting, we ignore
 		case !configuration.Spec.EnableDriftDetection, configuration.DeletionTimestamp != nil:
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		case len(configuration.Status.Conditions) == 0:
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the plan condition does not exist, we ignore
 		case !configuration.Status.HasCondition(terraformv1alphav1.ConditionTerraformPlan):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the apply condition does not exist, we ignore
 		case !configuration.Status.HasCondition(terraformv1alphav1.ConditionTerraformApply):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the last plan for this generation failed, we ignore
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the last apply for this generation failed, we ignore
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the configuration plan is already in progress
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).InProgress():
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the configuration apply is already in progress
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).InProgress():
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if a plan has not been run on the current generation, we ignore
 		case !configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the apply for the generation has not been run, we ignore
 		case !configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the last transition on a plan was less than the interval, i.e we've had activity, we ignore
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the last transition on a apply was less than the interval, i.e we've had activity, we ignore
 		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
+
 		// if the number of active configuration running a drift exceeds the max percentage, we ignore
-		case len(list.Items) > 1 && running >= c.DriftThreshold:
+		case totalRunning >= totalAllowed:
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 		}
 

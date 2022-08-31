@@ -39,10 +39,10 @@ import (
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/assets"
 	"github.com/appvia/terranetes-controller/pkg/controller"
-	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
@@ -472,13 +472,15 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 		} else {
 			state.checkovConstraint = policy
 
-			config, err := utils.Template(checkovPolicyTemplate, map[string]interface{}{"Policy": policy})
-			if err != nil {
-				cond.Failed(err, "Failed to parse the checkov policy template")
+			if policy.Source == nil {
+				config, err := template.New(checkovPolicyTemplate, map[string]interface{}{"Policy": policy})
+				if err != nil {
+					cond.Failed(err, "Failed to parse the checkov policy template")
 
-				return reconcile.Result{}, err
+					return reconcile.Result{}, err
+				}
+				secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey] = config
 			}
-			secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey] = config
 		}
 
 		if err := kubernetes.CreateOrPatch(ctx, c.cc, secret); err != nil {

@@ -20,6 +20,7 @@ APP_NAMESPACE="apps"
 BATS_OPTIONS=${BATS_OPTIONS:-""}
 BUCKET=${BUCKET:-"terranetes-controller-ci-bucket"}
 CLOUD=""
+DIAGNOSTICS=${DIAGNOSTICS:-""}
 UNITS="test/e2e/integration"
 USE_CHART="false"
 VERSION="ci"
@@ -40,7 +41,28 @@ EOF
   exit 0
 }
 
+# run_diagnosis is called to retrieve details on the failure
+run_diagnosis() {
+  [[ $? -ne 1          ]] && exit $?
+  [[ "${CI}" != "true" ]] && exit $?
+
+  echo "Running Diagnosis on failure"
+
+  mkdir -p /tmp/diagnostics
+  if kubectl cluster-info dump --namespaces terraform-system,apps --output-directory=/tmp/diagnostics >/dev/null; then
+    # @step: upload the files to the bucket
+    BUCKET="${DIAGNOSTICS}/${GITHUB_RUN_ID}"
+    if ! aws s3 cp /tmp/diagnostics "${BUCKET}" --acl private --recursive >/dev/null; then
+      echo "Failed to copy all the diagnostics"
+      exit 1
+    fi
+  fi
+
+  exit 1
+}
+
 run_bats() {
+  trap run_diagnosis EXIT
   echo -e "Running units: ${*}\n"
   APP_NAMESPACE=${APP_NAMESPACE} \
   BUCKET=${BUCKET} \

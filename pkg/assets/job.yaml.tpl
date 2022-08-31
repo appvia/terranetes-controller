@@ -53,11 +53,11 @@ spec:
               - key: variables.tfvars.json
                 path: variables.tfvars.json
               {{- end }}
-        {{- if and (.Policy) (eq .Stage "plan") }}
+        {{- if and (.Policy) (not .Policy.Source) (eq .Stage "plan") }}
         - name: checkov
           secret :
             secretName: {{ .Secrets.Config }}
-            optional: false
+            optional: true
             items:
               - key: checkov.yaml
                 path: checkov.yaml
@@ -105,7 +105,27 @@ spec:
             - name: source
               mountPath: /data
 
-        {{- if and (.Policy) (eq .Stage "plan") }}
+        {{- if and (.Policy) (.Policy.Source) (eq .Stage "plan") }}
+        - name: policy-source
+          image: {{ .Images.Executor }}
+          imagePullPolicy: {{ .ImagePullPolicy }}
+          workingDir: /run
+          command:
+            - /run/bin/step
+          args:
+            - --comment=Retrieve policy source
+            - --command=/bin/source --dest=/run/checkov --source={{ .Policy.Source.URL }}
+          {{- if and (.Policy.Source.SecretRef) (.Policy.Source.SecretRef.Name) }}
+          envFrom:
+            - secretRef
+                name: {{ .Policy.Source.SecretRef.Name }}
+          {{- end }}
+          volumeMounts:
+            - name: run
+              mountPath: /run
+        {{- end }}
+
+        {{- if and (.Policy) (not .Policy.Source) (eq .Stage "plan") }}
         {{- $image := .Images.Executor }}
         {{- $imagePullPolicy := .ImagePullPolicy }}
         {{- range .Policy.External }}
@@ -129,6 +149,7 @@ spec:
               mountPath: /run
         {{- end }}
         {{- end }}
+
       containers:
       - name: {{ .TerraformContainerName }}
         image: {{ .Images.Terraform }}
@@ -234,6 +255,11 @@ spec:
       {{- end }}
 
       {{- if and (.Policy) (eq .Stage "plan") }}
+      {{- $configfile := "/run/checkov/checkov.yaml" }}
+      {{- $options := "--framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run" }}
+      {{- if .Policy.Source }}
+      {{- $configfile = printf "%s/%s" "/run/checkov" .Policy.Source.Configuration }}
+      {{- end }}
       - name: verify-policy
         image: {{ .Images.Policy }}
         imagePullPolicy: {{ .ImagePullPolicy }}
@@ -242,7 +268,7 @@ spec:
           - /run/bin/step
         args:
           - --comment=Evaluating Against Security Policy
-          - --command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml -f /run/plan.json -o json -o cli --output-file-path /run >/dev/null
+          - --command=/usr/local/bin/checkov --config {{ $configfile }} {{ $options }} >/dev/null
           - --command=/bin/cat /run/results_cli.txt
           - --namespace=$(KUBE_NAMESPACE)
           - --upload=$(POLICY_REPORT_NAME)=/run/results_json.json
@@ -259,14 +285,16 @@ spec:
         envFrom
           - secretRef:
               name: {{ .Secrets.Policy }}
-              optional: false
+              optional: true
         {{- end }}
         securityContext:
           capabilities:
             drop: [ALL]
         volumeMounts:
+          {{- if not .Policy.Source }}
           - name: checkov
             mountPath: /run/checkov
+          {{- end }}
           - name: run
             mountPath: /run
           - name: source

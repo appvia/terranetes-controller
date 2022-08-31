@@ -11,7 +11,7 @@ ENV VERSION=$VERSION
 RUN cd /go/src/github.com/appvia/terranetes-controller && make source
 RUN cd /go/src/github.com/appvia/terranetes-controller && make step
 
-FROM alpine:3.15.4
+FROM alpine:3.16
 
 RUN apk add ca-certificates curl unzip
 

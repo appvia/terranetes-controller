@@ -66,4 +66,23 @@ spec:
         - name:
           url:
           secretRef:
-
+            name:
+---
+# Source a centrally managed policy
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
+  name: checkov
+spec:
+  constraints:
+    checkov:
+      source:
+        # an optional configuration file to use, else default to .checkov.yaml
+        configuration: PATH
+        # the source to true
+        url: https://github.com/appvia/terranetes-policy?ref=main
+        # secretRef is an optional reference to a secret container credentuals to retrieve
+        # the source above - this uses the same format as modules
+        secretRef:
+          name: NAME
+          namespace: MUST_BE_IN_CONTROLLER_NAMESPACE

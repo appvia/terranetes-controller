@@ -8,7 +8,7 @@ jobs:
   push-image:
     strategy:
       matrix:
-        image: ['controller', 'executor']
+        image: ['controller', 'executor', 'cli']
     runs-on: ubuntu-latest
     permissions:
       actions: none
@@ -34,8 +34,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Get image tag
         id: get_image_tag
-        env:
-          DOCS_DOMAIN: docs-preview.appvia.io
         run: |
           if [[ "${GITHUB_REF##*/}" == "master" ]]; then
             echo "::set-output name=image_tag::latest"

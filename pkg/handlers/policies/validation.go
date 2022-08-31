@@ -153,7 +153,22 @@ func validateCheckovConstraints(policy *terraformv1alphav1.Policy) error {
 
 	if len(constraint.Checks) > 0 && len(constraint.SkipChecks) > 0 {
 		if utils.ContainsList(constraint.Checks, constraint.SkipChecks) {
-			return errors.New("spec.constraints.policy.skipChecks cannot contain checks from spec.constraints.policy.checks")
+			return errors.New("spec.constraints.checkov.skipChecks cannot contain checks from spec.constraints.checkov.checks")
+		}
+	}
+
+	if constraint.Source != nil {
+		if len(constraint.SkipChecks) > 0 {
+			return errors.New("spec.constraints.checkov.skipChecks cannot be used with spec.constraints.checkov.source")
+		}
+		if len(constraint.Checks) > 0 {
+			return errors.New("spec.constraints.checkov.checks cannot be used with spec.constraints.checkov.source")
+		}
+		if constraint.Source.Configuration == "" {
+			return errors.New("spec.constraints.checkov.source.configuration is required")
+		}
+		if constraint.Source.URL == "" {
+			return errors.New("spec.constraints.checkov.source.url is required")
 		}
 	}
 

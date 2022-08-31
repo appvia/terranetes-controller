@@ -32,6 +32,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe/assets"
 	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 // Command represents the available get command options
@@ -77,7 +78,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	flags := c.Flags()
 	flags.BoolVar(&options.ShowPassedChecks, "show-passed-checks", true, "Indicates we should show passed checks")
-	flags.StringVarP(&options.Namespace, "namespace", "n", "", "Namespace of the resource/s")
+	flags.StringVarP(&options.Namespace, "namespace", "n", "default", "Namespace of the resource/s")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
 
@@ -196,7 +197,7 @@ func (o *Command) Run(ctx context.Context) error {
 			data["Cost"] = report["projects"].([]interface{})[0]
 		}
 
-		x, err := utils.Template(string(assets.MustAsset("describe.yaml.tpl")), data)
+		x, err := template.New(string(assets.MustAsset("describe.yaml.tpl")), data)
 		if err != nil {
 			return err
 		}

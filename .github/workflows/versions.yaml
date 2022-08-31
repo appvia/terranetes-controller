@@ -1,0 +1,53 @@
+---
+name: Image Versions
+
+on:
+  schedule:
+    - cron: '37 9 * * 2'
+  workflow_dispatch:
+
+jobs:
+  versions:
+    strategy:
+      matrix:
+        include:
+          - name: Checkov
+            repository: bridgecrewio/checkov
+            image: bridgecrew/checkov
+            value: controller.images.policy
+          - name: Infracost
+            repository: infracost/infracost
+            image: infracost/infracost
+            value: controller.images.infracost
+          - name: Terraform
+            repository: hashicorp/terraform
+            image: hashicorp/terraform
+            value: controller.images.terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: develop
+      - name: Retrieving ${{ matrix.name }} Release
+        run: curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
+      - name: Install YQ
+        env:
+          BINARY: yq_linux_amd64
+          VERSION: v4.27.2
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+      - name: Patch Helm Chart
+        run: |
+          export VERSION=$(cat /tmp/release.latest)
+          export IMAGE="${{ matrix.image }}:${VERSION##v}"
+          yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
+      - name: Raise Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          branch: develop
+          branch-suffix: timestamp
+          title: '[IMAGES] - ${{ matrix.name }} Image Update'
+          body: |
+            Updating the ${{ matrix.name }} image in the helm values to the latest
