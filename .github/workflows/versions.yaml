@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: develop
       - name: Retrieving ${{ matrix.name }} Release
         run: curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
       - name: Install YQ
