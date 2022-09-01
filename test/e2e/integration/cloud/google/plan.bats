@@ -42,6 +42,7 @@ spec:
       - bucket_name
   variables:
     bucket: terranetes-controller-e2e
+    project_id: ${GOOGLE_PROJECT}
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]

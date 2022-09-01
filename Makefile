@@ -275,3 +275,8 @@ azure-credentials:
 		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
 		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
 		--from-literal=ARM_TENANT_ID=${ARM_TENANT_ID}
+
+google-credentials:
+	@echo "--> Creating Google credentials"
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@echo ${GOOGLE_CREDENTIALS} | base64 -d | kubectl -n terraform-system apply -f - 2>/dev/null
