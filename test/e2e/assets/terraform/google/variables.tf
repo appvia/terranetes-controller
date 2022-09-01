@@ -8,3 +8,8 @@ variable "location" {
   type        = string
   default     = "europe-west2"
 }
+
+variable "project_id" {
+  description = "Is the google project id"
+  type        = string
+}
