@@ -254,6 +254,14 @@ trigger-azure-e2e:
 	@echo "--> Triggering the e2e tests on develop branch (Azure)"
 	@gh workflow run e2e.yaml --ref develop -f cloud=azure -f use_helm=false -f version=ci
 
+trigger-google-e2e:
+	@echo "--> Triggering the e2e tests on develop branch (Azure)"
+	@gh workflow run e2e.yaml --ref develop -f cloud=google -f use_helm=false -f version=ci
+
+trigger-quickstart-e2e:
+	@echo "--> Triggering the e2e tests on master using official repository"
+	@gh workflow run e2e.yaml --ref master -f cloud=aws` -f use_helm=true -f version=na
+
 clean:
 	@echo "--> Cleaning up the environment"
 	rm -rf ./bin 2>/dev/null
@@ -275,3 +283,8 @@ azure-credentials:
 		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
 		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
 		--from-literal=ARM_TENANT_ID=${ARM_TENANT_ID}
+
+google-credentials:
+	@echo "--> Creating Google credentials"
+	@kubectl create namespace terraform-system 2>/dev/null || true
+	@echo ${GOOGLE_CREDENTIALS} | base64 -d | kubectl -n terraform-system apply -f - 2>/dev/null

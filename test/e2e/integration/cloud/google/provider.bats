@@ -30,7 +30,7 @@ teardown() {
     skip "Cloud credential already exists"
   fi
 
-  runit "kubectl -n ${NAMESPACE} create secret generic google --from-literal=GOOGLE_CREDENTIALS=$GOOGLE_CREDENTIALS --from-literal=GOOGLE_PROJECT=$GOOGLE_PROJECT"
+  runit "echo ${GOOGLE_CREDENTIALS} | base64 -d | kubectl -n ${NAMESPACE} apply -f - 2>/dev/null"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} get secret google"
   [[ "$status" -eq 0 ]]
