@@ -141,4 +141,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_AWS_SECRET_ACCESS_KEY }}
           DIAGNOSTICS: ${{ secrets.DIAGNOSTICS }}
           E2E_SSH_DEPLOYMENT_KEY: ${{ secrets.E2E_SSH_DEPLOYMENT_KEY }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}

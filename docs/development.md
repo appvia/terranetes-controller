@@ -84,6 +84,11 @@ For Azure i.e `check-suite.sh --cloud azure`
 * ARM_APP_ID
 * ARM_APP_NAME
 
+For Google
+
+* GOOGLE_PROJECT
+* GOOGLE_CREDENTIALS
+
 You can use the following template
 
 ```shell
@@ -101,6 +106,20 @@ export ARM_CLIENT_ID=""
 export ARM_CLIENT_SECRET=""
 export ARM_SUBSCRIPTION_ID=""
 export ARM_TENANT_ID=""
+
+# Required by Google
+export GOOGLE_PROJECT=""
+# This will be a base64 of a Kubernetes secret which contains the GOOGLE_PROJECT and GOOGLE_CREDENTIALS
+# environment variables. This is due to the JSON key file being a pain to handle i.e. the file would look like
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#  name: google
+# type: Opaque
+# data:
+#  GOOGLE_PROJECT: BASE64
+#  GOOGLE_CREDENTIALS: BASE64
+export GOOGLE_CREDENTIALS=BASE64 OF ABOVE FILE
 ```
 
 1. Copy the above file and place into dev/credentials.sh _(note the dev/ folder is ignored by .gitignore)_.

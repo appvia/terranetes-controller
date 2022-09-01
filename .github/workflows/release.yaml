@@ -19,6 +19,12 @@ jobs:
     with:
       cloud: azure
 
+  e2e-google:
+    uses: ./.github/workflows/e2e.yaml
+    secrets: inherit
+    with:
+      cloud: google
+
   release-tagged-images:
     needs:
       - e2e-aws
