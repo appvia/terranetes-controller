@@ -335,6 +335,27 @@ entries:
     version: v0.2.1
   terranetes-controller:
   - apiVersion: v2
+    appVersion: v0.3.9
+    created: "2022-09-04T12:07:56.788825923Z"
+    description: Controller used to provision a terraform workflow within kubernetes
+    digest: 950defc687ce0e8fa66bd34d6c871216d1f7e1a834135fe179b73a3816f6d9a4
+    maintainers:
+    - email: info@appvia.io
+      name: Appvia
+      url: https://appvia.io
+    - email: gambol99@gmail.com
+      name: Rohith
+      url: https://github.com/gambol99
+    name: terranetes-controller
+    sources:
+    - https://github.com/appvia/terranetes-controller
+    - https://github.com/appvia/terranetes
+    - https://terranetes.appvia.io
+    type: application
+    urls:
+    - https://github.com/appvia/terranetes-controller/releases/download/terranetes-controller-v0.3.11/terranetes-controller-v0.3.11.tgz
+    version: v0.3.11
+  - apiVersion: v2
     appVersion: v0.3.8
     created: "2022-08-24T11:27:42.349849903Z"
     description: Controller used to provision a terraform workflow within kubernetes
@@ -544,4 +565,4 @@ entries:
     urls:
     - https://github.com/appvia/terranetes-controller/releases/download/terranetes-controller-v0.3.0/terranetes-controller-v0.3.0.tgz
     version: v0.3.0
-generated: "2022-08-24T11:27:42.349946905Z"
+generated: "2022-09-04T12:07:56.789034826Z"
