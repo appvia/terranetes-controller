@@ -44,8 +44,9 @@ jobs:
           go-version: '1.18.1'
       - name: Check Binaries
         run: |
-          make step
           make source
+          make step
+          make tnctl
 
   dependencies:
     runs-on: ubuntu-latest
