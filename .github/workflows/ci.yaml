@@ -107,7 +107,8 @@ jobs:
         with:
           image-ref: ghcr.io/appvia/terranetes-controller:${{ github.sha }}
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
+          exit: 1
 
   executor-image:
     runs-on: ubuntu-latest
@@ -121,4 +122,5 @@ jobs:
         with:
           image-ref: ghcr.io/appvia/terranetes-executor:${{ github.sha }}
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
+          exit: 1
