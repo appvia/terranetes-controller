@@ -89,7 +89,7 @@ var _ = Describe("Configuration Controller", func() {
 			recorder:            recorder,
 			EnableInfracosts:    false,
 			EnableWatchers:      true,
-			ExecutorImage:       "ghcr.io/appvia/terraform-executor",
+			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
 			InfracostsImage:     "infracosts/infracost:latest",
 			ControllerNamespace: "default",
 			PolicyImage:         "bridgecrew/checkov:2.0.1140",
@@ -200,7 +200,7 @@ var _ = Describe("Configuration Controller", func() {
 
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
-				Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal("terraform-executor"))
+				Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal("terranetes-executor"))
 			})
 		})
 

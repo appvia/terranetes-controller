@@ -17,4 +17,4 @@ metadata:
 spec:
   source: injected
   provider: aws
-  serviceAccount: terraform-executor
+  serviceAccount: terranetes-executor

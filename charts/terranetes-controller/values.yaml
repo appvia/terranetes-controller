@@ -130,7 +130,7 @@ rbac:
     annotations: {}
   # Configuration for the terraform executor service account
   executor:
-    # indicates we should create the terraform-executor service account
+    # indicates we should create the terranetes-executor service account
     create: true
     # annotations is a collection of annotations which should be added
     annotations: {}
