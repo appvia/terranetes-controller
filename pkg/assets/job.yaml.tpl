@@ -239,10 +239,15 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        {{- if .Secrets.Infracosts }}
         envFrom:
+        {{- if .Secrets.Infracosts }}
           - secretRef:
               name: {{ .Secrets.Infracosts }}
+        {{- end }}
+        {{- range .ExecutorSecrets }}
+          - secretRef:
+              name: {{ . }}
+              optional: true
         {{- end }}
         securityContext:
           capabilities:
@@ -281,10 +286,15 @@ spec:
                 fieldPath: metadata.namespace
           - name: POLICY_REPORT_NAME
             value: {{ .Secrets.PolicyReport }}
+        envFrom:
         {{- if .Secrets.Policy }}
-        envFrom
           - secretRef:
               name: {{ .Secrets.Policy }}
+              optional: true
+        {{- end }}
+        {{- range .ExecutorSecrets }}
+          - secretRef:
+              name: {{ . }}
               optional: true
         {{- end }}
         securityContext:
