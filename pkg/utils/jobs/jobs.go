@@ -35,7 +35,7 @@ import (
 )
 
 // DefaultServiceAccount is the default service account to use for the job if no override is given
-const DefaultServiceAccount = "terraform-executor"
+const DefaultServiceAccount = "terranetes-executor"
 
 // TerraformContainerName is the default name for the main terraform container
 const TerraformContainerName = "terraform"

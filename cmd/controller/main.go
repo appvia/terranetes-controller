@@ -67,7 +67,7 @@ func main() {
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")
 	flags.IntVar(&config.WebhookPort, "webhooks-port", 10081, "The port the webhook endpoint binds to")
 	flags.StringSliceVar(&config.ExecutorSecrets, "executor-secret", []string{}, "Name of a secret in controller namespace which should be added to the job")
-	flags.StringVar(&config.ExecutorImage, "executor-image", "ghcr.io/appvia/terraform-executor:latest", "The image to use for the executor")
+	flags.StringVar(&config.ExecutorImage, "executor-image", "ghcr.io/appvia/terranetes-executor:latest", "The image to use for the executor")
 	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:latest", "The image to use for the infracosts")
 	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")

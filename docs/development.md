@@ -22,7 +22,7 @@ controller:
     # is the controller image
     controller: ghcr.io/appvia/terranetes-controller:ci
     # The terraform image used when running jobs
-    executor: ghcr.io/appvia/terraform-executor:ci
+    executor: ghcr.io/appvia/terranetes-executor:ci
 ```
 
 ```shell
