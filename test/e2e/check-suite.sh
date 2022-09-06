@@ -90,6 +90,7 @@ run_checks() {
     "${UNITS}/infracost.bats"
     "${UNITS}/checkov.bats"
     "${UNITS}/private.bats"
+    "${UNITS}/error-handler.bats"
   )
   local CONSTRAINTS_FILES=(
     "${UNITS}/constraints/setup.bats"
