@@ -28,7 +28,7 @@ VERSION="ci"
 usage() {
   cat <<EOF
 Usage: $0 [options]
---cloud <NAME>         Cloud provider name to run against (aws, azure, google, defaults: aws)
+--cloud <NAME>         Cloud provider name to run against (aws, azurerm, google, defaults: aws)
 --use-chart <BOOLEAN>  Indicates we use the chart instead of using the local directory (defaults: ${USE_CHART})
 --version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
@@ -137,6 +137,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ ${CLOUD} == "aws" ]] || [[ ${CLOUD} == "azure" ]] || [[ ${CLOUD} == "google" ]] || [[ ${CLOUD} == "" ]] || usage "Unknown cloud: ${CLOUD}"
+[[ ${CLOUD} == "aws" ]] || [[ ${CLOUD} == "azurerm" ]] || [[ ${CLOUD} == "google" ]] || [[ ${CLOUD} == "" ]] || usage "Unknown cloud: ${CLOUD}"
 
 run_checks

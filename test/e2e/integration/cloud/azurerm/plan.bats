@@ -35,7 +35,7 @@ metadata:
 spec:
   module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/azure?ref=master
   providerRef:
-    name: azure
+    name: ${CLOUD}
   writeConnectionSecretToRef:
     name: test
     keys:

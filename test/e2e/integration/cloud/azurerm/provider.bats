@@ -26,26 +26,39 @@ teardown() {
 }
 
 @test "We should be able to create a cloud credential" {
-  if kubectl -n ${NAMESPACE} get secret azure; then
+  if kubectl -n ${NAMESPACE} get secret ${CLOUD}; then
     skip "Cloud credential already exists"
   fi
 
-  runit "kubectl -n ${NAMESPACE} create secret generic azure --from-literal=ARM_CLIENT_ID=$ARM_CLIENT_ID --from-literal=ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET --from-literal=ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID --from-literal=ARM_TENANT_ID=$ARM_TENANT_ID"
+  runit "kubectl -n ${NAMESPACE} create secret generic ${CLOUD} --from-literal=ARM_CLIENT_ID=$ARM_CLIENT_ID --from-literal=ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET --from-literal=ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID --from-literal=ARM_TENANT_ID=$ARM_TENANT_ID"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} get secret azure"
+  runit "kubectl -n ${NAMESPACE} get secret ${CLOUD}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to create a cloud provider" {
-  runit "kubectl apply -f examples/azure-provider.yaml"
+  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: ${CLOUD}
+spec:
+  source: secret
+  provider: ${CLOUD}
+  secretRef:
+    namespace: terraform-system
+    name: ${CLOUD}
+EOF
+  runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
-  runit "kubectl get provider azure"
+  runit "kubectl get provider ${CLOUD}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a healthy cloud provider" {
-  runit "kubectl get provider azure -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
+  runit "kubectl get provider ${CLOUD} -o json" "jq -r '.status.conditions[0].name' | grep -q 'Provider Ready'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl get provider azure -o json" "jq -r '.status.conditions[0].status' | grep -q True"
+  runit "kubectl get provider ${CLOUD} -o json" "jq -r '.status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
 }

@@ -146,9 +146,13 @@ controller-kind:
 	@kubectl -n apps delete po --all || true
 	@$(MAKE) VERSION=ci controller-image
 	@$(MAKE) VERSION=ci executor-image
+	@$(MAKE) VERSION=ci controller-kind-images
+	@kubectl -n terraform-system scale deployment terranetes-controller --replicas=1 || true
+
+controller-kind-images:
+	@echo "--> Loading Controller CI Images into Kind"
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:ci
 	@kind load docker-image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:ci
-	@kubectl -n terraform-system scale deployment terranetes-controller --replicas=1 || true
 
 controller-image-verify: install-trivy
 	@echo "--> Verifying controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
@@ -252,7 +256,7 @@ trigger-aws-e2e:
 
 trigger-azure-e2e:
 	@echo "--> Triggering the e2e tests on develop branch (Azure)"
-	@gh workflow run e2e.yaml --ref develop -f cloud=azure -f use_helm=false -f version=ci
+	@gh workflow run e2e.yaml --ref develop -f cloud=azurerm -f use_helm=false -f version=ci
 
 trigger-google-e2e:
 	@echo "--> Triggering the e2e tests on develop branch (Goolge)"
@@ -278,7 +282,7 @@ aws-credentials:
 azure-credentials:
 	@echo "--> Creating Azure credentials"
 	@kubectl create namespace terraform-system 2>/dev/null || true
-	@kubectl -n terraform-system create secret generic azure \
+	@kubectl -n terraform-system create secret generic azurerm \
 		--from-literal=ARM_CLIENT_ID=${ARM_CLIENT_ID} \
 		--from-literal=ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
 		--from-literal=ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \

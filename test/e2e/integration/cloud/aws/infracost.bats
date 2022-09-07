@@ -40,7 +40,7 @@ metadata:
 spec:
   module: https://github.com/terraform-aws-modules/terraform-aws-ec2-instance?ref=v4.0.0
   providerRef:
-    name: aws
+    name: ${CLOUD}
   variables:
     unused: $(date +"%s")
     name: instance0

@@ -36,7 +36,7 @@ spec:
   module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.3.0
   enableDriftDetection: true
   providerRef:
-    name: aws
+    name: ${CLOUD}
   writeConnectionSecretToRef:
     name: test
     keys:

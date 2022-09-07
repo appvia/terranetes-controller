@@ -46,8 +46,8 @@ jobs:
       - name: Raise Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          branch: develop
           branch-suffix: timestamp
+          delete-branch: true
           title: '[IMAGES] - ${{ matrix.name }} Image Update'
           body: |
             Updating the ${{ matrix.name }} image in the helm values to the latest

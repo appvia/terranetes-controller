@@ -17,7 +17,7 @@ jobs:
     uses: ./.github/workflows/e2e.yaml
     secrets: inherit
     with:
-      cloud: azure
+      cloud: azurerm
 
   e2e-google:
     uses: ./.github/workflows/e2e.yaml

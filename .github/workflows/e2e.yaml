@@ -25,7 +25,7 @@ on:
         type: choice
         options:
           - aws
-          - azure
+          - azurerm
           - google
       use_helm:
         description: Indicates we install the controller via official helm chart

@@ -4,11 +4,18 @@ kind: Provider
 metadata:
   name: aws
 spec:
+  # Source and be 'secret' or 'injected'. When using a 'secret' you
+  # must specify the spec.secretRef which defines the name of the
+  # secret in the controller namespace containing the credentials.
   source: secret
+  # Provider can be google, aws, azurerm
   provider: aws
+  # Used when spec.source is secret.
   secretRef:
     namespace: terraform-system
     name: aws
+  # When using spec.source injected we can use a service account
+  # serviceAccount: NAME
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Provider
