@@ -157,7 +157,7 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 
 		pod = kubernetes.FindLatestPod(pods)
 		switch pod.Status.Phase {
-		case v1.PodRunning, v1.PodSucceeded:
+		case v1.PodRunning, v1.PodSucceeded, v1.PodFailed:
 			return true, nil
 		}
 
