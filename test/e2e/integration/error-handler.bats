@@ -33,7 +33,7 @@ teardown() {
     skip "namespace already exists"
   fi
 
-  runit "kubectl create namespace {NAMESPACE}"
+  runit "kubectl create namespace ${NAMESPACE}"
   [ "$status" -eq 0 ]
 }
 
