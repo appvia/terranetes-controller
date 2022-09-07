@@ -18,6 +18,9 @@
 package fixtures
 
 import (
+	"fmt"
+
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -42,4 +45,21 @@ func NewValidBucketConfiguration(namespace, name string) *terraformv1alphav1.Con
 	}
 
 	return config
+}
+
+// NewConfigurationPodWatcher returns a new configuration pod
+func NewConfigurationPodWatcher(configuration *terraformv1alphav1.Configuration, stage string) *v1.Pod {
+	pod := &v1.Pod{}
+	pod.Namespace = configuration.Namespace
+	pod.Name = "test-configuration-1234"
+	pod.Labels = map[string]string{
+		terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+		terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
+		terraformv1alphav1.ConfigurationStageLabel:      stage,
+		terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.UID),
+	}
+	pod.Status.Phase = v1.PodSucceeded
+	pod.Spec.Containers = []v1.Container{{Name: "terraform"}}
+
+	return pod
 }

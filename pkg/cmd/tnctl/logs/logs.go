@@ -67,6 +67,8 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 		},
 		ValidArgsFunction: cmd.AutoCompleteConfigurations(factory),
 	}
+	c.SetErr(o.GetStreams().ErrOut)
+	c.SetOut(o.GetStreams().Out)
 
 	flags := c.Flags()
 	flags.BoolVarP(&o.Follow, "follow", "f", false, "follow the logs")
@@ -113,19 +115,19 @@ func (o *Command) Run(ctx context.Context) error {
 		return err
 	}
 	if !found {
-		return fmt.Errorf("resource %s not found", o.Name)
+		return fmt.Errorf("resource %q not found", o.Name)
 	}
 
 	if o.Stage != "" {
 		return o.showLogs(ctx, o.Stage, configuration)
 	}
 
-	if !configuration.CreationTimestamp.IsZero() {
+	if !configuration.DeletionTimestamp.IsZero() {
 		return o.showLogs(ctx, terraformv1alphav1.StageTerraformDestroy, configuration)
 	}
 
 	condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-	if condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alphav1.ReasonNotDetermined {
+	if condition != nil && condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alphav1.ReasonNotDetermined {
 		if condition.Reason == corev1alphav1.ReasonActionRequired {
 			if strings.Contains(condition.Message, "Waiting for terraform apply annotation") {
 				return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
@@ -136,7 +138,7 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	condition = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-	if condition.ObservedGeneration == configuration.GetGeneration() {
+	if condition != nil && condition.ObservedGeneration == configuration.GetGeneration() {
 		return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
 	}
 
@@ -165,7 +167,7 @@ func (o *Command) showLogs(ctx context.Context, stage string, configuration *ter
 		return err
 	}
 	if len(list.Items) == 0 {
-		return fmt.Errorf("no pods found for configuration %s", configuration.Name)
+		return fmt.Errorf("no pods found for configuration %q", configuration.Name)
 	}
 
 	// @step: find the latest
