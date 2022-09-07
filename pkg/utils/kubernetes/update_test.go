@@ -21,12 +21,12 @@ import (
 	"context"
 	"testing"
 
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/appvia/terranetes-controller/pkg/schema"
-	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
 func TestCreateOrForceUpdate(t *testing.T) {
@@ -34,29 +34,32 @@ func TestCreateOrForceUpdate(t *testing.T) {
 	name := "test"
 
 	cc := fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
-	configuration := fixtures.NewValidBucketConfiguration(namespace, name)
+	pod := &v1.Pod{}
+	pod.Name = name
+	pod.Namespace = namespace
+	pod.Labels = map[string]string{"hello": "world"}
 
-	found, err := GetIfExists(context.TODO(), cc, configuration.DeepCopy())
+	found, err := GetIfExists(context.TODO(), cc, pod.DeepCopy())
 	assert.NoError(t, err)
 	assert.False(t, found)
 
-	err = CreateOrForceUpdate(context.TODO(), cc, configuration)
+	err = CreateOrForceUpdate(context.TODO(), cc, pod)
 	assert.NoError(t, err)
-	assert.Equal(t, "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git", configuration.Spec.Module)
+	assert.Equal(t, map[string]string{"hello": "world"}, pod.Labels)
 
-	found, err = GetIfExists(context.TODO(), cc, configuration.DeepCopy())
+	found, err = GetIfExists(context.TODO(), cc, pod.DeepCopy())
 	assert.NoError(t, err)
 	assert.True(t, found)
 
-	update := configuration.DeepCopy()
-	update.Spec.Module = "updated"
+	update := pod.DeepCopy()
+	update.Labels["is"] = "updated"
 	err = CreateOrForceUpdate(context.TODO(), cc, update)
 	assert.NoError(t, err)
 
-	found, err = GetIfExists(context.TODO(), cc, configuration)
+	found, err = GetIfExists(context.TODO(), cc, pod)
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, "updated", configuration.Spec.Module)
+	assert.Equal(t, map[string]string{"hello": "world", "is": "updated"}, pod.Labels)
 }
 
 func TestCreateOfPatch(t *testing.T) {
@@ -64,21 +67,24 @@ func TestCreateOfPatch(t *testing.T) {
 	name := "test"
 
 	cc := fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
-	configuration := fixtures.NewValidBucketConfiguration(namespace, name)
+	pod := &v1.Pod{}
+	pod.Name = name
+	pod.Namespace = namespace
+	pod.Labels = map[string]string{"hello": "world"}
 
 	// first we create
-	assert.NoError(t, CreateOrPatch(context.TODO(), cc, configuration))
-	found, err := GetIfExists(context.TODO(), cc, configuration.DeepCopy())
+	assert.NoError(t, CreateOrPatch(context.TODO(), cc, pod))
+	found, err := GetIfExists(context.TODO(), cc, pod.DeepCopy())
 	assert.NoError(t, err)
 	assert.True(t, found)
 
 	// then we update
-	updated := configuration.DeepCopy()
-	updated.Spec.Module = "updated"
+	updated := pod.DeepCopy()
+	updated.Labels["hello"] = "updated"
 	assert.NoError(t, CreateOrPatch(context.TODO(), cc, updated))
 
-	found, err = GetIfExists(context.TODO(), cc, configuration)
+	found, err = GetIfExists(context.TODO(), cc, pod)
 	assert.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, "updated", configuration.Spec.Module)
+	assert.Equal(t, updated.Labels["hello"], "updated")
 }
