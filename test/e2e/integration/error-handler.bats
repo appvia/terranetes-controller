@@ -19,7 +19,6 @@ load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
-  [[ ${CLOUD} == "aws" ]] || skip "drift check only runs on aws"
 }
 
 teardown() {
@@ -49,7 +48,7 @@ metadata:
 spec:
   module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?v3.1.0
   providerRef:
-    name: aws
+    name: ${CLOUD}
   variables:
     unused: $(date +"%s")
     bucket_name: ${RESOURCE_NAME}
