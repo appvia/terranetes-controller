@@ -259,7 +259,7 @@ trigger-azure-e2e:
 	@gh workflow run e2e.yaml --ref develop -f cloud=azurerm -f use_helm=false -f version=ci
 
 trigger-google-e2e:
-	@echo "--> Triggering the e2e tests on develop branch (Goolge)"
+	@echo "--> Triggering the e2e tests on develop branch (Google)"
 	@gh workflow run e2e.yaml --ref develop -f cloud=google -f use_helm=false -f version=ci
 
 trigger-quickstart-e2e:
