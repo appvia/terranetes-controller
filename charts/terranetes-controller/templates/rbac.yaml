@@ -185,5 +185,8 @@ subjects:
   - kind: ServiceAccount
     name: terranetes-executor
     namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: terraform-executor
+    namespace: {{ .Release.Namespace }}
   {{- end }}
 {{- end }}
