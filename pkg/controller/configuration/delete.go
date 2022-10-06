@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -182,6 +183,14 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 				return reconcile.Result{}, err
 			}
 		}
+
+		// @step: log information around the removal
+		log.WithFields(log.Fields{
+			"name":      configuration.GetName(),
+			"namespace": configuration.GetNamespace(),
+		}).Info("successfully deleted the configuration")
+
+		c.recorder.Event(configuration, v1.EventTypeNormal, "ConfigurationDeleted", "Configuration has been deleted")
 
 		return reconcile.Result{}, nil
 	}
