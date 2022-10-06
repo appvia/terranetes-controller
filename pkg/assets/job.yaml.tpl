@@ -12,6 +12,8 @@ spec:
   backoffLimit: 2
   completions: 1
   parallelism: 1
+  # retain the jobs for 6 hours
+  ttlSecondsAfterFinished: 28800
   template:
     metadata:
       labels:
@@ -30,8 +32,6 @@ spec:
         runAsUser: 65534
         runAsGroup: 65534
         fsGroup: 65534
-      # retain the jobs for 6 hours
-      ttlSecondsAfterFinished: 28800
       volumes:
         # Used to hold the terraform module source code
         - name: source
