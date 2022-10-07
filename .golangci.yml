@@ -9,7 +9,6 @@ run:
 
 linters:
   enable:
-    - deadcode
     - depguard
     - errcheck
     - exportloopref
@@ -17,12 +16,10 @@ linters:
     - govet
     - ineffassign
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unparam
     - unused
-    - varcheck
     - wastedassign
 
 linters-settings:
