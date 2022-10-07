@@ -17,7 +17,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.19'
       - name: Unit Tests
         run: make test
 
@@ -29,7 +29,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.19'
       - name: Check CLI
         run: make tnctl
 
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.19'
       - name: Check Binaries
         run: |
           make source
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.18.1'
+          go-version: '1.19'
       - name: Linting
         run: |
           make check-gofmt

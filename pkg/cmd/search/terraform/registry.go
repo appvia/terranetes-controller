@@ -72,7 +72,6 @@ func New(endpoint string) (search.Interface, error) {
 	}, nil
 }
 
-//
 // IsHandle returns true if we handle this source
 func IsHandle(source string) bool {
 	switch {
