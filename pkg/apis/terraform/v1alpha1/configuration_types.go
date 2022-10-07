@@ -276,8 +276,10 @@ const (
 	ResourcesInSync ResourceStatus = "InSync"
 	// ResourcesOutOfSync is the status when the configuration is out of sync
 	ResourcesOutOfSync ResourceStatus = "OutOfSync"
-	// DestroyingResources is the status
+	// DestroyingResources is the status when the configuration is being destroyed
 	DestroyingResources ResourceStatus = "Deleting"
+	// DestroyingResourcesFailed is the status when the configuration is being destroyed and failed
+	DestroyingResourcesFailed ResourceStatus = "DeletionFailed"
 	// UnknownResourceStatus is the status when the configuration is unknown
 	UnknownResourceStatus ResourceStatus = ""
 )
