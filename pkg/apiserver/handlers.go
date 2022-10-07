@@ -57,6 +57,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, req *http.Request) {
 }
 
 // handleBuilds is http handler for the logs endpoint
+//
 //nolint:errcheck
 func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	params := []string{
