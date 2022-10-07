@@ -116,8 +116,10 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 			return reconcile.Result{}, nil
 
 		case jobs.IsFailed(job):
-			cond.Failed(nil, "Terraform destroy is failing")
-			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			cond.Failed(nil, "Terraform destroy has failed")
+			configuration.Status.ResourceStatus = terraformv1alphav1.DestroyingResourcesFailed
+
+			return reconcile.Result{}, controller.ErrIgnore
 
 		case jobs.IsActive(job):
 			cond.InProgress("Terraform destroy is running")
