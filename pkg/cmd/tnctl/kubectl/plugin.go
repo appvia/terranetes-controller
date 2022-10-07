@@ -37,10 +37,10 @@ called from kubectl. You need to ensure the scripts this command
 generates are included your $PATH, long with the location of the
 tnctl command.
 
-# Create the kubectl plugins (defaults to ${HOME}/bin)
+Create the kubectl plugins (defaults to ${HOME}/bin)
 $ tnctl kubectl plugin
 
-# Place the plugins scripts in another directory
+Place the plugins scripts in another directory
 $ tnctl kubectl plugin -d ${GOPATH}/bin
 `
 
