@@ -4,6 +4,7 @@ nameOverride: ""
 fullnameOverride: ""
 # The number of replicas for the controller
 replicaCount: 1
+# Settings for the controller
 controller:
   # Is the port the builds apis
   port: 10080

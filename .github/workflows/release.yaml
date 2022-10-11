@@ -43,7 +43,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.19'
       - name: Build CLI
