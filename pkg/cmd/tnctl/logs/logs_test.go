@@ -73,14 +73,14 @@ var _ = Describe("Logs Command", func() {
 		command = NewCommand(factory)
 	})
 
-	When("no configuration is provided", func() {
+	When("no configuration provided", func() {
 		BeforeEach(func() {
 			err = command.Execute()
 		})
 
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("accepts 1 arg(s), received 0"))
+			Expect(err.Error()).To(ContainSubstring("accepts 1 arg(s)"))
 		})
 	})
 

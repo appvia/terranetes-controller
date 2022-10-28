@@ -15,6 +15,7 @@ GOVERSION ?= 1.17
 HARDWARE=$(shell uname -m)
 PLATFORM=$(shell uname -s)
 PACKAGES=$(shell go list ./...)
+PACKAGES_LIST=$(shell go list ./... | sed -e 's/github.com\/appvia\/terranetes-controller\//.\//')
 GIT_SHA=$(shell git --no-pager describe --always --dirty)
 BUILD_TIME=$(shell date '+%s')
 GO_DIRS=cmd hack pkg
@@ -120,7 +121,7 @@ step: golang
 test:
 	@echo "--> Running the tests"
 	@rm -f cover.out || true
-	@go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname -- -coverprofile=cover.out ./...
+	@go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --packages $(PACKAGES_LIST) -- -coverprofile=cover.out
 	@echo "--> Coverage: $(shell go tool cover -func=cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+')" || true
 
 ### IMAGES ###

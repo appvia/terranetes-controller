@@ -85,7 +85,7 @@ var _ = Describe("Convert Configuration Command", func() {
 
 		It("should fail due to missing path", func() {
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("accepts 1 arg(s), received 0"))
+			Expect(err.Error()).To(ContainSubstring("accepts 1 arg(s)"))
 		})
 	})
 
