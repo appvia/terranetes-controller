@@ -60,7 +60,7 @@ jobs:
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v2.3.0
+        uses: sigstore/cosign-installer@v2.8.1
       - name: Sign image
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
