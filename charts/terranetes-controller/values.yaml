@@ -35,7 +35,7 @@ controller:
     # image to use for infracost
     infracost: infracost/infracost:0.10.13
     # policy is image for policy
-    policy: bridgecrew/checkov:2.1.290
+    policy: bridgecrew/checkov:2.2.15
     # is the controller image
     controller: ghcr.io/appvia/terranetes-controller:v0.3.10
     # The terranetes image used when running jobs
