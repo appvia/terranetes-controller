@@ -8,3 +8,11 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "develop"
+
+
+# Dependencies listed in .github/workflows/*.yml
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
