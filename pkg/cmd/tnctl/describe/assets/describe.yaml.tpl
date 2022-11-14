@@ -44,7 +44,6 @@ Secret:         {{ .Object.metadata.namespace }}/{{ .Object.spec.writeConnection
 {{- else }}
 Secret:         None
 {{- end }}
-{{- if and (.Object.status.costs) (.Object.status.costs.enabled) }}
 
 {{- if .Policy }}
 
@@ -63,7 +62,6 @@ Status:        Configuration has passed {{ .Policy.results.passed_checks | len }
 ├─ Name:       {{ $check.check_name }}
 ├─ Resource:   {{ $check.resource_address }}
 └─ Guide:      {{ default "-" $check.guideline }}
-{{- end }}
 {{- end }}
 {{- end }}
 
