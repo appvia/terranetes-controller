@@ -22,4 +22,7 @@ COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/step /bi
 
 COPY images/assets/ssh_config /etc/ssh/ssh_config
 
+COPY images/assets/watch_logs.sh /watch_logs.sh
+RUN chmod +x /watch_logs.sh
+
 USER 1001

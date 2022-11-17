@@ -1083,7 +1083,8 @@ terraform {
 
 			container := list.Items[0].Spec.Template.Spec.Containers[0]
 			Expect(container.Name).To(Equal("watch"))
-			Expect(container.Command).To(Equal([]string{"sh"}))
+			Expect(container.Command).To(Equal([]string{"/watch_logs.sh"}))
+			Expect(container.Args).To(Equal([]string{"-e", "http://controller.default.svc.cluster.local/v1/builds/apps/bucket/logs?generation=0&name=bucket&namespace=apps&stage=plan&uid=1234-122-1234-1234"}))
 		})
 
 		It("should have added a approval annotation to the configuration", func() {
@@ -1395,7 +1396,8 @@ terraform {
 
 				container := list.Items[0].Spec.Template.Spec.Containers[0]
 				Expect(container.Name).To(Equal("watch"))
-				Expect(container.Command).To(Equal([]string{"sh"}))
+				Expect(container.Command).To(Equal([]string{"/watch_logs.sh"}))
+				Expect(container.Args).To(Equal([]string{"-e", "http://controller.default.svc.cluster.local/v1/builds/apps/bucket/logs?generation=0&name=bucket&namespace=apps&stage=plan&uid=1234-122-1234-1234"}))
 			})
 		})
 
@@ -2136,7 +2138,8 @@ terraform {
 
 				container := list.Items[0].Spec.Template.Spec.Containers[0]
 				Expect(container.Name).To(Equal("watch"))
-				Expect(container.Command).To(Equal([]string{"sh"}))
+				Expect(container.Command).To(Equal([]string{"/watch_logs.sh"}))
+				Expect(container.Args).To(Equal([]string{"-e", "http://controller.default.svc.cluster.local/v1/builds/apps/bucket/logs?generation=0&name=bucket&namespace=apps&stage=apply&uid=1234-122-1234-1234"}))
 			})
 
 			It("should ask us to requeue", func() {
