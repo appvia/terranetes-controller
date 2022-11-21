@@ -85,7 +85,7 @@ func New(configuration *terraformv1alphav1.Configuration, provider *terraformv1a
 }
 
 // NewJobWatch is responsible for creating a job watch pod
-func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
+func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *batchv1.Job {
 	query := []string{
 		"generation=" + fmt.Sprintf("%d", r.configuration.GetGeneration()),
 		"name=" + r.configuration.Name,
@@ -96,8 +96,6 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 
 	endpoint := fmt.Sprintf("http://controller.%s.svc.cluster.local/v1/builds/%s/%s/logs?%s",
 		namespace, r.configuration.Namespace, r.configuration.Name, strings.Join(query, "&"))
-
-	buildLog := "/tmp/build.log"
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,7 +113,7 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            pointer.Int32Ptr(5),
+			BackoffLimit:            pointer.Int32Ptr(0),
 			Completions:             pointer.Int32Ptr(1),
 			Parallelism:             pointer.Int32Ptr(1),
 			TTLSecondsAfterFinished: pointer.Int32Ptr(3600),
@@ -129,7 +127,7 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 					},
 				},
 				Spec: v1.PodSpec{
-					RestartPolicy: v1.RestartPolicyOnFailure,
+					RestartPolicy: v1.RestartPolicyNever,
 					SecurityContext: &v1.PodSecurityContext{
 						RunAsGroup:   pointer.Int64(65534),
 						RunAsNonRoot: pointer.Bool(true),
@@ -138,10 +136,10 @@ func (r *Render) NewJobWatch(namespace, stage string) *batchv1.Job {
 					Containers: []v1.Container{
 						{
 							Name:            "watch",
-							Image:           "curlimages/curl:7.82.0",
+							Image:           executorImage,
 							ImagePullPolicy: v1.PullIfNotPresent,
-							Command:         []string{"sh"},
-							Args:            []string{"-c", fmt.Sprintf("curl --no-buffer --silent '%s' | tee -a %[2]s && grep -qi 'build.*complete' %[2]s", endpoint, buildLog)},
+							Command:         []string{"/watch_logs.sh"},
+							Args:            []string{"-e", endpoint},
 							SecurityContext: &v1.SecurityContext{
 								AllowPrivilegeEscalation: pointer.Bool(false),
 								Capabilities:             &v1.Capabilities{Drop: []v1.Capability{"ALL"}},
