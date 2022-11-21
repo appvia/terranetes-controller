@@ -1912,6 +1912,124 @@ terraform {
 					Expect(string(secret.Data["results_json.json"])).To(ContainSubstring("summary"))
 				})
 			})
+
+			When("policy contains no passes or failures", func() {
+				BeforeEach(func() {
+					report := &v1.Secret{}
+					report.Namespace = ctrl.ControllerNamespace
+					report.Name = configuration.GetTerraformPolicySecretName()
+
+					// @note: delete the old secret adding a passed one
+					Expect(ctrl.cc.Delete(context.TODO(), report)).ToNot(HaveOccurred())
+					report.Data = map[string][]byte{"results_json.json": []byte(`{"failed": 0, "passed": 0}}`)}
+					Expect(ctrl.cc.Create(context.TODO(), report)).ToNot(HaveOccurred())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+				})
+
+				It("should have the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+					Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+				})
+
+				It("should indicate the we failed", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+					Expect(cond.Message).To(Equal("Passed security checks"))
+				})
+
+				It("should have not create an apply job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(2))
+				})
+
+				It("should copied the report into the configuration namespace", func() {
+					secret := &v1.Secret{}
+					secret.Namespace = configuration.Namespace
+					secret.Name = configuration.GetTerraformPolicySecretName()
+					found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+					Expect(secret.Data).To(HaveKey("results_json.json"))
+				})
+			})
+
+			When("policy report zero, but missing passed field", func() {
+				BeforeEach(func() {
+					report := &v1.Secret{}
+					report.Namespace = ctrl.ControllerNamespace
+					report.Name = configuration.GetTerraformPolicySecretName()
+
+					// @note: delete the old secret adding a passed one
+					Expect(ctrl.cc.Delete(context.TODO(), report)).ToNot(HaveOccurred())
+					report.Data = map[string][]byte{"results_json.json": []byte(`{"failed": 0}}`)}
+					Expect(ctrl.cc.Create(context.TODO(), report)).ToNot(HaveOccurred())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+				})
+
+				It("should have the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+					Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+				})
+
+				It("should indicate the we failed", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+					Expect(cond.Message).To(Equal("Security report is missing passed field"))
+				})
+
+				It("should have not create an apply job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+			})
+
+			When("policy report zero, but missing failed field", func() {
+				BeforeEach(func() {
+					report := &v1.Secret{}
+					report.Namespace = ctrl.ControllerNamespace
+					report.Name = configuration.GetTerraformPolicySecretName()
+
+					// @note: delete the old secret adding a passed one
+					Expect(ctrl.cc.Delete(context.TODO(), report)).ToNot(HaveOccurred())
+					report.Data = map[string][]byte{"results_json.json": []byte(`{"passed": 0}}`)}
+					Expect(ctrl.cc.Create(context.TODO(), report)).ToNot(HaveOccurred())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
+				})
+
+				It("should have the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+					Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+				})
+
+				It("should indicate the we failed", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+					Expect(cond.Message).To(Equal("Security report is missing failed field"))
+				})
+
+				It("should have not create an apply job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+			})
 		})
 	})
 
