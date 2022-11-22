@@ -49,6 +49,7 @@ Secret:         None
 
 Checkov Security Policy:
 =======================
+{{- if .Policy.results }}
 Status:        Configuration has passed {{ .Policy.results.passed_checks | len }} and failed on {{ .Policy.results.failed_checks | len }} checks.
 {{ range $check := .Policy.results.failed_checks }}
 {{ printf "%-15s%s" $check.check_id "FAILED" }}
@@ -64,7 +65,9 @@ Status:        Configuration has passed {{ .Policy.results.passed_checks | len }
 └─ Guide:      {{ default "-" $check.guideline }}
 {{- end }}
 {{- end }}
-
+{{- else }}
+Status:        No matching security checks found, configuration passed.
+{{- end }}
 {{- if .Cost }}
 
 Predicted Costs:

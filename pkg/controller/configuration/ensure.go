@@ -729,18 +729,35 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 			return reconcile.Result{RequeueAfter: 10 * time.Minute}, nil
 		}
 
+		var failed gjson.Result
+
 		// @step: retrieve summary from the report
-		checksFailed := gjson.GetBytes(secret.Data[key], "summary.failed")
-		if !checksFailed.Exists() {
-			cond.Failed(errors.New("missing report"), "Security report does not contain a summary of finding, please contact platform administrator")
+		if gjson.GetBytes(secret.Data[key], "summary").Exists() {
+			failed = gjson.GetBytes(secret.Data[key], "summary.failed")
+			if !failed.Exists() {
+				cond.Failed(errors.New("missing report"), "Security report does not contain a summary of finding, please contact platform administrator")
 
-			return reconcile.Result{}, controller.ErrIgnore
-		}
+				return reconcile.Result{}, controller.ErrIgnore
+			}
 
-		if checksFailed.Type != gjson.Number {
-			cond.Failed(errors.New("invalid resport"), "Security report failed summary is not numerical as expected, please contact platform administrator")
+			if failed.Type != gjson.Number {
+				cond.Failed(errors.New("invalid resport"), "Security report failed summary is not numerical as expected, please contact platform administrator")
 
-			return reconcile.Result{}, controller.ErrIgnore
+				return reconcile.Result{}, controller.ErrIgnore
+			}
+		} else {
+			for _, x := range []string{"passed", "failed"} {
+				if !gjson.GetBytes(secret.Data[key], x).Exists() {
+					cond.Failed(errors.New("invalid policy report"), "Security report is missing %s field", x)
+
+					return reconcile.Result{}, controller.ErrIgnore
+				}
+				if gjson.GetBytes(secret.Data[key], "zero").Int() != 0 {
+					cond.Failed(errors.New("invalid policy report"), "Security report is field %s is non-zero", x)
+
+					return reconcile.Result{}, controller.ErrIgnore
+				}
+			}
 		}
 
 		// @step: copy the report into the configuration namespace
@@ -767,7 +784,7 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 			return reconcile.Result{}, err
 		}
 
-		if checksFailed.Int() > 0 {
+		if failed.Int() > 0 {
 			cond.ActionRequired("Configuration has failed security policy, refusing to continue")
 
 			return reconcile.Result{}, controller.ErrIgnore
