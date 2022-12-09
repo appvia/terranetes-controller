@@ -37,12 +37,12 @@ require (
 	golang.org/x/tools v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.8.1
-	k8s.io/api v0.25.4
-	k8s.io/apiextensions-apiserver v0.25.4
-	k8s.io/apimachinery v0.25.4
+	k8s.io/api v0.25.5
+	k8s.io/apiextensions-apiserver v0.25.5
+	k8s.io/apimachinery v0.25.5
 	k8s.io/cli-runtime v0.25.4
-	k8s.io/client-go v0.25.4
-	k8s.io/code-generator v0.25.4
+	k8s.io/client-go v0.25.5
+	k8s.io/code-generator v0.25.5
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	mvdan.cc/sh/v3 v3.5.1
@@ -295,7 +295,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20220827204233-334a2380cb91 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.3.0 // indirect
+	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
@@ -313,7 +313,7 @@ require (
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.3.3 // indirect
-	k8s.io/component-base v0.25.4 // indirect
+	k8s.io/component-base v0.25.5 // indirect
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
 	k8s.io/klog/v2 v2.80.0 // indirect
 	mvdan.cc/editorconfig v0.2.0 // indirect
