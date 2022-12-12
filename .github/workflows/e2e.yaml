@@ -97,7 +97,7 @@ jobs:
           sudo apt install bats jq
 
       - name: Install Kubectl
-        uses: azure/setup-kubectl@v3.0
+        uses: azure/setup-kubectl@v3.1
         with:
           version: v1.23.0
 
