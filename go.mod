@@ -42,8 +42,8 @@ require (
 	k8s.io/apimachinery v0.25.5
 	k8s.io/cli-runtime v0.25.4
 	k8s.io/client-go v0.25.5
-	k8s.io/code-generator v0.25.5
-	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea
+	k8s.io/code-generator v0.26.0
+	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 	mvdan.cc/sh/v3 v3.5.1
 	sigs.k8s.io/controller-runtime v0.13.1
@@ -314,8 +314,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.3.3 // indirect
 	k8s.io/component-base v0.25.5 // indirect
-	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
-	k8s.io/klog/v2 v2.80.0 // indirect
+	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
+	k8s.io/klog/v2 v2.80.1 // indirect
 	mvdan.cc/editorconfig v0.2.0 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
