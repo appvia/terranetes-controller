@@ -39,12 +39,12 @@ require (
 	gotest.tools/gotestsum v1.8.1
 	k8s.io/api v0.25.5
 	k8s.io/apiextensions-apiserver v0.25.5
-	k8s.io/apimachinery v0.25.5
+	k8s.io/apimachinery v0.26.0
 	k8s.io/cli-runtime v0.25.4
 	k8s.io/client-go v0.25.5
 	k8s.io/code-generator v0.26.0
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
-	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
+	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d
 	mvdan.cc/sh/v3 v3.6.0
 	sigs.k8s.io/controller-runtime v0.13.1
 	sigs.k8s.io/controller-tools v0.10.0
