@@ -37,14 +37,14 @@ require (
 	golang.org/x/tools v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/gotestsum v1.8.1
-	k8s.io/api v0.25.5
-	k8s.io/apiextensions-apiserver v0.25.5
-	k8s.io/apimachinery v0.25.5
+	k8s.io/api v0.26.0
+	k8s.io/apiextensions-apiserver v0.26.0
+	k8s.io/apimachinery v0.26.0
 	k8s.io/cli-runtime v0.25.4
-	k8s.io/client-go v0.25.5
+	k8s.io/client-go v0.26.0
 	k8s.io/code-generator v0.26.0
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
-	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
+	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d
 	mvdan.cc/sh/v3 v3.6.0
 	sigs.k8s.io/controller-runtime v0.13.1
 	sigs.k8s.io/controller-tools v0.10.0
@@ -99,7 +99,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/firefart/nonamedreturns v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/go-critic/go-critic v0.6.5 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
@@ -202,7 +202,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/mbilski/exhaustivestruct v1.2.0 // indirect
 	github.com/mgechev/revive v1.2.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
@@ -313,7 +313,7 @@ require (
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.3.3 // indirect
-	k8s.io/component-base v0.25.5 // indirect
+	k8s.io/component-base v0.26.0 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	mvdan.cc/editorconfig v0.2.0 // indirect
