@@ -57,7 +57,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:     "logs NAME [OPTIONS]",
-		Short:   "Displays the logs from the current configuration",
+		Short:   "Displays the latest logs for the given Configuration name",
 		Long:    longLogsHelp,
 		PreRunE: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -71,10 +71,9 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	c.SetOut(o.GetStreams().Out)
 
 	flags := c.Flags()
-	flags.BoolVarP(&o.Follow, "follow", "f", false, "follow the logs")
-	flags.StringVar(&o.Name, "name", "", "Is the name of the resource to create")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace of the resource")
-	flags.StringVar(&o.Stage, "stage", "", "Selects the stage to show logs for, else defaults to the condition")
+	flags.BoolVarP(&o.Follow, "follow", "f", false, "Follow the logs")
+	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace of the Configuration resource")
+	flags.StringVar(&o.Stage, "stage", "", "Select the stage to show logs for, else defaults to the current Configuration state")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
 	cmd.RegisterFlagCompletionFunc(c, "stage", cmd.AutoCompleteWithList([]string{
