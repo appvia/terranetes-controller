@@ -113,10 +113,10 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            pointer.Int32Ptr(0),
-			Completions:             pointer.Int32Ptr(1),
-			Parallelism:             pointer.Int32Ptr(1),
-			TTLSecondsAfterFinished: pointer.Int32Ptr(3600),
+			BackoffLimit:            pointer.Int32(0),
+			Completions:             pointer.Int32(1),
+			Parallelism:             pointer.Int32(1),
+			TTLSecondsAfterFinished: pointer.Int32(3600),
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -190,7 +190,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Name":           r.provider.Name,
 			"Namespace":      r.provider.Namespace,
 			"SecretRef":      r.provider.Spec.SecretRef,
-			"ServiceAccount": pointer.StringPtrDerefOr(r.provider.Spec.ServiceAccount, ""),
+			"ServiceAccount": pointer.StringDeref(r.provider.Spec.ServiceAccount, ""),
 			"Source":         string(r.provider.Spec.Source),
 		},
 		"EnableInfraCosts":       options.EnableInfraCosts,
