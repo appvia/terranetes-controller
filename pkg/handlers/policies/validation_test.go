@@ -67,7 +67,7 @@ var _ = Describe("Module Constraints", func() {
 						},
 					},
 				},
-				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"\" is not a valid pod selector operator"),
+				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"\" is not a valid label selector operator"),
 			},
 			{
 				Selector: &terraformv1alphav1.Selector{
@@ -77,7 +77,7 @@ var _ = Describe("Module Constraints", func() {
 						},
 					},
 				},
-				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"BAD\" is not a valid pod selector operator"),
+				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"BAD\" is not a valid label selector operator"),
 			},
 			{
 				Selector: &terraformv1alphav1.Selector{
@@ -87,7 +87,7 @@ var _ = Describe("Module Constraints", func() {
 						},
 					},
 				},
-				Expect: errors.New("spec.constraints.modules.selector.resource is invalid, \"BAD\" is not a valid pod selector operator"),
+				Expect: errors.New("spec.constraints.modules.selector.resource is invalid, \"BAD\" is not a valid label selector operator"),
 			},
 		}
 
