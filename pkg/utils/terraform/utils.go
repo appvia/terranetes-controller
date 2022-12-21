@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
@@ -35,6 +36,13 @@ terraform {
 	backend "kubernetes" {
 		in_cluster_config = true
 		namespace         = "{{ .controller.namespace }}"
+		{{- if .controller.labels }}
+		labels            = {
+			{{- range $key, $value := .controller.labels }}
+			"{{ $key }}" = "{{ $value }}"
+			{{- end }}
+		}
+		{{- end }}
 		secret_suffix     = "{{ .controller.suffix }}"
 	}
 }
@@ -113,7 +121,13 @@ func NewKubernetesBackend(options BackendOptions) ([]byte, error) {
 	params := map[string]interface{}{
 		"controller": map[string]interface{}{
 			"namespace": options.Namespace,
-			"suffix":    options.Suffix,
+			"labels": map[string]string{
+				terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", options.Configuration.GetGeneration()),
+				terraformv1alphav1.ConfigurationNameLabel:       options.Configuration.Name,
+				terraformv1alphav1.ConfigurationNamespaceLabel:  options.Configuration.Namespace,
+				terraformv1alphav1.ConfigurationUIDLabel:        string(options.Configuration.GetUID()),
+			},
+			"suffix": options.Suffix,
 		},
 		"configuration": options.Configuration,
 		"name":          options.Configuration.Name,
