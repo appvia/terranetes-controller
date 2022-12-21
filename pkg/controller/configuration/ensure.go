@@ -515,7 +515,9 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
-			AdditionalLabels:   map[string]string{terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]},
+			AdditionalLabels: map[string]string{
+				terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation],
+			},
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
 			ExecutorSecrets:    c.ExecutorSecrets,

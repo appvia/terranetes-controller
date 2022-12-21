@@ -80,7 +80,7 @@ func (c *ConditionManager) transition(cond *corev1alphav1.Condition, methodFunc 
 		logger.Info("resource is deleting")
 	case corev1alphav1.ReasonReady:
 		if cond.Type == corev1alphav1.ConditionReady {
-			log.Info("resource is ready")
+			logger.Info("resource is ready")
 		}
 	case corev1alphav1.ReasonWarning, corev1alphav1.ReasonActionRequired:
 		logger.Warn(cond.Message)
