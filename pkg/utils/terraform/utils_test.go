@@ -21,10 +21,51 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
+
+func TestNewKubernetesBackend(t *testing.T) {
+	cases := []struct {
+		Options  BackendOptions
+		Expected string
+	}{
+		{
+			Options: BackendOptions{
+				Configuration: &terraformv1alphav1.Configuration{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				Namespace: "default",
+				Suffix:    "test",
+				Template:  KubernetesBackendTemplate,
+			},
+			Expected: `
+terraform {
+	backend "kubernetes" {
+		in_cluster_config = true
+		namespace         = "default"
+		labels            = {
+			"terraform.appvia.io/configuration" = "test"
+			"terraform.appvia.io/configuration-uid" = ""
+			"terraform.appvia.io/generation" = "0"
+			"terraform.appvia.io/namespace" = "default"
+		}
+		secret_suffix     = "test"
+	}
+}
+`},
+	}
+	for _, c := range cases {
+		generated, err := NewKubernetesBackend(c.Options)
+		assert.NoError(t, err)
+		assert.Equal(t, string(c.Expected), string(generated))
+	}
+}
 
 func TestNewTerraformProvider(t *testing.T) {
 	cases := []struct {

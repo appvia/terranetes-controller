@@ -965,6 +965,12 @@ terraform {
 	backend "kubernetes" {
 		in_cluster_config = true
 		namespace         = "default"
+		labels            = {
+			"terraform.appvia.io/configuration" = "bucket"
+			"terraform.appvia.io/configuration-uid" = "1234-122-1234-1234"
+			"terraform.appvia.io/generation" = "0"
+			"terraform.appvia.io/namespace" = "apps"
+		}
 		secret_suffix     = "1234-122-1234-1234"
 	}
 }
