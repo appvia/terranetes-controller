@@ -47,7 +47,7 @@ require (
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	mvdan.cc/sh/v3 v3.6.0
 	sigs.k8s.io/controller-runtime v0.14.1
-	sigs.k8s.io/controller-tools v0.10.0
+	sigs.k8s.io/controller-tools v0.11.1
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -123,7 +123,7 @@ require (
 	github.com/go-toolsmith/strparse v1.0.0 // indirect
 	github.com/go-toolsmith/typep v1.0.2 // indirect
 	github.com/go-xmlfmt/xmlfmt v0.0.0-20191208150333-d5b6f63a941b // indirect
-	github.com/gobuffalo/flect v0.2.5 // indirect
+	github.com/gobuffalo/flect v0.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-yaml v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
