@@ -69,7 +69,7 @@ registry, nothing is required, but for private repositories on Github your
 environment must already be setup to git clone the repository.
 `
 
-// Command returns the cobra command for the "build" sub-command.
+// Command returns the cobra command
 type Command struct {
 	cmd.Factory
 	// EnableDefaults indicates if any defaults with values from the terraform module are included
