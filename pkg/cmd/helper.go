@@ -20,15 +20,35 @@ package cmd
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
+
+// NewTableWriter returns a default table writer
+func NewTableWriter(out io.Writer) *tablewriter.Table {
+	tw := tablewriter.NewWriter(out)
+	tw.SetAutoWrapText(false)
+	tw.SetAutoFormatHeaders(true)
+	tw.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	tw.SetAlignment(tablewriter.ALIGN_LEFT)
+	tw.SetCenterSeparator("")
+	tw.SetColumnSeparator("")
+	tw.SetRowSeparator("")
+	tw.SetHeaderLine(false)
+	tw.SetBorder(false)
+	tw.SetTablePadding("\t")
+	tw.SetNoWhiteSpace(true)
+
+	return tw
+}
 
 // AutoCompletionFunc is a function that returns a list of completions
 type AutoCompletionFunc func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
