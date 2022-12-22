@@ -56,7 +56,7 @@ func RequeueAfter(d time.Duration) EnsureFunc {
 
 // Run is a generic handler for running the ensure methods
 func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Object, ensures []EnsureFunc) (result reconcile.Result, rerr error) {
-	original := resource.DeepCopyObject()
+	original := resource.DeepCopyObject().(client.Object)
 	status := resource.GetCommonStatus()
 
 	status.LastReconcile = &corev1alphav1.LastReconcileStatus{
@@ -68,7 +68,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	// see a drift. And updating the status of the resource overall
 	defer func() {
 		// @step: we need to update the status of the resource
-		if err := cc.Status().Patch(ctx, resource, client.MergeFrom(original.(client.Object))); err != nil {
+		if err := cc.Status().Patch(ctx, resource, client.MergeFrom(original)); err != nil {
 			if err := client.IgnoreNotFound(err); err != nil {
 				log.WithError(err).Error("failed to update the status of resource")
 

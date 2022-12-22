@@ -2167,6 +2167,15 @@ terraform {
 				Expect(cond.Message).To(Equal("Waiting for terraform apply annotation to be set to true"))
 			})
 
+			It("should indicate the ready condition is false", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Waiting for changes to be approved"))
+			})
+
 			It("should have raised a kubernetes event", func() {
 				Expect(recorder.Events).To(HaveLen(1))
 				Expect(recorder.Events[0]).To(Equal("(apps/bucket) Warning Action Required: Waiting for terraform apply annotation to be set to true"))

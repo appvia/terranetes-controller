@@ -592,6 +592,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		switch {
 		case jobs.IsComplete(job):
 			cond.Success("Terraform plan is complete")
+
 			return reconcile.Result{}, nil
 
 		case jobs.IsFailed(job):
@@ -889,6 +890,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
+	readyCond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
@@ -896,6 +899,9 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 
 		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
+			// update the ready condition to reflect the new state
+			readyCond.InProgress("Waiting for changes to be approved")
+
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
