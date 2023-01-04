@@ -171,7 +171,7 @@ var _ = Describe("Configuration Validation", func() {
 			It("should deny the configuration of the module", func() {
 				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
+				Expect(err.Error()).To(Equal("spec.module: source has been denied by module policy, contact an administrator"))
 			})
 		})
 
@@ -223,7 +223,7 @@ var _ = Describe("Configuration Validation", func() {
 
 				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("configuration has been denied by policy"))
+				Expect(err.Error()).To(Equal("spec.module: source has been denied by module policy, contact an administrator"))
 			})
 
 			It("should be allowed by the second policy", func() {

@@ -217,5 +217,5 @@ func validateModuleConstriants(
 		}
 	}
 
-	return fmt.Errorf("configuration has been denied by policy")
+	return fmt.Errorf("spec.module: source has been denied by module policy, contact an administrator")
 }
