@@ -591,9 +591,6 @@ github.com/jirfag/go-printf-func-name/pkg/analyzer
 # github.com/jmespath/go-jmespath v0.4.0
 ## explicit; go 1.14
 github.com/jmespath/go-jmespath
-# github.com/jonboulle/clockwork v0.2.2
-## explicit; go 1.13
-github.com/jonboulle/clockwork
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
 github.com/josharian/intern
@@ -1464,7 +1461,7 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# gotest.tools/gotestsum v1.8.1
+# gotest.tools/gotestsum v1.8.2
 ## explicit; go 1.13
 gotest.tools/gotestsum
 gotest.tools/gotestsum/cmd
@@ -1474,7 +1471,7 @@ gotest.tools/gotestsum/internal/aggregate
 gotest.tools/gotestsum/internal/dotwriter
 gotest.tools/gotestsum/internal/filewatcher
 gotest.tools/gotestsum/internal/junitxml
-gotest.tools/gotestsum/log
+gotest.tools/gotestsum/internal/log
 gotest.tools/gotestsum/testjson
 # honnef.co/go/tools v0.3.3
 ## explicit; go 1.17

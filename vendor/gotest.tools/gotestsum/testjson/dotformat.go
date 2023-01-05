@@ -10,18 +10,18 @@ import (
 
 	"golang.org/x/term"
 	"gotest.tools/gotestsum/internal/dotwriter"
-	"gotest.tools/gotestsum/log"
+	"gotest.tools/gotestsum/internal/log"
 )
 
-func dotsFormatV1(event TestEvent, exec *Execution) (string, error) {
+func dotsFormatV1(event TestEvent, exec *Execution) string {
 	pkg := exec.Package(event.Package)
 	switch {
 	case event.PackageEvent():
-		return "", nil
+		return ""
 	case event.Action == ActionRun && pkg.Total == 1:
-		return "[" + RelativePackagePath(event.Package) + "]", nil
+		return "[" + RelativePackagePath(event.Package) + "]"
 	}
-	return fmtDot(event), nil
+	return fmtDot(event)
 }
 
 func fmtDot(event TestEvent) string {

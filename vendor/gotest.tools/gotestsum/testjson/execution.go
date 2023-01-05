@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -11,10 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonboulle/clockwork"
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"gotest.tools/gotestsum/log"
+	"gotest.tools/gotestsum/internal/log"
 )
 
 // Action of TestEvent
@@ -107,6 +106,9 @@ type Package struct {
 	// github.com/golang/go/issues/45508. This field may be removed in the future
 	// if the issue is fixed in Go.
 	panicked bool
+	// shuffleSeed is the seed used to shuffle the tests. The value is set when
+	// tests are run with -shuffle
+	shuffleSeed string
 }
 
 // Result returns if the package passed, failed, or was skipped because there
@@ -156,6 +158,7 @@ func (p *Package) Output(id int) string {
 // As a workaround for test output being attributed to the wrong subtest, if:
 //   - the TestCase is a root TestCase (not a subtest), and
 //   - the TestCase has no subtest failures;
+//
 // then all output for every subtest under the root test is returned.
 // See https://github.com/golang/go/issues/29755.
 func (p *Package) OutputLines(tc TestCase) []string {
@@ -344,8 +347,11 @@ func (p *Package) addEvent(event TestEvent) {
 		if isCoverageOutput(event.Output) {
 			p.coverage = strings.TrimRight(event.Output, "\n")
 		}
-		if isCachedOutput(event.Output) {
+		if strings.Contains(event.Output, "\t(cached)") {
 			p.cached = true
+		}
+		if isShuffleSeedOutput(event.Output) {
+			p.shuffleSeed = strings.TrimRight(event.Output, "\n")
 		}
 		p.addOutput(0, event.Output)
 	}
@@ -437,8 +443,8 @@ func isCoverageOutput(output string) bool {
 		strings.Contains(output, "% of statements"))
 }
 
-func isCachedOutput(output string) bool {
-	return strings.Contains(output, "\t(cached)")
+func isShuffleSeedOutput(output string) bool {
+	return strings.HasPrefix(output, "-test.shuffle ")
 }
 
 func isWarningNoTestsToRunOutput(output string) bool {
@@ -464,11 +470,11 @@ func (e *Execution) Packages() []string {
 	return sortedKeys(e.packages)
 }
 
-var clock = clockwork.NewRealClock()
+var timeNow = time.Now
 
 // Elapsed returns the time elapsed since the execution started.
 func (e *Execution) Elapsed() time.Duration {
-	return clock.Now().Sub(e.started)
+	return timeNow().Sub(e.started)
 }
 
 // Failed returns a list of all the failed test cases.
@@ -573,7 +579,7 @@ func (e *Execution) Started() time.Time {
 // time the test execution started.
 func newExecution() *Execution {
 	return &Execution{
-		started:  clock.Now(),
+		started:  timeNow(),
 		packages: make(map[string]*Package),
 	}
 }
@@ -675,7 +681,7 @@ func readStdout(config ScanConfig, execution *Execution) error {
 				config.Handler.Err(string(raw))
 				continue
 			}
-			return errors.Wrapf(err, "failed to parse test output: %s", string(raw))
+			return fmt.Errorf("failed to parse test output: %s: %w", string(raw), err)
 		}
 
 		event.RunID = config.RunID
@@ -684,7 +690,10 @@ func readStdout(config ScanConfig, execution *Execution) error {
 			return err
 		}
 	}
-	return errors.Wrap(scanner.Err(), "failed to scan test output")
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("failed to scan test output: %w", err)
+	}
+	return nil
 }
 
 func readStderr(config ScanConfig, execution *Execution) error {
