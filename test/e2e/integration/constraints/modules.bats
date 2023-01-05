@@ -61,8 +61,9 @@ spec:
     namespace: terraform-system
     name: fake
 EOF
+  expected="spec.module: source has been denied by module policy, contact an administrator"
 
-  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml 2>&1" "grep 'configuration has been denied by policy'"
+  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml 2>&1" "grep '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
