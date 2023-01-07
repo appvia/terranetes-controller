@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -158,18 +159,24 @@ func (o *Command) showLogs(ctx context.Context, stage string, configuration *ter
 		terraformv1alphav1.ConfigurationUIDLabel + "=" + string(configuration.UID),
 	}
 
+	var list *v1.PodList
+
 	// @step: find the pods associated to this configuration
-	list, err := cc.CoreV1().Pods(configuration.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: strings.Join(labels, ","),
+	err = utils.Retry(ctx, 3, true, 3*time.Second, func() (bool, error) {
+		list, err = cc.CoreV1().Pods(configuration.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: strings.Join(labels, ","),
+		})
+		if err != nil {
+			return false, nil
+		}
+
+		return len(list.Items) > 0, nil
 	})
 	if err != nil {
-		return err
-	}
-	if len(list.Items) == 0 {
 		return fmt.Errorf("no pods found for configuration %q", configuration.Name)
 	}
 
-	// @step: find the latest
+	// @step: get the latest in the list
 	pod := kubernetes.FindLatestPod(list)
 
 	// @step: render the logs
