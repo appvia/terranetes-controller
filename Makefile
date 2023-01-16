@@ -10,7 +10,7 @@ CURRENT_TAG=$(shell git tag --points-at HEAD)
 DEPS=$(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
 DOCKER_IMAGES ?= controller
 GIT_REMOTE?=origin
-GIT_BRANCH?=
+GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 GOVERSION ?= 1.17
 HARDWARE=$(shell uname -m)
 PLATFORM=$(shell uname -s)
@@ -252,16 +252,16 @@ check: test
 ### UTILITIES ###
 
 trigger-aws-e2e:
-	@echo "--> Triggering the e2e tests on develop branch (AWS)"
-	@gh workflow run e2e.yaml --ref develop -f cloud=aws -f use_helm=false -f version=ci
+	@echo "--> Triggering the e2e tests on ${GIT_BRANCH} branch (AWS)"
+	@gh workflow run e2e.yaml --ref ${GIT_BRANCH} -f cloud=aws -f use_helm=false -f version=ci
 
 trigger-azure-e2e:
-	@echo "--> Triggering the e2e tests on develop branch (Azure)"
-	@gh workflow run e2e.yaml --ref develop -f cloud=azurerm -f use_helm=false -f version=ci
+	@echo "--> Triggering the e2e tests on ${GIT_BRANCH} branch (Azure)"
+	@gh workflow run e2e.yaml --ref ${GIT_BRANCH} -f cloud=azurerm -f use_helm=false -f version=ci
 
 trigger-google-e2e:
-	@echo "--> Triggering the e2e tests on develop branch (Google)"
-	@gh workflow run e2e.yaml --ref develop -f cloud=google -f use_helm=false -f version=ci
+	@echo "--> Triggering the e2e tests on ${GIT_BRANCH} branch (Google)"
+	@gh workflow run e2e.yaml --ref ${GIT_BRANCH} -f cloud=google -f use_helm=false -f version=ci
 
 trigger-quickstart-e2e:
 	@echo "--> Triggering the e2e tests on master using official repository"
