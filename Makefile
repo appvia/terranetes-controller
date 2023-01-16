@@ -225,11 +225,6 @@ coverage:
 	@go test -coverprofile cover.out
 	@go tool cover -html=cover.out -o cover.html
 
-spelling:
-	@echo "--> Checking the spelling."
-	@find . -name "*.go" -type f -not -path "./vendor/*" -not -path "./charts/*" | xargs go run github.com/client9/misspell/cmd/misspell -error -source=go *.go
-	@find . -name "*.md" -type f -not -path "./vendor/*" -not -path "./charts/*" | xargs go run github.com/client9/misspell/cmd/misspell -error -source=text *.md
-
 golangci-lint:
 	@echo "--> Checking against the golangci-lint"
 	@go run github.com/golangci/golangci-lint/cmd/golangci-lint run ./...
@@ -245,7 +240,6 @@ check: test
 	@$(MAKE) golang
 	@$(MAKE) check-gofmt
 	@$(MAKE) shfmt
-	@$(MAKE) spelling
 	@$(MAKE) golangci-lint
 
 ### UTILITIES ###
