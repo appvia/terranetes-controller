@@ -14,7 +14,6 @@ import (
 	_ "github.com/stretchr/testify/require"
 	_ "github.com/tcnksm/ghr"
 	_ "golang.org/x/tools/cmd/goimports"
-	_ "gotest.tools/gotestsum"
 	_ "k8s.io/code-generator"
 	_ "k8s.io/kube-openapi/cmd/openapi-gen"
 	_ "mvdan.cc/sh/v3/cmd/shfmt"
