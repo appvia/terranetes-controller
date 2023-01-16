@@ -171,10 +171,6 @@ github.com/chavacava/garif
 # github.com/chzyer/readline v1.5.1
 ## explicit; go 1.15
 github.com/chzyer/readline
-# github.com/client9/misspell v0.3.4
-## explicit
-github.com/client9/misspell
-github.com/client9/misspell/cmd/misspell
 # github.com/cpuguy83/go-md2man/v2 v2.0.2
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man

@@ -70,7 +70,6 @@ jobs:
         run: |
           make check-gofmt
           make shfmt
-          make spelling
           make golangci-lint
 
   helm:
