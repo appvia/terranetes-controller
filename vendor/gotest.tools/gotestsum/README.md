@@ -2,40 +2,44 @@
 
 `gotestsum` runs tests using `go test -json`, prints formatted test output, and a summary of the test run.
 It is designed to work well for both local development, and for automation like CI.
-`gotest.tools/gotestsum/testjson` ([godoc](https://pkg.go.dev/gotest.tools/gotestsum/testjson)) is a library
-that can be used to read [`test2json`](https://golang.org/cmd/test2json/) output.
-
-See [documentation](#documentation).
 
 ## Install
 
 Download a binary from [releases](https://github.com/gotestyourself/gotestsum/releases), or build from
 source with `go install gotest.tools/gotestsum@latest`. With `go` version before 1.17, use `go get gotest.tools/gotestsum`.
 
-## Demo
-A demonstration of three `--format` options.
+## Documentation
 
-![Demo](https://i.ibb.co/XZfhmXq/demo.gif)
-<br /><sup>[Source](https://github.com/gotestyourself/gotestsum/tree/readme-demo/scripts)</sup>
+**Core features**
+- Change the [test output format](#output-format), from compact to verbose with color highlighting.
+- Print a [summary](#summary) of the test run after running all the tests.
+- Use any [`go test` flag](#custom-go-test-command),
+  run a script with [`--raw-command`](#custom-go-test-command),
+  or [run a compiled test binary](#executing-a-compiled-test-binary).
 
-## Documentation 
+**CI and Automation**
+- [`--junitfile`](#junit-xml-output) - write a JUnit XML file for integration with CI systems.
+- [`--jsonfile`](#json-file-output) - write all the [test2json](https://pkg.go.dev/cmd/test2json) input received by `gotestsum` to a file. The file
+  can be used as input to [`gotestsum tool slowest`](#finding-and-skipping-slow-tests), or as a way to
+  store the full verbose output of tests when less verbose output is printed to stdout using a compact [`--format`](#output-format).
+- [`--rerun-fails`](#re-running-failed-tests) - run failed (possibly flaky) tests again to avoid re-running the
+  entire suite. Re-running individual tests can save significant time when working with flaky test suites.
 
-- [Output Format](#output-format) from compact to verbose, with color highlighting.
-- [Summary](#summary) of the test run.
-- [JUnit XML file](#junit-xml-output) for integration with CI systems.
-- [JSON file](#json-file-output) to capture the `test2json` output in a file.
-- [Post run commands](#post-run-command) may be used for desktop notification.
-- [Re-run failed tests](#re-running-failed-tests) to save time when dealing with flaky test suites.
-- [Add `go test` flags](#custom-go-test-command), or 
-  [run a compiled test binary](#executing-a-compiled-test-binary).
-- [Find or skip slow tests](#finding-and-skipping-slow-tests) using `gotestsum tool slowest`.
-- [Run tests when a file is saved](#run-tests-when-a-file-is-saved).
+**Local Development**
+- [`--watch`](#run-tests-when-a-file-is-saved) - every time a `.go` file is saved run the tests for the package that changed.
+- [`--post-run-command`](#post-run-command) - run a command after the tests, can be used for desktop notification of the test run.
+- [`gotestsum tool slowest`](#finding-and-skipping-slow-tests) - find the slowest tests, or automatically update the source code of
+  the slowest tests to add a conditional `t.Skip` statements. This statement allows you to skip the slowest tests using `gotestsum -- -short ./...`.
+
 
 ### Output Format
 
 The `--format` flag or `GOTESTSUM_FORMAT` environment variable set the format that
 is used to print the test names, and possibly test output, as the tests run. Most
 outputs use color to highlight pass, fail, or skip.
+
+The `--format-hivis` flag changes the icons used by `pkgname` formats to higher
+visiblity unicode characters.
 
 Commonly used formats (see `--help` for a full list):
 
@@ -47,6 +51,13 @@ Commonly used formats (see `--help` for a full list):
 
 Have an idea for a new format?
 Please [share it on github](https://github.com/gotestyourself/gotestsum/issues/new)!
+
+#### Demo
+
+A demonstration of three `--format` options.
+
+![Demo](https://user-images.githubusercontent.com/442180/182284939-e08a0aa5-4504-4e30-9e88-207ef47f4537.gif)
+<br /><sup>[Source](https://github.com/gotestyourself/gotestsum/tree/readme-demo/scripts)</sup>
 
 ### Summary
 
@@ -290,7 +301,7 @@ output. `./binary.test` is the path to the compiled test binary. The `-test.v`
 must be included so that `go tool test2json` receives all the output.
 
 To execute a test binary without installing Go, see
-[running without go](./docs/running-without-go.md).
+[running without go](./.project/docs/running-without-go.md).
 
 
 ### Finding and skipping slow tests
@@ -341,14 +352,21 @@ The next time tests are run using `--short` all the slow tests will be skipped.
 When the `--watch` flag is set, `gotestsum` will watch directories using
 [file system notifications](https://pkg.go.dev/github.com/fsnotify/fsnotify).
 When a Go file in one of those directories is modified, `gotestsum` will run the
-tests for the package which contains the changed file. By default all
-directories with at least one file with a `.go` extension, under the current
-directory will be watched. Use the `--packages` flag to specify a different list.
+tests for the package that contains the changed file. By default all
+directories under the current
+directory with at least one `.go` file will be watched.
+Use the `--packages` flag to specify a different list.
 
 If `--watch` is used with a command line that includes the name of one or more
 packages as command line arguments (ex: `gotestsum --watch -- ./...` or
 `gotestsum --watch -- ./extrapkg`), the
 tests in those packages will also be run when any file changes.
+
+With the `--watch-chdir` flag, `gotestsum` will change the working directory
+to the directory with the modified file before running tests. Changing the
+directory is primarily useful when the project contains multiple Go modules.
+Without this flag, `go test` will refuse to run tests for any package outside
+of the main Go module.
 
 While in watch mode, pressing some keys will perform an action:
 
@@ -384,7 +402,9 @@ gotestsum --watch --format testname
 
 [![Godoc](https://godoc.org/gotest.tools/gotestsum?status.svg)](https://pkg.go.dev/gotest.tools/gotestsum?tab=subdirectories)
 [![CircleCI](https://circleci.com/gh/gotestyourself/gotestsum/tree/main.svg?style=shield)](https://circleci.com/gh/gotestyourself/gotestsum/tree/main)
+[![Go Recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 [![Go Reportcard](https://goreportcard.com/badge/gotest.tools/gotestsum)](https://goreportcard.com/report/gotest.tools/gotestsum)
+
 
 Pull requests and bug reports are welcome! Please open an issue first for any
 big changes.
