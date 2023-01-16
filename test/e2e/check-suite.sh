@@ -18,7 +18,7 @@
 
 APP_NAMESPACE="apps"
 BATS_OPTIONS=${BATS_OPTIONS:-""}
-BUCKET=${BUCKET:-"terranetes-controller-ci-bucket"}
+BUCKET=${BUCKET:-"terranetes-${GITHUB_RUN_ID:-controller}-ci-bucket"}
 CLOUD=""
 DIAGNOSTICS=${DIAGNOSTICS:-""}
 UNITS="test/e2e/integration"
