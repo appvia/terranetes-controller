@@ -195,7 +195,7 @@ func (o *Command) Run(ctx context.Context) (err error) {
 	// @step: allow the user to choose the module
 	module, found, err := o.chooseModule(nctx, responses)
 	if err != nil {
-		if err == promptui.ErrAbort || err == promptui.ErrInterrupt {
+		if errors.Is(err, promptui.ErrAbort) || errors.Is(err, promptui.ErrInterrupt) {
 			return nil
 		}
 		return err

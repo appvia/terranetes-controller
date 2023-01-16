@@ -66,7 +66,7 @@ func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1
 		totalAllowed := int(math.Ceil(float64(len(list.Items)) * c.DriftThreshold))
 
 		switch {
-		// can't really happen due the the predicate - but better safe than sorry; if not enabled or deleting, we ignore
+		// can't really happen due the predicate - but better safe than sorry; if not enabled or deleting, we ignore
 		case !configuration.Spec.EnableDriftDetection, configuration.DeletionTimestamp != nil:
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 

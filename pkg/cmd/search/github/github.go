@@ -70,7 +70,7 @@ func New(endpoint, token string) (search.Interface, error) {
 		return nil, err
 	}
 	if u.Path == "" {
-		return nil, errors.New("must must a user or organizations /user or /org")
+		return nil, errors.New("must be a user or organizations /user or /org")
 	}
 	if u.Scheme == "" {
 		endpoint = fmt.Sprintf("https://%s", endpoint)

@@ -43,19 +43,19 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 	// @step: read the certificate authority
 	ca, err := os.ReadFile(s.config.TLSAuthority)
 	if err != nil {
-		return fmt.Errorf("failed to read the certificate authority file, %s", err)
+		return fmt.Errorf("failed to read the certificate authority file, %w", err)
 	}
 
 	documents, err := utils.YAMLDocuments(bytes.NewReader(register.MustAsset("webhooks/manifests.yaml")))
 	if err != nil {
-		return fmt.Errorf("failed to decode the webhooks manifests, %s", err)
+		return fmt.Errorf("failed to decode the webhooks manifests, %w", err)
 	}
 
 	// @step: register the validating webhooks
 	for _, x := range documents {
 		o, err := schema.DecodeYAML([]byte(x))
 		if err != nil {
-			return fmt.Errorf("failed to decode the webhook, %s", err)
+			return fmt.Errorf("failed to decode the webhook, %w", err)
 		}
 
 		switch o := o.(type) {
@@ -80,7 +80,7 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 		}
 
 		if err := kubernetes.CreateOrForceUpdate(ctx, cc, o); err != nil {
-			return fmt.Errorf("failed to create / update the webhook, %s", err)
+			return fmt.Errorf("failed to create / update the webhook, %w", err)
 		}
 	}
 

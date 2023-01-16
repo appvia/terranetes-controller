@@ -35,7 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/version"
@@ -116,6 +116,8 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 }
 
 // Run implements the command action
+//
+//nolint:gocyclo
 func (o *Command) Run(ctx context.Context) error {
 	switch {
 	case o.Name == "":
@@ -150,18 +152,18 @@ func (o *Command) Run(ctx context.Context) error {
 	// @step: parse the process the module
 	module, diag := tfconfig.LoadModule(destination)
 	if diag.HasErrors() {
-		return fmt.Errorf("failed to load terraform module: %s", diag.Err())
+		return fmt.Errorf("failed to load terraform module: %w", diag.Err())
 	}
 	o.Println("%s Successfully parsed the terraform module", cmd.IconGood)
 
-	configuration := terraformv1alphav1.NewConfiguration(o.Namespace, o.Name)
+	configuration := terraformv1alpha1.NewConfiguration(o.Namespace, o.Name)
 	configuration.Annotations = map[string]string{
 		"terraform.appvia.io/source":  o.Source,
 		"terraform.appvia.io/version": version.Version,
 	}
 	configuration.Spec.EnableAutoApproval = o.EnableAutoApproval
 	configuration.Spec.EnableDriftDetection = o.EnableDriftDetection
-	configuration.Spec.ProviderRef = &terraformv1alphav1.ProviderReference{Name: o.Provider}
+	configuration.Spec.ProviderRef = &terraformv1alpha1.ProviderReference{Name: o.Provider}
 	configuration.Spec.Module = source
 
 	data := []byte(`{}`)
@@ -182,7 +184,7 @@ func (o *Command) Run(ctx context.Context) error {
 					if err != nil {
 						return nil
 					}
-					vf := terraformv1alphav1.ValueFromSource{}
+					vf := terraformv1alpha1.ValueFromSource{}
 					vf.Key = variable.Name
 					vf.Secret = answer
 					configuration.Spec.ValueFrom = append(configuration.Spec.ValueFrom, vf)
@@ -245,7 +247,7 @@ func (o *Command) Run(ctx context.Context) error {
 		}, &o.Secret); err != nil {
 			return err
 		}
-		configuration.Spec.WriteConnectionSecretToRef = &terraformv1alphav1.WriteConnectionSecret{
+		configuration.Spec.WriteConnectionSecretToRef = &terraformv1alpha1.WriteConnectionSecret{
 			Name: o.Secret,
 		}
 	}

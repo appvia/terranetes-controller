@@ -170,8 +170,10 @@ func (o *Command) Run(ctx context.Context) error {
 		return findSecret(name, key)
 	}
 
-	for _, resource := range list.Items {
-		if !resourceFilter(&resource) {
+	for i := 0; i < len(list.Items); i++ {
+		resource := &list.Items[i]
+
+		if !resourceFilter(resource) {
 			continue
 		}
 
@@ -189,11 +191,11 @@ func (o *Command) Run(ctx context.Context) error {
 		}
 
 		// @step: check if the configuration has a policy report
-		if report, found := findPolicyReport(&resource); found {
+		if report, found := findPolicyReport(resource); found {
 			data["Policy"] = report
 		}
 		// @step: check if we have a cost report
-		if report, found := findCostReport(&resource); found {
+		if report, found := findCostReport(resource); found {
 			data["Cost"] = report["projects"].([]interface{})[0]
 		}
 

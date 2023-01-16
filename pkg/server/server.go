@@ -102,8 +102,9 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	hs := &http.Server{
-		Addr:        listener.Addr().String(),
-		IdleTimeout: 30 * time.Second,
+		Addr:              listener.Addr().String(),
+		IdleTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
 		Handler: (&apiserver.Server{
 			Client:    cc,
 			Namespace: config.Namespace,
@@ -134,7 +135,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	log.Info("creating a new manager for the controllers")
 	mgr, err := manager.New(cfg, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the controller manager: %v", err)
+		return nil, fmt.Errorf("failed to create the controller manager: %w", err)
 	}
 
 	if config.InfracostsSecretName != "" && config.InfracostsImage != "" {
@@ -155,7 +156,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,
 	}).Add(mgr); err != nil {
-		return nil, fmt.Errorf("failed to create the configuration controller, error: %v", err)
+		return nil, fmt.Errorf("failed to create the configuration controller, error: %w", err)
 	}
 
 	if err := (&drift.Controller{
@@ -163,17 +164,17 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		DriftInterval:  config.DriftInterval,
 		DriftThreshold: config.DriftThreshold,
 	}).Add(mgr); err != nil {
-		return nil, fmt.Errorf("failed to create the drift controller, error: %v", err)
+		return nil, fmt.Errorf("failed to create the drift controller, error: %w", err)
 	}
 
 	if err := (&provider.Controller{
 		ControllerNamespace: config.Namespace,
 	}).Add(mgr); err != nil {
-		return nil, fmt.Errorf("failed to create the provider controller, error: %v", err)
+		return nil, fmt.Errorf("failed to create the provider controller, error: %w", err)
 	}
 
 	if err := (&policy.Controller{}).Add(mgr); err != nil {
-		return nil, fmt.Errorf("failed to create the policy controller, error: %v", err)
+		return nil, fmt.Errorf("failed to create the policy controller, error: %w", err)
 	}
 
 	return &Server{
@@ -189,7 +190,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 func (s *Server) Start(ctx context.Context) error {
 	if s.config.EnableWebhook {
 		if err := s.registerWebhooks(ctx); err != nil {
-			return fmt.Errorf("failed to register the webhooks, error: %v", err)
+			return fmt.Errorf("failed to register the webhooks, error: %w", err)
 		}
 	}
 

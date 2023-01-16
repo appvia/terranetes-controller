@@ -94,7 +94,9 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configur
 		}
 
 		// @step: iterate the items, if running AND from another generation, we wait
-		for _, x := range list.Items {
+		for i := 0; i < len(list.Items); i++ {
+			x := list.Items[i]
+
 			if !jobs.IsComplete(&x) && !jobs.IsFailed(&x) {
 				if x.GetGeneration() != configuration.GetGeneration() {
 					log.WithFields(log.Fields{
@@ -839,7 +841,7 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 			return reconcile.Result{}, nil
 		}
 
-		// @step: retrive a list of pods related to the job
+		// @step: retrieve a list of pods related to the job
 		pods := &v1.PodList{}
 		filters := client.MatchingLabels{"job-name": job.GetName()}
 		if err := c.cc.List(ctx, pods, client.InNamespace(c.ControllerNamespace), filters); err != nil {

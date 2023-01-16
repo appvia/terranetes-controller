@@ -18,8 +18,9 @@
 package state
 
 import (
-	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/spf13/cobra"
+
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // Command returns the cobra command

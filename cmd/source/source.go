@@ -84,7 +84,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 
 	uri, err := url.Parse(source)
 	if err != nil {
-		return fmt.Errorf("failed to parse source url: %v", err)
+		return fmt.Errorf("failed to parse source url: %w", err)
 	}
 	location := source
 
@@ -93,7 +93,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 	case os.Getenv("SSH_AUTH_KEYFILE") != "":
 		data, err := os.ReadFile(os.Getenv("SSH_AUTH_KEYFILE"))
 		if err != nil {
-			return fmt.Errorf("failed to read ssh key file: %v", err)
+			return fmt.Errorf("failed to read ssh key file: %w", err)
 		}
 		encoded := base64.StdEncoding.EncodeToString(data)
 		switch strings.Contains(source, "?") {
@@ -135,7 +135,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 				uri.Hostname(), uri.Path, source),
 		}
 		if err := exec.Command("git", args...).Run(); err != nil {
-			return fmt.Errorf("failed tp update the git configuration: %v", err)
+			return fmt.Errorf("failed tp update the git configuration: %w", err)
 		}
 
 	}
@@ -162,7 +162,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		dest = "/tmp/source"
 
 		if err := os.RemoveAll(dest); err != nil {
-			return fmt.Errorf("failed to remove temporary directory: %v", err)
+			return fmt.Errorf("failed to remove temporary directory: %w", err)
 		}
 	}
 
@@ -219,7 +219,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 			case <-doneCh:
 				return nil
 			case err := <-errCh:
-				return fmt.Errorf("failed to download the source: %s", err)
+				return fmt.Errorf("failed to download the source: %w", err)
 			}
 		}
 	}()
@@ -233,5 +233,6 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		return nil
 	}
 
+	//nolint:gosec
 	return exec.Command("cp", []string{"-rT", "/tmp/source/", destination}...).Run()
 }

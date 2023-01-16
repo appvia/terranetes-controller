@@ -23,13 +23,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // CleanCommand is the options for the clean command

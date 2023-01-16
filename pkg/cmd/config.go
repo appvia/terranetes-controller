@@ -61,6 +61,7 @@ func (f *fileConfig) SaveConfig(config Config) error {
 		return err
 	}
 
+	//nolint:gosec
 	return os.WriteFile(f.path, encoded, 0640)
 }
 

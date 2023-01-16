@@ -87,7 +87,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 				result = RequeueImmediate
 				return
 
-			case rerr == ErrIgnore:
+			case errors.Is(rerr, ErrIgnore):
 				rerr = nil
 				result = reconcile.Result{}
 				return
