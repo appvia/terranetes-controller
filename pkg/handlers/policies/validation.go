@@ -107,13 +107,13 @@ func validateModuleConstraint(policy *terraformv1alphav1.Policy) error {
 	if constraint.Selector != nil {
 		if constraint.Selector.Namespace != nil {
 			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Namespace); err != nil {
-				return fmt.Errorf("spec.constraints.modules.selector.namespace is invalid, %v", err)
+				return fmt.Errorf("spec.constraints.modules.selector.namespace is invalid, %w", err)
 			}
 		}
 
 		if constraint.Selector.Resource != nil {
 			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Resource); err != nil {
-				return fmt.Errorf("spec.constraints.modules.selector.resource is invalid, %v", err)
+				return fmt.Errorf("spec.constraints.modules.selector.resource is invalid, %w", err)
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func validateModuleConstraint(policy *terraformv1alphav1.Policy) error {
 	// @step: ensure the regexes are valid
 	for i, x := range constraint.Allowed {
 		if _, err := regexp.Compile(x); err != nil {
-			return fmt.Errorf("spec.constraints.modules.allowed[%d] is invalid, %v", i, err)
+			return fmt.Errorf("spec.constraints.modules.allowed[%d] is invalid, %w", i, err)
 		}
 	}
 
@@ -140,13 +140,13 @@ func validateCheckovConstraints(policy *terraformv1alphav1.Policy) error {
 	if constraint.Selector != nil {
 		if constraint.Selector.Namespace != nil {
 			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Namespace); err != nil {
-				return fmt.Errorf("spec.constraints.checkov.selector.namespace is invalid, %v", err)
+				return fmt.Errorf("spec.constraints.checkov.selector.namespace is invalid, %w", err)
 			}
 		}
 
 		if constraint.Selector.Resource != nil {
 			if _, err := metav1.LabelSelectorAsSelector(constraint.Selector.Resource); err != nil {
-				return fmt.Errorf("spec.constraints.checkov.selector.resource is invalid, %v", err)
+				return fmt.Errorf("spec.constraints.checkov.selector.resource is invalid, %w", err)
 			}
 		}
 	}

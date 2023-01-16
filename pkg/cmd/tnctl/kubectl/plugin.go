@@ -101,6 +101,7 @@ func (o *PluginCommand) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		//nolint:gosec
 		if err := os.WriteFile(path, []byte(content), 0755); err != nil {
 			return err
 		}

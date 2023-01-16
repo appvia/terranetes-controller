@@ -128,6 +128,7 @@ func Run(ctx context.Context, step Step) error {
 	}
 
 	for i, command := range step.Commands {
+		//nolint:gosec
 		cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
 		cmd.Env = os.Environ()
 

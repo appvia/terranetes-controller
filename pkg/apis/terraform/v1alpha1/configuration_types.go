@@ -220,7 +220,7 @@ type ConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Variables *runtime.RawExtension `json:"variables,omitempty"`
-	// ValueFromSource is a collection of value from sources, where the source of the value is
+	// ValueFromSource is a collection of value from sources, where the source of the value
 	// is taken from a secret
 	// +kubebuilder:validation:Optional
 	ValueFrom []ValueFromSource `json:"valueFrom,omitempty"`

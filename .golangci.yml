@@ -9,12 +9,21 @@ run:
 
 linters:
   enable:
+    - asasalint
+    - bodyclose
     - depguard
+    - dupl
+    - dupword
     - errcheck
+    - errname
+    - errorlint
     - exportloopref
+    - gocyclo
+    - gosec
     - gosimple
     - govet
     - ineffassign
+    - misspell
     - staticcheck
     - stylecheck
     - typecheck
@@ -28,11 +37,7 @@ linters-settings:
     include-go-root: true
     packages-with-error-message:
       - github.com/davecgh/go-spew/spew: "used for debugging - should not appear in the codebase"
-      - github.com/satori/go.uuid: "considered unsafe - see https://github.com/satori/go.uuid/issues/73"
       - io/ioutil: "deprecated in go1.16 - see https://golang.org/doc/go1.16#ioutil"
-
-  errcheck:
-    ignore: github.com/appvia/wayfinder/pkg/utils/validation:^AddFieldError
 
   gosimple:
     go: "1.17"

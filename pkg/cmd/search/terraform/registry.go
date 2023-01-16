@@ -107,6 +107,7 @@ func (r *registry) Versions(ctx context.Context, module search.Module) ([]string
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -147,6 +148,8 @@ func (r *registry) ResolveSource(ctx context.Context, module search.Module) (str
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusNoContent {
 		return "", fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
@@ -241,6 +244,8 @@ func (r *registry) search(ctx context.Context, query search.Query, offset int) (
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}

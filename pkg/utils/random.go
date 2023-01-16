@@ -28,6 +28,7 @@ const (
 )
 
 var (
+	//nolint:gosec
 	seed = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 

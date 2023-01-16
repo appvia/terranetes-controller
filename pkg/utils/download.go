@@ -83,7 +83,7 @@ func Download(ctx context.Context, source, destination string) error {
 			case <-doneCh:
 				return nil
 			case err := <-errCh:
-				return fmt.Errorf("failed to download the source: %s", err)
+				return fmt.Errorf("failed to download the source: %w", err)
 			}
 		}
 	}()

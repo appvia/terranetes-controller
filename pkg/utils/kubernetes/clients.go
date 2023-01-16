@@ -30,7 +30,7 @@ import (
 func NewKubeClient() (k8sclient.Interface, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to find kubeconfig: %w", err)
 	}
 
 	return k8sclient.NewForConfig(cfg)
@@ -40,12 +40,12 @@ func NewKubeClient() (k8sclient.Interface, error) {
 func NewRuntimeClient(scheme *runtime.Scheme) (client.Client, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to find kubeconfig: %w", err)
 	}
 
 	cc, err := client.New(cfg, client.Options{Scheme: scheme})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubernetes client: %v", err)
+		return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
 	return cc, nil

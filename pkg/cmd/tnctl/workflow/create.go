@@ -118,7 +118,7 @@ func (o *ModuleCommand) Run(ctx context.Context) error {
 	// @step: download the template repository
 	tmpdir := utils.TempDirName()
 	if err := utils.Download(ctx, o.Template, tmpdir); err != nil {
-		return fmt.Errorf("failed to download the template repository: %v", err)
+		return fmt.Errorf("failed to download the template repository: %w", err)
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpdir); err != nil {
@@ -131,7 +131,7 @@ func (o *ModuleCommand) Run(ctx context.Context) error {
 		tmpdir + "/", o.Source,
 	}
 	if err := exec.Command("rsync", args...).Run(); err != nil {
-		return fmt.Errorf("failed to copy the template repository: %v", err)
+		return fmt.Errorf("failed to copy the template repository: %w", err)
 	}
 
 	o.Println("%s Successfully created the workflow in %s", cmd.IconGood, o.Source)

@@ -211,7 +211,7 @@ func validateModuleConstriants(
 	// @step: we then iterate the allowed list; at least one of the policies must be satisfied
 	for _, x := range list {
 		if found, err := x.Spec.Constraints.Modules.Matches(configuration.Spec.Module); err != nil {
-			return fmt.Errorf("failed to compile the policy: %s, error: %s", x.Name, err)
+			return fmt.Errorf("failed to compile the policy: %s, error: %w", x.Name, err)
 		} else if found {
 			return nil
 		}

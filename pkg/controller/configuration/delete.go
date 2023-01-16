@@ -178,7 +178,8 @@ func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1al
 			return reconcile.Result{}, nil
 		}
 
-		for _, job := range list.Items {
+		for i := 0; i < len(list.Items); i++ {
+			job := list.Items[i]
 			if err := kubernetes.DeleteIfExists(ctx, c.cc, &job); err != nil {
 				cond.Failed(err, "Failed to delete the configuration job (%s/%s)", job.Namespace, job.Name)
 
