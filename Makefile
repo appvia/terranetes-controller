@@ -121,8 +121,7 @@ step: golang
 test:
 	@echo "--> Running the tests"
 	@rm -f cover.out || true
-	@go run ./vendor/gotest.tools/gotestsum/main.go --format pkgname --packages $(PACKAGES_LIST) -- -coverprofile=cover.out
-	@echo "--> Coverage: $(shell go tool cover -func=cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+')" || true
+	@go test -cover -v ./...
 
 ### IMAGES ###
 
