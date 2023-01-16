@@ -59,10 +59,3 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v2.8.1
-      - name: Sign image
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          COSIGN_EXPERIMENTAL: 1
-        run: cosign sign ${TAGS}
