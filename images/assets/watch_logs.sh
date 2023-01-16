@@ -20,7 +20,7 @@ ${TRACE:+set -x}
 
 # Variables
 LOGFILE="/tmp/build.log"
-DELAY=5
+DELAY=10
 MAX_RETRIES=10
 LOGS_FETCHED=false
 FLAG_ENDPOINT=""
