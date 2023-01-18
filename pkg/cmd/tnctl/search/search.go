@@ -48,6 +48,10 @@ generate the Configuration CRD required to use the module as a source.
 At present we support using the Terraform registry and GitHub user / organizations
 as a source for terraform modules.
 
+Note, you can lookup the available providers available to you by selecting the
+'check available' option. This option will use the currently configured kubeconfig
+to list providers available in that cluster.
+
 Add the terraform registry
 $ tnctl config sources add https://registry.terraform.io
 
@@ -56,6 +60,9 @@ $ tnctl config sources add https://registry.terraform.io/namespaces/appvia
 
 Adding a GitHub user or organization
 $ tnctl config sources add https://github.com/appvia
+
+# Search for all modules which have the term database using an 'aws' provider
+$ tnctl search database -p aws
 
 Write the generated output to a file
 $ tnctl search -o filename
@@ -114,7 +121,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	flags.StringVarP(&o.Source, "source", "s", "", "Limit the scope of the search to a specific source")
 	flags.StringVarP(&o.Filename, "output", "o", "", "Optional filename to write the generated configuration (defaults: stdout)")
 
-	cmd.RegisterFlagCompletionFunc(c, "provider", cmd.AutoCompleteWithList([]string{"aws", "azurerm", "google", "vsphere"}))
+	cmd.RegisterFlagCompletionFunc(c, "provider", cmd.AutoCompleteWithList([]string{"aws", "azurerm", "google", "vsphere", "check available"}))
 	cmd.RegisterFlagCompletionFunc(c, "source", func(cmd *cobra.Command, args []string, flagValue string) ([]string, cobra.ShellCompDirective) {
 		config, found, err := o.GetConfig()
 		if !found || err != nil {
@@ -168,13 +175,36 @@ func (o *Command) Run(ctx context.Context) (err error) {
 
 	if o.Provider == "" {
 		if err := survey.AskOne(&survey.Input{
-			Message: "What cloud provider should we scope the search to?",
-			Help:    "Scopes the search to providers of the specified type e.g aws, google, azure, etc",
+			Message: "Which provider should we scope the search?",
+			Help:    "Scopes the search a specific provider e.g aws, google, azure, etc, we can also lookup available from cluster",
 			Suggest: func(toComplete string) []string {
-				return []string{"aws", "azurerm", "google", "vsphere"}
+				return []string{"aws", "azurerm", "google", "vsphere", "check available"}
 			},
 		}, &o.Provider, survey.WithKeepFilter(true)); err != nil {
 			return err
+		}
+
+		// @step: are we are checking for available providers
+		if o.Provider == "check available" {
+			o.Println("%s Checking for available providers, using your current kube context", cmd.IconHelp)
+
+			list, err := cmd.ListAvailableProviders(ctx, o.Factory)
+			if err != nil {
+				return err
+			}
+			if len(list) == 0 {
+				o.Println("%s No providers found in current cluster", cmd.IconBad)
+
+				return nil
+			}
+
+			if err := survey.AskOne(&survey.Select{
+				Message: "Found the following providers available, which should we use?",
+				Help:    "Scopes the search to providers of the specified type e.g aws, google, azure, etc",
+				Options: list,
+			}, &o.Provider, survey.WithKeepFilter(true)); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -319,7 +349,7 @@ func (o *Command) chooseModule(_ context.Context, responses []search.Response) (
   `}
 
 	prompt := promptui.Select{
-		Label:        "Which module would you like to use?",
+		Label:        "Which module would you like to consume?",
 		HideSelected: true,
 		HideHelp:     true,
 		Items:        modules,
