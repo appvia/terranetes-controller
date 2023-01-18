@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // ConfigurationKind is the kind for a Configuration
@@ -287,7 +287,7 @@ const (
 // ConfigurationStatus defines the observed state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
-	corev1alphav1.CommonStatus `json:",inline"`
+	corev1alpha1.CommonStatus `json:",inline"`
 	// Costs is the predicted costs of this configuration. Note this field is only populated
 	// when the integration has been configured by the administrator.
 	// +kubebuilder:validation:Optional
@@ -375,7 +375,7 @@ func (c *Configuration) GetTerraformCostSecretName() string {
 }
 
 // GetCommonStatus returns the common status
-func (c *Configuration) GetCommonStatus() *corev1alphav1.CommonStatus {
+func (c *Configuration) GetCommonStatus() *corev1alpha1.CommonStatus {
 	return &c.Status.CommonStatus
 }
 

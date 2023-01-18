@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 var (
@@ -59,7 +59,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	original := resource.DeepCopyObject().(client.Object)
 	status := resource.GetCommonStatus()
 
-	status.LastReconcile = &corev1alphav1.LastReconcileStatus{
+	status.LastReconcile = &corev1alpha1.LastReconcileStatus{
 		Generation: resource.GetGeneration(),
 		Time:       metav1.NewTime(time.Now()),
 	}
@@ -100,10 +100,10 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 		}
 	}
 
-	cond := ConditionMgr(resource, corev1alphav1.ConditionReady, nil)
+	cond := ConditionMgr(resource, corev1alpha1.ConditionReady, nil)
 	cond.Success("Resource ready")
 
-	status.LastSuccess = &corev1alphav1.LastReconcileStatus{
+	status.LastSuccess = &corev1alpha1.LastReconcileStatus{
 		Generation: resource.GetGeneration(),
 		Time:       metav1.NewTime(time.Now()),
 	}

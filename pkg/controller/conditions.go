@@ -20,28 +20,28 @@ package controller
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // EnsureConditionsRegistered is responsible for ensuring all the conditions are registered
-func EnsureConditionsRegistered(conditions []corev1alphav1.ConditionSpec, resource Object) {
+func EnsureConditionsRegistered(conditions []corev1alpha1.ConditionSpec, resource Object) {
 	status := resource.GetCommonStatus()
 
 	if status.LastReconcile == nil {
-		status.LastReconcile = &corev1alphav1.LastReconcileStatus{}
+		status.LastReconcile = &corev1alpha1.LastReconcileStatus{}
 	}
 	if status.LastSuccess == nil {
-		status.LastSuccess = &corev1alphav1.LastReconcileStatus{}
+		status.LastSuccess = &corev1alpha1.LastReconcileStatus{}
 	}
 	if status.Conditions == nil {
-		status.Conditions = make([]corev1alphav1.Condition, 0)
+		status.Conditions = make([]corev1alpha1.Condition, 0)
 	}
 
 	for _, x := range conditions {
 		if status.GetCondition(x.Type) == nil {
-			condition := corev1alphav1.Condition{
+			condition := corev1alpha1.Condition{
 				Name:   x.Name,
-				Reason: corev1alphav1.ReasonNotDetermined,
+				Reason: corev1alpha1.ReasonNotDetermined,
 				Status: x.DefaultStatus,
 				Type:   x.Type,
 			}

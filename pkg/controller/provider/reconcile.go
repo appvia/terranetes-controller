@@ -24,13 +24,13 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 )
 
 // Reconcile is called to handle the reconciliation of the provider resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	provider := &terraformv1alphav1.Provider{}
+	provider := &terraformv1alpha1.Provider{}
 
 	// @step: retrieve the provider resource
 	if err := c.cc.Get(ctx, request.NamespacedName, provider); err != nil {
@@ -42,7 +42,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 	// @step: ensure the provider has all the condition registered
-	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultProviderConditions, provider)
+	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultProviderConditions, provider)
 
 	return controller.DefaultEnsureHandler.Run(ctx, c.cc, provider, []controller.EnsureFunc{
 		c.ensureProviderSecret(provider),

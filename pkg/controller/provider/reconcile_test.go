@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	controllertests "github.com/appvia/terranetes-controller/test"
 	"github.com/appvia/terranetes-controller/test/fixtures"
@@ -50,9 +50,9 @@ var _ = Describe("Provider Controller", func() {
 	var result reconcile.Result
 	var rerr error
 	var controller *Controller
-	var provider *terraformv1alphav1.Provider
+	var provider *terraformv1alpha1.Provider
 
-	validProvider := func() *terraformv1alphav1.Provider {
+	validProvider := func() *terraformv1alpha1.Provider {
 		return fixtures.NewValidAWSProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
 	}
 
@@ -79,9 +79,9 @@ var _ = Describe("Provider Controller", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 
 			Expect(provider.Status.Conditions).To(HaveLen(1))
-			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alphav1.ConditionReady))
+			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 			Expect(provider.Status.Conditions[0].Message).To(Equal("Provider secret (default/aws) not found"))
 		})
 
@@ -112,9 +112,9 @@ var _ = Describe("Provider Controller", func() {
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 			Expect(provider.Status.Conditions).To(HaveLen(1))
-			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alphav1.ConditionReady))
+			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 			Expect(provider.Status.Conditions[0].Message).To(Equal("provider secret (default/aws) missing aws secrets"))
 		})
 
@@ -143,9 +143,9 @@ var _ = Describe("Provider Controller", func() {
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 			Expect(provider.Status.Conditions).To(HaveLen(1))
-			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alphav1.ConditionReady))
+			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 			Expect(provider.Status.Conditions[0].Message).To(Equal("Provider type: not-supported is not supported"))
 		})
 
@@ -173,9 +173,9 @@ var _ = Describe("Provider Controller", func() {
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 			Expect(provider.Status.Conditions).To(HaveLen(1))
-			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alphav1.ConditionReady))
+			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonReady))
 			Expect(provider.Status.Conditions[0].Message).To(Equal("Resource ready"))
 		})
 

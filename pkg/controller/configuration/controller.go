@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/configurations"
 	"github.com/appvia/terranetes-controller/pkg/utils/policies"
 )
@@ -134,28 +134,28 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	c.kc = kc
 
 	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/validate/%s/configurations", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
+		fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
+		admission.WithCustomValidator(&terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
 	)
 	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/mutate/%s/configurations", terraformv1alphav1.GroupName),
-		admission.WithCustomDefaulter(&terraformv1alphav1.Configuration{}, configurations.NewMutator(c.cc)),
+		fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),
+		admission.WithCustomDefaulter(&terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&terraformv1alphav1.Configuration{}).
+		For(&terraformv1alpha1.Configuration{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		// @note: we will avoid reconciliation on any resource where the annotation is set
 		WithEventFilter(&predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
-				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+				return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
-				return !(e.ObjectNew.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+				return !(e.ObjectNew.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
 			},
 			GenericFunc: func(e event.GenericEvent) bool {
-				return !(e.Object.GetLabels()[terraformv1alphav1.ReconcileAnnotation] == "false")
+				return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
 			},
 		}).
 		Watches(
@@ -208,8 +208,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 // an error.
 func (c *Controller) findMatchingPolicy(
 	ctx context.Context,
-	configuration *terraformv1alphav1.Configuration,
-	list *terraformv1alphav1.PolicyList) (*terraformv1alphav1.PolicyConstraint, error) {
+	configuration *terraformv1alpha1.Configuration,
+	list *terraformv1alpha1.PolicyList) (*terraformv1alpha1.PolicyConstraint, error) {
 
 	if len(list.Items) == 0 {
 		return nil, nil

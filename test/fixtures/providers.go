@@ -21,17 +21,17 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 )
 
 // NewValidAWSProvider returns a valid provider for aws
-func NewValidAWSProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
-	provider := &terraformv1alphav1.Provider{
+func NewValidAWSProvider(name string, secret *v1.Secret) *terraformv1alpha1.Provider {
+	provider := &terraformv1alpha1.Provider{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: terraformv1alphav1.ProviderSpec{
-			Source:   terraformv1alphav1.SourceSecret,
+		Spec: terraformv1alpha1.ProviderSpec{
+			Source:   terraformv1alpha1.SourceSecret,
 			Provider: "aws",
 		},
 	}
@@ -44,19 +44,19 @@ func NewValidAWSProvider(name string, secret *v1.Secret) *terraformv1alphav1.Pro
 }
 
 // NewValidAWSNotReadyProvider returns a ready aws provider
-func NewValidAWSNotReadyProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
+func NewValidAWSNotReadyProvider(name string, secret *v1.Secret) *terraformv1alpha1.Provider {
 	provider := NewValidAWSProvider(name, secret)
-	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultProviderConditions, provider)
-	provider.Status.GetCondition(corev1alphav1.ConditionReady).Status = metav1.ConditionFalse
+	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultProviderConditions, provider)
+	provider.Status.GetCondition(corev1alpha1.ConditionReady).Status = metav1.ConditionFalse
 
 	return provider
 }
 
 // NewValidAWSReadyProvider returns a ready aws provider
-func NewValidAWSReadyProvider(name string, secret *v1.Secret) *terraformv1alphav1.Provider {
+func NewValidAWSReadyProvider(name string, secret *v1.Secret) *terraformv1alpha1.Provider {
 	provider := NewValidAWSProvider(name, secret)
-	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultProviderConditions, provider)
-	provider.Status.GetCondition(corev1alphav1.ConditionReady).Status = metav1.ConditionTrue
+	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultProviderConditions, provider)
+	provider.Status.GetCondition(corev1alpha1.ConditionReady).Status = metav1.ConditionTrue
 
 	return provider
 }

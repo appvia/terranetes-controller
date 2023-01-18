@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
@@ -40,7 +40,7 @@ var _ = Describe("Configuration Validation", func() {
 	name := "aws"
 
 	When("we have a connection secret", func() {
-		var configuration *terraformv1alphav1.Configuration
+		var configuration *terraformv1alpha1.Configuration
 
 		BeforeEach(func() {
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
@@ -159,8 +159,8 @@ var _ = Describe("Configuration Validation", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				policy := fixtures.NewPolicy("block")
-				policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
-				policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{
+				policy.Spec.Constraints = &terraformv1alpha1.Constraints{}
+				policy.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{
 					Allowed: []string{"does_not_match"},
 				}
 
@@ -179,8 +179,8 @@ var _ = Describe("Configuration Validation", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				policy := fixtures.NewPolicy("block")
-				policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
-				policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{
+				policy.Spec.Constraints = &terraformv1alpha1.Constraints{}
+				policy.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{
 					Allowed: []string{".*"},
 				}
 
@@ -203,12 +203,12 @@ var _ = Describe("Configuration Validation", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 				all := fixtures.NewPolicy("all")
-				all.Spec.Constraints = &terraformv1alphav1.Constraints{}
-				all.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"default.*"}}
+				all.Spec.Constraints = &terraformv1alpha1.Constraints{}
+				all.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{Allowed: []string{"default.*"}}
 
 				allow := fixtures.NewPolicy("allow")
-				allow.Spec.Constraints = &terraformv1alphav1.Constraints{}
-				allow.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{Allowed: []string{"allow.*"}}
+				allow.Spec.Constraints = &terraformv1alpha1.Constraints{}
+				allow.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{Allowed: []string{"allow.*"}}
 
 				Expect(cc.Create(ctx, all)).To(Succeed())
 				Expect(cc.Create(ctx, allow)).To(Succeed())
@@ -238,7 +238,7 @@ var _ = Describe("Configuration Validation", func() {
 		When("provider namespace selectors do not match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"does_not_match": "true",
@@ -264,7 +264,7 @@ var _ = Describe("Configuration Validation", func() {
 		When("provider namespace selectors do match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"name": namespace,
@@ -288,7 +288,7 @@ var _ = Describe("Configuration Validation", func() {
 		When("provider resource selectors do not match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"does_not_match": "true",
@@ -314,7 +314,7 @@ var _ = Describe("Configuration Validation", func() {
 		When("provider resource selectors match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"does_match": "true",

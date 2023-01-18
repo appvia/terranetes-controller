@@ -29,7 +29,7 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
@@ -44,13 +44,13 @@ func NewMutator(cc client.Client) admission.CustomDefaulter {
 
 // Default implements the mutation handler
 func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
-	o, ok := obj.(*terraformv1alphav1.Configuration)
+	o, ok := obj.(*terraformv1alpha1.Configuration)
 	if !ok {
 		return fmt.Errorf("expected terraform configuration, not %T", obj)
 	}
 
 	// @step: retrieve a list of all policies
-	list := &terraformv1alphav1.PolicyList{}
+	list := &terraformv1alpha1.PolicyList{}
 	if err := m.cc.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list policies: %w", err)
 	}
@@ -66,7 +66,7 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 // mutateOnDefaults is called to validate the module policy enforced
-func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alphav1.PolicyList, o *terraformv1alphav1.Configuration) error {
+func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alpha1.PolicyList, o *terraformv1alpha1.Configuration) error {
 
 	namespace := &v1.Namespace{}
 	namespace.Name = o.Namespace
@@ -117,7 +117,7 @@ func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alphav1
 		if o.Annotations == nil {
 			o.Annotations = make(map[string]string)
 		}
-		o.Annotations[terraformv1alphav1.DefaultVariablesAnnotation] = strings.Join(names, ",")
+		o.Annotations[terraformv1alpha1.DefaultVariablesAnnotation] = strings.Join(names, ",")
 	}
 
 	return nil
@@ -125,8 +125,8 @@ func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alphav1
 
 // isMatch returns if the selector matches the policy
 func isMatch(
-	selector terraformv1alphav1.DefaultVariablesSelector,
-	configuration *terraformv1alphav1.Configuration,
+	selector terraformv1alpha1.DefaultVariablesSelector,
+	configuration *terraformv1alpha1.Configuration,
 	namespace client.Object,
 ) (bool, error) {
 

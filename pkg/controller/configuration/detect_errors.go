@@ -29,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -39,14 +39,14 @@ import (
 
 // ensureErrorDetection is helper used to try and detect by the configuration failed and
 // report is back to the users via status
-func (c *Controller) ensureErrorDetection(configuration *terraformv1alphav1.Configuration, job *batchv1.Job, state *state) controller.EnsureFunc {
+func (c *Controller) ensureErrorDetection(configuration *terraformv1alpha1.Configuration, job *batchv1.Job, state *state) controller.EnsureFunc {
 	logger := log.WithFields(log.Fields{
 		"job":       job.Name,
 		"name":      configuration.Name,
 		"namespace": configuration.Namespace,
 	})
 	provider := string(state.provider.Spec.Provider)
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: we check if the logs for the configuration are available

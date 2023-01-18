@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
@@ -53,7 +53,7 @@ external-checks-dir:
 
 // GetTerraformImage is called to return the terraform image to use, or the image plus version
 // override
-func GetTerraformImage(configuration *terraformv1alphav1.Configuration, image string) string {
+func GetTerraformImage(configuration *terraformv1alpha1.Configuration, image string) string {
 	if configuration.Spec.TerraformVersion == "" {
 		return image
 	}
@@ -63,7 +63,7 @@ func GetTerraformImage(configuration *terraformv1alphav1.Configuration, image st
 }
 
 // CreateWatcher is responsible for ensuring the logger is running in the application namespace
-func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv1alphav1.Configuration, stage string) error {
+func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv1alpha1.Configuration, stage string) error {
 	watcher := jobs.New(configuration, nil).NewJobWatch(c.ControllerNamespace, stage, c.ExecutorImage)
 
 	// @step: check if the logger has been created

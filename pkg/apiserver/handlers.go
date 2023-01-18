@@ -30,7 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -91,11 +91,11 @@ func (s *Server) handleBuilds(w http.ResponseWriter, req *http.Request) {
 	log.WithFields(fields).Debug("received request for builds")
 
 	labels := []string{
-		terraformv1alphav1.ConfigurationGenerationLabel + "=" + values["generation"],
-		terraformv1alphav1.ConfigurationNameLabel + "=" + values["name"],
-		terraformv1alphav1.ConfigurationNamespaceLabel + "=" + values["namespace"],
-		terraformv1alphav1.ConfigurationStageLabel + "=" + values["stage"],
-		terraformv1alphav1.ConfigurationUIDLabel + "=" + values["uid"],
+		terraformv1alpha1.ConfigurationGenerationLabel + "=" + values["generation"],
+		terraformv1alpha1.ConfigurationNameLabel + "=" + values["name"],
+		terraformv1alpha1.ConfigurationNamespaceLabel + "=" + values["namespace"],
+		terraformv1alpha1.ConfigurationStageLabel + "=" + values["stage"],
+		terraformv1alpha1.ConfigurationUIDLabel + "=" + values["uid"],
 	}
 
 	var pod *v1.Pod

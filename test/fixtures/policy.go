@@ -20,22 +20,22 @@ package fixtures
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // NewPolicy returns an empty policy
-func NewPolicy(name string) *terraformv1alphav1.Policy {
-	return &terraformv1alphav1.Policy{
+func NewPolicy(name string) *terraformv1alpha1.Policy {
+	return &terraformv1alpha1.Policy{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec:       terraformv1alphav1.PolicySpec{},
+		Spec:       terraformv1alpha1.PolicySpec{},
 	}
 }
 
 // NewMatchAllPolicyConstraint returns a policy which matches all configurations
-func NewMatchAllPolicyConstraint(name string) *terraformv1alphav1.Policy {
+func NewMatchAllPolicyConstraint(name string) *terraformv1alpha1.Policy {
 	p := NewPolicy(name)
-	p.Spec.Constraints = &terraformv1alphav1.Constraints{}
-	p.Spec.Constraints.Checkov = &terraformv1alphav1.PolicyConstraint{}
+	p.Spec.Constraints = &terraformv1alpha1.Constraints{}
+	p.Spec.Constraints.Checkov = &terraformv1alpha1.PolicyConstraint{}
 
 	return p
 }

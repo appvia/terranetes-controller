@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
@@ -44,22 +44,22 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 
 // ValidateDelete is called when a resource is being deleted
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	list := &terraformv1alphav1.ConfigurationList{}
-	o := obj.(*terraformv1alphav1.Policy)
+	list := &terraformv1alpha1.ConfigurationList{}
+	o := obj.(*terraformv1alpha1.Policy)
 
 	err := v.cc.List(ctx, list, client.InNamespace(""))
 	if err != nil {
 		return err
 	}
 
-	if o.GetAnnotations()[terraformv1alphav1.SkipDefaultsValidationCheck] == "true" {
+	if o.GetAnnotations()[terraformv1alpha1.SkipDefaultsValidationCheck] == "true" {
 		return nil
 	}
 
 	var using []string
 
 	for _, x := range list.Items {
-		items := strings.Split(x.GetAnnotations()[terraformv1alphav1.DefaultVariablesAnnotation], ",")
+		items := strings.Split(x.GetAnnotations()[terraformv1alpha1.DefaultVariablesAnnotation], ",")
 		if len(items) == 0 {
 			continue
 		}
@@ -83,7 +83,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	o := newObj.(*terraformv1alphav1.Policy)
+	o := newObj.(*terraformv1alpha1.Policy)
 
 	if err := validateCheckovConstraints(o); err != nil {
 		return err
@@ -96,7 +96,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 }
 
 // validateModuleConstraint ensures the constraints are valid
-func validateModuleConstraint(policy *terraformv1alphav1.Policy) error {
+func validateModuleConstraint(policy *terraformv1alpha1.Policy) error {
 	switch {
 	case policy.Spec.Constraints == nil, policy.Spec.Constraints.Modules == nil:
 		return nil
@@ -129,7 +129,7 @@ func validateModuleConstraint(policy *terraformv1alphav1.Policy) error {
 }
 
 // validateCheckovConstraints ensures the constraints are valid
-func validateCheckovConstraints(policy *terraformv1alphav1.Policy) error {
+func validateCheckovConstraints(policy *terraformv1alpha1.Policy) error {
 	switch {
 	case policy.Spec.Constraints == nil, policy.Spec.Constraints.Checkov == nil:
 		return nil

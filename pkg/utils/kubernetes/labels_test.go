@@ -23,14 +23,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 func TestIsSelectorMatch(t *testing.T) {
 	cases := []struct {
 		ResourceLabels map[string]string
 		NamespaceLabel map[string]string
-		Selector       terraformv1alphav1.Selector
+		Selector       terraformv1alpha1.Selector
 		Expect         bool
 	}{
 		{
@@ -38,7 +38,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: true,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Namespace: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"is": "there"},
 				},
@@ -47,7 +47,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: false,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Namespace: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"not": "there"},
 				},
@@ -56,7 +56,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: false,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Namespace: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -70,7 +70,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: true,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Namespace: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -84,7 +84,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: false,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Resource: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -98,7 +98,7 @@ func TestIsSelectorMatch(t *testing.T) {
 		},
 		{
 			Expect: true,
-			Selector: terraformv1alphav1.Selector{
+			Selector: terraformv1alpha1.Selector{
 				Resource: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{

@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // PolicyKind is the kind for a Policy
@@ -141,11 +141,11 @@ type Policy struct {
 // PolicyStatus defines the observed state of a provider
 // +k8s:openapi-gen=true
 type PolicyStatus struct {
-	corev1alphav1.CommonStatus `json:",inline"`
+	corev1alpha1.CommonStatus `json:",inline"`
 }
 
 // GetCommonStatus returns the common status
-func (p *Policy) GetCommonStatus() *corev1alphav1.CommonStatus {
+func (p *Policy) GetCommonStatus() *corev1alpha1.CommonStatus {
 	return &p.Status.CommonStatus
 }
 

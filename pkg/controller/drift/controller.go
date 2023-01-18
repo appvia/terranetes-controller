@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 const controllerName = "drift.terraform.appvia.io"
@@ -72,13 +72,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&terraformv1alphav1.Configuration{}).
+		For(&terraformv1alpha1.Configuration{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		WithEventFilter(&predicate.Funcs{
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				switch {
-				case !e.ObjectNew.(*terraformv1alphav1.Configuration).Spec.EnableDriftDetection:
+				case !e.ObjectNew.(*terraformv1alpha1.Configuration).Spec.EnableDriftDetection:
 					return false
 				case !e.ObjectNew.GetDeletionTimestamp().IsZero():
 					return false

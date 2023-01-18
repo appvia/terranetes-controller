@@ -38,8 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	controllertests "github.com/appvia/terranetes-controller/test"
@@ -58,7 +58,7 @@ var _ = Describe("Configuration Controller", func() {
 	var result reconcile.Result
 	var rerr error
 	var ctrl *Controller
-	var configuration *terraformv1alphav1.Configuration
+	var configuration *terraformv1alpha1.Configuration
 	var recorder *controllertests.FakeRecorder
 
 	cfgNamespace := "apps"
@@ -116,10 +116,10 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the provider is missing", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
-				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderReady))
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Provider referenced \"does_not_exist\" does not exist"))
 			})
 
@@ -157,9 +157,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the provider is not ready", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionProviderReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonWarning))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonWarning))
 				Expect(cond.Message).To(Equal("Provider is not ready"))
 			})
 
@@ -212,7 +212,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "injected"
 
 				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
-				provider.Spec.Source = terraformv1alphav1.SourceInjected
+				provider.Spec.Source = terraformv1alpha1.SourceInjected
 				provider.Spec.SecretRef = nil
 				provider.Spec.ServiceAccount = &serviceAccount
 
@@ -252,7 +252,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Spec.ProviderRef.Name = "policy"
 
 				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "true"},
 					},
@@ -271,10 +271,10 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the provider is denied", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
-				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderReady))
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Provider policy does not permit the configuration to use it"))
 			})
 
@@ -295,7 +295,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Labels = map[string]string{"does_not_match": "true"}
 
 				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_not_match": "false"},
 					},
@@ -314,10 +314,10 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the provider is denied", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
-				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderReady))
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Provider policy does not permit the configuration to use it"))
 			})
 
@@ -338,7 +338,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration.Labels = map[string]string{"does_match": "true"}
 
 				provider := fixtures.NewValidAWSReadyProvider(configuration.Spec.ProviderRef.Name, fixtures.NewValidAWSProviderSecret(ctrl.ControllerNamespace, configuration.Spec.ProviderRef.Name))
-				provider.Spec.Selector = &terraformv1alphav1.Selector{
+				provider.Spec.Selector = &terraformv1alpha1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchLabels: map[string]string{"does_match": "true"},
 					},
@@ -360,10 +360,10 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the provider is ready", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionProviderReady)
-				Expect(cond.Type).To(Equal(terraformv1alphav1.ConditionProviderReady))
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionProviderReady)
+				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderReady))
 				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 				Expect(cond.Message).To(Equal("Provider ready"))
 			})
 
@@ -394,9 +394,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the failure on the conditions", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonError))
 				Expect(cond.Message).To(Equal("Failed to find matching policy constraints"))
 				Expect(cond.Detail).To(Equal("multiple policies match configuration: all0, all1"))
 			})
@@ -431,9 +431,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the credentials are missing", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Authentication secret (spec.auth) does not exist"))
 			})
 
@@ -472,9 +472,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the plan is in progress", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.GetCommonStatus().GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Terraform plan in progress"))
 			})
 
@@ -555,9 +555,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the costs analytics token is invalid", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
 			})
 
@@ -596,9 +596,9 @@ var _ = Describe("Configuration Controller", func() {
 			It("should indicate the costs analytics token is invalid", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
 			})
 
@@ -620,7 +620,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 
 				// create two successful plan
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 				// create fake terraform state
@@ -652,7 +652,7 @@ var _ = Describe("Configuration Controller", func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 
 				// create two successful plan
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 				// create fake terraform state
@@ -707,7 +707,7 @@ var _ = Describe("Configuration Controller", func() {
 
 			When("secret is missing and not optional", func() {
 				BeforeEach(func() {
-					configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 						{Secret: "missing", Key: "key"},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
@@ -722,9 +722,9 @@ var _ = Describe("Configuration Controller", func() {
 				It("should indicate the failure on the conditions", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 					Expect(cond.Message).To(Equal("Secret spec.valueFrom[0] (apps/missing) does not exist"))
 					Expect(cond.Detail).To(Equal(""))
 				})
@@ -739,7 +739,7 @@ var _ = Describe("Configuration Controller", func() {
 
 			When("secret is missing but optional", func() {
 				BeforeEach(func() {
-					configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 						{Secret: "missing", Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
@@ -760,7 +760,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Namespace = configuration.Namespace
 					secret.Name = "exists"
 
-					configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{{Secret: "exists", Key: "missing"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "missing"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -775,9 +775,9 @@ var _ = Describe("Configuration Controller", func() {
 				It("should indicate the failure on the conditions", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 					Expect(cond.Message).To(Equal(`Secret spec.valueFrom[0] (apps/exists) does not contain key: "missing"`))
 				})
 
@@ -791,7 +791,7 @@ var _ = Describe("Configuration Controller", func() {
 
 			When("key is missing but optional", func() {
 				BeforeEach(func() {
-					configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 						{Secret: "missing", Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
@@ -830,7 +830,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"my": []byte("value")}
 
-					configuration.Spec.ValueFrom = []terraformv1alphav1.ValueFromSource{{Secret: "exists", Key: "my"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "my"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -845,9 +845,9 @@ var _ = Describe("Configuration Controller", func() {
 				It("should indicate the plan is in progress", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				})
 
 				It("should have created a job", func() {
@@ -867,8 +867,8 @@ var _ = Describe("Configuration Controller", func() {
 					found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(found).To(BeTrue())
-					Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
-					Expect(string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])).To(Equal(expected))
+					Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
+					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal(expected))
 				})
 			})
 		})
@@ -892,9 +892,9 @@ var _ = Describe("Configuration Controller", func() {
 		It("should indicate the failure on the conditions", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionProviderReady)
 			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 			Expect(cond.Message).To(Equal("Provider ready"))
 		})
 
@@ -940,9 +940,9 @@ var _ = Describe("Configuration Controller", func() {
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionProviderReady)
 			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 			Expect(cond.Message).To(Equal("Provider ready"))
 		})
 
@@ -955,8 +955,8 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
-			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
 		})
 
 		It("should have create a terraform backend configuration", func() {
@@ -983,7 +983,7 @@ terraform {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			backend := string(secret.Data[terraformv1alphav1.TerraformBackendConfigMapKey])
+			backend := string(secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey])
 			Expect(backend).ToNot(BeZero())
 			Expect(backend).To(Equal(expected))
 		})
@@ -998,7 +998,7 @@ terraform {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			backend := string(secret.Data[terraformv1alphav1.TerraformProviderConfigMapKey])
+			backend := string(secret.Data[terraformv1alpha1.TerraformProviderConfigMapKey])
 			Expect(backend).ToNot(BeZero())
 			Expect(backend).To(Equal(expected))
 		})
@@ -1014,7 +1014,7 @@ terraform {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			backend := string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])
+			backend := string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])
 			Expect(backend).ToNot(BeZero())
 			Expect(backend).To(Equal(expected))
 		})
@@ -1022,9 +1022,9 @@ terraform {
 		It("should indicate the terraform plan is running", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 			Expect(cond.Message).To(Equal("Terraform plan in progress"))
 		})
 
@@ -1072,13 +1072,13 @@ terraform {
 			Expect(len(list.Items)).To(Equal(1))
 
 			labels := list.Items[0].GetLabels()
-			Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
-			Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNamespaceLabel))
-			Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationGenerationLabel))
-			Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationStageLabel))
-			Expect(labels[terraformv1alphav1.ConfigurationStageLabel]).To(Equal(terraformv1alphav1.StageTerraformPlan))
-			Expect(labels[terraformv1alphav1.ConfigurationNameLabel]).To(Equal(configuration.Name))
-			Expect(labels[terraformv1alphav1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
+			Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNameLabel))
+			Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNamespaceLabel))
+			Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationGenerationLabel))
+			Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationStageLabel))
+			Expect(labels[terraformv1alpha1.ConfigurationStageLabel]).To(Equal(terraformv1alpha1.StageTerraformPlan))
+			Expect(labels[terraformv1alpha1.ConfigurationNameLabel]).To(Equal(configuration.Name))
+			Expect(labels[terraformv1alpha1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
 		})
 
 		It("should have created a watch job in the configuration namespace", func() {
@@ -1095,13 +1095,13 @@ terraform {
 
 		It("should have added a approval annotation to the configuration", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Annotations).To(HaveKey(terraformv1alphav1.ApplyAnnotation))
+			Expect(configuration.Annotations).To(HaveKey(terraformv1alpha1.ApplyAnnotation))
 		})
 
 		It("should have a out of sync status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesOutOfSync))
 		})
 
 		It("should not have a terraform version yet", func() {
@@ -1156,12 +1156,12 @@ terraform {
 			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
-			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
-			Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
 
 			expected := "{\"name\":\"test\",\"terranetes\":{\"name\":\"bucket\",\"namespace\":\"apps\"}}\n"
 
-			Expect(string(secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey])).To(Equal(expected))
+			Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal(expected))
 		})
 	})
 
@@ -1184,9 +1184,9 @@ terraform {
 			It("should indicate the configuration failed", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Backend template secret \"default/not_there\" not found, contact administrator"))
 			})
 
@@ -1217,9 +1217,9 @@ terraform {
 			It("should indicate the configuration failed", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Backend template secret \"default/missing_key\" does not contain the backend.tf key"))
 			})
 
@@ -1250,9 +1250,9 @@ terraform {
 			It("should indicate the configuration failed", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Backend template secret \"default/missing_key\" does not contain the backend.tf key"))
 			})
 
@@ -1282,9 +1282,9 @@ terraform {
 			It("should indicate the provider is ready", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionProviderReady)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionProviderReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 				Expect(cond.Message).To(Equal("Provider ready"))
 			})
 
@@ -1297,8 +1297,8 @@ terraform {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
 
-				Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformVariablesConfigMapKey))
-				Expect(secret.Data).To(HaveKey(terraformv1alphav1.TerraformBackendConfigMapKey))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
 			})
 
 			It("should have create a terraform backend configuration", func() {
@@ -1321,7 +1321,7 @@ terraform {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
 
-				backend := string(secret.Data[terraformv1alphav1.TerraformBackendConfigMapKey])
+				backend := string(secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey])
 				Expect(backend).ToNot(BeZero())
 				Expect(backend).To(Equal(expected))
 			})
@@ -1329,9 +1329,9 @@ terraform {
 			It("should indicate the terraform plan is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Terraform plan is running"))
 			})
 
@@ -1350,7 +1350,7 @@ terraform {
 		When("drift annotation is tagged but configuration has not opted in for detection", func() {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+				configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "true"}
 
 				Setup(configuration)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1364,9 +1364,9 @@ terraform {
 			It("should indicate the terraform plan is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Terraform plan in progress"))
 			})
 
@@ -1383,15 +1383,15 @@ terraform {
 				Expect(len(list.Items)).To(Equal(1))
 
 				labels := list.Items[0].GetLabels()
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNamespaceLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationGenerationLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationStageLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.DriftAnnotation))
-				Expect(labels[terraformv1alphav1.ConfigurationStageLabel]).To(Equal(terraformv1alphav1.StageTerraformPlan))
-				Expect(labels[terraformv1alphav1.ConfigurationNameLabel]).To(Equal(configuration.Name))
-				Expect(labels[terraformv1alphav1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
-				Expect(labels[terraformv1alphav1.DriftAnnotation]).To(Equal("true"))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNameLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNamespaceLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationGenerationLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationStageLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.DriftAnnotation))
+				Expect(labels[terraformv1alpha1.ConfigurationStageLabel]).To(Equal(terraformv1alpha1.StageTerraformPlan))
+				Expect(labels[terraformv1alpha1.ConfigurationNameLabel]).To(Equal(configuration.Name))
+				Expect(labels[terraformv1alpha1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
+				Expect(labels[terraformv1alpha1.DriftAnnotation]).To(Equal("true"))
 			})
 
 			It("should have created a watch job in the configuration namespace", func() {
@@ -1412,11 +1412,11 @@ terraform {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 				configuration.Spec.EnableDriftDetection = true
 				configuration.Annotations = map[string]string{
-					terraformv1alphav1.DriftAnnotation: "true",
-					terraformv1alphav1.ApplyAnnotation: "false",
+					terraformv1alpha1.DriftAnnotation: "true",
+					terraformv1alpha1.ApplyAnnotation: "false",
 				}
 
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 
@@ -1439,9 +1439,9 @@ terraform {
 			It("should indicate the terraform plan is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Waiting for terraform apply annotation to be set to true"))
 			})
 		})
@@ -1450,18 +1450,18 @@ terraform {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 				configuration.Spec.EnableAutoApproval = true
-				configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "changed"}
+				configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "changed"}
 
 				job := &batchv1.Job{}
 				job.Name = "test"
 				job.Namespace = ctrl.ControllerNamespace
 				job.Labels = map[string]string{
-					terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
-					terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
-					terraformv1alphav1.ConfigurationNamespaceLabel:  configuration.Namespace,
-					terraformv1alphav1.ConfigurationStageLabel:      terraformv1alphav1.StageTerraformPlan,
-					terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.GetUID()),
-					terraformv1alphav1.DriftAnnotation:              "different_before",
+					terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+					terraformv1alpha1.ConfigurationNameLabel:       configuration.Name,
+					terraformv1alpha1.ConfigurationNamespaceLabel:  configuration.Namespace,
+					terraformv1alpha1.ConfigurationStageLabel:      terraformv1alpha1.StageTerraformPlan,
+					terraformv1alpha1.ConfigurationUIDLabel:        string(configuration.GetUID()),
+					terraformv1alpha1.DriftAnnotation:              "different_before",
 				}
 				Setup(configuration, job)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1470,15 +1470,15 @@ terraform {
 			It("should indicate the terraform plan is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Terraform plan is running"))
 			})
 
 			It("should have an out of sync status", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesOutOfSync))
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesOutOfSync))
 			})
 
 			It("should create another job", func() {
@@ -1496,7 +1496,7 @@ terraform {
 			Setup(configuration)
 
 			constraint := fixtures.NewMatchAllPolicyConstraint("all")
-			constraint.Spec.Constraints.Checkov.Source = &terraformv1alphav1.ExternalSource{
+			constraint.Spec.Constraints.Checkov.Source = &terraformv1alpha1.ExternalSource{
 				URL:           "https://github.com/appvia/terranetes-policy?ref=main",
 				Configuration: "config.yaml",
 			}
@@ -1544,7 +1544,7 @@ terraform {
 			found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
-			Expect(secret.Data).ToNot(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
+			Expect(secret.Data).ToNot(HaveKey(terraformv1alpha1.CheckovJobTemplateConfigMapKey))
 		})
 
 		It("should have updated the command line for checkov scan", func() {
@@ -1621,8 +1621,8 @@ terraform {
 				found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
-				Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
-				Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\n  - check1"))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.CheckovJobTemplateConfigMapKey))
+				Expect(string(secret.Data[terraformv1alpha1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\n  - check1"))
 			})
 		})
 
@@ -1639,7 +1639,7 @@ terraform {
 
 				priority := fixtures.NewMatchAllPolicyConstraint("priority")
 				priority.Spec.Constraints.Checkov.Checks = []string{"priority"}
-				priority.Spec.Constraints.Checkov.Selector = &terraformv1alphav1.Selector{}
+				priority.Spec.Constraints.Checkov.Selector = &terraformv1alpha1.Selector{}
 				priority.Spec.Constraints.Checkov.Selector.Namespace = &metav1.LabelSelector{
 					MatchLabels: map[string]string{"name": cfgNamespace},
 				}
@@ -1683,8 +1683,8 @@ terraform {
 				found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
-				Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
-				Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - priority"))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.CheckovJobTemplateConfigMapKey))
+				Expect(string(secret.Data[terraformv1alpha1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - priority"))
 			})
 		})
 
@@ -1696,7 +1696,7 @@ terraform {
 				// @notes: we add a policy with and external check
 				external := fixtures.NewMatchAllPolicyConstraint("external")
 				external.Spec.Constraints.Checkov.Checks = []string{"check0"}
-				external.Spec.Constraints.Checkov.External = []terraformv1alphav1.ExternalCheck{
+				external.Spec.Constraints.Checkov.External = []terraformv1alpha1.ExternalCheck{
 					{
 						Name: "test",
 						URL:  "https://example.com//dir",
@@ -1779,8 +1779,8 @@ terraform {
 				found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
-				Expect(secret.Data).To(HaveKey(terraformv1alphav1.CheckovJobTemplateConfigMapKey))
-				Expect(string(secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\nexternal-checks-dir:\n  - /run/policy/test"))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.CheckovJobTemplateConfigMapKey))
+				Expect(string(secret.Data[terraformv1alpha1.CheckovJobTemplateConfigMapKey])).To(Equal("framework:\n  - terraform_plan\nsoft-fail: true\ncompact: true\ncheck:\n  - check0\nexternal-checks-dir:\n  - /run/policy/test"))
 			})
 		})
 
@@ -1792,7 +1792,7 @@ terraform {
 				// a fake security report
 				policy := fixtures.NewMatchAllPolicyConstraint("all")
 				policy.Spec.Constraints.Checkov.Checks = []string{"check0"}
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 
@@ -1822,9 +1822,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonWarning))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonWarning))
 					Expect(cond.Message).To(Equal("Failed to find the secret: (default/policy-1234-122-1234-1234) containing checkov scan"))
 				})
 			})
@@ -1842,9 +1842,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 					Expect(cond.Message).To(Equal("Configuration has failed security policy, refusing to continue"))
 				})
 
@@ -1894,9 +1894,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 					Expect(cond.Message).To(Equal("Passed security checks"))
 				})
 
@@ -1941,9 +1941,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 					Expect(cond.Message).To(Equal("Passed security checks"))
 				})
 
@@ -1987,9 +1987,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonError))
 					Expect(cond.Message).To(Equal("Security report is missing passed field"))
 				})
 
@@ -2023,9 +2023,9 @@ terraform {
 				It("should indicate the we failed", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPolicy)
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPolicy)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-					Expect(cond.Reason).To(Equal(corev1alphav1.ReasonError))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonError))
 					Expect(cond.Message).To(Equal("Security report is missing failed field"))
 				})
 
@@ -2066,9 +2066,9 @@ terraform {
 			It("should indicate action is required in the conditions", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Custom job template (default/template) does not exists"))
 			})
 
@@ -2106,9 +2106,9 @@ terraform {
 			It("should indicate action is required due to missing keys", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Custom job template (default/template) does not contain the \"job.yaml\" key"))
 			})
 
@@ -2131,9 +2131,9 @@ terraform {
 			It("should indicate the terraform plan is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Terraform plan in progress"))
 			})
 		})
@@ -2144,8 +2144,8 @@ terraform {
 		When("the configuration needs approval", func() {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-				configuration.Annotations = map[string]string{terraformv1alphav1.ApplyAnnotation: "false"}
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				configuration.Annotations = map[string]string{terraformv1alpha1.ApplyAnnotation: "false"}
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 
@@ -2161,18 +2161,18 @@ terraform {
 			It("should indicate configuration is waiting approval", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonActionRequired))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
 				Expect(cond.Message).To(Equal("Waiting for terraform apply annotation to be set to true"))
 			})
 
 			It("should indicate the ready condition is false", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonInProgress))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 				Expect(cond.Message).To(Equal("Waiting for changes to be approved"))
 			})
 
@@ -2191,7 +2191,7 @@ terraform {
 		When("the configuration is approved", func() {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
-				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
 				Setup(configuration, plan)
@@ -2206,9 +2206,9 @@ terraform {
 			It("should indicate the terraform apply is running", func() {
 				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-				cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-				Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 				Expect(cond.Message).To(Equal("Terraform plan is complete"))
 			})
 
@@ -2254,13 +2254,13 @@ terraform {
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 
 				labels := list.Items[0].GetLabels()
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNameLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationNamespaceLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationGenerationLabel))
-				Expect(labels).To(HaveKey(terraformv1alphav1.ConfigurationStageLabel))
-				Expect(labels[terraformv1alphav1.ConfigurationStageLabel]).To(Equal(terraformv1alphav1.StageTerraformApply))
-				Expect(labels[terraformv1alphav1.ConfigurationNameLabel]).To(Equal(configuration.Name))
-				Expect(labels[terraformv1alphav1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNameLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationNamespaceLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationGenerationLabel))
+				Expect(labels).To(HaveKey(terraformv1alpha1.ConfigurationStageLabel))
+				Expect(labels[terraformv1alpha1.ConfigurationStageLabel]).To(Equal(terraformv1alpha1.StageTerraformApply))
+				Expect(labels[terraformv1alpha1.ConfigurationNameLabel]).To(Equal(configuration.Name))
+				Expect(labels[terraformv1alpha1.ConfigurationNamespaceLabel]).To(Equal(configuration.Namespace))
 			})
 
 			It("should have created a watch job in the configuration namespace", func() {
@@ -2287,11 +2287,11 @@ terraform {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
 			// create two successful jobs
-			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			plan.Status.Succeeded = 1
 
-			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformApply)
+			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformApply)
 			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			apply.Status.Succeeded = 1
 
@@ -2311,9 +2311,9 @@ terraform {
 		It("should indicate the terraform apply has run", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
 			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 			Expect(cond.Message).To(Equal("Terraform apply is complete"))
 		})
 
@@ -2346,7 +2346,7 @@ terraform {
 		It("should have a in resource status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesInSync))
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesInSync))
 		})
 
 		It("should have created a secret containing the module output", func() {
@@ -2374,11 +2374,11 @@ terraform {
 			}
 
 			// create two successful jobs
-			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformPlan)
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			plan.Status.Succeeded = 1
 
-			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alphav1.StageTerraformApply)
+			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformApply)
 			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			apply.Status.Succeeded = 1
 
@@ -2398,16 +2398,16 @@ terraform {
 		It("should indicate the terraform apply has run", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
 			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
-			Expect(cond.Reason).To(Equal(corev1alphav1.ReasonReady))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
 			Expect(cond.Message).To(Equal("Terraform apply is complete"))
 		})
 
 		It("should have a in resource status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
-			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alphav1.ResourcesInSync))
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesInSync))
 		})
 
 		It("should have created a secret containing the module output", func() {

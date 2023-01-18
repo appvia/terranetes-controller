@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
@@ -91,7 +91,7 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	for _, resource := range o.Names {
-		configuration := &terraformv1alphav1.Configuration{}
+		configuration := &terraformv1alpha1.Configuration{}
 		configuration.Namespace = o.Namespace
 		configuration.Name = resource
 
@@ -109,12 +109,12 @@ func (o *Command) Run(ctx context.Context) error {
 		switch {
 		case configuration.Annotations == nil:
 			continue
-		case configuration.Annotations[terraformv1alphav1.ApplyAnnotation] == "":
+		case configuration.Annotations[terraformv1alpha1.ApplyAnnotation] == "":
 			continue
-		case configuration.Annotations[terraformv1alphav1.ApplyAnnotation] == "true":
+		case configuration.Annotations[terraformv1alpha1.ApplyAnnotation] == "true":
 			continue
 		}
-		configuration.Annotations[terraformv1alphav1.ApplyAnnotation] = "true"
+		configuration.Annotations[terraformv1alpha1.ApplyAnnotation] = "true"
 
 		if err := cc.Patch(ctx, configuration, client.MergeFrom(original)); err != nil {
 			return err

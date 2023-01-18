@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -31,7 +31,7 @@ import (
 
 // ensureProviderSecret is responsible for ensuring the provider secret exists
 func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) controller.EnsureFunc {
-	cond := controller.ConditionMgr(provider, corev1alphav1.ConditionReady, c.recorder)
+	cond := controller.ConditionMgr(provider, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if provider.Spec.SecretRef == nil {

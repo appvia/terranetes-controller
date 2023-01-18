@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
@@ -37,17 +37,17 @@ import (
 )
 
 // ensureTerraformDestroy is responsible for deleting any associated terraform configuration
-func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: if the configuration has the orphan label we can skip the deletion step
-		if configuration.GetAnnotations()[terraformv1alphav1.OrphanAnnotation] == "true" {
+		if configuration.GetAnnotations()[terraformv1alpha1.OrphanAnnotation] == "true" {
 			return reconcile.Result{}, nil
 		}
 
-		configuration.Status.ResourceStatus = terraformv1alphav1.DestroyingResources
+		configuration.Status.ResourceStatus = terraformv1alpha1.DestroyingResources
 
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
@@ -69,7 +69,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 			WithGeneration(generation).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
-			WithStage(terraformv1alphav1.StageTerraformDestroy).
+			WithStage(terraformv1alpha1.StageTerraformDestroy).
 			WithUID(string(configuration.GetUID())).
 			Latest()
 
@@ -94,7 +94,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 		// @step: we can requeue or move on depending on the status
 		if !found {
 			if c.EnableWatchers {
-				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformDestroy); err != nil {
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alpha1.StageTerraformDestroy); err != nil {
 					cond.Failed(err, "Failed to create the terraform destroy watcher")
 
 					return reconcile.Result{}, err
@@ -117,7 +117,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 
 		case jobs.IsFailed(job):
 			cond.Failed(nil, "Terraform destroy has failed")
-			configuration.Status.ResourceStatus = terraformv1alphav1.DestroyingResourcesFailed
+			configuration.Status.ResourceStatus = terraformv1alpha1.DestroyingResourcesFailed
 
 			return reconcile.Result{}, controller.ErrIgnore
 
@@ -130,8 +130,8 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alphav1.Co
 }
 
 // ensureConfigurationSecretsDeleted is responsible for deleting any associated terraform state
-func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		names := []string{
@@ -158,15 +158,15 @@ func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv
 }
 
 // ensureConfigurationJobsDeleted is responsible for deleting any associated terraform configuration jobs
-func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureConfigurationJobsDeleted(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list := &batchv1.JobList{}
 
 		err := c.cc.List(ctx, list, &client.MatchingLabels{
-			terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
-			terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
+			terraformv1alpha1.ConfigurationNameLabel:      configuration.Name,
+			terraformv1alpha1.ConfigurationNamespaceLabel: configuration.Namespace,
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to list all the configuration jobs")

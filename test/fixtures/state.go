@@ -23,7 +23,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 var state = `
@@ -92,7 +92,7 @@ func NewCostsSecret(namespace, name string) *v1.Secret {
 }
 
 // NewCostsReport returns a secret used to mock a cost report for a configuration
-func NewCostsReport(configuration *terraformv1alphav1.Configuration) *v1.Secret {
+func NewCostsReport(configuration *terraformv1alpha1.Configuration) *v1.Secret {
 	secret := &v1.Secret{}
 	secret.Name = configuration.GetTerraformCostSecretName()
 	secret.Data = map[string][]byte{"costs.json": []byte(fakeCostsReport)}
@@ -101,7 +101,7 @@ func NewCostsReport(configuration *terraformv1alphav1.Configuration) *v1.Secret 
 }
 
 // NewTerraformState returns a fake state
-func NewTerraformState(configuration *terraformv1alphav1.Configuration) *v1.Secret {
+func NewTerraformState(configuration *terraformv1alpha1.Configuration) *v1.Secret {
 	encoded := &bytes.Buffer{}
 
 	w := gzip.NewWriter(encoded)
@@ -112,7 +112,7 @@ func NewTerraformState(configuration *terraformv1alphav1.Configuration) *v1.Secr
 	secret := &v1.Secret{}
 	secret.Name = configuration.GetTerraformStateSecretName()
 	secret.Data = map[string][]byte{
-		terraformv1alphav1.TerraformStateSecretKey: encoded.Bytes(),
+		terraformv1alpha1.TerraformStateSecretKey: encoded.Bytes(),
 	}
 
 	return secret

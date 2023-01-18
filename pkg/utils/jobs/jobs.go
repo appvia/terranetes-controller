@@ -29,7 +29,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
@@ -57,7 +57,7 @@ type Options struct {
 	// Namespace is the location of the jobs
 	Namespace string
 	// PolicyConstraint is a matching constraint for this policy
-	PolicyConstraint *terraformv1alphav1.PolicyConstraint
+	PolicyConstraint *terraformv1alpha1.PolicyConstraint
 	// PolicyImage is image to use for checkov
 	PolicyImage string
 	// SaveTerraformState indicates we should save the terraform state in a secret
@@ -71,13 +71,13 @@ type Options struct {
 // Render is responsible for rendering the terraform configuration
 type Render struct {
 	// configuration is the configuration that we are rendering
-	configuration *terraformv1alphav1.Configuration
+	configuration *terraformv1alpha1.Configuration
 	// provider is the provider that we are rendering
-	provider *terraformv1alphav1.Provider
+	provider *terraformv1alpha1.Provider
 }
 
 // New returns a new render job
-func New(configuration *terraformv1alphav1.Configuration, provider *terraformv1alphav1.Provider) *Render {
+func New(configuration *terraformv1alpha1.Configuration, provider *terraformv1alpha1.Provider) *Render {
 	return &Render{
 		configuration: configuration,
 		provider:      provider,
@@ -102,11 +102,11 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			Name:      fmt.Sprintf("%s-%d-%s", r.configuration.Name, r.configuration.GetGeneration(), stage),
 			Namespace: r.configuration.Namespace,
 			Labels: map[string]string{
-				terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
-				terraformv1alphav1.ConfigurationNameLabel:       r.configuration.Name,
-				terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.Namespace,
-				terraformv1alphav1.ConfigurationStageLabel:      stage,
-				terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
+				terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
+				terraformv1alpha1.ConfigurationNameLabel:       r.configuration.Name,
+				terraformv1alpha1.ConfigurationNamespaceLabel:  r.configuration.Namespace,
+				terraformv1alpha1.ConfigurationStageLabel:      stage,
+				terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.configuration, r.configuration.GroupVersionKind()),
@@ -120,10 +120,10 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
-						terraformv1alphav1.ConfigurationNameLabel:       r.configuration.Name,
-						terraformv1alphav1.ConfigurationStageLabel:      stage,
-						terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
+						terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
+						terraformv1alpha1.ConfigurationNameLabel:       r.configuration.Name,
+						terraformv1alpha1.ConfigurationStageLabel:      stage,
+						terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 					},
 				},
 				Spec: v1.PodSpec{
@@ -155,17 +155,17 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 
 // NewTerraformPlan is responsible for creating a batch job to run terraform plan
 func (r *Render) NewTerraformPlan(options Options) (*batchv1.Job, error) {
-	return r.createTerraformFromTemplate(options, terraformv1alphav1.StageTerraformPlan)
+	return r.createTerraformFromTemplate(options, terraformv1alpha1.StageTerraformPlan)
 }
 
 // NewTerraformApply is responsible for creating a batch job to run terraform apply
 func (r *Render) NewTerraformApply(options Options) (*batchv1.Job, error) {
-	return r.createTerraformFromTemplate(options, terraformv1alphav1.StageTerraformApply)
+	return r.createTerraformFromTemplate(options, terraformv1alpha1.StageTerraformApply)
 }
 
 // NewTerraformDestroy is responsible for creating a batch job to run terraform destroy
 func (r *Render) NewTerraformDestroy(options Options) (*batchv1.Job, error) {
-	return r.createTerraformFromTemplate(options, terraformv1alphav1.StageTerraformDestroy)
+	return r.createTerraformFromTemplate(options, terraformv1alpha1.StageTerraformDestroy)
 }
 
 // createTerraformFromTemplate is used to render the terraform job from the parameters and the template
@@ -173,18 +173,18 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	var arguments string
 
 	if r.configuration.HasVariables() {
-		arguments = fmt.Sprintf("--var-file %s", terraformv1alphav1.TerraformVariablesConfigMapKey)
+		arguments = fmt.Sprintf("--var-file %s", terraformv1alpha1.TerraformVariablesConfigMapKey)
 	}
 
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,
 		"Labels": utils.MergeStringMaps(map[string]string{
-			terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
-			terraformv1alphav1.ConfigurationNameLabel:       r.configuration.GetName(),
-			terraformv1alphav1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
-			terraformv1alphav1.ConfigurationStageLabel:      stage,
-			terraformv1alphav1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
+			terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
+			terraformv1alpha1.ConfigurationNameLabel:       r.configuration.GetName(),
+			terraformv1alpha1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
+			terraformv1alpha1.ConfigurationStageLabel:      stage,
+			terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 		}, options.AdditionalLabels),
 		"Provider": map[string]interface{}{
 			"Name":           r.provider.Name,

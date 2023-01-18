@@ -18,10 +18,10 @@
 package v1alpha1
 
 import (
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // DefaultProviderConditions returns the default conditions for a provider
-var DefaultProviderConditions = []corev1alphav1.ConditionSpec{
-	{Type: corev1alphav1.ConditionReady, Name: "Provider Ready"},
+var DefaultProviderConditions = []corev1alpha1.ConditionSpec{
+	{Type: corev1alpha1.ConditionReady, Name: "Provider Ready"},
 }
