@@ -29,7 +29,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // NewTableWriter returns a default table writer
@@ -87,7 +87,7 @@ func AutoCompleteConfigurations(factory Factory) AutoCompletionFunc {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		list := &terraformv1alphav1.ConfigurationList{}
+		list := &terraformv1alpha1.ConfigurationList{}
 		if err := cc.List(context.Background(), list, client.InNamespace(namespace)); err != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
@@ -98,6 +98,18 @@ func AutoCompleteConfigurations(factory Factory) AutoCompletionFunc {
 		}
 
 		return resources, cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
+// AutoCompletionAvailableProviders returns a list of available providers in the cluster
+func AutoCompletionAvailableProviders(factory Factory) AutoCompletionFunc {
+	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		list, err := ListAvailableProviders(cmd.Context(), factory)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		return list, cobra.ShellCompDirectiveNoFileComp
 	}
 }
 
@@ -130,4 +142,24 @@ func ConfigPath() string {
 	}
 
 	return filepath.Join(os.Getenv("HOME"), ".tnctl", "config.yaml")
+}
+
+// ListAvailableProviders returns a list of available providers in the cluster
+func ListAvailableProviders(ctx context.Context, factory Factory) ([]string, error) {
+	cc, err := factory.GetClient()
+	if err != nil {
+		return nil, err
+	}
+
+	list := &terraformv1alpha1.ProviderList{}
+	if err := cc.List(ctx, list); err != nil {
+		return nil, err
+	}
+
+	var providers []string
+	for _, provider := range list.Items {
+		providers = append(providers, string(provider.Spec.Provider))
+	}
+
+	return providers, nil
 }
