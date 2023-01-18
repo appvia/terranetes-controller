@@ -42,7 +42,7 @@ spec:
 
   variables:
     # -- The name of the bucket. If omitted, Terraform will assign a random, unique name
-    bucket: terranetes-controller-ci-bucket
+    bucket: terranetes-controller-ci-bucket-rohith
     # -- The canned ACL to apply
     acl: private
     # -- Map containing versioning configuration

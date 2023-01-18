@@ -30,6 +30,7 @@ import (
 // NewValidBucketConfiguration returns a valid configuration for aws bucket
 func NewValidBucketConfiguration(namespace, name string) *terraformv1alpha1.Configuration {
 	config := &terraformv1alpha1.Configuration{}
+	config.Annotations = map[string]string{}
 	config.Namespace = namespace
 	config.UID = types.UID("1234-122-1234-1234")
 	config.Name = name

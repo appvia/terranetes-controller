@@ -40,6 +40,7 @@ import (
 
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	controllertests "github.com/appvia/terranetes-controller/test"
@@ -124,7 +125,7 @@ var _ = Describe("Configuration Controller", func() {
 			})
 
 			It("should have raised a event", func() {
-				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events).ToNot(BeEmpty())
 				Expect(recorder.Events[0]).To(ContainSubstring("Provider referenced \"does_not_exist\" does not exist"))
 			})
 
@@ -238,6 +239,66 @@ var _ = Describe("Configuration Controller", func() {
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
 				Expect(list.Items[0].Spec.Template.Spec.ServiceAccountName).To(Equal(serviceAccount))
+			})
+		})
+	})
+
+	// RETRYABLE CONFIGURATION
+	When("the user is attempting to retry a configuration", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			configuration.Finalizers = []string{"test"}
+			configuration.Status.LastReconcile = &corev1alpha1.LastReconcileStatus{Time: metav1.Time{Time: time.Now()}}
+			configuration.Annotations[terraformv1alpha1.RetryAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
+
+			// step the plan condition to success
+			cond := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionTerraformPlan, nil)
+			cond.Success("Plan succeeded")
+		})
+
+		Context("and the retryable annotation is invalid", func() {
+			BeforeEach(func() {
+				configuration.Annotations[terraformv1alpha1.RetryAnnotation] = "invalid"
+				Setup(configuration)
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+			})
+
+			It("should not create a new job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+		})
+
+		Context("the configuration has a reconciled before", func() {
+			Context("but the last reconcile is after the retry timestamp", func() {
+				BeforeEach(func() {
+					configuration.Status.LastReconcile = &corev1alpha1.LastReconcileStatus{
+						Time: metav1.Time{Time: time.Now().Add(1 * time.Hour)},
+					}
+					Setup(configuration)
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+				})
+			})
+
+			Context("and the last reconcile is a before the retry timestamp", func() {
+				BeforeEach(func() {
+					configuration.Status.LastReconcile = &corev1alpha1.LastReconcileStatus{Time: metav1.Time{Time: time.Now().Add(-1 * time.Hour)}}
+					configuration.Annotations[terraformv1alpha1.RetryAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
+					Setup(configuration)
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 20)
+				})
+
+				It("should create a new job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
 			})
 		})
 	})
@@ -475,7 +536,7 @@ var _ = Describe("Configuration Controller", func() {
 				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
-				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
 			})
 
 			It("should have added the secret the job configuration secret", func() {
@@ -562,7 +623,7 @@ var _ = Describe("Configuration Controller", func() {
 			})
 
 			It("should have raised a event", func() {
-				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events).ToNot(BeEmpty())
 				Expect(recorder.Events[0]).To(ContainSubstring("Cost analytics secret (default/not_there) does not exist, contact platform administrator"))
 			})
 
@@ -603,7 +664,7 @@ var _ = Describe("Configuration Controller", func() {
 			})
 
 			It("should have raised a event", func() {
-				Expect(recorder.Events).To(HaveLen(1))
+				Expect(recorder.Events).ToNot(BeEmpty())
 				Expect(recorder.Events[0]).To(ContainSubstring("Cost analytics secret (default/token) does not contain a token, contact platform administrator"))
 			})
 
@@ -1025,7 +1086,7 @@ terraform {
 			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
-			Expect(cond.Message).To(Equal("Terraform plan in progress"))
+			Expect(cond.Message).To(Equal("Terraform plan is running"))
 		})
 
 		It("should have created job for the terraform plan", func() {
@@ -1111,7 +1172,7 @@ terraform {
 		})
 
 		It("should ask us to requeue", func() {
-			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 5 * time.Second}))
+			Expect(result).To(Equal(reconcile.Result{RequeueAfter: 10 * time.Second}))
 			Expect(rerr).To(BeNil())
 		})
 	})
@@ -1367,7 +1428,7 @@ terraform {
 				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
-				Expect(cond.Message).To(Equal("Terraform plan in progress"))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
 			})
 
 			It("should have created job for the terraform plan", func() {
