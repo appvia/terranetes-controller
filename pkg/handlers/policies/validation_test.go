@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
@@ -42,25 +42,25 @@ func TestReconcile(t *testing.T) {
 var _ = Describe("Module Constraints", func() {
 	var err error
 	var v *validator
-	var policy *terraformv1alphav1.Policy
+	var policy *terraformv1alpha1.Policy
 	var cc client.Client
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
 		v = &validator{cc: cc}
 		policy = fixtures.NewPolicy("modules")
-		policy.Spec.Constraints = &terraformv1alphav1.Constraints{}
-		policy.Spec.Constraints.Modules = &terraformv1alphav1.ModuleConstraint{}
-		policy.Spec.Constraints.Modules.Selector = &terraformv1alphav1.Selector{}
+		policy.Spec.Constraints = &terraformv1alpha1.Constraints{}
+		policy.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{}
+		policy.Spec.Constraints.Modules.Selector = &terraformv1alpha1.Selector{}
 	})
 
 	When("creating a module with constraints", func() {
 		cases := []struct {
-			Selector *terraformv1alphav1.Selector
+			Selector *terraformv1alpha1.Selector
 			Expect   error
 		}{
 			{
-				Selector: &terraformv1alphav1.Selector{
+				Selector: &terraformv1alpha1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: ""},
@@ -70,7 +70,7 @@ var _ = Describe("Module Constraints", func() {
 				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"\" is not a valid label selector operator"),
 			},
 			{
-				Selector: &terraformv1alphav1.Selector{
+				Selector: &terraformv1alpha1.Selector{
 					Namespace: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: "KEY", Operator: "BAD"},
@@ -80,7 +80,7 @@ var _ = Describe("Module Constraints", func() {
 				Expect: errors.New("spec.constraints.modules.selector.namespace is invalid, \"BAD\" is not a valid label selector operator"),
 			},
 			{
-				Selector: &terraformv1alphav1.Selector{
+				Selector: &terraformv1alpha1.Selector{
 					Resource: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: "KEY", Operator: "BAD"},
@@ -112,7 +112,7 @@ var _ = Describe("Module Constraints", func() {
 var _ = Describe("Policy Validation", func() {
 	var err error
 	var v *validator
-	var policy *terraformv1alphav1.Policy
+	var policy *terraformv1alpha1.Policy
 	var cc client.Client
 
 	BeforeEach(func() {
@@ -124,14 +124,14 @@ var _ = Describe("Policy Validation", func() {
 	When("creating a checkov policy", func() {
 		cases := []struct {
 			CheckName string
-			Change    func(policy *terraformv1alphav1.PolicyConstraint)
+			Change    func(policy *terraformv1alpha1.PolicyConstraint)
 			Expected  string
 		}{
 			{
 				CheckName: "it should fail with invalid namespace selector",
 				Expected:  "spec.constraints.checkov.selector.namespace is invalid, \"BAD\" is not a valid pod selector operator",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Selector = &terraformv1alphav1.Selector{
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Selector = &terraformv1alpha1.Selector{
 						Namespace: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{Key: "KEY", Operator: "BAD"},
@@ -143,8 +143,8 @@ var _ = Describe("Policy Validation", func() {
 			{
 				CheckName: "it should fail with invalid resource selector",
 				Expected:  "spec.constraints.checkov.selector.resource is invalid, \"BAD\" is not a valid pod selector operator",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Selector = &terraformv1alphav1.Selector{
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Selector = &terraformv1alpha1.Selector{
 						Resource: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{Key: "KEY", Operator: "BAD"},
@@ -156,29 +156,29 @@ var _ = Describe("Policy Validation", func() {
 			{
 				CheckName: "it should fail with missing name",
 				Expected:  "spec.constraints.checkov.external[0].name cannot be empty",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.External = []terraformv1alphav1.ExternalCheck{{}}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.External = []terraformv1alpha1.ExternalCheck{{}}
 				},
 			},
 			{
 				CheckName: "it should fail with missing url",
 				Expected:  "spec.constraints.checkov.external[0].url cannot be empty",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.External = []terraformv1alphav1.ExternalCheck{{Name: "check"}}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.External = []terraformv1alpha1.ExternalCheck{{Name: "check"}}
 				},
 			},
 			{
 				CheckName: "it should fail with missing secret name",
 				Expected:  "spec.constraints.checkov.external[0].secretRef.name cannot be empty",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.External = []terraformv1alphav1.ExternalCheck{{Name: "check", URL: "check", SecretRef: &v1.SecretReference{}}}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.External = []terraformv1alpha1.ExternalCheck{{Name: "check", URL: "check", SecretRef: &v1.SecretReference{}}}
 				},
 			},
 			{
 				CheckName: "it should fail with namespace set",
 				Expected:  "spec.constraints.checkov.external[0].secretRef.namespace should not be set",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.External = []terraformv1alphav1.ExternalCheck{
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.External = []terraformv1alpha1.ExternalCheck{
 						{Name: "check", URL: "check", SecretRef: &v1.SecretReference{Name: "check", Namespace: "bad"}},
 					}
 				},
@@ -186,31 +186,31 @@ var _ = Describe("Policy Validation", func() {
 			{
 				CheckName: "it should fail when source and checks are defined",
 				Expected:  "spec.constraints.checkov.checks cannot be used with spec.constraints.checkov.source",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Source = &terraformv1alphav1.ExternalSource{}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Source = &terraformv1alpha1.ExternalSource{}
 					policy.Checks = []string{"hello"}
 				},
 			},
 			{
 				CheckName: "it should fail when source and skips are defined",
 				Expected:  "spec.constraints.checkov.skipChecks cannot be used with spec.constraints.checkov.source",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Source = &terraformv1alphav1.ExternalSource{}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Source = &terraformv1alpha1.ExternalSource{}
 					policy.SkipChecks = []string{"hello"}
 				},
 			},
 			{
 				CheckName: "it should fail when source url is not defined",
 				Expected:  "spec.constraints.checkov.source.url is required",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Source = &terraformv1alphav1.ExternalSource{Configuration: "test"}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Source = &terraformv1alpha1.ExternalSource{Configuration: "test"}
 				},
 			},
 			{
 				CheckName: "it should fail when source name is not defined",
 				Expected:  "spec.constraints.checkov.source.configuration is required",
-				Change: func(policy *terraformv1alphav1.PolicyConstraint) {
-					policy.Source = &terraformv1alphav1.ExternalSource{URL: "test"}
+				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
+					policy.Source = &terraformv1alpha1.ExternalSource{URL: "test"}
 				},
 			},
 		}
@@ -232,8 +232,8 @@ var _ = Describe("Policy Validation", func() {
 })
 
 var _ = Describe("Policy Delete Validation", func() {
-	var configurations []*terraformv1alphav1.Configuration
-	var policy *terraformv1alphav1.Policy
+	var configurations []*terraformv1alpha1.Configuration
+	var policy *terraformv1alpha1.Policy
 	var err error
 
 	JustBeforeEach(func() {
@@ -256,7 +256,7 @@ var _ = Describe("Policy Delete Validation", func() {
 
 	When("deleting the policy with not configurations using it", func() {
 		BeforeEach(func() {
-			configurations = []*terraformv1alphav1.Configuration{
+			configurations = []*terraformv1alpha1.Configuration{
 				fixtures.NewValidBucketConfiguration("default", "test"),
 			}
 		})
@@ -269,8 +269,8 @@ var _ = Describe("Policy Delete Validation", func() {
 	When("deleting the policy with configurations using it", func() {
 		BeforeEach(func() {
 			configuration := fixtures.NewValidBucketConfiguration("default", "test")
-			configuration.Annotations = map[string]string{terraformv1alphav1.DefaultVariablesAnnotation: "test"}
-			configurations = []*terraformv1alphav1.Configuration{configuration}
+			configuration.Annotations = map[string]string{terraformv1alpha1.DefaultVariablesAnnotation: "test"}
+			configurations = []*terraformv1alpha1.Configuration{configuration}
 		})
 
 		It("should throw a validation error", func() {
@@ -281,11 +281,11 @@ var _ = Describe("Policy Delete Validation", func() {
 	When("deleting the policy with configurations using it but annotation to skip", func() {
 		BeforeEach(func() {
 			configuration := fixtures.NewValidBucketConfiguration("default", "test")
-			configuration.Annotations = map[string]string{terraformv1alphav1.DefaultVariablesAnnotation: "test"}
-			configurations = []*terraformv1alphav1.Configuration{configuration}
+			configuration.Annotations = map[string]string{terraformv1alpha1.DefaultVariablesAnnotation: "test"}
+			configurations = []*terraformv1alpha1.Configuration{configuration}
 
 			policy = fixtures.NewPolicy("test")
-			policy.Annotations = map[string]string{terraformv1alphav1.SkipDefaultsValidationCheck: "true"}
+			policy.Annotations = map[string]string{terraformv1alpha1.SkipDefaultsValidationCheck: "true"}
 		})
 
 		It("should throw a validation error", func() {

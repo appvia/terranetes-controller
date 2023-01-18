@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 type validator struct {
@@ -43,12 +43,12 @@ func NewValidator(cc client.Client, namespace string) admission.CustomValidator 
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.Validate(ctx, obj.(*terraformv1alphav1.Provider))
+	return v.Validate(ctx, obj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.Validate(ctx, newObj.(*terraformv1alphav1.Provider))
+	return v.Validate(ctx, newObj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateDelete is called when a resource is being deleted
@@ -57,14 +57,14 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 // Validate handles the generic validation of a provider
-func (v *validator) Validate(ctx context.Context, provider *terraformv1alphav1.Provider) error {
-	if !terraformv1alphav1.IsSupportedProviderType(provider.Spec.Provider) {
+func (v *validator) Validate(ctx context.Context, provider *terraformv1alpha1.Provider) error {
+	if !terraformv1alpha1.IsSupportedProviderType(provider.Spec.Provider) {
 		return fmt.Errorf("spec.provider: %s is not supported (must be %s)", provider.Spec.Provider,
-			strings.Join(terraformv1alphav1.SupportedProviderTypeList(), ","))
+			strings.Join(terraformv1alpha1.SupportedProviderTypeList(), ","))
 	}
 
 	switch provider.Spec.Source {
-	case terraformv1alphav1.SourceSecret:
+	case terraformv1alpha1.SourceSecret:
 		switch {
 		case provider.Spec.SecretRef == nil:
 			return errors.New("spec.secretRef: secret is required when source is secret")
@@ -76,7 +76,7 @@ func (v *validator) Validate(ctx context.Context, provider *terraformv1alphav1.P
 			return errors.New("spec.secretRef.namespace: must be in same namespace as the controller")
 		}
 
-	case terraformv1alphav1.SourceInjected:
+	case terraformv1alpha1.SourceInjected:
 		switch {
 		case provider.Spec.ServiceAccount == nil:
 			return errors.New("spec.serviceAccount: serviceAccount is required when source is injected")

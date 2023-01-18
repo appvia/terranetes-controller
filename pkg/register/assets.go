@@ -62,7 +62,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: configurations.terraform.appvia.io
 spec:
@@ -142,7 +142,7 @@ spec:
                   description: TerraformVersion provides the ability to override the default terraform version. Before changing this field its best to consult with platform administrator. As the value of this field is used to change the tag of the terraform container image.
                   type: string
                 valueFrom:
-                  description: ValueFromSource is a collection of value from sources, where the source of the value is is taken from a secret
+                  description: ValueFromSource is a collection of value from sources, where the source of the value is taken from a secret
                   items:
                     description: ValueFromSource defines a value which is taken from a secret
                     properties:
@@ -315,7 +315,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: policies.terraform.appvia.io
 spec:
@@ -719,7 +719,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: providers.terraform.appvia.io
 spec:

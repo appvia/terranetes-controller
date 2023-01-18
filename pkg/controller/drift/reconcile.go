@@ -24,13 +24,13 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 )
 
 // Reconcile is called to handle the reconciliation of the configuration resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	configuration := &terraformv1alphav1.Configuration{}
+	configuration := &terraformv1alpha1.Configuration{}
 
 	if err := c.cc.Get(ctx, request.NamespacedName, configuration); err != nil {
 		if kerrors.IsNotFound(err) {

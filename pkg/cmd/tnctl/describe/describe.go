@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe/assets"
 	"github.com/appvia/terranetes-controller/pkg/utils"
@@ -100,7 +100,7 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(terraformv1alphav1.ConfigurationGVK)
+	list.SetGroupVersionKind(terraformv1alpha1.ConfigurationGVK)
 	err = cc.List(context.Background(), list, client.InNamespace(o.Namespace))
 	if err != nil {
 		return err
@@ -124,14 +124,14 @@ func (o *Command) Run(ctx context.Context) error {
 	// @step: retrieve all pods related to builds in the namespace
 	pods := &v1.PodList{}
 	_ = cc.List(context.Background(), pods,
-		client.HasLabels([]string{terraformv1alphav1.ConfigurationNameLabel}),
+		client.HasLabels([]string{terraformv1alpha1.ConfigurationNameLabel}),
 		client.InNamespace(o.Namespace),
 	)
 
 	// @step: retrieve a list of all secrets related to the builds
 	secrets := &v1.SecretList{}
 	_ = cc.List(context.Background(), secrets,
-		client.HasLabels([]string{terraformv1alphav1.ConfigurationNameLabel}),
+		client.HasLabels([]string{terraformv1alpha1.ConfigurationNameLabel}),
 		client.InNamespace(o.Namespace),
 	)
 

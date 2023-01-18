@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
@@ -78,7 +78,7 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to read configuration file: %w", err)
 	}
 
-	configuration := &terraformv1alphav1.Configuration{}
+	configuration := &terraformv1alpha1.Configuration{}
 	if err := yaml.Unmarshal(content, configuration); err != nil {
 		return err
 	}

@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
@@ -78,7 +78,7 @@ func (o *CleanCommand) Run(ctx context.Context) error {
 	}
 
 	// @step: retrieve the list of configurations
-	list := &terraformv1alphav1.ConfigurationList{}
+	list := &terraformv1alpha1.ConfigurationList{}
 	if err := cc.List(ctx, list); err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (o *CleanCommand) Run(ctx context.Context) error {
 	}
 
 	// findMatchingConfiguration return true if the uuid is found
-	findMatchingConfiguration := func(uuid string, list *terraformv1alphav1.ConfigurationList) bool {
+	findMatchingConfiguration := func(uuid string, list *terraformv1alpha1.ConfigurationList) bool {
 		for _, x := range list.Items {
 			if string(x.GetUID()) == uuid {
 				return true
@@ -111,13 +111,13 @@ func (o *CleanCommand) Run(ctx context.Context) error {
 		if !findMatchingConfiguration(uuid, list) {
 			row := []string{secret.Name}
 
-			if secret.GetLabels()[terraformv1alphav1.ConfigurationNameLabel] != "" {
-				row = append(row, secret.GetLabels()[terraformv1alphav1.ConfigurationNameLabel])
+			if secret.GetLabels()[terraformv1alpha1.ConfigurationNameLabel] != "" {
+				row = append(row, secret.GetLabels()[terraformv1alpha1.ConfigurationNameLabel])
 			} else {
 				row = append(row, "Unknown")
 			}
-			if secret.GetLabels()[terraformv1alphav1.ConfigurationNamespaceLabel] != "" {
-				row = append(row, secret.GetLabels()[terraformv1alphav1.ConfigurationNamespaceLabel])
+			if secret.GetLabels()[terraformv1alpha1.ConfigurationNamespaceLabel] != "" {
+				row = append(row, secret.GetLabels()[terraformv1alpha1.ConfigurationNamespaceLabel])
 			} else {
 				row = append(row, "Unknown")
 			}

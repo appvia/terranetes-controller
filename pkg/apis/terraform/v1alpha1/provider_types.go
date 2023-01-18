@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // ProviderKind is the kind for a Provider
@@ -197,11 +197,11 @@ func (p *Provider) GetNamespacedName() types.NamespacedName {
 // ProviderStatus defines the observed state of a provider
 // +k8s:openapi-gen=true
 type ProviderStatus struct {
-	corev1alphav1.CommonStatus `json:",inline"`
+	corev1alpha1.CommonStatus `json:",inline"`
 }
 
 // GetCommonStatus returns the common status
-func (p *Provider) GetCommonStatus() *corev1alphav1.CommonStatus {
+func (p *Provider) GetCommonStatus() *corev1alpha1.CommonStatus {
 	return &p.Status.CommonStatus
 }
 

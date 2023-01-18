@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -55,7 +55,7 @@ var _ = Describe("Logs Command", func() {
 	var kc *k8sfake.Clientset
 	var factory cmd.Factory
 	var streams genericclioptions.IOStreams
-	var configuration *terraformv1alphav1.Configuration
+	var configuration *terraformv1alpha1.Configuration
 	var stdout *bytes.Buffer
 	var command *cobra.Command
 	var err error
@@ -119,7 +119,7 @@ var _ = Describe("Logs Command", func() {
 	When("configuration is found", func() {
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration("default", "test")
-			controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+			controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 			command.SetArgs([]string{"--namespace", configuration.Namespace, configuration.Name})
 		})
 
@@ -138,8 +138,8 @@ var _ = Describe("Logs Command", func() {
 		When("configuration is in plan phase and pod exists", func() {
 			When("pod is not ready", func() {
 				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					condition.Reason = corev1alphav1.ReasonInProgress
+					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					condition.Reason = corev1alpha1.ReasonInProgress
 					condition.Status = metav1.ConditionTrue
 					Expect(cc.Create(ctx, configuration)).To(Succeed())
 
@@ -154,12 +154,12 @@ var _ = Describe("Logs Command", func() {
 
 			When("pod is ready", func() {
 				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					condition.Reason = corev1alphav1.ReasonInProgress
+					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					condition.Reason = corev1alpha1.ReasonInProgress
 					condition.Status = metav1.ConditionTrue
 
 					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alphav1.StageTerraformPlan)
+					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformPlan)
 					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 					Expect(err).To(Succeed())
 					Expect(cc.Create(ctx, configuration)).To(Succeed())
@@ -176,8 +176,8 @@ var _ = Describe("Logs Command", func() {
 		When("configuration in apply phase", func() {
 			When("no pod exists", func() {
 				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					condition.Reason = corev1alphav1.ReasonInProgress
+					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					condition.Reason = corev1alpha1.ReasonInProgress
 					condition.Status = metav1.ConditionTrue
 					Expect(cc.Create(ctx, configuration)).To(Succeed())
 
@@ -192,12 +192,12 @@ var _ = Describe("Logs Command", func() {
 
 			When("pod exists", func() {
 				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					condition.Reason = corev1alphav1.ReasonInProgress
+					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					condition.Reason = corev1alpha1.ReasonInProgress
 					condition.Status = metav1.ConditionTrue
 
 					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alphav1.StageTerraformApply)
+					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformApply)
 					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 					Expect(err).To(Succeed())
 					Expect(cc.Create(ctx, configuration)).To(Succeed())
@@ -234,7 +234,7 @@ var _ = Describe("Logs Command", func() {
 					Expect(cc.Create(ctx, configuration)).To(Succeed())
 
 					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alphav1.StageTerraformDestroy)
+					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
 					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 					Expect(err).To(Succeed())
 

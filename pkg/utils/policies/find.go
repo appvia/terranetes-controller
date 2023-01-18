@@ -26,16 +26,16 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/weights"
 )
 
 // FindMatchingPolicy is called to find a match of policy for a given configurations
 func FindMatchingPolicy(
 	ctx context.Context,
-	configuration *terraformv1alphav1.Configuration,
+	configuration *terraformv1alpha1.Configuration,
 	namespace client.Object,
-	list *terraformv1alphav1.PolicyList) (*terraformv1alphav1.PolicyConstraint, error) {
+	list *terraformv1alpha1.PolicyList) (*terraformv1alpha1.PolicyConstraint, error) {
 
 	if len(list.Items) == 0 {
 		return nil, nil
@@ -88,5 +88,5 @@ func FindMatchingPolicy(
 		return nil, fmt.Errorf("multiple policies match configuration: %s", strings.Join(priority.HighestNames(), ", "))
 	}
 
-	return matches[0].(*terraformv1alphav1.Policy).Spec.Constraints.Checkov, nil
+	return matches[0].(*terraformv1alpha1.Policy).Spec.Constraints.Checkov, nil
 }

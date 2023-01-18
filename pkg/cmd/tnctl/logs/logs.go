@@ -29,8 +29,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -78,9 +78,9 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
 	cmd.RegisterFlagCompletionFunc(c, "stage", cmd.AutoCompleteWithList([]string{
-		terraformv1alphav1.StageTerraformApply,
-		terraformv1alphav1.StageTerraformDestroy,
-		terraformv1alphav1.StageTerraformPlan,
+		terraformv1alpha1.StageTerraformApply,
+		terraformv1alpha1.StageTerraformDestroy,
+		terraformv1alpha1.StageTerraformPlan,
 	}))
 
 	return c
@@ -94,9 +94,9 @@ func (o *Command) Run(ctx context.Context) error {
 	case o.Namespace == "":
 		return cmd.ErrMissingArgument("namespace")
 	case o.Stage != "" && !utils.Contains(o.Stage, []string{
-		terraformv1alphav1.StageTerraformApply,
-		terraformv1alphav1.StageTerraformDestroy,
-		terraformv1alphav1.StageTerraformPlan,
+		terraformv1alpha1.StageTerraformApply,
+		terraformv1alpha1.StageTerraformDestroy,
+		terraformv1alpha1.StageTerraformPlan,
 	}):
 		return errors.New("invalid stage (must be one of: plan, apply or destroy)")
 	}
@@ -106,7 +106,7 @@ func (o *Command) Run(ctx context.Context) error {
 		return err
 	}
 
-	configuration := &terraformv1alphav1.Configuration{}
+	configuration := &terraformv1alpha1.Configuration{}
 	configuration.Name = o.Name
 	configuration.Namespace = o.Namespace
 
@@ -123,40 +123,40 @@ func (o *Command) Run(ctx context.Context) error {
 	}
 
 	if !configuration.DeletionTimestamp.IsZero() {
-		return o.showLogs(ctx, terraformv1alphav1.StageTerraformDestroy, configuration)
+		return o.showLogs(ctx, terraformv1alpha1.StageTerraformDestroy, configuration)
 	}
 
-	condition := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-	if condition != nil && condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alphav1.ReasonNotDetermined {
-		if condition.Reason == corev1alphav1.ReasonActionRequired {
+	condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+	if condition != nil && condition.ObservedGeneration == configuration.GetGeneration() && condition.Reason != corev1alpha1.ReasonNotDetermined {
+		if condition.Reason == corev1alpha1.ReasonActionRequired {
 			if strings.Contains(condition.Message, "Waiting for terraform apply annotation") {
-				return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
+				return o.showLogs(ctx, terraformv1alpha1.StageTerraformPlan, configuration)
 			}
 		}
 
-		return o.showLogs(ctx, terraformv1alphav1.StageTerraformApply, configuration)
+		return o.showLogs(ctx, terraformv1alpha1.StageTerraformApply, configuration)
 	}
 
-	condition = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
+	condition = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
 	if condition != nil && condition.ObservedGeneration == configuration.GetGeneration() {
-		return o.showLogs(ctx, terraformv1alphav1.StageTerraformPlan, configuration)
+		return o.showLogs(ctx, terraformv1alpha1.StageTerraformPlan, configuration)
 	}
 
 	return errors.New("neither plan, apply or destroy have been run for this configuration")
 }
 
 // showLogs is a helper function to show the logs for all the containers under a build
-func (o *Command) showLogs(ctx context.Context, stage string, configuration *terraformv1alphav1.Configuration) error {
+func (o *Command) showLogs(ctx context.Context, stage string, configuration *terraformv1alpha1.Configuration) error {
 	cc, err := o.GetKubeClient()
 	if err != nil {
 		return err
 	}
 
 	labels := []string{
-		terraformv1alphav1.ConfigurationGenerationLabel + "=" + fmt.Sprintf("%d", configuration.GetGeneration()),
-		terraformv1alphav1.ConfigurationNameLabel + "=" + configuration.Name,
-		terraformv1alphav1.ConfigurationStageLabel + "=" + stage,
-		terraformv1alphav1.ConfigurationUIDLabel + "=" + string(configuration.UID),
+		terraformv1alpha1.ConfigurationGenerationLabel + "=" + fmt.Sprintf("%d", configuration.GetGeneration()),
+		terraformv1alpha1.ConfigurationNameLabel + "=" + configuration.Name,
+		terraformv1alpha1.ConfigurationStageLabel + "=" + stage,
+		terraformv1alpha1.ConfigurationUIDLabel + "=" + string(configuration.UID),
 	}
 
 	var list *v1.PodList

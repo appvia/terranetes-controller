@@ -18,25 +18,25 @@
 package v1alpha1
 
 import (
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 const (
 	// ConditionProviderReady indicate the status of the provider
-	ConditionProviderReady corev1alphav1.ConditionType = "ProviderReady"
+	ConditionProviderReady corev1alpha1.ConditionType = "ProviderReady"
 	// ConditionTerraformPlan indicates the status of the terraform plan
-	ConditionTerraformPlan corev1alphav1.ConditionType = "TerraformPlan"
+	ConditionTerraformPlan corev1alpha1.ConditionType = "TerraformPlan"
 	// ConditionTerraformPolicy indicates the status of the terraform apply
-	ConditionTerraformPolicy corev1alphav1.ConditionType = "SecurityPolicy"
+	ConditionTerraformPolicy corev1alpha1.ConditionType = "SecurityPolicy"
 	// ConditionTerraformApply indicates the status of the terraform apply
-	ConditionTerraformApply corev1alphav1.ConditionType = "TerraformApply"
+	ConditionTerraformApply corev1alpha1.ConditionType = "TerraformApply"
 )
 
 // DefaultConfigurationConditions are the default conditions for all configurations
-var DefaultConfigurationConditions = []corev1alphav1.ConditionSpec{
+var DefaultConfigurationConditions = []corev1alpha1.ConditionSpec{
 	{Type: ConditionProviderReady, Name: "Provider ready"},
 	{Type: ConditionTerraformPlan, Name: "Terraform Plan"},
 	{Type: ConditionTerraformPolicy, Name: "Security Policy"},
 	{Type: ConditionTerraformApply, Name: "Terraform Apply"},
-	{Type: corev1alphav1.ConditionReady, Name: "Ready"},
+	{Type: corev1alpha1.ConditionReady, Name: "Ready"},
 }

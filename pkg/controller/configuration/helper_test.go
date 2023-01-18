@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 func TestGetTerraformImage(t *testing.T) {
@@ -43,7 +43,7 @@ func TestGetTerraformImage(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		config := &terraformv1alphav1.Configuration{}
+		config := &terraformv1alpha1.Configuration{}
 		config.Spec.TerraformVersion = c.Override
 
 		assert.Equal(t, c.Expected, GetTerraformImage(config, c.Default))

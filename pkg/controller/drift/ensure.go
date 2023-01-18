@@ -27,16 +27,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 )
 
 // ensureConfigurationReadyForDrift is responsible for checking the configuration is ready for drift
-func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
 	return func(ctx context.Context) (reconcile.Result, error) {
 		var totalRunning int
 
-		list := &terraformv1alphav1.ConfigurationList{}
+		list := &terraformv1alpha1.ConfigurationList{}
 		if err := c.cc.List(ctx, list, client.InNamespace("")); err != nil {
 			log.WithError(err).Error("failed to retrieve a list of configurations in cluster")
 
@@ -50,13 +50,13 @@ func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1
 			case len(x.Status.Conditions) == 0:
 				continue
 
-			case x.Status.HasCondition(terraformv1alphav1.ConditionTerraformPlan):
-				if x.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).InProgress() {
+			case x.Status.HasCondition(terraformv1alpha1.ConditionTerraformPlan):
+				if x.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan).InProgress() {
 					totalRunning++
 				}
 
-			case x.Status.HasCondition(terraformv1alphav1.ConditionTerraformApply):
-				if x.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).InProgress() {
+			case x.Status.HasCondition(terraformv1alpha1.ConditionTerraformApply):
+				if x.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply).InProgress() {
 					totalRunning++
 				}
 			}
@@ -74,43 +74,43 @@ func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the plan condition does not exist, we ignore
-		case !configuration.Status.HasCondition(terraformv1alphav1.ConditionTerraformPlan):
+		case !configuration.Status.HasCondition(terraformv1alpha1.ConditionTerraformPlan):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the apply condition does not exist, we ignore
-		case !configuration.Status.HasCondition(terraformv1alphav1.ConditionTerraformApply):
+		case !configuration.Status.HasCondition(terraformv1alpha1.ConditionTerraformApply):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the last plan for this generation failed, we ignore
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).IsFailed(configuration.GetGeneration()):
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan).IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the last apply for this generation failed, we ignore
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).IsFailed(configuration.GetGeneration()):
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply).IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the configuration plan is already in progress
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).InProgress():
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan).InProgress():
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the configuration apply is already in progress
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).InProgress():
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply).InProgress():
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if a plan has not been run on the current generation, we ignore
-		case !configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).IsComplete(configuration.GetGeneration()):
+		case !configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan).IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the apply for the generation has not been run, we ignore
-		case !configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).IsComplete(configuration.GetGeneration()):
+		case !configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply).IsComplete(configuration.GetGeneration()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the last transition on a plan was less than the interval, i.e we've had activity, we ignore
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the last transition on a apply was less than the interval, i.e we've had activity, we ignore
-		case configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
+		case configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply).LastTransitionTime.Add(c.DriftInterval).After(time.Now()):
 			return reconcile.Result{RequeueAfter: c.CheckInterval}, nil
 
 		// if the number of active configuration running a drift exceeds the max percentage, we ignore
@@ -123,7 +123,7 @@ func (c *Controller) ensureConfigurationReadyForDrift(configuration *terraformv1
 }
 
 // ensureDriftDetection is responsible for triggering off drift detection on the configuration
-func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
+func (c *Controller) ensureDriftDetection(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
 	return func(ctx context.Context) (reconcile.Result, error) {
 		original := configuration.DeepCopy()
 
@@ -132,7 +132,7 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 			configuration.Annotations = map[string]string{}
 		}
 
-		configuration.Annotations[terraformv1alphav1.DriftAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
+		configuration.Annotations[terraformv1alpha1.DriftAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
 
 		if err := c.cc.Patch(ctx, configuration, client.MergeFrom(original)); err != nil {
 			c.recorder.Event(configuration, "Warning", "DriftDetection", "Failed to patch configuration with drift detection annotation")

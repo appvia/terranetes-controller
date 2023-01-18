@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/test/fixtures"
@@ -113,16 +113,16 @@ var _ = Describe("Approve Command", func() {
 	})
 
 	When("configuration exists", func() {
-		var configuration *terraformv1alphav1.Configuration
+		var configuration *terraformv1alpha1.Configuration
 
 		BeforeEach(func() {
 			configuration = fixtures.NewValidBucketConfiguration("default", "test")
-			configuration.Annotations = map[string]string{terraformv1alphav1.ApplyAnnotation: "false"}
+			configuration.Annotations = map[string]string{terraformv1alpha1.ApplyAnnotation: "false"}
 		})
 
 		When("no approval annotation already exists", func() {
 			BeforeEach(func() {
-				configuration.Annotations[terraformv1alphav1.ApplyAnnotation] = "true"
+				configuration.Annotations[terraformv1alpha1.ApplyAnnotation] = "true"
 				Expect(cc.Create(context.Background(), configuration)).To(Succeed())
 
 				err = command.Run(context.Background())

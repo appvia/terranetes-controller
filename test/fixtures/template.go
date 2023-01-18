@@ -20,7 +20,7 @@ package fixtures
 import (
 	v1 "k8s.io/api/core/v1"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // NewJobTemplateConfigmap returns a custom job template configmap
@@ -44,7 +44,7 @@ spec:
 	cm.Namespace = namespace
 	cm.Name = name
 	cm.Data = map[string]string{
-		terraformv1alphav1.TerraformJobTemplateConfigMapKey: template,
+		terraformv1alpha1.TerraformJobTemplateConfigMapKey: template,
 	}
 
 	return cm

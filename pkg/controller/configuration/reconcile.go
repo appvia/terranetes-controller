@@ -26,7 +26,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
@@ -35,16 +35,16 @@ type state struct {
 	// auth is an optional secret which is used for authentication
 	auth *v1.Secret
 	// checkovConstraint is the policy constraint for this configuration
-	checkovConstraint *terraformv1alphav1.PolicyConstraint
+	checkovConstraint *terraformv1alpha1.PolicyConstraint
 	// hasDrift is a flag to indicate if the configuration has drift
 	hasDrift bool
 	// backendTemplate is the template to use for the terraform state backend.
 	// We always default this to the kubernetes backend
 	backendTemplate string
 	// policies is a list of policies in the cluster
-	policies *terraformv1alphav1.PolicyList
+	policies *terraformv1alpha1.PolicyList
 	// provider is the credentials provider to use
-	provider *terraformv1alphav1.Provider
+	provider *terraformv1alpha1.Provider
 	// jobs is list of all jobs for this configuration and generation
 	jobs *batchv1.JobList
 	// jobTemplate is the template to use when rendering the job
@@ -57,7 +57,7 @@ type state struct {
 
 // Reconcile is called to handle the reconciliation of the provider resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	configuration := &terraformv1alphav1.Configuration{}
+	configuration := &terraformv1alpha1.Configuration{}
 
 	if err := c.cc.Get(ctx, request.NamespacedName, configuration); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -106,7 +106,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// @step: ensure the conditions are registered
-	controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{

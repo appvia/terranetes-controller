@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/providers"
 )
 
@@ -53,12 +53,12 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/validate/%s/providers", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Provider{}, providers.NewValidator(c.cc, c.ControllerNamespace)),
+		fmt.Sprintf("/validate/%s/providers", terraformv1alpha1.GroupName),
+		admission.WithCustomValidator(&terraformv1alpha1.Provider{}, providers.NewValidator(c.cc, c.ControllerNamespace)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&terraformv1alphav1.Provider{}).
+		For(&terraformv1alpha1.Provider{}).
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).

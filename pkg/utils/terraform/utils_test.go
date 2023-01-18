@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 func TestNewKubernetesBackend(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNewKubernetesBackend(t *testing.T) {
 	}{
 		{
 			Options: BackendOptions{
-				Configuration: &terraformv1alphav1.Configuration{
+				Configuration: &terraformv1alpha1.Configuration{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -69,33 +69,33 @@ terraform {
 
 func TestNewTerraformProvider(t *testing.T) {
 	cases := []struct {
-		Provider *terraformv1alphav1.Provider
+		Provider *terraformv1alpha1.Provider
 		Expected string
 	}{
 		{
-			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
-				Provider:      terraformv1alphav1.AWSProviderType,
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AWSProviderType,
 				Configuration: nil,
 			}},
 			Expected: "provider \"aws\" {\n}\n",
 		},
 		{
-			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
-				Provider:      terraformv1alphav1.AzureProviderType,
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
 				Configuration: nil,
 			}},
 			Expected: "provider \"azurerm\" {\n  \n  features {}\n  \n}\n",
 		},
 		{
-			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
-				Provider:      terraformv1alphav1.AzureProviderType,
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
 				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": {\"hello\": \"world\"}}")},
 			}},
 			Expected: "provider \"azurerm\" {\n  \n  features {\n    hello = \"world\"\n  }\n  \n}\n",
 		},
 		{
-			Provider: &terraformv1alphav1.Provider{Spec: terraformv1alphav1.ProviderSpec{
-				Provider:      terraformv1alphav1.AzureProviderType,
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
 				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
 			}},
 			Expected: "provider \"azurerm\" {\n  \n  features = \"hello\"\n  \n}\n",

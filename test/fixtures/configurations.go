@@ -24,22 +24,22 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // NewValidBucketConfiguration returns a valid configuration for aws bucket
-func NewValidBucketConfiguration(namespace, name string) *terraformv1alphav1.Configuration {
-	config := &terraformv1alphav1.Configuration{}
+func NewValidBucketConfiguration(namespace, name string) *terraformv1alpha1.Configuration {
+	config := &terraformv1alpha1.Configuration{}
 	config.Namespace = namespace
 	config.UID = types.UID("1234-122-1234-1234")
 	config.Name = name
-	config.Spec = terraformv1alphav1.ConfigurationSpec{
+	config.Spec = terraformv1alpha1.ConfigurationSpec{
 		Module:      "https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git",
-		ProviderRef: &terraformv1alphav1.ProviderReference{Name: "aws"},
+		ProviderRef: &terraformv1alpha1.ProviderReference{Name: "aws"},
 		Variables: &runtime.RawExtension{
 			Raw: []byte(`{"name": "test"}`),
 		},
-		WriteConnectionSecretToRef: &terraformv1alphav1.WriteConnectionSecret{
+		WriteConnectionSecretToRef: &terraformv1alpha1.WriteConnectionSecret{
 			Name: "aws-secret",
 		},
 	}
@@ -48,15 +48,15 @@ func NewValidBucketConfiguration(namespace, name string) *terraformv1alphav1.Con
 }
 
 // NewConfigurationPodWatcher returns a new configuration pod
-func NewConfigurationPodWatcher(configuration *terraformv1alphav1.Configuration, stage string) *v1.Pod {
+func NewConfigurationPodWatcher(configuration *terraformv1alpha1.Configuration, stage string) *v1.Pod {
 	pod := &v1.Pod{}
 	pod.Namespace = configuration.Namespace
 	pod.Name = "test-configuration-1234"
 	pod.Labels = map[string]string{
-		terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
-		terraformv1alphav1.ConfigurationNameLabel:       configuration.Name,
-		terraformv1alphav1.ConfigurationStageLabel:      stage,
-		terraformv1alphav1.ConfigurationUIDLabel:        string(configuration.UID),
+		terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
+		terraformv1alpha1.ConfigurationNameLabel:       configuration.Name,
+		terraformv1alpha1.ConfigurationStageLabel:      stage,
+		terraformv1alpha1.ConfigurationUIDLabel:        string(configuration.UID),
 	}
 	pod.Status.Phase = v1.PodSucceeded
 	pod.Spec.Containers = []v1.Container{{Name: "terraform"}}

@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"io"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
@@ -84,8 +84,8 @@ func DecodeState(in []byte) (*State, error) {
 // NewTerraformProvider generates a terraform provider configuration
 func NewTerraformProvider(provider string, configuration []byte) ([]byte, error) {
 	// @step: azure requires the configuration for features
-	switch terraformv1alphav1.ProviderType(provider) {
-	case terraformv1alphav1.AzureProviderType:
+	switch terraformv1alpha1.ProviderType(provider) {
+	case terraformv1alpha1.AzureProviderType:
 		if len(configuration) == 0 {
 			configuration = []byte(`{"features":{}}`)
 		}
@@ -107,7 +107,7 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 // BackendOptions are the options used to generate the backend
 type BackendOptions struct {
 	// Configuration is a reference to the terraform configuration
-	Configuration *terraformv1alphav1.Configuration
+	Configuration *terraformv1alpha1.Configuration
 	// Namespace is a reference to the controller namespace
 	Namespace string
 	// Suffix is an expexted suffix for the terraform state
@@ -122,10 +122,10 @@ func NewKubernetesBackend(options BackendOptions) ([]byte, error) {
 		"controller": map[string]interface{}{
 			"namespace": options.Namespace,
 			"labels": map[string]string{
-				terraformv1alphav1.ConfigurationGenerationLabel: fmt.Sprintf("%d", options.Configuration.GetGeneration()),
-				terraformv1alphav1.ConfigurationNameLabel:       options.Configuration.Name,
-				terraformv1alphav1.ConfigurationNamespaceLabel:  options.Configuration.Namespace,
-				terraformv1alphav1.ConfigurationUIDLabel:        string(options.Configuration.GetUID()),
+				terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", options.Configuration.GetGeneration()),
+				terraformv1alpha1.ConfigurationNameLabel:       options.Configuration.Name,
+				terraformv1alpha1.ConfigurationNamespaceLabel:  options.Configuration.Namespace,
+				terraformv1alpha1.ConfigurationUIDLabel:        string(options.Configuration.GetUID()),
 			},
 			"suffix": options.Suffix,
 		},

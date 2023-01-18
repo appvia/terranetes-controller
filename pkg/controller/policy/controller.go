@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/policies"
 )
 
@@ -42,8 +42,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	c.cc = mgr.GetClient()
 
 	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/validate/%s/policies", terraformv1alphav1.GroupName),
-		admission.WithCustomValidator(&terraformv1alphav1.Policy{}, policies.NewValidator(c.cc)),
+		fmt.Sprintf("/validate/%s/policies", terraformv1alpha1.GroupName),
+		admission.WithCustomValidator(&terraformv1alpha1.Policy{}, policies.NewValidator(c.cc)),
 	)
 
 	return nil

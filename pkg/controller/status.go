@@ -29,13 +29,13 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
 // ConditionManager manages the condition of the resource
 type ConditionManager struct {
 	// condition is a reference to the condition
-	condition *corev1alphav1.Condition
+	condition *corev1alpha1.Condition
 	// resource is the underlying resource
 	resource client.Object
 	// recorder is used to recorder kubernetes events on the resource
@@ -43,24 +43,24 @@ type ConditionManager struct {
 }
 
 // ConditionMgr returns a manager for the condition
-func ConditionMgr(resource corev1alphav1.CommonStatusAware, condition corev1alphav1.ConditionType, recorder record.EventRecorder) *ConditionManager {
+func ConditionMgr(resource corev1alpha1.CommonStatusAware, condition corev1alpha1.ConditionType, recorder record.EventRecorder) *ConditionManager {
 	cond := resource.GetCommonStatus().GetCondition(condition)
 	if cond == nil {
-		cond = &corev1alphav1.Condition{}
+		cond = &corev1alpha1.Condition{}
 	}
 
 	return &ConditionManager{condition: cond, resource: resource, recorder: recorder}
 }
 
 // GetCondition returns the condition
-func (c *ConditionManager) GetCondition() *corev1alphav1.Condition {
+func (c *ConditionManager) GetCondition() *corev1alpha1.Condition {
 	return c.condition
 }
 
 // transition is a helper method used to update the transition time. The method takes of a copy of the current
 // condition and then allows the handler to update. Before exiting it performs a comparison and if it's been update
 // it updates the transitions time
-func (c *ConditionManager) transition(cond *corev1alphav1.Condition, methodFunc func()) {
+func (c *ConditionManager) transition(cond *corev1alpha1.Condition, methodFunc func()) {
 	original := *cond
 	methodFunc()
 
@@ -76,22 +76,22 @@ func (c *ConditionManager) transition(cond *corev1alphav1.Condition, methodFunc 
 
 	// @step: record the message on the logs
 	switch cond.Reason {
-	case corev1alphav1.ReasonDeleting:
+	case corev1alpha1.ReasonDeleting:
 		logger.Info("resource is deleting")
-	case corev1alphav1.ReasonReady:
-		if cond.Type == corev1alphav1.ConditionReady {
+	case corev1alpha1.ReasonReady:
+		if cond.Type == corev1alpha1.ConditionReady {
 			logger.Info("resource is ready")
 		}
-	case corev1alphav1.ReasonWarning, corev1alphav1.ReasonActionRequired:
+	case corev1alpha1.ReasonWarning, corev1alpha1.ReasonActionRequired:
 		logger.Warn(cond.Message)
-	case corev1alphav1.ReasonError:
+	case corev1alpha1.ReasonError:
 		logger.WithError(errors.New(cond.Detail)).Error(cond.Message)
 	}
 
 	// @step: create a kubernetes events from the condition
 	if c.recorder != nil {
 		switch cond.Reason {
-		case corev1alphav1.ReasonActionRequired:
+		case corev1alpha1.ReasonActionRequired:
 			c.recorder.Event(c.resource, v1.EventTypeWarning, "Action Required", cond.Message)
 		}
 	}
@@ -102,7 +102,7 @@ func (c *ConditionManager) ActionRequired(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
-		c.condition.Reason = corev1alphav1.ReasonActionRequired
+		c.condition.Reason = corev1alpha1.ReasonActionRequired
 		c.condition.Message = fmt.Sprintf(message, args...)
 		c.condition.Detail = ""
 	})
@@ -113,7 +113,7 @@ func (c *ConditionManager) Warning(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
-		c.condition.Reason = corev1alphav1.ReasonWarning
+		c.condition.Reason = corev1alpha1.ReasonWarning
 		c.condition.Message = fmt.Sprintf(message, args...)
 		c.condition.Detail = ""
 	})
@@ -124,7 +124,7 @@ func (c *ConditionManager) Success(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionTrue
-		c.condition.Reason = corev1alphav1.ReasonReady
+		c.condition.Reason = corev1alpha1.ReasonReady
 		c.condition.Message = fmt.Sprintf(message, args...)
 		c.condition.Detail = ""
 	})
@@ -135,7 +135,7 @@ func (c *ConditionManager) Failed(err error, message string, args ...interface{}
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
-		c.condition.Reason = corev1alphav1.ReasonError
+		c.condition.Reason = corev1alpha1.ReasonError
 		c.condition.Message = fmt.Sprintf(message, args...)
 		if err != nil {
 			c.condition.Detail = err.Error()
@@ -148,7 +148,7 @@ func (c *ConditionManager) InProgress(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
-		c.condition.Reason = corev1alphav1.ReasonInProgress
+		c.condition.Reason = corev1alpha1.ReasonInProgress
 		c.condition.Message = fmt.Sprintf(message, args...)
 		c.condition.Detail = ""
 	})
@@ -159,7 +159,7 @@ func (c *ConditionManager) Deleting(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()
 		c.condition.Status = metav1.ConditionFalse
-		c.condition.Reason = corev1alphav1.ReasonDeleting
+		c.condition.Reason = corev1alpha1.ReasonDeleting
 		c.condition.Message = fmt.Sprintf(message, args...)
 		c.condition.Detail = ""
 	})

@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/assets"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
@@ -47,12 +47,12 @@ import (
 )
 
 // ensureCapturedState is responsible for retrieving various resources required for later ensure methods
-func (c *Controller) ensureCapturedState(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: retrieve a list of policies
-		policies := &terraformv1alphav1.PolicyList{}
+		policies := &terraformv1alpha1.PolicyList{}
 		if err := c.cc.List(ctx, policies); err != nil {
 			cond.Failed(err, "Failed to list the policies in cluster")
 
@@ -68,8 +68,8 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alphav1.Confi
 		}
 
 		// @step: if no sync state is set we determine it out of sync
-		if configuration.Status.ResourceStatus == terraformv1alphav1.UnknownResourceStatus {
-			configuration.Status.ResourceStatus = terraformv1alphav1.ResourcesOutOfSync
+		if configuration.Status.ResourceStatus == terraformv1alpha1.UnknownResourceStatus {
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 		}
 
 		state.jobs = jobs
@@ -81,7 +81,7 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alphav1.Confi
 
 // ensureNoActivity is responsible for ensuring there active jobs are running for this configuration, if so we act
 // safely and wait for the job to finish
-func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
+func (c *Controller) ensureNoActivity(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		list, found := filters.Jobs(state.jobs).
@@ -117,8 +117,8 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alphav1.Configur
 
 // ensureCustomBackendTemplate is called to ensure that if configured the backend template for the terraform
 // is available and ready
-func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if !c.HasBackendTemplate() {
@@ -161,8 +161,8 @@ func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha
 // ensureCostSecret is responsible for ensuring the cost analytics secret is available. This secret is added into
 // the job namespace by the platform administrator - but it's possible someone has deleted / changed it - so better to
 // place guard around it
-func (c *Controller) ensureCostSecret(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureCostSecret(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if !c.EnableInfracosts {
@@ -197,8 +197,8 @@ func (c *Controller) ensureCostSecret(configuration *terraformv1alphav1.Configur
 }
 
 // ensureValueFromSecret is responsible for checking any valuefrom secrets are available and placing them into the state
-func (c *Controller) ensureValueFromSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if len(configuration.Spec.ValueFrom) == 0 {
@@ -244,8 +244,8 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alphav1.Con
 }
 
 // ensureCustomJobTemplate is used to verify the job template exists if we have been configured to override the template
-func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if c.JobTemplate == "" {
@@ -270,10 +270,10 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
-		template, found := cm.Data[terraformv1alphav1.TerraformJobTemplateConfigMapKey]
+		template, found := cm.Data[terraformv1alpha1.TerraformJobTemplateConfigMapKey]
 		if !found {
 			cond.ActionRequired("Custom job template (%s/%s) does not contain the %q key",
-				c.ControllerNamespace, c.JobTemplate, terraformv1alphav1.TerraformJobTemplateConfigMapKey)
+				c.ControllerNamespace, c.JobTemplate, terraformv1alpha1.TerraformJobTemplateConfigMapKey)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -286,8 +286,8 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alphav1.C
 
 // ensureAuthenticationSecret is responsible for verifying that any secret which is referenced by the
 // configuration does exist
-func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		if configuration.Spec.Auth == nil {
@@ -317,11 +317,11 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alphav
 }
 
 // ensureProviderReady is responsible for ensuring the provider referenced by this configuration is ready to be used
-func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionProviderReady, c.recorder)
+func (c *Controller) ensureProviderReady(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionProviderReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		provider := &terraformv1alphav1.Provider{}
+		provider := &terraformv1alpha1.Provider{}
 		provider.Name = configuration.Spec.ProviderRef.Name
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, provider)
@@ -337,7 +337,7 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 		}
 
 		// @step: we need to check the status of the provider to ensure it's ready to be used
-		if provider.Status.GetCondition(corev1alphav1.ConditionReady).Status != metav1.ConditionTrue {
+		if provider.Status.GetCondition(corev1alpha1.ConditionReady).Status != metav1.ConditionTrue {
 			cond.Warning("Provider is not ready")
 
 			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
@@ -375,9 +375,9 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alphav1.Confi
 
 // ensureJobConfigurationSecret is responsible in ensuring the terraform configuration is generated for this job. This
 // includes the backend configuration and the variables which have been included in the configuration
-func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
-	policyCondition := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
+func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
+	policyCondition := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionTerraformPolicy, c.recorder)
 	suffix := string(configuration.GetUID())
 	name := configuration.GetTerraformConfigSecretName()
 
@@ -392,9 +392,9 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			return reconcile.Result{}, err
 		}
 		secret.Labels = map[string]string{
-			terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
-			terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
-			terraformv1alphav1.ConfigurationUIDLabel:       string(configuration.GetUID()),
+			terraformv1alpha1.ConfigurationNameLabel:      configuration.Name,
+			terraformv1alpha1.ConfigurationNamespaceLabel: configuration.Namespace,
+			terraformv1alpha1.ConfigurationUIDLabel:       string(configuration.GetUID()),
 		}
 
 		// @step: generate the terraform backend configuration - this creates a kubernetes terraform
@@ -410,7 +410,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 			return reconcile.Result{}, err
 		}
-		secret.Data = map[string][]byte{terraformv1alphav1.TerraformBackendConfigMapKey: cfg}
+		secret.Data = map[string][]byte{terraformv1alpha1.TerraformBackendConfigMapKey: cfg}
 
 		// @step: generate the provider for the terraform configuration
 		cfg, err = terraform.NewTerraformProvider(string(state.provider.Spec.Provider), state.provider.GetConfiguration())
@@ -419,7 +419,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 			return reconcile.Result{}, err
 		}
-		secret.Data[terraformv1alphav1.TerraformProviderConfigMapKey] = cfg
+		secret.Data[terraformv1alpha1.TerraformProviderConfigMapKey] = cfg
 
 		// @step: we need to generate the value from the variables
 		variables, err := configuration.GetVariables()
@@ -443,7 +443,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 		// @step: if the any variables for this job lets add them
 		switch len(variables) == 0 {
 		case true:
-			delete(secret.Data, terraformv1alphav1.TerraformVariablesConfigMapKey)
+			delete(secret.Data, terraformv1alpha1.TerraformVariablesConfigMapKey)
 
 		default:
 			encoded := &bytes.Buffer{}
@@ -452,7 +452,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 				return reconcile.Result{}, err
 			}
-			secret.Data[terraformv1alphav1.TerraformVariablesConfigMapKey] = encoded.Bytes()
+			secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey] = encoded.Bytes()
 		}
 
 		// @step: copy any authentication details into the secret
@@ -470,7 +470,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			return reconcile.Result{}, err
 		}
 		if policy == nil {
-			delete(secret.Data, terraformv1alphav1.CheckovJobTemplateConfigMapKey)
+			delete(secret.Data, terraformv1alpha1.CheckovJobTemplateConfigMapKey)
 		} else {
 			state.checkovConstraint = policy
 
@@ -481,7 +481,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 					return reconcile.Result{}, err
 				}
-				secret.Data[terraformv1alphav1.CheckovJobTemplateConfigMapKey] = config
+				secret.Data[terraformv1alpha1.CheckovJobTemplateConfigMapKey] = config
 			}
 		}
 
@@ -497,8 +497,8 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 // ensureTerraformPlan is responsible for ensuring the terraform plan is running or has already ran for this generation. We
 // consult the status of the resource to check the status of a stage at generation x
-func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPlan, c.recorder)
+func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionTerraformPlan, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -508,7 +508,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			return reconcile.Result{}, controller.ErrIgnore
 
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
-			if !configuration.Spec.EnableDriftDetection || configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation] == "" {
+			if !configuration.Spec.EnableDriftDetection || configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == "" {
 				// @note: this is effectively checking the status of plan condition - if the condition is True
 				// for the given generation we can say the plan has already been run and can move on
 				return reconcile.Result{}, nil
@@ -518,7 +518,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		// @step: lets build the options to render the job
 		options := jobs.Options{
 			AdditionalLabels: map[string]string{
-				terraformv1alphav1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation],
+				terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
 			},
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
@@ -544,10 +544,10 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 		// @step: search for any current jobs
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
-			WithLabel(terraformv1alphav1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]).
+			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
-			WithStage(terraformv1alphav1.StageTerraformPlan).
+			WithStage(terraformv1alpha1.StageTerraformPlan).
 			WithUID(string(configuration.GetUID())).
 			Latest()
 
@@ -558,7 +558,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 				if configuration.Annotations == nil {
 					configuration.Annotations = map[string]string{}
 				}
-				configuration.Annotations[terraformv1alphav1.ApplyAnnotation] = "false"
+				configuration.Annotations[terraformv1alpha1.ApplyAnnotation] = "false"
 
 				if err := c.cc.Patch(ctx, configuration, client.MergeFrom(original)); err != nil {
 					cond.Failed(err, "Failed to create or update the terraform configuration")
@@ -572,7 +572,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 			if c.EnableWatchers {
 				// @step: create a watch job in the configuration namespace to allow the user to witness
 				// the terraform output
-				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformPlan); err != nil {
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alpha1.StageTerraformPlan); err != nil {
 					cond.Failed(err, "Failed to create the terraform plan watcher")
 
 					return reconcile.Result{}, err
@@ -611,14 +611,14 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alphav1.Confi
 }
 
 // ensureCostStatus is responsible for updating the cost status post a plan
-func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configuration) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureCostStatus(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 	labels := []string{configuration.GetNamespace(), configuration.GetName()}
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
 		case !c.EnableInfracosts:
-			configuration.Status.Costs = &terraformv1alphav1.CostStatus{Monthly: "Not Enabled"}
+			configuration.Status.Costs = &terraformv1alpha1.CostStatus{Monthly: "Not Enabled"}
 
 			return reconcile.Result{}, nil
 		}
@@ -634,7 +634,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 			return reconcile.Result{}, err
 		}
 		if !found {
-			configuration.Status.Costs = &terraformv1alphav1.CostStatus{Enabled: false}
+			configuration.Status.Costs = &terraformv1alpha1.CostStatus{Enabled: false}
 
 			return reconcile.Result{}, nil
 		}
@@ -666,7 +666,7 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 			values[key] = cost
 		}
 
-		configuration.Status.Costs = &terraformv1alphav1.CostStatus{
+		configuration.Status.Costs = &terraformv1alpha1.CostStatus{
 			Enabled: true,
 			Hourly:  fmt.Sprintf("$%v", values["totalHourlyCost"]),
 			Monthly: fmt.Sprintf("$%v", values["totalMonthlyCost"]),
@@ -681,13 +681,13 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 		copied.Namespace = configuration.GetNamespace()
 		copied.Name = configuration.GetTerraformCostSecretName()
 		copied.Labels = map[string]string{
-			terraformv1alphav1.ConfigurationNameLabel: configuration.GetName(),
-			terraformv1alphav1.ConfigurationUIDLabel:  string(configuration.GetUID()),
+			terraformv1alpha1.ConfigurationNameLabel: configuration.GetName(),
+			terraformv1alpha1.ConfigurationUIDLabel:  string(configuration.GetUID()),
 		}
 		copied.OwnerReferences = []metav1.OwnerReference{
 			{
-				APIVersion: terraformv1alphav1.SchemeGroupVersion.String(),
-				Kind:       terraformv1alphav1.ConfigurationKind,
+				APIVersion: terraformv1alpha1.SchemeGroupVersion.String(),
+				Kind:       terraformv1alpha1.ConfigurationKind,
 				Name:       configuration.GetName(),
 				UID:        configuration.GetUID(),
 			},
@@ -705,8 +705,8 @@ func (c *Controller) ensureCostStatus(configuration *terraformv1alphav1.Configur
 }
 
 // ensurePolicyStatus is responsible for checking the checkov results and refusing to continue if failed
-func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformPolicy, c.recorder)
+func (c *Controller) ensurePolicyStatus(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionTerraformPolicy, c.recorder)
 	key := "results_json.json"
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -770,13 +770,13 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 		copied.Namespace = configuration.GetNamespace()
 		copied.Name = configuration.GetTerraformPolicySecretName()
 		copied.Labels = map[string]string{
-			terraformv1alphav1.ConfigurationNameLabel: configuration.GetName(),
-			terraformv1alphav1.ConfigurationUIDLabel:  string(configuration.GetUID()),
+			terraformv1alpha1.ConfigurationNameLabel: configuration.GetName(),
+			terraformv1alpha1.ConfigurationUIDLabel:  string(configuration.GetUID()),
 		}
 		copied.OwnerReferences = []metav1.OwnerReference{
 			{
-				APIVersion: terraformv1alphav1.SchemeGroupVersion.String(),
-				Kind:       terraformv1alphav1.ConfigurationKind,
+				APIVersion: terraformv1alpha1.SchemeGroupVersion.String(),
+				Kind:       terraformv1alpha1.ConfigurationKind,
 				Name:       configuration.GetName(),
 				UID:        configuration.GetUID(),
 			},
@@ -802,8 +802,8 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alphav1.Config
 }
 
 // ensureDriftDetection is responsible for checking for drift in the terraform state
-func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureDriftDetection(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
@@ -812,24 +812,24 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 		case !configuration.Spec.EnableDriftDetection:
 			return reconcile.Result{}, nil
 		// if the annotation is not set, we ignore
-		case configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation] == "":
+		case configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == "":
 			return reconcile.Result{}, nil
 			// if the annotation is the same as the last drift timestamp, we ignore
-		case configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation] == configuration.Status.DriftTimestamp:
+		case configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == configuration.Status.DriftTimestamp:
 			return reconcile.Result{}, nil
 		}
 		// @note: everytime we run a drift we update the timestamp on the status, this is used to ensure we don't
 		// try and rerun the drift. We should remove the annotation from the configuration but that has issues as it
 		// updates the resourceVersion which make updating the status conflict.
-		configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]
+		configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]
 
 		// @step: we need retrieve the logs and check for the drift
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
-			WithLabel(terraformv1alphav1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]).
+			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
-			WithStage(terraformv1alphav1.StageTerraformPlan).
+			WithStage(terraformv1alpha1.StageTerraformPlan).
 			WithUID(string(configuration.GetUID())).
 			Latest()
 		if !found {
@@ -876,9 +876,9 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 
 		// @step: handle the update to the status
 		if !state.hasDrift {
-			configuration.Status.ResourceStatus = terraformv1alphav1.ResourcesInSync
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesInSync
 		} else {
-			configuration.Status.ResourceStatus = terraformv1alphav1.ResourcesOutOfSync
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 
 			cond.ActionRequired("Drift has been detected in the resource")
 		}
@@ -888,11 +888,11 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alphav1.Conf
 }
 
 // ensureTerraformApply is responsible for ensuring the terraform apply is running or run
-func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, terraformv1alphav1.ConditionTerraformApply, c.recorder)
+func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, terraformv1alpha1.ConditionTerraformApply, c.recorder)
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
-	readyCond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+	readyCond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
@@ -930,16 +930,16 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 			WithGeneration(generation).
 			WithNamespace(configuration.GetNamespace()).
 			WithName(configuration.GetName()).
-			WithStage(terraformv1alphav1.StageTerraformApply).
+			WithStage(terraformv1alpha1.StageTerraformApply).
 			WithUID(string(configuration.GetUID())).
 			Latest()
 
 		// @step: we can requeue or move on depending on the status
 		if !found {
-			configuration.Status.ResourceStatus = terraformv1alphav1.ResourcesOutOfSync
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 
 			if c.EnableWatchers {
-				if err := c.CreateWatcher(ctx, configuration, terraformv1alphav1.StageTerraformApply); err != nil {
+				if err := c.CreateWatcher(ctx, configuration, terraformv1alpha1.StageTerraformApply); err != nil {
 					cond.Failed(err, "Failed to create the terraform apply watcher")
 
 					return reconcile.Result{}, err
@@ -960,7 +960,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 		// @step: we only shift out of this state of the job is complete
 		switch {
 		case jobs.IsComplete(job):
-			configuration.Status.ResourceStatus = terraformv1alphav1.ResourcesInSync
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesInSync
 
 			cond.Success("Terraform apply is complete")
 			return reconcile.Result{}, nil
@@ -979,8 +979,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alphav1.Conf
 }
 
 // ensureConnectionSecret is responsible for ensuring the jobs ran successfully
-func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureConnectionSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		secret := &v1.Secret{}
@@ -1002,7 +1002,7 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 
 		if configuration.Spec.WriteConnectionSecretToRef != nil {
 			// @step: decode the terraform state (essentially just returning the uncompressed content)
-			state, err := terraform.DecodeState(secret.Data[terraformv1alphav1.TerraformStateSecretKey])
+			state, err := terraform.DecodeState(secret.Data[terraformv1alpha1.TerraformStateSecretKey])
 			if err != nil {
 				cond.Failed(err, "Failed to decode the terraform state")
 
@@ -1019,9 +1019,9 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 					*metav1.NewControllerRef(configuration, configuration.GroupVersionKind()),
 				}
 				secret.Labels = map[string]string{
-					terraformv1alphav1.ConfigurationNameLabel:      configuration.Name,
-					terraformv1alphav1.ConfigurationNamespaceLabel: configuration.Namespace,
-					terraformv1alphav1.ConfigurationUIDLabel:       string(configuration.GetUID()),
+					terraformv1alpha1.ConfigurationNameLabel:      configuration.Name,
+					terraformv1alpha1.ConfigurationNamespaceLabel: configuration.Namespace,
+					terraformv1alpha1.ConfigurationUIDLabel:       string(configuration.GetUID()),
 				}
 				secret.Data = make(map[string][]byte)
 
@@ -1061,11 +1061,11 @@ func (c *Controller) ensureConnectionSecret(configuration *terraformv1alphav1.Co
 }
 
 // ensureTerraformStatus is responsible for updating the configuration status
-func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Configuration, state *state) controller.EnsureFunc {
-	cond := controller.ConditionMgr(configuration, corev1alphav1.ConditionReady, c.recorder)
+func (c *Controller) ensureTerraformStatus(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		tfstate, err := terraform.DecodeState(state.tfstate.Data[terraformv1alphav1.TerraformStateSecretKey])
+		tfstate, err := terraform.DecodeState(state.tfstate.Data[terraformv1alpha1.TerraformStateSecretKey])
 		if err != nil {
 			cond.Failed(err, "Failed to decode the terraform state")
 
@@ -1075,9 +1075,9 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alphav1.Con
 		configuration.Status.TerraformVersion = tfstate.TerraformVersion
 
 		switch configuration.Status.ResourceStatus {
-		case terraformv1alphav1.ResourcesInSync:
+		case terraformv1alpha1.ResourcesInSync:
 			inSyncMetric.WithLabelValues(configuration.Namespace, configuration.Name).Set(1)
-		case terraformv1alphav1.ResourcesOutOfSync:
+		case terraformv1alpha1.ResourcesOutOfSync:
 			inSyncMetric.WithLabelValues(configuration.Namespace, configuration.Name).Set(0)
 		}
 		cond.Success("Resource ready")

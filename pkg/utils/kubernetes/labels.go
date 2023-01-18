@@ -21,12 +21,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
 
 // IsSelectorMatch is used to check if the resource matches the selectors.
 func IsSelectorMatch(
-	selector terraformv1alphav1.Selector,
+	selector terraformv1alpha1.Selector,
 	resourceLabels, namespaceLabels map[string]string) (bool, error) {
 
 	if selector.Namespace == nil && selector.Resource == nil {

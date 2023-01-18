@@ -30,8 +30,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	corev1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	controllertests "github.com/appvia/terranetes-controller/test"
@@ -53,18 +53,18 @@ var _ = Describe("Drift Controller", func() {
 		cases := []struct {
 			Name        string
 			Before      func(ctrl *Controller)
-			Check       func(configuration *terraformv1alphav1.Configuration)
+			Check       func(configuration *terraformv1alpha1.Configuration)
 			ShouldDrift bool
 		}{
 			{
 				Name: "drift detection is not enabled",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
+				Check: func(configuration *terraformv1alpha1.Configuration) {
 					configuration.Spec.EnableDriftDetection = false
 				},
 			},
 			{
 				Name: "configuration is deleting",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
+				Check: func(configuration *terraformv1alpha1.Configuration) {
 					now := metav1.NewTime(time.Now())
 					configuration.DeletionTimestamp = &now
 					configuration.Finalizers = []string{"do-not-delete"}
@@ -72,80 +72,80 @@ var _ = Describe("Drift Controller", func() {
 			},
 			{
 				Name: "terraform plan has not been run yet",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonNotDetermined
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonNotDetermined
 					cond.Status = metav1.ConditionFalse
 
-					cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					cond.Reason = corev1alphav1.ReasonNotDetermined
+					cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					cond.Reason = corev1alpha1.ReasonNotDetermined
 					cond.Status = metav1.ConditionFalse
 
 				},
 			},
 			{
 				Name: "terraform apply has not been run yet",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonComplete
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonComplete
 					cond.Status = metav1.ConditionTrue
 
-					cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					cond.Reason = corev1alphav1.ReasonNotDetermined
+					cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					cond.Reason = corev1alpha1.ReasonNotDetermined
 					cond.Status = metav1.ConditionFalse
 				},
 			},
 			{
 				Name: "terraform plan has failed",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonError
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonError
 					cond.Status = metav1.ConditionFalse
 				},
 			},
 			{
 				Name: "terraform apply has failed",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					cond.Reason = corev1alphav1.ReasonError
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					cond.Reason = corev1alpha1.ReasonError
 					cond.Status = metav1.ConditionFalse
 				},
 			},
 			{
 				Name: "terraform plan in progress",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonInProgress
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonInProgress
 					cond.Status = metav1.ConditionFalse
 				},
 			},
 			{
 				Name: "terraform apply in progress",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					cond.Reason = corev1alphav1.ReasonInProgress
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					cond.Reason = corev1alpha1.ReasonInProgress
 					cond.Status = metav1.ConditionFalse
 				},
 			},
 			{
 				Name: "terraform plan occurred recently",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonComplete
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonComplete
 					cond.LastTransitionTime = metav1.NewTime(time.Now())
 					cond.Status = metav1.ConditionTrue
 				},
 			},
 			{
 				Name: "terraform apply occurred recently",
-				Check: func(configuration *terraformv1alphav1.Configuration) {
-					cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-					cond.Reason = corev1alphav1.ReasonComplete
+				Check: func(configuration *terraformv1alpha1.Configuration) {
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					cond.Reason = corev1alpha1.ReasonComplete
 					cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-24 * time.Hour))
 					cond.Status = metav1.ConditionTrue
 
-					cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-					cond.Reason = corev1alphav1.ReasonComplete
+					cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+					cond.Reason = corev1alpha1.ReasonComplete
 					cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Minute))
 					cond.Status = metav1.ConditionTrue
 				},
@@ -155,18 +155,18 @@ var _ = Describe("Drift Controller", func() {
 				Before: func(ctrl *Controller) {
 					for i := 0; i < 10; i++ {
 						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-config", i))
-						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "true"}
 						configuration.Spec.EnableDriftDetection = true
 
-						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
-						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-						cond.Reason = corev1alphav1.ReasonInProgress
+						controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+						cond.Reason = corev1alpha1.ReasonInProgress
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
 
-						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-						cond.Reason = corev1alphav1.ReasonComplete
+						cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
@@ -182,18 +182,18 @@ var _ = Describe("Drift Controller", func() {
 
 					for i := 0; i < 9; i++ {
 						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-config", i))
-						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "true"}
 						configuration.Spec.EnableDriftDetection = true
 
-						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
-						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-						cond.Reason = corev1alphav1.ReasonComplete
+						controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
 
-						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-						cond.Reason = corev1alphav1.ReasonComplete
+						cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
@@ -209,18 +209,18 @@ var _ = Describe("Drift Controller", func() {
 					// @step: we create x configuration not running
 					for i := 0; i < 7; i++ {
 						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d-notrunning", i))
-						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "true"}
 						configuration.Spec.EnableDriftDetection = true
 
-						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
-						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-						cond.Reason = corev1alphav1.ReasonComplete
+						controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
 
-						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-						cond.Reason = corev1alphav1.ReasonComplete
+						cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
@@ -231,18 +231,18 @@ var _ = Describe("Drift Controller", func() {
 					// @step: we create x configuration running
 					for i := 0; i < 2; i++ {
 						configuration := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test%d-running", i))
-						configuration.Annotations = map[string]string{terraformv1alphav1.DriftAnnotation: "true"}
+						configuration.Annotations = map[string]string{terraformv1alpha1.DriftAnnotation: "true"}
 						configuration.Spec.EnableDriftDetection = true
 
-						controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
-						cond := configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformPlan)
-						cond.Reason = corev1alphav1.ReasonInProgress
+						controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+						cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+						cond.Reason = corev1alpha1.ReasonInProgress
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
 
-						cond = configuration.Status.GetCondition(terraformv1alphav1.ConditionTerraformApply)
-						cond.Reason = corev1alphav1.ReasonComplete
+						cond = configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+						cond.Reason = corev1alpha1.ReasonComplete
 						cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 						cond.ObservedGeneration = configuration.GetGeneration()
 						cond.Status = metav1.ConditionTrue
@@ -271,23 +271,23 @@ var _ = Describe("Drift Controller", func() {
 
 				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
 				configuration.Spec.EnableDriftDetection = true
-				controller.EnsureConditionsRegistered(terraformv1alphav1.DefaultConfigurationConditions, configuration)
+				controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 
 				// @step: set the conditions to true
-				conditions := []corev1alphav1.ConditionType{
-					terraformv1alphav1.ConditionTerraformPlan,
-					terraformv1alphav1.ConditionTerraformApply,
+				conditions := []corev1alpha1.ConditionType{
+					terraformv1alpha1.ConditionTerraformPlan,
+					terraformv1alpha1.ConditionTerraformApply,
 				}
 				for _, name := range conditions {
 					cond := configuration.Status.GetCondition(name)
-					cond.Reason = corev1alphav1.ReasonComplete
+					cond.Reason = corev1alpha1.ReasonComplete
 					cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 					cond.ObservedGeneration = configuration.GetGeneration()
 					cond.Status = metav1.ConditionTrue
 				}
 
-				cond := configuration.Status.GetCondition(corev1alphav1.ConditionReady)
-				cond.Reason = corev1alphav1.ReasonReady
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				cond.Reason = corev1alpha1.ReasonReady
 				cond.LastTransitionTime = metav1.NewTime(time.Now().Add(-5 * time.Hour))
 				cond.ObservedGeneration = configuration.GetGeneration()
 				cond.Status = metav1.ConditionTrue
@@ -312,7 +312,7 @@ var _ = Describe("Drift Controller", func() {
 					It("should have a drift detection annotation", func() {
 						Expect(ctrl.cc.Get(ctx, configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 						Expect(configuration.GetAnnotations()).ToNot(BeEmpty())
-						Expect(configuration.GetAnnotations()[terraformv1alphav1.DriftAnnotation]).ToNot(BeEmpty())
+						Expect(configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).ToNot(BeEmpty())
 					})
 
 					It("should have raised a event indicating the trigger", func() {

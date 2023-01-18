@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
@@ -45,18 +45,18 @@ func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, nil, obj.(*terraformv1alphav1.Configuration))
+	return v.validate(ctx, nil, obj.(*terraformv1alpha1.Configuration))
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	var before, after *terraformv1alphav1.Configuration
+	var before, after *terraformv1alpha1.Configuration
 
 	if newObj != nil {
-		after = newObj.(*terraformv1alphav1.Configuration)
+		after = newObj.(*terraformv1alpha1.Configuration)
 	}
 	if oldObj != nil {
-		before = oldObj.(*terraformv1alphav1.Configuration)
+		before = oldObj.(*terraformv1alpha1.Configuration)
 	}
 
 	return v.validate(ctx, before, after)
@@ -68,7 +68,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 // validate is called to ensure the configuration is valid and incline with current policies
-func (v *validator) validate(ctx context.Context, before, configuration *terraformv1alphav1.Configuration) error {
+func (v *validator) validate(ctx context.Context, before, configuration *terraformv1alpha1.Configuration) error {
 	creating := before == nil
 
 	// @step: let us check the provider
@@ -120,7 +120,7 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 		return err
 	}
 
-	list := &terraformv1alphav1.PolicyList{}
+	list := &terraformv1alpha1.PolicyList{}
 	if err := v.cc.List(ctx, list); err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 }
 
 // validateConnectionSecret checks if the secret is valid
-func validateConnectionSecret(configuration *terraformv1alphav1.Configuration) error {
+func validateConnectionSecret(configuration *terraformv1alpha1.Configuration) error {
 	switch {
 	case configuration.Spec.WriteConnectionSecretToRef == nil:
 		return nil
@@ -155,8 +155,8 @@ func validateConnectionSecret(configuration *terraformv1alphav1.Configuration) e
 }
 
 // validateProvider is called to ensure the configuration is valid and inline with current provider policy
-func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alphav1.Configuration, namespace *v1.Namespace) error {
-	provider := &terraformv1alphav1.Provider{}
+func validateProvider(ctx context.Context, cc client.Client, configuration *terraformv1alpha1.Configuration, namespace *v1.Namespace) error {
+	provider := &terraformv1alpha1.Provider{}
 	provider.Name = configuration.Spec.ProviderRef.Name
 
 	found, err := kubernetes.GetIfExists(ctx, cc, provider)
@@ -180,11 +180,11 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 
 // validateModuleConstriants evaluates the module constraints and ensure the configuration passes all policies
 func validateModuleConstriants(
-	configuration *terraformv1alphav1.Configuration,
-	policies *terraformv1alphav1.PolicyList,
+	configuration *terraformv1alpha1.Configuration,
+	policies *terraformv1alpha1.PolicyList,
 	namespace *v1.Namespace) error {
 
-	var list []terraformv1alphav1.Policy
+	var list []terraformv1alpha1.Policy
 
 	// @step: first we build a list of policies which apply this configuration.
 	for _, x := range policies.Items {

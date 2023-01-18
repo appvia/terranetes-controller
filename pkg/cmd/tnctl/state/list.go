@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	terraformv1alphav1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
@@ -68,7 +68,7 @@ func (o *ListCommand) Run(ctx context.Context) error {
 	}
 
 	// @step: retrieve the list of configurations
-	list := &terraformv1alphav1.ConfigurationList{}
+	list := &terraformv1alpha1.ConfigurationList{}
 	if err := cc.List(ctx, list, client.InNamespace(o.Namespace)); err != nil {
 		return err
 	}
