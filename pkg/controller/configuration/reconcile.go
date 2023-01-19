@@ -111,6 +111,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 		[]controller.EnsureFunc{
 			finalizer.EnsurePresent(configuration),
+			c.ensureReconcileAnnotation(configuration),
 			c.ensureCapturedState(configuration, state),
 			c.ensureNoActivity(configuration, state),
 			c.ensureCustomBackendTemplate(configuration, state),

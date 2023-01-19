@@ -151,17 +151,23 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		// @note: we will avoid reconciliation on any resource where the annotation is set
-		WithEventFilter(&predicate.Funcs{
-			CreateFunc: func(e event.CreateEvent) bool {
-				return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-			},
-			UpdateFunc: func(e event.UpdateEvent) bool {
-				return !(e.ObjectNew.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-			},
-			GenericFunc: func(e event.GenericEvent) bool {
-				return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-			},
-		}).
+		WithEventFilter(predicate.Or(
+			&predicate.AnnotationChangedPredicate{},
+			&predicate.GenerationChangedPredicate{},
+			/*
+				&predicate.Funcs{
+					CreateFunc: func(e event.CreateEvent) bool {
+						return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
+					},
+					UpdateFunc: func(e event.UpdateEvent) bool {
+						return !(e.ObjectNew.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
+					},
+					GenericFunc: func(e event.GenericEvent) bool {
+						return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
+					},
+				},
+			*/
+		)).
 		Watches(
 			// We use this it keep a local cache of all namespaces in the cluster
 			&source.Kind{Type: &v1.Namespace{}},
@@ -182,7 +188,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 				return []ctrl.Request{
 					{NamespacedName: client.ObjectKey{
-						Namespace: c.ControllerNamespace,
+						Namespace: a.GetNamespace(),
 						Name:      a.GetLabels()["job-name"],
 					}},
 				}

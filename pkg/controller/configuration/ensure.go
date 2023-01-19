@@ -46,6 +46,19 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
+// ensureReconcileAnnotation is responsible for ignoring the configuration if the annotation is set
+func (c *Controller) ensureReconcileAnnotation(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		// @step: check if we are ignoring the configuration
+		if configuration.GetAnnotations()[terraformv1alpha1.ReconcileAnnotation] == "false" {
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureCapturedState is responsible for retrieving various resources required for later ensure methods
 func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
