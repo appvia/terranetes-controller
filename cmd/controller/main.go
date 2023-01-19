@@ -58,7 +58,7 @@ func main() {
 	flags.BoolVar(&config.EnableContextInjection, "enable-context-injection", false, "Indicates the controller should inject Configuration context into the terraform variables")
 	flags.BoolVar(&config.EnableTerraformVersions, "enable-terraform-versions", true, "Indicates the terraform version can be overridden by configurations")
 	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuration namespaces")
-	flags.BoolVar(&config.EnableWebhook, "enable-webhook", true, "Indicates we should register the webhooks")
+	flags.BoolVar(&config.EnableWebhooks, "enable-webhooks", true, "Indicates we should register the webhooks")
 	flags.BoolVar(&config.RegisterCRDs, "register-crds", true, "Indicates the controller to register its own CRDs")
 	flags.DurationVar(&config.DriftControllerInterval, "drift-controller-interval", 5*time.Minute, "Is the check interval for the controller to search for configurations which should be checked for drift")
 	flags.DurationVar(&config.DriftInterval, "drift-interval", 3*time.Hour, "The minimum duration the controller will wait before triggering a drift check")

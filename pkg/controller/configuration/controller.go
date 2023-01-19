@@ -75,6 +75,8 @@ type Controller struct {
 	EnableTerraformVersions bool
 	// EnableWatchers indicates we should create watcher jobs in the user namespace
 	EnableWatchers bool
+	// EnableWebhooks indicates if we should register the webhooks
+	EnableWebhooks bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
 	// ExecutorSecrets is a collection of secrets which should be added to the
@@ -133,14 +135,16 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 	c.kc = kc
 
-	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
-		admission.WithCustomValidator(&terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
-	)
-	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),
-		admission.WithCustomDefaulter(&terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
-	)
+	if c.EnableWebhooks {
+		mgr.GetWebhookServer().Register(
+			fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
+			admission.WithCustomValidator(&terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
+		)
+		mgr.GetWebhookServer().Register(
+			fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),
+			admission.WithCustomDefaulter(&terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
+		)
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terraformv1alpha1.Configuration{}).

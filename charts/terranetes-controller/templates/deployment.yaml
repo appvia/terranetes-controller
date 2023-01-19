@@ -65,7 +65,7 @@ spec:
             - --enable-context-injection={{ .Values.controller.enableContextInjection }}
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
-            - --enable-webhook={{ .Values.controller.webhooks.enabled }}
+            - --enable-webhooks={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
             {{- range .Values.controller.executorSecrets }}
             - --executor-secret={{ . }}
