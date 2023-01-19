@@ -103,7 +103,7 @@ jobs:
 
       - name: Install Kind
         run: |
-          curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.13.0/kind-linux-amd64 -o kind
+          curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.17.0/kind-linux-amd64 -o kind
           chmod +x kind
           kind create cluster
 
