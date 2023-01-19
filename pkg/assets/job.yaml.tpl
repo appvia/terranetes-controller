@@ -235,6 +235,8 @@ spec:
         env:
           - name: COST_REPORT_NAME
             value: {{ .Secrets.InfracostsReport }}
+          - name: INFRACOST_SKIP_UPDATE_CHECK
+            value: "true"
           - name: KUBE_NAMESPACE
             valueFrom:
               fieldRef:
