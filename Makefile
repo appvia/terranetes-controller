@@ -264,7 +264,7 @@ trigger-all-e2e: trigger-aws-e2e trigger-azure-e2e trigger-google-e2e
 
 diagnostics:
 	@echo "--> Retrieving diagnostics"
-	@AWS_PROFILE=appvia aws s3 cp s3://terranetes-e2e-diagnostics ./dev/diagnostics/ --recursive
+	@AWS_PROFILE=appvia aws s3 sync s3://terranetes-e2e-diagnostics ./dev/diagnostics/
 
 clean:
 	@echo "--> Cleaning up the environment"
