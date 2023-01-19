@@ -59,14 +59,14 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	original := resource.DeepCopyObject().(client.Object)
 	status := resource.GetCommonStatus()
 
-	status.LastReconcile = &corev1alpha1.LastReconcileStatus{
-		Generation: resource.GetGeneration(),
-		Time:       metav1.NewTime(time.Now()),
-	}
-
 	// @here we are responsible for updating the transition times of the conditions where we
 	// see a drift. And updating the status of the resource overall
 	defer func() {
+		status.LastReconcile = &corev1alpha1.LastReconcileStatus{
+			Generation: resource.GetGeneration(),
+			Time:       metav1.NewTime(time.Now()),
+		}
+
 		// @step: we need to update the status of the resource
 		if err := cc.Status().Patch(ctx, resource, client.MergeFrom(original)); err != nil {
 			if err := client.IgnoreNotFound(err); err != nil {

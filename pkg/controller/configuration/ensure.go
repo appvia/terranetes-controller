@@ -516,6 +516,20 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		// @note: ensure the retryable annotation is valid
+		case configuration.HasRetryableAnnotation() && !configuration.IsRetryableValid():
+			cond.Failed(nil, "Retryable annotation is invalid, must be a valid unix timestamp")
+
+			return reconcile.Result{}, controller.ErrIgnore
+
+		// @note: if the configuration is marked for retry and the last reconcile was before us - we can retry
+		// the configuration
+		case configuration.HasRetryableAnnotation() && configuration.IsRetryable():
+			log.WithFields(log.Fields{
+				"name":      configuration.Name,
+				"namespace": configuration.Namespace,
+			}).Info("retrying the configuration")
+
 		// @note: the last plan failed for this generation - we do not run it again
 		case cond.GetCondition().IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{}, controller.ErrIgnore
@@ -532,6 +546,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		options := jobs.Options{
 			AdditionalLabels: map[string]string{
 				terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
+				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
 			},
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
@@ -558,6 +573,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
 			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
+			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
 			WithStage(terraformv1alpha1.StageTerraformPlan).
@@ -840,6 +856,7 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alpha1.Confi
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
 			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
+			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
 			WithStage(terraformv1alpha1.StageTerraformPlan).
@@ -909,15 +926,19 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
-		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
-			return reconcile.Result{}, nil
-
 		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
 			// update the ready condition to reflect the new state
 			readyCond.InProgress("Waiting for changes to be approved")
 
 			return reconcile.Result{}, controller.ErrIgnore
+
+			// if the configuration is retryable
+		case configuration.HasRetryableAnnotation() && configuration.IsRetryable():
+			break
+
+		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
+			return reconcile.Result{}, nil
 		}
 
 		// @step: create the terraform job

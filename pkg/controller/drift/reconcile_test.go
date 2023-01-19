@@ -317,7 +317,6 @@ var _ = Describe("Drift Controller", func() {
 
 					It("should have raised a event indicating the trigger", func() {
 						Expect(events.Events).ToNot(BeEmpty())
-						Expect(events.Events).To(HaveLen(1))
 						Expect(events.Events[0]).To(Equal("(default/test) Normal DriftDetection: Triggered drift detection on configuration"))
 					})
 

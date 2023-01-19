@@ -25,27 +25,24 @@ import (
 )
 
 // Roll is called to run the reconciler
-func Roll(ctx context.Context, ctrl reconcile.Reconciler, o client.Object, max int) (reconcile.Result, int, error) {
+func Roll(ctx context.Context, ctrl reconcile.Reconciler, o client.Object, _ int) (reconcile.Result, int, error) {
 	req := reconcile.Request{}
 	req.Namespace = o.GetNamespace()
 	req.Name = o.GetName()
 
-	if max <= 0 {
-		max = 10
-	}
-
 	var result reconcile.Result
 	var err error
 
-	for i := 0; i < max; i++ {
+	for i := 0; i < 10; i++ {
 		result, err = ctrl.Reconcile(ctx, req)
 		switch {
 		case err != nil:
 			return result, i, err
-		case !result.Requeue && result.RequeueAfter <= 0:
-			return result, i, err
+		case result.Requeue, result.RequeueAfter > 0:
+		default:
+			return result, i, nil
 		}
 	}
 
-	return result, max, err
+	return result, 0, err
 }

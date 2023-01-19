@@ -97,7 +97,7 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 	endpoint := fmt.Sprintf("http://controller.%s.svc.cluster.local/v1/builds/%s/%s/logs?%s",
 		namespace, r.configuration.Namespace, r.configuration.Name, strings.Join(query, "&"))
 
-	return &batchv1.Job{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%d-%s", r.configuration.Name, r.configuration.GetGeneration(), stage),
 			Namespace: r.configuration.Namespace,
@@ -151,6 +151,13 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			},
 		},
 	}
+
+	if r.configuration.HasRetryableAnnotation() {
+		job.Labels[terraformv1alpha1.RetryAnnotation] = r.configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]
+		job.Spec.Template.Labels[terraformv1alpha1.RetryAnnotation] = r.configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]
+	}
+
+	return job
 }
 
 // NewTerraformPlan is responsible for creating a batch job to run terraform plan

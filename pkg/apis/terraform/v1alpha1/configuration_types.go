@@ -21,7 +21,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,6 +58,8 @@ const (
 	DriftAnnotation = "terraform.appvia.io/drift"
 	// ReconcileAnnotation is the label used control reconciliation
 	ReconcileAnnotation = "terraform.appvia.io/reconcile"
+	// RetryAnnotation is the annotation used to mark a resource for retry
+	RetryAnnotation = "terraform.appvia.io/retry"
 	// OrphanAnnotation is the label used to orphan a configuration
 	OrphanAnnotation = "terraform.appvia.io/orphan"
 	// VersionAnnotation is the label used to hold the version
@@ -342,6 +346,53 @@ func (c *Configuration) HasVariables() bool {
 	}
 
 	return true
+}
+
+// HasRetryableAnnotation returns true if the configuration has the retryable annotation
+func (c *Configuration) HasRetryableAnnotation() bool {
+	if c.Annotations == nil {
+		return false
+	}
+	_, found := c.Annotations[RetryAnnotation]
+
+	return found
+}
+
+// IsRetryableValid returns true if the retryable annotation is valid
+func (c *Configuration) IsRetryableValid() bool {
+	if c.Annotations == nil {
+		return false
+	}
+	retryable, found := c.Annotations[RetryAnnotation]
+	if !found {
+		return false
+	}
+	_, err := strconv.ParseInt(retryable, 10, 64)
+
+	return err == nil
+}
+
+// IsRetryable returns true if the configuration is in a state where it can be retried
+func (c *Configuration) IsRetryable() bool {
+	switch {
+	case c.Annotations == nil:
+		return false
+	case c.Annotations[RetryAnnotation] == "":
+		return false
+	case c.Status.LastReconcile == nil:
+		return false
+	case c.Status.LastReconcile.Time.IsZero():
+		return false
+	}
+
+	// @step: we need to parse the unix timestamp
+	timestamp, err := strconv.ParseInt(c.Annotations[RetryAnnotation], 10, 64)
+	if err != nil {
+		return false
+	}
+	tm := time.Unix(timestamp, 0)
+
+	return tm.After(c.Status.LastReconcile.Time.Time)
 }
 
 // HasApproval returns true if the configuration has an approval
