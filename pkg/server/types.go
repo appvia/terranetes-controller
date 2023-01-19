@@ -38,8 +38,8 @@ type Config struct {
 	// into the terraform variables - i.e. namespace and name under a terraform variable
 	// called 'terranetes'
 	EnableContextInjection bool
-	// EnableWebhook enables the webhook registration
-	EnableWebhook bool
+	// EnableWebhooks enables the webhooks registration
+	EnableWebhooks bool
 	// EnableWatchers enables the creation of watcher jobs
 	EnableWatchers bool
 	// EnableTerraformVersions indicates if configurations can override the default terraform version

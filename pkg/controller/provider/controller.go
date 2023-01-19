@@ -43,6 +43,8 @@ type Controller struct {
 	recorder record.EventRecorder
 	// ControllerNamespace is the namespace the controller lives
 	ControllerNamespace string
+	// EnableWebhooks indicates if the webhooks should be enabled
+	EnableWebhooks bool
 }
 
 // Add is called to setup the manager for the controller
@@ -52,10 +54,12 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	c.cc = mgr.GetClient()
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
-	mgr.GetWebhookServer().Register(
-		fmt.Sprintf("/validate/%s/providers", terraformv1alpha1.GroupName),
-		admission.WithCustomValidator(&terraformv1alpha1.Provider{}, providers.NewValidator(c.cc, c.ControllerNamespace)),
-	)
+	if c.EnableWebhooks {
+		mgr.GetWebhookServer().Register(
+			fmt.Sprintf("/validate/%s/providers", terraformv1alpha1.GroupName),
+			admission.WithCustomValidator(&terraformv1alpha1.Provider{}, providers.NewValidator(c.cc, c.ControllerNamespace)),
+		)
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terraformv1alpha1.Provider{}).

@@ -122,7 +122,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		SyncPeriod:                    &config.ResyncPeriod,
 	}
 
-	if config.EnableWebhook {
+	if config.EnableWebhooks {
 		log.Info("creating the webhook server for validation and mutations")
 		options.WebhookServer = &webhook.Server{
 			CertDir:  config.TLSDir,
@@ -148,6 +148,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,
+		EnableWebhooks:          config.EnableWebhooks,
 		ExecutorImage:           config.ExecutorImage,
 		ExecutorSecrets:         config.ExecutorSecrets,
 		InfracostsImage:         config.InfracostsImage,
@@ -169,11 +170,14 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	if err := (&provider.Controller{
 		ControllerNamespace: config.Namespace,
+		EnableWebhooks:      config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the provider controller, error: %w", err)
 	}
 
-	if err := (&policy.Controller{}).Add(mgr); err != nil {
+	if err := (&policy.Controller{
+		EnableWebhooks: config.EnableWebhooks,
+	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the policy controller, error: %w", err)
 	}
 
@@ -188,7 +192,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 // Start is called to begin the service
 func (s *Server) Start(ctx context.Context) error {
-	if s.config.EnableWebhook {
+	if s.config.EnableWebhooks {
 		if err := s.registerWebhooks(ctx); err != nil {
 			return fmt.Errorf("failed to register the webhooks, error: %w", err)
 		}
