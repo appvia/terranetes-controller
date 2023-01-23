@@ -266,6 +266,10 @@ diagnostics:
 	@echo "--> Retrieving diagnostics"
 	@AWS_PROFILE=appvia aws s3 sync s3://terranetes-e2e-diagnostics ./dev/diagnostics/
 
+diagnostics-cleanup:
+	@echo "--> Cleaning diagnostics build"
+	@AWS_PROFILE=appvia aws s3 rm --recursive s3://terranetes-e2e-diagnostics/github
+
 clean:
 	@echo "--> Cleaning up the environment"
 	rm -rf ./bin 2>/dev/null
