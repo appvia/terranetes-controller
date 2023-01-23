@@ -56,21 +56,59 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 		}
 
 		// @step: ensure the format of the secret is correct
-		switch provider.Spec.Provider {
-		case terraformv1alpha1.AWSProviderType:
-			switch {
-			case secret.Data["AWS_ACCESS_KEY_ID"] == nil, secret.Data["AWS_SECRET_ACCESS_KEY"] == nil:
-				cond.ActionRequired("provider secret (%s/%s) missing aws secrets", secret.Namespace, secret.Name)
+		annotations := provider.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
 
-				return reconcile.Result{}, controller.ErrIgnore
+		switch annotations[terraformv1alpha1.ProviderSecretSkipChecks] {
+		case "false", "False", "":
+			switch provider.Spec.Provider {
+			case terraformv1alpha1.AzureProviderType, terraformv1alpha1.AzureCloudStackProviderType:
+				switch {
+				case secret.Data["ARM_CLIENT_ID"] == nil:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_CLIENT_ID", secret.Namespace, secret.Name)
+					return reconcile.Result{}, controller.ErrIgnore
+				case secret.Data["ARM_CLIENT_SECRET"] == nil:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_CLIENT_SECRET", secret.Namespace, secret.Name)
+					return reconcile.Result{}, controller.ErrIgnore
+				case secret.Data["ARM_SUBSCRIPTION_ID"] == nil:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_SUBSCRIPTION_ID", secret.Namespace, secret.Name)
+					return reconcile.Result{}, controller.ErrIgnore
+				case secret.Data["ARM_TENANT_ID"] == nil:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_TENANT_ID", secret.Namespace, secret.Name)
+					return reconcile.Result{}, controller.ErrIgnore
+				}
+
+			case terraformv1alpha1.GCPProviderType:
+				switch {
+				case
+					secret.Data["GCLOUD_KEYFILE_JSON"] == nil &&
+						secret.Data["GOOGLE_APPLICATION_CREDENTIALS"] == nil &&
+						secret.Data["GOOGLE_CLOUD_KEYFILE_JSON"] == nil &&
+						secret.Data["GOOGLE_CREDENTIALS"] == nil:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_CREDENTIALS, GOOGLE_CLOUD_KEYFILE_JSON or GCLOUD_KEYFILE_JSON field", secret.Namespace, secret.Name)
+
+					return reconcile.Result{}, controller.ErrIgnore
+				}
+
+			case terraformv1alpha1.AWSProviderType:
+				switch {
+				case len(secret.Data["AWS_ACCESS_KEY_ID"]) == 0:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the AWS_ACCESS_KEY_ID", secret.Namespace, secret.Name)
+
+					return reconcile.Result{}, controller.ErrIgnore
+
+				case len(secret.Data["AWS_SECRET_ACCESS_KEY"]) == 0:
+					cond.ActionRequired("Provider secret (%s/%s) is missing the AWS_SECRET_ACCESS_KEY", secret.Namespace, secret.Name)
+
+					return reconcile.Result{}, controller.ErrIgnore
+				case len(secret.Data["AWS_ACCESS_KEY_ID"]) > len(secret.Data["AWS_SECRET_ACCESS_KEY"]):
+					cond.ActionRequired("provider secret (%s/%s) aws access key is larger than secret", secret.Namespace, secret.Name)
+
+					return reconcile.Result{}, controller.ErrIgnore
+				}
 			}
-
-		case terraformv1alpha1.AzureProviderType:
-		case terraformv1alpha1.GCPProviderType:
-		default:
-			cond.ActionRequired("Provider type: %s is not supported", provider.Spec.Provider)
-
-			return reconcile.Result{}, controller.ErrIgnore
 		}
 
 		return reconcile.Result{}, nil

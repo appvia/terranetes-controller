@@ -32,6 +32,11 @@ import (
 // ProviderKind is the kind for a Provider
 const ProviderKind = "Provider"
 
+const (
+	// ProviderSecretSkipChecks is the annotation to skip checks on the secret keys
+	ProviderSecretSkipChecks = "providers.terraform.appvia.io/skip-checks"
+)
+
 // ProviderGVK is the GVK for a Provider
 var ProviderGVK = schema.GroupVersionKind{
 	Group:   GroupVersion.Group,
