@@ -91,40 +91,79 @@ var _ = Describe("Provider Controller", func() {
 		})
 	})
 
-	When("aws provider secret is invalid", func() {
-		BeforeEach(func() {
-			provider = validProvider()
-			secret := validProviderSecret()
-			secret.Data = map[string][]byte{
-				"AWS_ACCESS_KEY_ID": []byte("test"),
-			}
+	When("checking the provider secret", func() {
+		Context("and aws is invalid", func() {
+			Context("due to missing access key", func() {
+				BeforeEach(func() {
+					provider = validProvider()
+					secret := validProviderSecret()
+					secret.Data = map[string][]byte{}
 
-			cc = fake.NewFakeClientWithScheme(schema.GetScheme(), provider, secret)
-			controller = &Controller{cc: cc}
-			result, _, rerr = controllertests.Roll(context.TODO(), controller, provider, 3)
-		})
+					cc = fake.NewFakeClientWithScheme(schema.GetScheme(), provider, secret)
+					controller = &Controller{cc: cc}
+					result, _, rerr = controllertests.Roll(context.TODO(), controller, provider, 3)
+				})
 
-		It("should have the conditions", func() {
-			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
-		})
+				It("should indicate the provider is ready", func() {
+					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
+					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
+					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
+					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+					Expect(provider.Status.Conditions[0].Message).To(Equal("Provider secret (default/aws) is missing the AWS_ACCESS_KEY_ID"))
+				})
+			})
 
-		It("should indicate the provider is ready", func() {
-			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
-			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
-			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
-			Expect(provider.Status.Conditions[0].Message).To(Equal("provider secret (default/aws) missing aws secrets"))
-		})
+			Context("due to missing access key", func() {
+				BeforeEach(func() {
+					provider = validProvider()
+					secret := validProviderSecret()
+					secret.Data = map[string][]byte{
+						"AWS_ACCESS_KEY_ID": []byte("test"),
+					}
+					cc = fake.NewFakeClientWithScheme(schema.GetScheme(), provider, secret)
+					controller = &Controller{cc: cc}
 
-		It("should not requeue", func() {
-			Expect(rerr).To(BeNil())
-			Expect(result).To(Equal(reconcile.Result{}))
+					result, _, rerr = controllertests.Roll(context.TODO(), controller, provider, 3)
+				})
+
+				It("should indicate the provider is ready", func() {
+					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
+					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
+					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
+					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+					Expect(provider.Status.Conditions[0].Message).To(Equal("Provider secret (default/aws) is missing the AWS_SECRET_ACCESS_KEY"))
+				})
+			})
+
+			Context("aws access id is empty", func() {
+				BeforeEach(func() {
+					provider = validProvider()
+					secret := validProviderSecret()
+					secret.Data = map[string][]byte{
+						"AWS_ACCESS_KEY_ID":     []byte(""),
+						"AWS_SECRET_ACCESS_KEY": []byte("test"),
+					}
+					cc = fake.NewFakeClientWithScheme(schema.GetScheme(), provider, secret)
+					controller = &Controller{cc: cc}
+
+					result, _, rerr = controllertests.Roll(context.TODO(), controller, provider, 3)
+				})
+
+				It("should indicate the provider is ready", func() {
+					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
+					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
+					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
+					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+					Expect(provider.Status.Conditions[0].Message).To(Equal("Provider secret (default/aws) is missing the AWS_ACCESS_KEY_ID"))
+				})
+			})
 		})
 	})
 
-	When("the cloud provider is not supported", func() {
+	When("the cloud provider is unknown", func() {
 		BeforeEach(func() {
 			provider = validProvider()
 			provider.Spec.Provider = "not-supported"
@@ -144,9 +183,7 @@ var _ = Describe("Provider Controller", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 			Expect(provider.Status.Conditions).To(HaveLen(1))
 			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
-			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
-			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
-			Expect(provider.Status.Conditions[0].Message).To(Equal("Provider type: not-supported is not supported"))
+			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
 		})
 
 		It("should not requeue", func() {
