@@ -1,6 +1,6 @@
 ---
 name: E2E
-run-name: Running E2E for Deploy ${{ inputs.cloud }}
+run-name: Running E2E for ${{ inputs.cloud }}
 
 on:
   workflow_call:
