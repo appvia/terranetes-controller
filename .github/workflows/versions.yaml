@@ -29,8 +29,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: develop
-      - name: Retrieving ${{ matrix.name }} Release
-        run: curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
+      - name: Retrieving ${{ matrix.name }} Latest Version
+        run: |
+          curl -s https://api.github.com/repos/${{ matrix.repository }}/releases/latest | jq -r '.name' > /tmp/release.latest
       - name: Install YQ
         env:
           BINARY: yq_linux_amd64
@@ -42,6 +43,12 @@ jobs:
         run: |
           export VERSION=$(cat /tmp/release.latest)
           export IMAGE="${{ matrix.image }}:${VERSION##v}"
+
+          # We should use the CI image for infracost
+          if [[ "${{ matrix.image }}" == "infracost/infracost" ]]; then
+            export IMAGE="${{ matrix.image }}:ci-${VERSION##v}"
+          fi
+
           yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
       - name: Raise Pull Request
         uses: peter-evans/create-pull-request@v4
