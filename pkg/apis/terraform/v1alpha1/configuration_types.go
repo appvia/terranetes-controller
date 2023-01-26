@@ -147,6 +147,25 @@ func (w *WriteConnectionSecret) HasKeys() bool {
 	return len(w.Keys) > 0
 }
 
+// AddKey adds a key to the list
+func (w *WriteConnectionSecret) AddKey(key, override string) {
+	name := key
+	if override != "" {
+		name = fmt.Sprintf("%s:%s", key, strings.ToUpper(override))
+	}
+
+	// @step: ensure we have no duplicates
+	var list []string
+	for _, x := range w.Keys {
+		if !strings.HasPrefix(x, key+":") && x != key {
+			list = append(list, x)
+		}
+	}
+	list = append(list, name)
+
+	w.Keys = list
+}
+
 // KeysMap returns the map of keys to name
 func (w *WriteConnectionSecret) KeysMap() (map[string]string, error) {
 	if !w.HasKeys() {
