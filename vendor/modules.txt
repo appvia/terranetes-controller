@@ -1911,7 +1911,7 @@ mvdan.cc/sh/v3/syntax/typedjson
 # mvdan.cc/unparam v0.0.0-20220706161116-678bad134442
 ## explicit; go 1.17
 mvdan.cc/unparam/check
-# sigs.k8s.io/controller-runtime v0.14.1
+# sigs.k8s.io/controller-runtime v0.14.2
 ## explicit; go 1.19
 sigs.k8s.io/controller-runtime
 sigs.k8s.io/controller-runtime/pkg/builder
