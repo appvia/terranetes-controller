@@ -258,7 +258,7 @@ trigger-google-e2e:
 
 trigger-quickstart-e2e:
 	@echo "--> Triggering the e2e tests on master using official repository"
-	@gh workflow run e2e.yaml --ref master -f cloud=aws` -f use_helm=true -f version=na
+	@gh workflow run e2e.yaml --ref master -f cloud=aws -f use_helm=true -f version=na
 
 trigger-all-e2e: trigger-aws-e2e trigger-azure-e2e trigger-google-e2e
 
