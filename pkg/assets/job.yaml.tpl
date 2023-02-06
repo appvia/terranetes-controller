@@ -76,11 +76,16 @@ spec:
             - --command=/bin/cp /run/config/* /data
             - --command=/bin/cp /bin/step /run/bin/step
             - --command=/bin/source --dest=/data --source={{ .Configuration.Module }}
-          {{- if .Secrets.Config }}
           envFrom:
+          {{- if .Secrets.Config }}
             - secretRef:
                 name: {{ .Secrets.Config }}
                 optional: false
+          {{- end }}
+          {{- range .ExecutorSecrets }}
+            - secretRef:
+                name: {{ . }}
+                optional: true
           {{- end }}
           volumeMounts:
             - name: config
@@ -115,10 +120,15 @@ spec:
           args:
             - --comment=Retrieve policy source
             - --command=/bin/source --dest=/run/checkov --source={{ .Policy.Source.URL }}
-          {{- if and (.Policy.Source.SecretRef) (.Policy.Source.SecretRef.Name) }}
           envFrom:
+          {{- if and (.Policy.Source.SecretRef) (.Policy.Source.SecretRef.Name) }}
             - secretRef
                 name: {{ .Policy.Source.SecretRef.Name }}
+          {{- end }}
+          {{- range .ExecutorSecrets }}
+            - secretRef:
+                name: {{ . }}
+                optional: true
           {{- end }}
           volumeMounts:
             - name: run
@@ -139,10 +149,15 @@ spec:
             - --comment=Retrieve external source for {{ .Name }}
             - --command=/bin/mkdir -p /run/policy
             - --command=/bin/source --dest=/run/policy/{{ .Name }} --source={{ .URL }}
-          {{- if and (.SecretRef) (.SecretRef.Name) }}
           envFrom:
+          {{- if and (.SecretRef) (.SecretRef.Name) }}
             - secretRef:
                 name: {{ .SecretRef.Name }}
+          {{- end }}
+          {{- range .ExecutorSecrets }}
+            - secretRef:
+                name: {{ . }}
+                optional: true
           {{- end }}
           volumeMounts:
             - name: run
