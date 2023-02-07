@@ -63,7 +63,7 @@ var _ = Describe("Configuration Mutation", func() {
 		err = m.Default(context.Background(), after)
 	})
 
-	When("we have not policies", func() {
+	Context("we have not policies", func() {
 		BeforeEach(func() {
 			policies = nil
 			before = fixtures.NewValidBucketConfiguration("default", "test")
@@ -75,7 +75,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have policies but zero matches", func() {
+	Context("we have policies but zero matches", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("default", "test")
 			policies = &terraformv1alpha1.PolicyList{}
@@ -101,7 +101,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have a match on the namespace selector", func() {
+	Context("we have a match on the namespace selector", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("test", "test")
 			before.Spec.Variables = &runtime.RawExtension{}
@@ -130,7 +130,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have a matching namespace policy and existing variables", func() {
+	Context("we have a matching namespace policy and existing variables", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("test", "test")
 			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
@@ -159,7 +159,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have a module policy", func() {
+	Context("we have a module policy", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("test", "test")
 			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
@@ -186,7 +186,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have have multiple selectors", func() {
+	Context("we have have multiple selectors", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("test", "test")
 			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
@@ -216,7 +216,7 @@ var _ = Describe("Configuration Mutation", func() {
 		})
 	})
 
-	When("we have have multiple selectors and does not match", func() {
+	Context("we have have multiple selectors and does not match", func() {
 		BeforeEach(func() {
 			before = fixtures.NewValidBucketConfiguration("test", "test")
 			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
@@ -242,6 +242,56 @@ var _ = Describe("Configuration Mutation", func() {
 		It("should have changed", func() {
 			Expect(before).To(Equal(after))
 			Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("the policy is defining default secrets not variables", func() {
+		BeforeEach(func() {
+			before = fixtures.NewValidBucketConfiguration("test", "test")
+			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
+
+			policies = &terraformv1alpha1.PolicyList{}
+			policy := fixtures.NewPolicy("test")
+			policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+				{
+					Secrets: []string{"test"},
+				},
+			}
+			policies.Items = append(policies.Items, *policy)
+		})
+
+		It("should not have changed", func() {
+			Expect(before).To(Equal(after))
+			Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("and the policy contains default secrets and variables", func() {
+		BeforeEach(func() {
+			before = fixtures.NewValidBucketConfiguration("test", "test")
+			before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
+
+			policies = &terraformv1alpha1.PolicyList{}
+			policy := fixtures.NewPolicy("test")
+			policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+				{
+					Selector: terraformv1alpha1.DefaultVariablesSelector{
+						Modules: []string{before.Spec.Module},
+					},
+					Variables: runtime.RawExtension{
+						Raw: []byte(`{"name": "new"}`),
+					},
+					Secrets: []string{"test"},
+				},
+			}
+			policies.Items = append(policies.Items, *policy)
+		})
+
+		It("should have changed", func() {
+			Expect(before).ToNot(Equal(after))
+			Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"new"}`)))
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})

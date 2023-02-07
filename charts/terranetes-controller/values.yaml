@@ -145,6 +145,7 @@ policies:
 #    constraint:
 #      modules:
 #        allowed: []
+#    defaults: []
 resources: {}
 # These resources are applied to the controller
 # limits:

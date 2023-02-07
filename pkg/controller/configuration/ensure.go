@@ -386,6 +386,71 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alpha1.Config
 	}
 }
 
+// ensurePolicyDefaultsExist is responsible for ensuring any default secrets which are being injected
+// are available for the this configuration
+func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		switch {
+		case state.policies == nil, len(state.policies.Items) == 0:
+			return reconcile.Result{}, nil
+		}
+
+		var list []string
+
+		// @step: find any policies who's using secrets and match this configuration
+		for i := 0; i < len(state.policies.Items); i++ {
+			switch {
+			case state.policies.Items[i].Spec.Defaults == nil:
+				continue
+			}
+
+			for k := 0; k < len(state.policies.Items[i].Spec.Defaults); k++ {
+				x := state.policies.Items[i].Spec.Defaults[k]
+
+				if len(x.Secrets) == 0 {
+					continue
+				}
+				if len(x.Selector.Modules) > 0 {
+					if match, err := x.Selector.IsModulesMatch(configuration); err != nil {
+						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)
+
+						return reconcile.Result{}, err
+					} else if !match {
+						continue
+					}
+				}
+				list = append(list, x.Secrets...)
+			}
+		}
+
+		// @step: we need to ensure any additional secrets are available
+		for i := 0; i < len(list); i++ {
+			secret := &v1.Secret{}
+			secret.Namespace = c.ControllerNamespace
+			secret.Name = list[i]
+
+			found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+			if err != nil {
+				cond.Failed(err, "Failed to retrieve the default secret: (%s/%s)", secret.Namespace, secret.Name)
+
+				return reconcile.Result{}, err
+			}
+			if !found {
+				cond.ActionRequired("Default secret (%s/%s) does not exist, please contact administrator", secret.Namespace, secret.Name)
+
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+		}
+
+		// @step: add the secrets to the state
+		state.additionalJobSecrets = list
+
+		return reconcile.Result{}, nil
+	}
+}
+
 // ensureJobConfigurationSecret is responsible in ensuring the terraform configuration is generated for this job. This
 // includes the backend configuration and the variables which have been included in the configuration
 func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
@@ -544,6 +609,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
+			AdditionalJobSecrets: state.additionalJobSecrets,
 			AdditionalLabels: map[string]string{
 				terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
 				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
@@ -943,15 +1009,16 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			EnableInfraCosts:   c.EnableInfracosts,
-			ExecutorImage:      c.ExecutorImage,
-			ExecutorSecrets:    c.ExecutorSecrets,
-			InfracostsImage:    c.InfracostsImage,
-			InfracostsSecret:   c.InfracostsSecretName,
-			Namespace:          c.ControllerNamespace,
-			SaveTerraformState: c.HasBackendTemplate(),
-			Template:           state.jobTemplate,
-			TerraformImage:     GetTerraformImage(configuration, c.TerraformImage),
+			AdditionalJobSecrets: state.additionalJobSecrets,
+			EnableInfraCosts:     c.EnableInfracosts,
+			ExecutorImage:        c.ExecutorImage,
+			ExecutorSecrets:      c.ExecutorSecrets,
+			InfracostsImage:      c.InfracostsImage,
+			InfracostsSecret:     c.InfracostsSecretName,
+			Namespace:            c.ControllerNamespace,
+			SaveTerraformState:   c.HasBackendTemplate(),
+			Template:             state.jobTemplate,
+			TerraformImage:       GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")

@@ -85,11 +85,32 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	o := newObj.(*terraformv1alpha1.Policy)
 
+	if err := validateDefaultVariables(o); err != nil {
+		return err
+	}
 	if err := validateCheckovConstraints(o); err != nil {
 		return err
 	}
 	if err := validateModuleConstraint(o); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateDefaultVariables ensures the default variables are valid
+func validateDefaultVariables(policy *terraformv1alpha1.Policy) error {
+	switch {
+	case policy.Spec.Defaults == nil, len(policy.Spec.Defaults) == 0:
+		return nil
+	}
+
+	for i := 0; i < len(policy.Spec.Defaults); i++ {
+		x := policy.Spec.Defaults[i]
+
+		if len(x.Variables.Raw) == 0 && len(x.Secrets) == 0 {
+			return fmt.Errorf("spec.defaults[%d]: must specify at least one variable or secret", i)
+		}
 	}
 
 	return nil

@@ -42,6 +42,8 @@ const TerraformContainerName = "terraform"
 
 // Options is the configuration for the render
 type Options struct {
+	// AdditionalJobSecret is a collection of secrets which should be mounted into the job.
+	AdditionalJobSecrets []string
 	// AdditionalLabels are additional labels added to the job
 	AdditionalLabels map[string]string
 	// EnableInfraCosts is the flag to enable cost analysis
@@ -225,11 +227,12 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Policy":     options.PolicyImage,
 		},
 		"Secrets": map[string]interface{}{
-			"Config":           r.configuration.GetTerraformConfigSecretName(),
-			"Infracosts":       options.InfracostsSecret,
-			"InfracostsReport": r.configuration.GetTerraformCostSecretName(),
-			"PolicyReport":     r.configuration.GetTerraformPolicySecretName(),
-			"TerraformState":   r.configuration.GetTerraformStateSecretName(),
+			"AdditionalSecrets": options.AdditionalJobSecrets,
+			"Config":            r.configuration.GetTerraformConfigSecretName(),
+			"Infracosts":        options.InfracostsSecret,
+			"InfracostsReport":  r.configuration.GetTerraformCostSecretName(),
+			"PolicyReport":      r.configuration.GetTerraformPolicySecretName(),
+			"TerraformState":    r.configuration.GetTerraformStateSecretName(),
 		},
 	}
 

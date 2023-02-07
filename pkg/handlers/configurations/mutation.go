@@ -30,6 +30,7 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
@@ -82,11 +83,19 @@ func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alpha1.
 
 	// @step: iterate over the policies and update the configuration if required
 	for _, policy := range list.Items {
-		if len(policy.Spec.Defaults) == 0 {
+		switch {
+		case len(policy.Spec.Defaults) == 0:
 			continue
 		}
 
 		for _, x := range policy.Spec.Defaults {
+			switch {
+			case len(x.Variables.Raw) == 0:
+				continue
+			case utils.Contains(string(x.Variables.Raw), []string{"{}", ""}):
+				continue
+			}
+
 			match, err := isMatch(x.Selector, o, namespace)
 			if err != nil {
 				return fmt.Errorf("failed to match selector: %w", err)

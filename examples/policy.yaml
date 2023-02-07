@@ -34,6 +34,24 @@ spec:
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Policy
 metadata:
+  name: default-authentication
+spec:
+  defaults:
+    - selector:
+        namespace:
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: Exists
+        # You can also filter by modules
+        # modules: []
+      secrets:
+        # the secret must be located in the same namespace as the
+        # controller
+        - auth_token
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Policy
+metadata:
   name: checkov
 spec:
   constraints:
