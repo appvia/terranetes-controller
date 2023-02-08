@@ -56,7 +56,7 @@ jobs:
           tags: ghcr.io/appvia/terranetes-controller:ci
           outputs: type=docker,dest=/tmp/controller-image.tar
       - name: Save
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: controller-image
           path: /tmp/controller-image.tar
@@ -78,7 +78,7 @@ jobs:
           tags: ghcr.io/appvia/terranetes-executor:ci
           outputs: type=docker,dest=/tmp/executor-image.tar
       - name: Save
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: executor-image
           path: /tmp/executor-image.tar
