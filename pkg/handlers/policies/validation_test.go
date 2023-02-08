@@ -231,6 +231,32 @@ var _ = Describe("Policy Validation", func() {
 
 })
 
+var _ = Describe("Defaults Validation", func() {
+	var cc client.Client
+	var policy *terraformv1alpha1.Policy
+	var err error
+
+	BeforeEach(func() {
+		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
+		policy = fixtures.NewPolicy("test")
+	})
+
+	When("checking the default values", func() {
+		Context("and neither secrets or variables have been defined", func() {
+			BeforeEach(func() {
+				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{{}}
+
+				err = (&validator{cc: cc}).ValidateCreate(context.TODO(), policy)
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("spec.defaults[0]: must specify at least one variable or secret"))
+			})
+		})
+	})
+})
+
 var _ = Describe("Policy Delete Validation", func() {
 	var configurations []*terraformv1alpha1.Configuration
 	var policy *terraformv1alpha1.Policy

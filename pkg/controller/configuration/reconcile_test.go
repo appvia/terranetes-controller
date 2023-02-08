@@ -52,6 +52,166 @@ func TestReconcile(t *testing.T) {
 	RunSpecs(t, "Running Test Suite")
 }
 
+var _ = Describe("Configuration Controller Default Injection", func() {
+	logrus.SetOutput(ioutil.Discard)
+
+	var cc client.Client
+	var result reconcile.Result
+	var rerr error
+	var ctrl *Controller
+	var configuration *terraformv1alpha1.Configuration
+	var recorder *controllertests.FakeRecorder
+
+	namespace := "default"
+
+	BeforeEach(func() {
+		secret := fixtures.NewValidAWSProviderSecret(namespace, "aws")
+		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
+		configuration.Spec.EnableAutoApproval = true
+
+		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
+			append([]runtime.Object{
+				fixtures.NewValidAWSReadyProvider("aws", secret),
+				secret,
+				configuration,
+			})...)
+
+		recorder = &controllertests.FakeRecorder{}
+		ctrl = &Controller{
+			cc:                  cc,
+			kc:                  kfake.NewSimpleClientset(),
+			cache:               cache.New(5*time.Minute, 10*time.Minute),
+			recorder:            recorder,
+			EnableInfracosts:    false,
+			EnableWatchers:      true,
+			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
+			InfracostsImage:     "infracosts/infracost:latest",
+			ControllerNamespace: "terraform-system",
+			PolicyImage:         "bridgecrew/checkov:2.0.1140",
+			TerraformImage:      "hashicorp/terraform:1.1.9",
+		}
+		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
+	})
+
+	When("creating a configuration", func() {
+		var policy *terraformv1alpha1.Policy
+
+		BeforeEach(func() {
+			policy = fixtures.NewPolicy("defaults")
+			policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+				{
+					Secrets: []string{"test"},
+				},
+			}
+			Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+			secret := &v1.Secret{}
+			secret.Namespace = ctrl.ControllerNamespace
+			secret.Name = "test"
+
+			Expect(cc.Create(context.Background(), secret)).To(Succeed())
+		})
+
+		Context("and the referenced secret does not exist", func() {
+			BeforeEach(func() {
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = "test"
+				Expect(cc.Delete(context.Background(), secret)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should ask to requeue", func() {
+				Expect(rerr).To(BeNil())
+				Expect(result.Requeue).To(BeFalse())
+				Expect(result.RequeueAfter).To(Equal(5 * time.Minute))
+			})
+
+			It("should have recorded an event", func() {
+				Expect(recorder.Events).ToNot(BeEmpty())
+				Expect(recorder.Events[0]).To(ContainSubstring(""))
+			})
+
+			It("should indicate on the conditions the missing secret", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal("Default secret (terraform-system/test) does not exist, please contact administrator"))
+			})
+		})
+
+		Context("and we have default secrets", func() {
+
+			Context("and no job for the terraform plan exists", func() {
+				BeforeEach(func() {
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).To(BeNil())
+				})
+
+				It("should create a plan job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should create a job containing the default secrets", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+
+					job := list.Items[0]
+					Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).ToNot(BeEmpty())
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[0].SecretRef.Name).To(Equal(configuration.GetTerraformConfigSecretName()))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[1].SecretRef.Name).To(Equal("test"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].EnvFrom).ToNot(BeEmpty())
+				})
+			})
+		})
+
+		Context("and the configuration does not match the selector", func() {
+			BeforeEach(func() {
+				Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
+
+				policy = fixtures.NewPolicy(policy.Name)
+				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+					{
+						Selector: terraformv1alpha1.DefaultVariablesSelector{
+							Modules: []string{"no_match"},
+						},
+						Secrets: []string{"test"},
+					},
+				}
+				Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should not have injected the default secrets", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+
+				job := list.Items[0]
+				Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+				Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+				Expect(len(job.Spec.Template.Spec.InitContainers[0].EnvFrom)).To(Equal(1))
+				Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+				Expect(len(job.Spec.Template.Spec.InitContainers[1].EnvFrom)).To(Equal(0))
+			})
+		})
+	})
+})
+
 var _ = Describe("Configuration Controller", func() {
 	logrus.SetOutput(ioutil.Discard)
 

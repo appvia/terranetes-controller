@@ -1,6 +1,6 @@
 ---
 name: E2E
-run-name: Running E2E for ${{ inputs.cloud }}
+run-name: Running E2E for ${{ inputs.cloud }} (${{ github.ref_name }})
 
 on:
   workflow_call:

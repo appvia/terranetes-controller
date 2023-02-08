@@ -96,10 +96,13 @@ type DefaultVariables struct {
 	// Selector is used to determine which configurations the variables should be injected into
 	// +kubebuilder:validation:Required
 	Selector DefaultVariablesSelector `json:"selector"`
+	// Secrets is a collection of secrets which are used to inject variables into the configuration
+	// +kubebuilder:validation:Optional
+	Secrets []string `json:"secrets,omitempty"`
 	// Variables is a collection of variables to inject into the configuration
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Variables runtime.RawExtension `json:"variables"`
+	Variables runtime.RawExtension `json:"variables,omitempty"`
 }
 
 // PolicySpec defines the desired state of a provider

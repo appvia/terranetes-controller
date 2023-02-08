@@ -49,6 +49,9 @@ type state struct {
 	jobs *batchv1.JobList
 	// jobTemplate is the template to use when rendering the job
 	jobTemplate []byte
+	// additionalJobSecrets is a collection of additional secrets to job - these secrets
+	// must reside in the same namespace as the controller
+	additionalJobSecrets []string
 	// valueFrom is a map of keys to values
 	valueFrom map[string]string
 	// tfstate is the secret containing the terraform state
@@ -89,6 +92,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 				c.ensureCapturedState(configuration, state),
 				c.ensureCustomBackendTemplate(configuration, state),
 				c.ensureProviderReady(configuration, state),
+				c.ensurePolicyDefaultsExist(configuration, state),
 				c.ensureAuthenticationSecret(configuration, state),
 				c.ensureCustomJobTemplate(configuration, state),
 				c.ensureTerraformDestroy(configuration, state),
@@ -120,6 +124,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensureAuthenticationSecret(configuration, state),
 			c.ensureCustomJobTemplate(configuration, state),
 			c.ensureProviderReady(configuration, state),
+			c.ensurePolicyDefaultsExist(configuration, state),
 			c.ensureJobConfigurationSecret(configuration, state),
 			c.ensureTerraformPlan(configuration, state),
 			c.ensureCostStatus(configuration),
