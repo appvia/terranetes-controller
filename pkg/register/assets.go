@@ -62,7 +62,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: configurations.terraform.appvia.io
 spec:
@@ -315,7 +315,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: policies.terraform.appvia.io
 spec:
@@ -558,6 +558,11 @@ spec:
                   items:
                     description: DefaultVariables provides platform administrators the ability to inject default variables into a configuration
                     properties:
+                      secrets:
+                        description: Secrets is a collection of secrets which are used to inject variables into the configuration
+                        items:
+                          type: string
+                        type: array
                       selector:
                         description: Selector is used to determine which configurations the variables should be injected into
                         properties:
@@ -604,7 +609,6 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                     required:
                       - selector
-                      - variables
                     type: object
                   type: array
                 summary:
@@ -719,7 +723,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: providers.terraform.appvia.io
 spec:
