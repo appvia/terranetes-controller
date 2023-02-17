@@ -23,7 +23,7 @@ require (
 	github.com/mitchellh/gox v1.0.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.8.1
-	github.com/onsi/gomega v1.26.0
+	github.com/onsi/gomega v1.27.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rodaine/hclencoder v0.0.1
