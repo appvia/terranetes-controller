@@ -37,11 +37,11 @@ require (
 	golang.org/x/tools v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
-	k8s.io/apiextensions-apiserver v0.26.2
+	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/cli-runtime v0.26.3
 	k8s.io/client-go v0.26.3
-	k8s.io/code-generator v0.26.2
+	k8s.io/code-generator v0.26.3
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	mvdan.cc/sh/v3 v3.6.0
@@ -315,7 +315,7 @@ require (
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.4.2 // indirect
-	k8s.io/component-base v0.26.2 // indirect
+	k8s.io/component-base v0.26.3 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	mvdan.cc/editorconfig v0.2.0 // indirect
