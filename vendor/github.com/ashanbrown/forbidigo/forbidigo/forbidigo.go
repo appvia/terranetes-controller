@@ -11,8 +11,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type Issue interface {
@@ -66,12 +64,13 @@ type config struct {
 	// don't check inside Godoc examples (see https://blog.golang.org/examples)
 	ExcludeGodocExamples   bool `options:",true"`
 	IgnorePermitDirectives bool // don't check for `permit` directives(for example, in favor of `nolint`)
+	AnalyzeTypes bool // enable to match canonical names for types and interfaces using type info
 }
 
 func NewLinter(patterns []string, options ...Option) (*Linter, error) {
 	cfg, err := newConfig(options...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to process options")
+		return nil, fmt.Errorf("failed to process options: %w", err)
 	}
 
 	if len(patterns) == 0 {
@@ -241,7 +240,7 @@ func (v *visitor) expandMatchText(node ast.Node, srcText string) (matchTexts []s
 	// come up with something different.
 	matchText := srcText
 
-	if v.runConfig.TypesInfo == nil {
+	if !v.cfg.AnalyzeTypes || v.runConfig.TypesInfo == nil {
 		return []string{matchText}, pkgText
 	}
 

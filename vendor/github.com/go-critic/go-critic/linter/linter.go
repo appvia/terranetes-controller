@@ -4,9 +4,22 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strconv"
 
 	"github.com/go-toolsmith/astfmt"
 )
+
+// UnknownType is a special sentinel value that is returned from the CheckerContext.TypeOf
+// method instead of the nil type.
+var UnknownType types.Type = types.Typ[types.Invalid]
+
+// FileWalker is an interface every checker should implement.
+//
+// The WalkFile method is executed for every Go file inside the
+// package that is being checked.
+type FileWalker interface {
+	WalkFile(*ast.File)
+}
 
 // CheckerCollection provides additional information for a group of checkers.
 type CheckerCollection struct {
@@ -123,6 +136,14 @@ type Checker struct {
 	fileWalker FileWalker
 }
 
+// NewChecker returns initialized checker identified by an info.
+// info must be non-nil.
+// Returns an error if info describes a checker that was not properly registered,
+// or if checker fails to initialize.
+func NewChecker(ctx *Context, info *CheckerInfo) (*Checker, error) {
+	return newChecker(ctx, info)
+}
+
 // Check runs rule checker over file f.
 func (c *Checker) Check(f *ast.File) []Warning {
 	c.ctx.warnings = c.ctx.warnings[:0]
@@ -157,14 +178,6 @@ type Warning struct {
 // HasQuickFix reports whether this warning has a suggested fix.
 func (warn Warning) HasQuickFix() bool {
 	return warn.Suggestion.Replacement != nil
-}
-
-// NewChecker returns initialized checker identified by an info.
-// info must be non-nil.
-// Returns an error if info describes a checker that was not properly registered,
-// or if checker fails to initialize.
-func NewChecker(ctx *Context, info *CheckerInfo) (*Checker, error) {
-	return newChecker(ctx, info)
 }
 
 // Context is a readonly state shared among every checker.
@@ -301,10 +314,6 @@ func (ctx *CheckerContext) WarnFixableWithPos(pos token.Pos, fix QuickFix, forma
 	})
 }
 
-// UnknownType is a special sentinel value that is returned from the CheckerContext.TypeOf
-// method instead of the nil type.
-var UnknownType types.Type = types.Typ[types.Invalid]
-
 // TypeOf returns the type of expression x.
 //
 // Unlike TypesInfo.TypeOf, it never returns nil.
@@ -335,10 +344,30 @@ func (ctx *CheckerContext) SizeOf(typ types.Type) (int64, bool) {
 	return ctx.SizesInfo.Sizeof(typ), true
 }
 
-// FileWalker is an interface every checker should implement.
-//
-// The WalkFile method is executed for every Go file inside the
-// package that is being checked.
-type FileWalker interface {
-	WalkFile(*ast.File)
+func resolvePkgObjects(ctx *Context, f *ast.File) {
+	ctx.PkgObjects = make(map[*types.PkgName]string, len(f.Imports))
+
+	for _, spec := range f.Imports {
+		if spec.Name != nil {
+			obj := ctx.TypesInfo.ObjectOf(spec.Name)
+			ctx.PkgObjects[obj.(*types.PkgName)] = spec.Name.Name
+		} else {
+			obj := ctx.TypesInfo.Implicits[spec]
+			ctx.PkgObjects[obj.(*types.PkgName)] = obj.Name()
+		}
+	}
+}
+
+func resolvePkgRenames(ctx *Context, f *ast.File) {
+	ctx.PkgRenames = make(map[string]string)
+
+	for _, spec := range f.Imports {
+		if spec.Name != nil {
+			path, err := strconv.Unquote(spec.Path.Value)
+			if err != nil {
+				panic(err)
+			}
+			ctx.PkgRenames[path] = spec.Name.Name
+		}
+	}
 }

@@ -247,7 +247,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		testpackageCfg = &m.cfg.LintersSettings.Testpackage
 		thelperCfg = &m.cfg.LintersSettings.Thelper
 		unparamCfg = &m.cfg.LintersSettings.Unparam
-		unusedCfg = &m.cfg.LintersSettings.Unused
+		unusedCfg = new(config.StaticCheckSettings)
 		varcheckCfg = &m.cfg.LintersSettings.Varcheck
 		varnamelenCfg = &m.cfg.LintersSettings.Varnamelen
 		whitespaceCfg = &m.cfg.LintersSettings.Whitespace
@@ -417,6 +417,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 		linter.NewConfig(golinters.NewForbidigo(forbidigoCfg)).
 			WithSince("v1.34.0").
 			WithPresets(linter.PresetStyle).
+			WithLoadForGoAnalysis().
 			WithURL("https://github.com/ashanbrown/forbidigo"),
 
 		linter.NewConfig(golinters.NewForceTypeAssert()).
@@ -732,8 +733,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithSince("v1.23.0").
 			WithLoadForGoAnalysis().
 			WithPresets(linter.PresetBugs, linter.PresetSQL).
-			WithURL("https://github.com/jingyugao/rowserrcheck").
-			WithNoopFallback(m.cfg),
+			WithURL("https://github.com/jingyugao/rowserrcheck"),
 
 		linter.NewConfig(golinters.NewScopelint()).
 			WithSince("v1.12.0").
@@ -850,8 +850,7 @@ func (m Manager) GetAllSupportedLinterConfigs() []*linter.Config {
 			WithSince("v1.38.0").
 			WithPresets(linter.PresetStyle).
 			WithLoadForGoAnalysis().
-			WithURL("https://github.com/sanposhiho/wastedassign").
-			WithNoopFallback(m.cfg),
+			WithURL("https://github.com/sanposhiho/wastedassign"),
 
 		linter.NewConfig(golinters.NewWhitespace(whitespaceCfg)).
 			WithSince("v1.19.0").
