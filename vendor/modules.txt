@@ -400,7 +400,7 @@ github.com/golangci/gofmt/gofmt
 github.com/golangci/gofmt/gofmt/internal/diff
 github.com/golangci/gofmt/gofmt/internal/execabs
 github.com/golangci/gofmt/goimports
-# github.com/golangci/golangci-lint v1.52.1
+# github.com/golangci/golangci-lint v1.52.2
 ## explicit; go 1.19
 github.com/golangci/golangci-lint/cmd/golangci-lint
 github.com/golangci/golangci-lint/internal/cache
@@ -760,7 +760,7 @@ github.com/modern-go/reflect2
 # github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00
 ## explicit
 github.com/monochromegane/go-gitignore
-# github.com/moricho/tparallel v0.3.0
+# github.com/moricho/tparallel v0.3.1
 ## explicit; go 1.20
 github.com/moricho/tparallel
 github.com/moricho/tparallel/pkg/ssafunc
