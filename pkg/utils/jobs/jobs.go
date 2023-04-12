@@ -103,13 +103,13 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%d-%s", r.configuration.Name, r.configuration.GetGeneration(), stage),
 			Namespace: r.configuration.Namespace,
-			Labels: map[string]string{
+			Labels: utils.MergeStringMaps(r.configuration.Labels, map[string]string{
 				terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 				terraformv1alpha1.ConfigurationNameLabel:       r.configuration.Name,
 				terraformv1alpha1.ConfigurationNamespaceLabel:  r.configuration.Namespace,
 				terraformv1alpha1.ConfigurationStageLabel:      stage,
 				terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
-			},
+			}),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.configuration, r.configuration.GroupVersionKind()),
 			},
@@ -121,12 +121,12 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			TTLSecondsAfterFinished: pointer.Int32(3600),
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
+					Labels: utils.MergeStringMaps(r.configuration.GetLabels(), map[string]string{
 						terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 						terraformv1alpha1.ConfigurationNameLabel:       r.configuration.Name,
 						terraformv1alpha1.ConfigurationStageLabel:      stage,
 						terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
-					},
+					}),
 				},
 				Spec: v1.PodSpec{
 					RestartPolicy: v1.RestartPolicyNever,
