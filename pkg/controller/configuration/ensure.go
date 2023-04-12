@@ -39,6 +39,7 @@ import (
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/assets"
 	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -610,10 +611,10 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		// @step: lets build the options to render the job
 		options := jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels: map[string]string{
+			AdditionalLabels: utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
 				terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
 				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
-			},
+			}),
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
 			ExecutorSecrets:    c.ExecutorSecrets,
@@ -1010,6 +1011,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
+			AdditionalLabels:     configuration.GetLabels(),
 			EnableInfraCosts:     c.EnableInfracosts,
 			ExecutorImage:        c.ExecutorImage,
 			ExecutorSecrets:      c.ExecutorSecrets,
