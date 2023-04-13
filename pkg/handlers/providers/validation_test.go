@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
@@ -161,6 +162,70 @@ var _ = Describe("Provider Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	When("creating a provider with default annotation defined", func() {
+		var provider *terraformv1alpha1.Provider
+
+		BeforeEach(func() {
+			provider = fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
+			provider.Annotations = map[string]string{
+				terraformv1alpha1.DefaultProviderAnnotation: "true",
+			}
+		})
+
+		Context("we have not other providers", func() {
+			It("should not throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should not throw an error on update", func() {
+				err := v.ValidateUpdate(ctx, nil, provider)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("we have other providers, but none set to default", func() {
+			BeforeEach(func() {
+				o := fixtures.NewValidAWSProvider("other", fixtures.NewValidAWSProviderSecret(namespace, "other"))
+				Expect(cc.Create(ctx, o)).To(Succeed())
+			})
+
+			It("should not throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should not throw an error on update", func() {
+				err := v.ValidateUpdate(ctx, nil, provider)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("we have other providers, and one set to default", func() {
+			expected := "only one provider can be set as the default provider"
+
+			BeforeEach(func() {
+				o := fixtures.NewValidAWSProvider("other", fixtures.NewValidAWSProviderSecret(namespace, "other"))
+				o.Annotations = map[string]string{
+					terraformv1alpha1.DefaultProviderAnnotation: "true",
+				}
+				Expect(cc.Create(ctx, o)).To(Succeed())
+			})
+
+			It("should throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
+			It("should throw an error on update", func() {
+				err := v.ValidateUpdate(ctx, nil, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
 		})
 	})
 })

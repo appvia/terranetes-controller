@@ -19,6 +19,7 @@ package configurations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -50,6 +51,11 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 		return fmt.Errorf("expected terraform configuration, not %T", obj)
 	}
 
+	// @step: we need to check if the configuration has a provider reference
+	if err := m.mutateOnProviderDefault(ctx, o); err != nil {
+		return err
+	}
+
 	// @step: retrieve a list of all policies
 	list := &terraformv1alpha1.PolicyList{}
 	if err := m.cc.List(ctx, list); err != nil {
@@ -61,6 +67,46 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 
 	if err := m.mutateOnDefaults(ctx, list, o); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// mutateOnProviderDefault is used to fill in a provider default if required
+func (m *mutator) mutateOnProviderDefault(ctx context.Context, o *terraformv1alpha1.Configuration) error {
+	switch {
+	case o.Spec.ProviderRef.Name != "":
+		return nil
+	}
+
+	// @step: retrieve a list of all providers
+	list := &terraformv1alpha1.ProviderList{}
+	if err := m.cc.List(ctx, list); err != nil {
+		return fmt.Errorf("failed to list providers: %w", err)
+	}
+
+	var provider *terraformv1alpha1.Provider
+
+	// @step: ensure only one provider is default as default
+	var count int
+	for i := 0; i < len(list.Items); i++ {
+		switch {
+		case list.Items[i].Annotations == nil:
+			continue
+		case list.Items[i].Annotations[terraformv1alpha1.DefaultProviderAnnotation] == "true":
+			count++
+			provider = &list.Items[i]
+		}
+	}
+	if count == 0 {
+		return nil
+	}
+	if count > 1 {
+		return errors.New("only one provider can be default, please contact your administrator")
+	}
+
+	o.Spec.ProviderRef = &terraformv1alpha1.ProviderReference{
+		Name: provider.Name,
 	}
 
 	return nil
