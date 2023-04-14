@@ -44,6 +44,11 @@ var ProviderGVK = schema.GroupVersionKind{
 	Kind:    ProviderKind,
 }
 
+var (
+	// DefaultProviderAnnotation indicates the default provider for all unset configurations
+	DefaultProviderAnnotation = "terranetes.appvia.io/default-provider"
+)
+
 // ProviderType is the type of cloud
 type ProviderType string
 

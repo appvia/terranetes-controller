@@ -43,12 +43,12 @@ func NewValidator(cc client.Client, namespace string) admission.CustomValidator 
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.Validate(ctx, obj.(*terraformv1alpha1.Provider))
+	return v.validate(ctx, obj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.Validate(ctx, newObj.(*terraformv1alpha1.Provider))
+	return v.validate(ctx, newObj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateDelete is called when a resource is being deleted
@@ -56,8 +56,8 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	return nil
 }
 
-// Validate handles the generic validation of a provider
-func (v *validator) Validate(ctx context.Context, provider *terraformv1alpha1.Provider) error {
+// validate handles the generic validation of a provider
+func (v *validator) validate(ctx context.Context, provider *terraformv1alpha1.Provider) error {
 	if !terraformv1alpha1.IsSupportedProviderType(provider.Spec.Provider) {
 		return fmt.Errorf("spec.provider: %s is not supported (must be %s)", provider.Spec.Provider,
 			strings.Join(terraformv1alpha1.SupportedProviderTypeList(), ","))
@@ -86,7 +86,25 @@ func (v *validator) Validate(ctx context.Context, provider *terraformv1alpha1.Pr
 
 	default:
 		return fmt.Errorf("spec.source: %s is not supported", provider.Spec.Source)
+	}
 
+	// @step: are we trying to set provider as a default provider
+	annotations := provider.GetAnnotations()
+	if annotations != nil && annotations[terraformv1alpha1.DefaultProviderAnnotation] == "true" {
+
+		list := &terraformv1alpha1.ProviderList{}
+		if err := v.cc.List(ctx, list); err != nil {
+			return fmt.Errorf("failed to list providers: %w", err)
+		}
+
+		for i := 0; i < len(list.Items); i++ {
+			if list.Items[i].Name == provider.Name {
+				continue
+			}
+			if list.Items[i].GetAnnotations()[terraformv1alpha1.DefaultProviderAnnotation] == "true" {
+				return errors.New("only one provider can be set as the default provider")
+			}
+		}
 	}
 
 	return nil
