@@ -69,7 +69,7 @@ var _ = Describe("Namespace Validation", func() {
 					err = v.ValidateDelete(ctx, fixtures.NewNamespace("default"))
 
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("namespace default is protected by terranetes, ensure configurations are deleted first"))
+					Expect(err.Error()).To(Equal("deletion of namespace default is prevented, ensure Terranetes Configurations are deleted first"))
 				})
 			})
 		})
