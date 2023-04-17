@@ -56,6 +56,7 @@ func main() {
 	flags.StringVar(&config.BackendTemplate, "backend-template", "", "Name of secret in the controller namespace containing a template for the terraform state")
 	flags.StringVar(&config.JobTemplate, "job-template", "", "Name of configmap in the controller namespace containing a template for the job")
 	flags.BoolVar(&config.EnableContextInjection, "enable-context-injection", false, "Indicates the controller should inject Configuration context into the terraform variables")
+	flags.BoolVar(&config.EnableNamespaceProtection, "enable-namespace-protection", false, "Indicates the controller should protect the controller namespace from being deleted")
 	flags.BoolVar(&config.EnableTerraformVersions, "enable-terraform-versions", true, "Indicates the terraform version can be overridden by configurations")
 	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuration namespaces")
 	flags.BoolVar(&config.EnableWebhooks, "enable-webhooks", true, "Indicates we should register the webhooks")
