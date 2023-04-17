@@ -59,6 +59,9 @@ controller:
   # indicate we create the watcher jobs in user namespace, these allow users
   # to view the terraform output
   enableWatchers: true
+  # indicates if namespace deletion should be blocked if the namespace contains one
+  # or more Configuration resources, forcing the user to delete correctly
+  enableNamespaceProtection: false
   # enableTerraformVersions indicates configurations are permitted to override
   # the terraform version in their spec.
   enableTerraformVersions: true

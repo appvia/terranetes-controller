@@ -38,6 +38,9 @@ type Config struct {
 	// into the terraform variables - i.e. namespace and name under a terraform variable
 	// called 'terranetes'
 	EnableContextInjection bool
+	// EnableNamespaceProtection indicates the controller should protect the namespace
+	// from being deleted if there are any terranetes resources in the namespace
+	EnableNamespaceProtection bool
 	// EnableWebhooks enables the webhooks registration
 	EnableWebhooks bool
 	// EnableWatchers enables the creation of watcher jobs

@@ -36,6 +36,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/apiserver"
 	"github.com/appvia/terranetes-controller/pkg/controller/configuration"
 	"github.com/appvia/terranetes-controller/pkg/controller/drift"
+	"github.com/appvia/terranetes-controller/pkg/controller/namespace"
 	"github.com/appvia/terranetes-controller/pkg/controller/policy"
 	"github.com/appvia/terranetes-controller/pkg/controller/provider"
 	"github.com/appvia/terranetes-controller/pkg/register"
@@ -96,9 +97,9 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, err
 	}
 
-	namespace := os.Getenv("KUBE_NAMESPACE")
-	if namespace == "" {
-		namespace = "terraform-system"
+	ns := os.Getenv("KUBE_NAMESPACE")
+	if ns == "" {
+		ns = "terraform-system"
 	}
 
 	hs := &http.Server{
@@ -114,7 +115,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	options := manager.Options{
 		LeaderElection:                false,
 		LeaderElectionID:              "controller.terraform.appvia.io",
-		LeaderElectionNamespace:       namespace,
+		LeaderElectionNamespace:       ns,
 		LeaderElectionReleaseOnCancel: true,
 		MetricsBindAddress:            fmt.Sprintf(":%d", config.MetricsPort),
 		Port:                          config.WebhookPort,
@@ -179,6 +180,13 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		EnableWebhooks: config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the policy controller, error: %w", err)
+	}
+
+	if err := (&namespace.Controller{
+		EnableNamespaceProtection: config.EnableNamespaceProtection,
+		EnableWebhooks:            config.EnableWebhooks,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the namespace controller, error: %w", err)
 	}
 
 	return &Server{
