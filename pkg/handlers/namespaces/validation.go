@@ -59,7 +59,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 	if len(list.Items) > 0 {
-		return fmt.Errorf("namespace %s is protected by terranetes, ensure configurations are deleted first", ns.Name)
+		return fmt.Errorf("deletion of namespace %s is prevented, ensure Terranetes Configurations are deleted first", ns.Name)
 	}
 
 	return nil
