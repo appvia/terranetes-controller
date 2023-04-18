@@ -85,42 +85,47 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 	}
 
 	// @step: create a webhook for intercepting the namespaces
-	if s.config.EnableNamespaceProtection {
-		decision := admissionv1.Fail
-		sideEffects := admissionv1.SideEffectClassNone
+	decision := admissionv1.Fail
+	sideEffects := admissionv1.SideEffectClassNone
 
-		wh := &admissionv1.ValidatingWebhookConfiguration{}
-		wh.Name = "validating-webhook-namespace"
-		wh.Webhooks = []admissionv1.ValidatingWebhook{
-			{
-				AdmissionReviewVersions: []string{"v1"},
-				ClientConfig: admissionv1.WebhookClientConfig{
-					Service: &admissionv1.ServiceReference{
-						Name:      "controller",
-						Namespace: os.Getenv("KUBE_NAMESPACE"),
-						Path:      pointer.String("/validate/terraform.appvia.io/namespaces"),
-						Port:      pointer.Int32(443),
-					},
-					CABundle: ca,
+	wh := &admissionv1.ValidatingWebhookConfiguration{}
+	wh.Name = "validating-webhook-namespace"
+	wh.Webhooks = []admissionv1.ValidatingWebhook{
+		{
+			AdmissionReviewVersions: []string{"v1"},
+			ClientConfig: admissionv1.WebhookClientConfig{
+				Service: &admissionv1.ServiceReference{
+					Name:      "controller",
+					Namespace: os.Getenv("KUBE_NAMESPACE"),
+					Path:      pointer.String("/validate/terraform.appvia.io/namespaces"),
+					Port:      pointer.Int32(443),
 				},
-				FailurePolicy: &decision,
-				Name:          "namespaces.terraform.appvia.io",
-				Rules: []admissionv1.RuleWithOperations{
-					{
-						Operations: []admissionv1.OperationType{"DELETE"},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{""},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"namespaces"},
-						},
-					},
-				},
-				SideEffects: &sideEffects,
+				CABundle: ca,
 			},
-		}
+			FailurePolicy: &decision,
+			Name:          "namespaces.terraform.appvia.io",
+			Rules: []admissionv1.RuleWithOperations{
+				{
+					Operations: []admissionv1.OperationType{"DELETE"},
+					Rule: admissionv1.Rule{
+						APIGroups:   []string{""},
+						APIVersions: []string{"v1"},
+						Resources:   []string{"namespaces"},
+					},
+				},
+			},
+			SideEffects: &sideEffects,
+		},
+	}
 
+	switch s.config.EnableNamespaceProtection {
+	case true:
 		if err := kubernetes.CreateOrForceUpdate(ctx, cc, wh); err != nil {
 			return fmt.Errorf("failed to create / update the namespace webhook, %w", err)
+		}
+	default:
+		if err := kubernetes.DeleteIfExists(ctx, cc, wh); err != nil {
+			return fmt.Errorf("failed to delete the namespace webhook, %w", err)
 		}
 	}
 
