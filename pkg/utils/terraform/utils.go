@@ -98,6 +98,12 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 		}
 	}
 
+	if terraformv1alpha1.ProviderType(provider) == terraformv1alpha1.AzureProviderType {
+		if config["features"] == nil {
+			config["features"] = make(map[string]interface{})
+		}
+	}
+
 	return Template(providerTF, map[string]interface{}{
 		"configuration": config,
 		"provider":      provider,
