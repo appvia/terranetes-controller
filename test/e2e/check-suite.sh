@@ -84,6 +84,7 @@ run_checks() {
     "${UNITS}/apply.bats"
     "${UNITS}/cloud/${CLOUD}/confirm.bats"
     "${UNITS}/drift.bats"
+    "${UNITS}/protection.bats"
     "${UNITS}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/infracost.bats"
@@ -91,6 +92,7 @@ run_checks() {
     "${UNITS}/checkov.bats"
     "${UNITS}/private.bats"
     "${UNITS}/error-handler.bats"
+    "${UNITS}/clean-protection.bats"
   )
   local CONSTRAINTS_FILES=(
     "${UNITS}/constraints/setup.bats"
