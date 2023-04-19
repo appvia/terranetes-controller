@@ -97,6 +97,8 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 				// @step: retrieve the current state of the namespace
 				ns := &v1.Namespace{}
 				ns.Name = configuration.GetNamespace()
+
+				// @step: retrieve the current state of the namespace
 				if _, err := kubernetes.GetIfExists(ctx, c.cc, ns); err != nil {
 					cond.Failed(err, "Failed to check for the namespace")
 
@@ -104,7 +106,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 				}
 
 				// @step: as long as the namespace is not terminating we can create a job
-				if ns.Status.Phase != v1.NamespaceTerminating {
+				if ns.DeletionTimestamp.IsZero() {
 					if err := c.CreateWatcher(ctx, configuration, terraformv1alpha1.StageTerraformDestroy); err != nil {
 						cond.Failed(err, "Failed to create the terraform destroy watcher")
 
