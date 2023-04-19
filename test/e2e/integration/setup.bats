@@ -25,46 +25,39 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should be able to deploy the helm chart" {
-  infracost=""
-  [[ -n "${INFRACOST_API_KEY}}" ]] && infracost="infracost-api"
-  [[ "${USE_CHART}" == "true" ]] && skip "skipping local chart deployment"
-
-  cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-replicaCount: 1
-controller:
-  images:
-    controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
-    executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-  costs:
-    secret: ${infracost}
-EOF
-
-  if ! helm -n ${NAMESPACE} ls | grep terranetes-controller; then
-    runit "helm install terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
-    [[ "$status" -eq 0 ]]
-  else
-    runit "helm upgrade terranetes-controller charts/terranetes-controller -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
-    [[ "$status" -eq 0 ]]
-  fi
-}
-
-@test "We should deploy the controller from the official helm chart" {
-  infracost=""
-  [[ -n "${INFRACOST_API_KEY}}" ]] && infracost="infracost-api"
-  [[ "${USE_CHART}" == "false" ]] && skip "skipping helm chart deployment"
-
-  cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-controller:
-  costs:
-    secret: ${infracost}
-EOF
-
+@test "We should be able to setup the helm repository" {
   runit "helm repo add appvia https://terranetes-controller.appvia.io"
   [[ "$status" -eq 0 ]]
   runit "helm repo update"
   [[ "$status" -eq 0 ]]
-  runit "helm install terranetes-controller appvia/terranetes-controller -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
+}
+
+@test "We should be able to deploy the helm chart" {
+  CHART="charts/terranetes-controller"
+
+  if [[ ${USE_CHART} == true ]]; then
+    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
+replicaCount: 1
+controller:
+  enableNamespaceProtection: true
+  images:
+    controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
+    executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
+  costs:
+    secret: infracost-api
+EOF
+  else
+    CHART="appvia/terranetes-controller"
+
+    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
+controller:
+  enableNamespaceProtection: true
+  costs:
+    secret: infracost-api
+EOF
+  fi
+
+  runit "helm upgrade --install terranetes-controller ${CHART} -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
   [[ "$status" -eq 0 ]]
 }
 
@@ -74,6 +67,11 @@ EOF
   runit "kubectl get crd policies.terraform.appvia.io"
   [[ "$status" -eq 0 ]]
   runit "kubectl get crd providers.terraform.appvia.io"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should have the controller webhooks enabled" {
+  runit "kubectl get validatingwebhookconfigurations validating-webhook-configuration"
   [[ "$status" -eq 0 ]]
 }
 
@@ -104,7 +102,7 @@ EOF
 
   runit "kubectl delete policies.terraform.appvia.io --all"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${NAMESPACE} delete job -l ${labels}"
+  runit "kubectl -n ${NAMESPACE} delete job --all"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} delete po -l terraform.appvia.io/configuration"
   [[ "$status" -eq 0 ]]
