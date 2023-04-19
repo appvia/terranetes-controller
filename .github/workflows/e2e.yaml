@@ -58,7 +58,7 @@ jobs:
       - name: Save
         uses: actions/upload-artifact@v3
         with:
-          name: controller-image
+          name: controller-image-${{ github.run_id }}
           path: /tmp/controller-image.tar
           retention-days: 1
 
@@ -80,7 +80,7 @@ jobs:
       - name: Save
         uses: actions/upload-artifact@v3
         with:
-          name: executor-image
+          name: executor-image-${{ github.run_id }}
           path: /tmp/executor-image.tar
           retention-days: 1
 
@@ -113,13 +113,13 @@ jobs:
         if: (github.event.inputs || inputs).version == 'ci'
         uses: actions/download-artifact@v3
         with:
-          name: controller-image
+          name: controller-image-${{ github.run_id }}
           path: /tmp
       - name: Retrieve Executor Image
         if: (github.event.inputs || inputs).version == 'ci'
         uses: actions/download-artifact@v3
         with:
-          name: executor-image
+          name: executor-image-${{ github.run_id }}
           path: /tmp
       - name: Load images
         if: (github.event.inputs || inputs).version == 'ci'
