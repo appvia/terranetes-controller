@@ -46,7 +46,7 @@ require (
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 	mvdan.cc/sh/v3 v3.6.0
 	sigs.k8s.io/controller-runtime v0.14.6
-	sigs.k8s.io/controller-tools v0.11.3
+	sigs.k8s.io/controller-tools v0.11.4
 	sigs.k8s.io/yaml v1.3.0
 )
 
