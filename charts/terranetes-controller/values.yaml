@@ -33,7 +33,7 @@ controller:
     # is the default image to use for terraform operations
     terraform: hashicorp/terraform:1.4.6
     # image to use for infracost
-    infracost: infracost/infracost:ci-0.10.20
+    infracost: infracost/infracost:ci-0.10.21
     # policy is image for policy
     policy: bridgecrew/checkov:2.3.212
     # is the controller image
