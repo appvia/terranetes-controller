@@ -93,6 +93,7 @@ run_checks() {
     "${UNITS}/private.bats"
     "${UNITS}/error-handler.bats"
     "${UNITS}/clean-protection.bats"
+    "${UNITS}/custom-state-backend.bats"
   )
   local CONSTRAINTS_FILES=(
     "${UNITS}/constraints/setup.bats"
