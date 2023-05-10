@@ -178,9 +178,11 @@ func Run(ctx context.Context, step Step) error {
 	// @step: upload any files as kubernetes secrets
 	for name, path := range step.UploadKeyPairs() {
 		err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
-			if err := uploadSecret(ctx, cc, step.Namespace, name, path); err == nil {
+			err := uploadSecret(ctx, cc, step.Namespace, name, path)
+			if err == nil {
 				return true, nil
 			}
+			log.WithError(err).WithField("secret", name).Error("failed to upload secret")
 
 			return false, nil
 		})
