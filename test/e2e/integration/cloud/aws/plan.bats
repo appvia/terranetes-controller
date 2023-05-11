@@ -33,7 +33,7 @@ kind: Configuration
 metadata:
   name: ${RESOURCE_NAME}
 spec:
-  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.3.0
+  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.10.1
   enableDriftDetection: true
   providerRef:
     name: ${CLOUD}
@@ -51,6 +51,8 @@ spec:
       enabled: true
     block_public_acls: true
     block_public_policy: true
+    control_object_ownership: true
+    object_ownership: ObjectWriter
     ignore_public_acls: true
     restrict_public_buckets: true
     server_side_encryption_configuration:
