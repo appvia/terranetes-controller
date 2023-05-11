@@ -62,8 +62,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.11.4
   name: configurations.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -152,6 +151,9 @@ spec:
                       optional:
                         description: Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is not contained in the secret, we ignore the error
                         type: boolean
+                      remapped:
+                        description: Remapped is an alternative name for the for the value - i.e. lets assume you have a secret with data.DH_HOST but you want to source the value as database_hostname
+                        type: string
                       secret:
                         description: Secret is the name of the secret in the configuration namespace
                         type: string
@@ -315,8 +317,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.11.4
   name: policies.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -723,8 +724,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.11.4
   name: providers.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -968,7 +968,6 @@ var _webhooksManifestsYaml = []byte(`---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
   name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -995,7 +994,6 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
