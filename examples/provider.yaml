@@ -8,7 +8,7 @@ spec:
   # must specify the spec.secretRef which defines the name of the
   # secret in the controller namespace containing the credentials.
   source: secret
-  # Provider can be google, aws, azurerm
+  # Provider can be google, aws, azurerm, alicloud, azurestack, googleworkspace etc
   provider: aws
   # Used when spec.source is secret.
   secretRef:
