@@ -26,7 +26,7 @@ teardown() {
 }
 
 @test "We should have resources indicated in the status" {
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '5'"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.resources' | grep -q '6'"
   [[ "$status" -eq 0 ]]
 }
 

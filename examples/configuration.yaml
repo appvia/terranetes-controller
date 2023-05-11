@@ -5,7 +5,7 @@ metadata:
   name: bucket
 spec:
   ## Using a public repository
-  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
+  module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.10.1
   ##
   ## If you need to use a private git repository, use the git format as below
   ##
@@ -56,13 +56,17 @@ spec:
 
   variables:
     # -- The name of the bucket. If omitted, Terraform will assign a random, unique name
-    bucket: terranetes-controller-ci-bucket-rohith11
+    bucket: terranetes-controller-ci-bucket
     # -- The canned ACL to apply
     acl: private
+    # -- Manage S3 Bucket Ownership Controls on this bucket.
+    control_object_ownership: true
+    # -- Object ownership type
+    object_ownership: ObjectWriter
     # -- Map containing versioning configuration
     versioning:
       enabled: true
-    # --Whether Amazon S3 should block public ACLs for this bucket
+    # -- Whether Amazon S3 should block public ACLs for this bucket
     block_public_acls: true
     # -- Whether Amazon S3 should block public bucket policies for this bucket
     block_public_policy: true
