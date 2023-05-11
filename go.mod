@@ -33,7 +33,7 @@ require (
 	github.com/tcnksm/ghr v0.16.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/oauth2 v0.7.0
+	golang.org/x/oauth2 v0.8.0
 	golang.org/x/tools v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
