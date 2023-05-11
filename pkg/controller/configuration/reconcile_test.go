@@ -1092,6 +1092,56 @@ var _ = Describe("Configuration Controller", func() {
 					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal(expected))
 				})
 			})
+
+			When("secret and key exist and we are remapping", func() {
+				BeforeEach(func() {
+					secret := &v1.Secret{}
+					secret.Namespace = configuration.Namespace
+					secret.Name = "exists"
+					secret.Data = map[string][]byte{"DB_HOST": []byte("value")}
+					remapped := "database_host"
+
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "DB_HOST", Remapped: &remapped}}
+					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
+					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
+				})
+
+				It("should have the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+					Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+				})
+
+				It("should indicate the plan is in progress", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+				})
+
+				It("should have created a job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should have added the value to the configuration config", func() {
+					expected := "{\"database_host\":\"value\",\"name\":\"test\"}\n"
+
+					secret := &v1.Secret{}
+					secret.Namespace = ctrl.ControllerNamespace
+					secret.Name = configuration.GetTerraformConfigSecretName()
+
+					found, err := kubernetes.GetIfExists(context.TODO(), ctrl.cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+					Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
+					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal(expected))
+				})
+			})
 		})
 	})
 
