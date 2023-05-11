@@ -249,7 +249,7 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 			}
 
 			if secret.Data != nil {
-				state.valueFrom[x.GetKeyName()] = string(secret.Data[x.Key])
+				state.valueFrom[x.GetName()] = string(secret.Data[x.Key])
 			}
 		}
 

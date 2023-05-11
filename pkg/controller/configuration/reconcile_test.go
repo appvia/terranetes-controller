@@ -1099,9 +1099,8 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Namespace = configuration.Namespace
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"DB_HOST": []byte("value")}
-					remapped := "database_host"
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "DB_HOST", Remapped: &remapped}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "DB_HOST", Name: "database_host"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
