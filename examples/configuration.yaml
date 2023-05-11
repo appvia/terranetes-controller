@@ -33,6 +33,20 @@ spec:
   providerRef:
     name: aws
 
+  # Allows you to source in terraform inputs from one of more kubernetes secrets
+  valueFrom:
+    - secret: database_secret
+      # Is the key inside the secret i.e. data.<NAME>
+      key: DB_HOST
+      # Is optional but recommended. This specifies the name of the variable presented
+      # to terraform. Note, by default if left blank the key is used instead. You can also
+      # remap names where i.e DB_HOST and be remapped to database_hostname when consumed
+      name: database_hostname
+      # Indicates if the secret is optional - by default, any unresolved secret will defer
+      # execution and wait for the secret to become available. By setting to true, the controller
+      # will ignore a missing secret and or key
+      optional: true
+
   writeConnectionSecretToRef:
     name: test
     keys:

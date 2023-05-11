@@ -200,21 +200,22 @@ type ValueFromSource struct {
 	// Key is the key in the secret which we should used for the value
 	// +kubebuilder:validation:Required
 	Key string `json:"key"`
-	// Remapped is an alternative name for the for the value - i.e. lets assume you
-	// have a secret with data.DH_HOST but you want to source the value as database_hostname
-	Remapped *string `json:"remapped,omitempty"`
+	// Name is the name which we use when injecting the value into the terraform code
+	// i.e. the secret maye contain data.DB_HOST but you call this database_hostname. Note,
+	// for backwards compatiability if no name is provided, we using the key at the name
+	Name string `json:"name,omitempty"`
 	// Secret is the name of the secret in the configuration namespace
 	// +kubebuilder:validation:Required
 	Secret string `json:"secret"`
 }
 
-// GetKeyName returns the name of the key but also checks for remapping
-func (v *ValueFromSource) GetKeyName() string {
-	if v.Remapped != nil && len(*v.Remapped) > 0 {
-		return *v.Remapped
+// GetName returns the name or the key if not set
+func (v *ValueFromSource) GetName() string {
+	if len(v.Name) == 0 {
+		return v.Key
 	}
 
-	return v.Key
+	return v.Name
 }
 
 // ConfigurationSpec defines the desired state of a terraform
