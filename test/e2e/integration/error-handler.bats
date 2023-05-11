@@ -59,7 +59,11 @@ EOF
 
 @test "We should be able to see the logs from the failing resource" {
   NAMESPACE="error-handling"
-  POD=$(kubectl -n ${NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
+  LABELS="-l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan"
+
+  retry 10 "kubectl -n ${NAMESPACE} get po --no-headers ${LABELS} -o json | wc -l | grep -v 0"
+  [[ "$status" -eq 0 ]]
+  POD=$(kubectl -n ${NAMESPACE} get pod ${LABELS} -o json | jq -r '.items[0].metadata.name')
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} logs ${POD} 2>&1" "grep -q 'failed to download the source'"
   [[ "$status" -eq 0 ]]
