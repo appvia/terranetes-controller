@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,11 +57,6 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 
 // validate handles the generic validation of a provider
 func (v *validator) validate(ctx context.Context, provider *terraformv1alpha1.Provider) error {
-	if !terraformv1alpha1.IsSupportedProviderType(provider.Spec.Provider) {
-		return fmt.Errorf("spec.provider: %s is not supported (must be %s)", provider.Spec.Provider,
-			strings.Join(terraformv1alpha1.SupportedProviderTypeList(), ","))
-	}
-
 	switch provider.Spec.Source {
 	case terraformv1alpha1.SourceSecret:
 		switch {

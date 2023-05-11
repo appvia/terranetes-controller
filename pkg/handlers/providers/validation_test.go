@@ -62,19 +62,16 @@ var _ = Describe("Provider Validation", func() {
 		})
 	})
 
-	When("creating a provider with an incorrect provider", func() {
+	When("creating a provider with an unknown provider", func() {
 		It("should throw error", func() {
 			policy := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
-			policy.Spec.Provider = "invalid"
-			msg := "spec.provider: invalid is not supported (must be aws,alicloud,azuread,azurestack,azurerm,google,googleworkspace,kubernetes,vsphere,vault)"
+			policy.Spec.Provider = "unknown"
 
 			err := v.ValidateCreate(ctx, policy)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal(msg))
+			Expect(err).ToNot(HaveOccurred())
 
 			err = v.ValidateUpdate(ctx, nil, policy)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal(msg))
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
