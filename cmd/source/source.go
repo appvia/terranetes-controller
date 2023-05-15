@@ -36,12 +36,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 }
+
+var gitConfig = `
+[url "{{ .Source }}"]
+  insteadOf = {{ .Destination }}
+`
 
 func main() {
 	var source, destination string
@@ -113,31 +119,39 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		}
 
 	case os.Getenv("GIT_USERNAME") != "" && os.Getenv("GIT_PASSWORD") != "":
-		filename := path.Join("${HOME}", ".git", "config")
+		data, err := template.New(gitConfig, map[string]string{
+			"Source": fmt.Sprintf("%s://%s:%s@%s%s",
+				uri.Scheme,
+				os.Getenv("GIT_USERNAME"),
+				os.Getenv("GIT_PASSWORD"),
+				uri.Hostname(), uri.Path,
+			),
+			"Destination": source,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create git config template: %w", err)
+		}
 
-		found, err := utils.FileExists(os.ExpandEnv(filename))
+		filename := os.ExpandEnv(
+			path.Join("${HOME}", utils.GetEnv("GIT_CONFIG", ".gitconfig")),
+		)
+
+		wr, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0760)
+		if err != nil {
+			return fmt.Errorf("failed to open git config file: %w", err)
+		}
+
+		err = func() error {
+			if _, err := wr.Write(data); err != nil {
+				return fmt.Errorf("failed to write git config file: %w", err)
+			}
+			defer wr.Close()
+
+			return nil
+		}()
 		if err != nil {
 			return err
 		}
-		if found {
-			log.WithField("path", filename).Warn("git configuration file already found, skipping")
-
-			break
-		}
-
-		// @step: update the gitconfig to overload the URL
-		// git config --global url."https://token:$GIT_TOKEN@github.com/example/".insteadOf "ssh://git@github.com/example/"
-		args := []string{
-			"config", "--global",
-			fmt.Sprintf("url.\"https://%s:%s@%s/%s\".insteadOf \"%s\"",
-				os.Getenv("GIT_USERNAME"),
-				os.Getenv("GIT_PASSWORD"),
-				uri.Hostname(), uri.Path, source),
-		}
-		if err := exec.Command("git", args...).Run(); err != nil {
-			return fmt.Errorf("failed tp update the git configuration: %w", err)
-		}
-
 	}
 
 	// @step: retrieve the working directory
@@ -152,8 +166,8 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 	}
 
 	log.WithFields(log.Fields{
-		"source": source,
 		"dest":   destination,
+		"source": source,
 	}).Info("downloading the assets")
 
 	// @step: create a temporary directory

@@ -77,6 +77,9 @@ spec:
             - --command=/bin/cp /run/config/* /data
             - --command=/bin/cp /bin/step /run/bin/step
             - --command=/bin/source --dest=/data --source={{ .Configuration.Module }}
+          env:
+            - name: HOME
+              value: /data
           envFrom:
           {{- if .Secrets.Config }}
             - secretRef:
