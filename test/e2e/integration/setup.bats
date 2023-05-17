@@ -35,7 +35,7 @@ teardown() {
 @test "We should be able to deploy the helm chart" {
   CHART="charts/terranetes-controller"
 
-  if [[ ${USE_CHART} == true ]]; then
+  if [[ ${USE_CHART} == "false" ]]; then
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 1
 controller:
