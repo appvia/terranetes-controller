@@ -55,7 +55,7 @@ EOF
 @test "We should be able to update the controller to use a custom backend" {
   CHART="charts/terranetes-controller"
 
-  if [[ "${USE_CHART}" == "true" ]]; then
+  if [[ "${USE_CHART}" == "false" ]]; then
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
   backendTemplate: terraform-backend-config
@@ -208,7 +208,7 @@ EOF
 @test "We should be able to revert the changes to the terranetes controller" {
   CHART="charts/terranetes-controller"
 
-  if [[ "${USE_CHART}" == "true" ]]; then
+  if [[ "${USE_CHART}" == "false" ]]; then
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 1
 controller:
