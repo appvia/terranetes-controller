@@ -56,8 +56,8 @@ spec:
             {{- if .Values.controller.costs.secret }}
             - --cost-secret={{ .Values.controller.costs.secret }}
             {{- end }}
-            {{- if .Values.controller.backendTemplate }}
-            - --backend-template={{ .Values.controller.backendTemplate }}
+            {{- if .Values.controller.backend.name }}
+            - --backend-template={{ .Values.controller.backend.name }}
             {{- end }}
             - --drift-controller-interval={{ .Values.controller.driftControllerInterval }}
             - --drift-interval={{ .Values.controller.driftInterval }}
