@@ -13,7 +13,8 @@ spec:
   ##
   ## For private repositories we need credentials. Assuming the source is git you can use the
   ## command: $ kubectl -n NAMESPACE create secret generic ssh-key --from-file=SSH_KEY_AUTH=ida.rsa
-  ## to push the private key and then reference secret in the auth as below
+  ## to push the private key and then reference secret in the auth as below. For HTTP authentication
+  ## $ kubectl -n NAMESPACE create secret generic auth --from-literal=GIT_USERNAME=git --from-literal=GIT_PASSWORD=pass
   #
   # auth:
   #   name: ssh-key
@@ -35,7 +36,20 @@ spec:
 
   # Allows you to source in terraform inputs from one of more kubernetes secrets
   valueFrom:
-    - secret: database_secret
+    -
+      # Retrieve the value from a specific context
+      context: default
+      # Is the key with the context resource which we should use. The translates
+      # to spec.variables.KEY.value
+      key: vpc
+      # Is the name which the value should be presented to terraform as
+      name: vpc_id
+      # Indicates the value, or context is not found is optional and will not fail the
+      # terraform run
+      optional: true
+    -
+      # Is the name of the local kubernetes secret which contains the value
+      secret: database_secret
       # Is the key inside the secret i.e. data.<NAME>
       key: DB_HOST
       # Is optional but recommended. This specifies the name of the variable presented

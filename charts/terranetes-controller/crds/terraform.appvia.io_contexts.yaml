@@ -1,0 +1,133 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.4
+  name: contexts.terraform.appvia.io
+spec:
+  group: terraform.appvia.io
+  names:
+    categories:
+      - terraform
+    kind: Context
+    listKind: ContextList
+    plural: contexts
+    singular: context
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Context is the schema for the context type
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ContextSpec defines the desired state for a context
+              properties:
+                variables:
+                  additionalProperties:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  description: Variables is a list of variables which can be used globally by Context resources. The structure of the variables is a map of key/value pairs, which MUST have both a description and a value.
+                  type: object
+              required:
+                - variables
+              type: object
+            status:
+              description: ContextStatus defines the observed state of a terraform
+              properties:
+                conditions:
+                  description: Conditions represents the observations of the resource's current state.
+                  items:
+                    description: Condition is the current observed condition of some aspect of a resource
+                    properties:
+                      detail:
+                        description: Detail is any additional human-readable detail to understand this condition, for example, the full underlying error which caused an issue
+                        type: string
+                      lastTransitionTime:
+                        description: LastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message is a human readable message indicating details about the transition. This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      name:
+                        description: Name is a human-readable name for this condition.
+                        minLength: 1
+                        type: string
+                      observedGeneration:
+                        description: ObservedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: Reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - name
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
+                lastReconcile:
+                  description: LastReconcile describes the generation and time of the last reconciliation
+                  properties:
+                    generation:
+                      description: Generation is the generation reconciled on the last reconciliation
+                      format: int64
+                      type: integer
+                    time:
+                      description: Time is the last time the resource was reconciled
+                      format: date-time
+                      type: string
+                  type: object
+                lastSuccess:
+                  description: LastSuccess descibes the generation and time of the last reconciliation which resulted in a Success status
+                  properties:
+                    generation:
+                      description: Generation is the generation reconciled on the last reconciliation
+                      format: int64
+                      type: integer
+                    time:
+                      description: Time is the last time the resource was reconciled
+                      format: date-time
+                      type: string
+                  type: object
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+  preserveUnknownFields: false

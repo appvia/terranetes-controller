@@ -103,6 +103,10 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 	if err := validateConnectionSecret(configuration); err != nil {
 		return err
 	}
+	// @step: check the configuration valud froms are valid
+	if err := validateValueFrom(configuration); err != nil {
+		return err
+	}
 
 	// @step: grab the namespace of the configuration
 	namespace := &v1.Namespace{}
@@ -131,6 +135,21 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 	// @step: validate the configuration against all module constraints
 	if err := validateModuleConstriants(configuration, list, namespace); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateValueFrom checks the value froms are valid
+func validateValueFrom(configuration *terraformv1alpha1.Configuration) error {
+	for i, v := range configuration.Spec.ValueFrom {
+		switch {
+		case v.Context == nil && v.Secret == nil:
+			return fmt.Errorf("spec.valueFrom[%d] requires either context or secret", i)
+
+		case v.Context != nil && v.Secret != nil:
+			return fmt.Errorf("spec.valueFrom[%d] requires either context or secret, not both", i)
+		}
 	}
 
 	return nil

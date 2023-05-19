@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -35,6 +36,7 @@ var _ = Describe("Configuration Validation", func() {
 	ctx := context.Background()
 	var cc client.Client
 	var v *validator
+	var err error
 
 	namespace := "default"
 	name := "aws"
@@ -153,6 +155,40 @@ var _ = Describe("Configuration Validation", func() {
 		BeforeEach(func() {
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
 			v = &validator{cc: cc, versioning: true}
+		})
+
+		When("specifying value from inputs", func() {
+			Context("neither of the input is specified", func() {
+				BeforeEach(func() {
+					c := fixtures.NewValidBucketConfiguration(namespace, name)
+					c.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{}}
+
+					err = v.ValidateCreate(ctx, c)
+				})
+
+				It("should fail with validation error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("spec.valueFrom[0] requires either context or secret"))
+				})
+			})
+
+			Context("both of the input are specified", func() {
+				BeforeEach(func() {
+					c := fixtures.NewValidBucketConfiguration(namespace, name)
+					c.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
+						{
+							Secret:  pointer.String("secret"),
+							Context: pointer.String("context"),
+						},
+					}
+					err = v.ValidateCreate(ctx, c)
+				})
+
+				It("should fail with validation error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("spec.valueFrom[0] requires either context or secret, not both"))
+				})
+			})
 		})
 
 		When("we have a module constraint", func() {

@@ -33,6 +33,7 @@ import (
 	"github.com/tidwall/sjson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
@@ -186,7 +187,7 @@ func (o *Command) Run(ctx context.Context) error {
 					}
 					vf := terraformv1alpha1.ValueFromSource{}
 					vf.Key = variable.Name
-					vf.Secret = answer
+					vf.Secret = pointer.String(answer)
 					configuration.Spec.ValueFrom = append(configuration.Spec.ValueFrom, vf)
 
 					continue

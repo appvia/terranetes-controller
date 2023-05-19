@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kfake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -207,6 +208,214 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 				Expect(len(job.Spec.Template.Spec.InitContainers[0].EnvFrom)).To(Equal(1))
 				Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
 				Expect(len(job.Spec.Template.Spec.InitContainers[1].EnvFrom)).To(Equal(0))
+			})
+		})
+	})
+})
+
+var _ = Describe("Configuration Controller with Contexts", func() {
+	logrus.SetOutput(ioutil.Discard)
+
+	var cc client.Client
+	var result reconcile.Result
+	var rerr error
+	var ctrl *Controller
+	var configuration *terraformv1alpha1.Configuration
+	var recorder *controllertests.FakeRecorder
+
+	namespace := "default"
+
+	BeforeEach(func() {
+		secret := fixtures.NewValidAWSProviderSecret(namespace, "aws")
+		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
+		configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
+			{
+				Context: pointer.String("default"),
+				Key:     "foo",
+				Name:    "test",
+			},
+		}
+		configuration.Spec.Variables = &runtime.RawExtension{
+			Raw: []byte(`{"hello":"world"}`),
+		}
+
+		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
+			append([]runtime.Object{
+				fixtures.NewValidAWSReadyProvider("aws", secret),
+				secret,
+			})...)
+
+		recorder = &controllertests.FakeRecorder{}
+		ctrl = &Controller{
+			cc:                  cc,
+			kc:                  kfake.NewSimpleClientset(),
+			cache:               cache.New(5*time.Minute, 10*time.Minute),
+			recorder:            recorder,
+			EnableInfracosts:    false,
+			EnableWatchers:      true,
+			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
+			InfracostsImage:     "infracosts/infracost:latest",
+			ControllerNamespace: "terraform-system",
+			PolicyImage:         "bridgecrew/checkov:2.0.1140",
+			TerraformImage:      "hashicorp/terraform:1.1.9",
+		}
+		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
+	})
+
+	When("create a configuration with a context", func() {
+		BeforeEach(func() {
+			txt := fixtures.NewTerranettesContext("default")
+			txt.Spec.Variables = map[string]runtime.RawExtension{
+				"foo": {
+					Raw: []byte(`{"description": "foo", "value": "should_be_me"}`),
+				},
+			}
+
+			Expect(cc.Create(context.Background(), txt)).To(Succeed())
+		})
+
+		Context("and the context does not exist", func() {
+			BeforeEach(func() {
+				cc.Delete(context.Background(), fixtures.NewTerranettesContext("default"))
+			})
+
+			Context("and the context is optional", func() {
+				BeforeEach(func() {
+					configuration.Spec.ValueFrom[0].Optional = true
+					Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+				})
+
+				It("should not have failed", func() {
+					Expect(rerr).ToNot(HaveOccurred())
+					Expect(result.Requeue).To(BeFalse())
+				})
+
+				It("should create the terraform plan", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should have the appropriate conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+					Expect(cond.Message).To(Equal("Terraform plan is running"))
+				})
+
+				It("should have the job configuration secret", func() {
+					secret := &v1.Secret{}
+					secret.Namespace = ctrl.ControllerNamespace
+					secret.Name = configuration.GetTerraformConfigSecretName()
+
+					found, err := kubernetes.GetIfExists(context.Background(), cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+				})
+			})
+
+			Context("and the context is required", func() {
+				BeforeEach(func() {
+					configuration.Spec.ValueFrom[0].Optional = false
+					Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+				})
+
+				It("should not create any jobs", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(0))
+				})
+
+				It("should have appropriate conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+					Expect(cond.Message).To(Equal("spec.valueFrom[0].context (default) does not exist"))
+				})
+			})
+		})
+
+		Context("and the context exists", func() {
+			Context("but the value is missing, but optional", func() {
+				BeforeEach(func() {
+					configuration.Spec.ValueFrom[0].Optional = true
+					configuration.Spec.ValueFrom[0].Key = "missing"
+					Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).ToNot(HaveOccurred())
+					Expect(result.Requeue).To(BeFalse())
+				})
+
+				It("should have the appropriate conditions ", func() {
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+					Expect(cond.Message).To(Equal("Terraform plan is running"))
+				})
+
+				It("should create the terraform plan", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.Background(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+			})
+
+			Context("but the value is present", func() {
+				BeforeEach(func() {
+					Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).ToNot(HaveOccurred())
+					Expect(result.Requeue).To(BeFalse())
+				})
+
+				It("should have the appropriate conditions ", func() {
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+					Expect(cond.Message).To(Equal("Terraform plan is running"))
+				})
+
+				It("should create the terraform plan", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.Background(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should have the context variable in the job configuration secret", func() {
+					secret := &v1.Secret{}
+					secret.Namespace = ctrl.ControllerNamespace
+					secret.Name = configuration.GetTerraformConfigSecretName()
+
+					found, err := kubernetes.GetIfExists(context.Background(), cc, secret)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(found).To(BeTrue())
+					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).ToNot(BeEmpty())
+					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal("{\"hello\":\"world\",\"test\":\"should_be_me\"}\n"))
+				})
 			})
 		})
 	})
@@ -929,7 +1138,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("secret is missing and not optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: "missing", Key: "key"},
+						{Secret: pointer.String("missing"), Key: "key"},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -946,7 +1155,7 @@ var _ = Describe("Configuration Controller", func() {
 					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
-					Expect(cond.Message).To(Equal("Secret spec.valueFrom[0] (apps/missing) does not exist"))
+					Expect(cond.Message).To(Equal("spec.valueFrom[0].secret (apps/missing) does not exist"))
 					Expect(cond.Detail).To(Equal(""))
 				})
 
@@ -961,7 +1170,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("secret is missing but optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: "missing", Key: "key", Optional: true},
+						{Secret: pointer.String("missing"), Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -981,7 +1190,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Namespace = configuration.Namespace
 					secret.Name = "exists"
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "missing"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "missing"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -999,7 +1208,7 @@ var _ = Describe("Configuration Controller", func() {
 					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
-					Expect(cond.Message).To(Equal(`Secret spec.valueFrom[0] (apps/exists) does not contain key: "missing"`))
+					Expect(cond.Message).To(Equal(`spec.valueFrom[0] (apps/exists) does not contain key: "missing"`))
 				})
 
 				It("should not create any jobs", func() {
@@ -1013,7 +1222,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("key is missing but optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: "missing", Key: "key", Optional: true},
+						{Secret: pointer.String("missing"), Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1051,7 +1260,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"my": []byte("value")}
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "my"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "my"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -1100,7 +1309,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"DB_HOST": []byte("value")}
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: "exists", Key: "DB_HOST", Name: "database_host"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "DB_HOST", Name: "database_host"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 

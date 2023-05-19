@@ -1,0 +1,12 @@
+
+WF-2949 - Support a dry-run diff flag when patching resources
+WF-2990 - [UI] No error message when deleting cluster plan referenced by the cluster
+WF-2964 - Cluster plan without channel specified was accepted but resulted in inability to create cluster
+WF-2672 - When deleting an environment with existing resources, it successfully goes through even though it isn't deleted
+WF-2481 - AWS clusters at v1.25 fail with nodepool and tigra errors
+WF-2946 - User cannot select EKS image
+WF-2966 - UI doesn't allow to change cluster plan node pool name while it's possible with the CLI
+WF-2993 - [UI] Cluster creation - packages show "Error loading data" message
+WF-2952 - Packages Showing Errors
+WF-2917 - Cloud Resource Plan Mandatory Field
+WF-2968 - Clusters reported inconsistently in the UI, CLI and cloud provider
