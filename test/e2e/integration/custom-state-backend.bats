@@ -41,7 +41,7 @@ teardown() {
 terraform {
   backend "s3" {
     bucket     = "terranetes-controller-state-e2e"
-    key        = "${GITHUB_RUN_ID:-'test'}/{{ .namespace }}/{{ .name }}"
+    key        = "${GITHUB_RUN_ID:-test}/{{ .namespace }}/{{ .name }}"
     region     = "eu-west-2"
     access_key = "${AWS_ACCESS_KEY_ID}"
     secret_key = "${AWS_SECRET_ACCESS_KEY}"
@@ -58,7 +58,8 @@ EOF
   if [[ "${USE_CHART}" == "false" ]]; then
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
-  backendTemplate: terraform-backend-config
+  backend:
+    name: terraform-backend-config
   images:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
@@ -70,7 +71,8 @@ EOF
 
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
-  backendTemplate: terraform-backend-config
+  backend:
+    name: terraform-backend-config
   costs:
     secret: infracost-api
 EOF
