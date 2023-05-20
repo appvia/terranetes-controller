@@ -1,0 +1,10 @@
+{{- if and ( .Values.controller.backend.name ) ( .Values.controller.backend.template ) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.controller.backend.name }}
+stringData:
+  backend.tf: |
+    {{ .Values.controller.backend.template }}
+{{- end }}
