@@ -35,6 +35,7 @@ import (
 
 	"github.com/appvia/terranetes-controller/pkg/apiserver"
 	"github.com/appvia/terranetes-controller/pkg/controller/configuration"
+	ctrlcontext "github.com/appvia/terranetes-controller/pkg/controller/context"
 	"github.com/appvia/terranetes-controller/pkg/controller/drift"
 	"github.com/appvia/terranetes-controller/pkg/controller/namespace"
 	"github.com/appvia/terranetes-controller/pkg/controller/policy"
@@ -141,6 +142,12 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	if config.InfracostsSecretName != "" && config.InfracostsImage != "" {
 		log.Info("enabling the infracost integration")
+	}
+
+	if err := (&ctrlcontext.Controller{
+		EnableWebhooks: config.EnableWebhooks,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to add the contexts controller: %w", err)
 	}
 
 	if err := (&configuration.Controller{

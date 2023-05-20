@@ -193,6 +193,9 @@ func (w *WriteConnectionSecret) KeysMap() (map[string]string, error) {
 
 // ValueFromSource defines a value which is taken from a secret
 type ValueFromSource struct {
+	// Context is the context is the name of the terraform context where the
+	// value should be retrieved from
+	Context *string `json:"context,omitempty"`
 	// Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
 	// not contained in the secret, we ignore the error
 	// +kubebuilder:validation:Optional
@@ -205,8 +208,8 @@ type ValueFromSource struct {
 	// for backwards compatiability if no name is provided, we using the key at the name
 	Name string `json:"name,omitempty"`
 	// Secret is the name of the secret in the configuration namespace
-	// +kubebuilder:validation:Required
-	Secret string `json:"secret"`
+	// +kubebuilder:validation:Optional
+	Secret *string `json:"secret,omitempty"`
 }
 
 // GetName returns the name or the key if not set

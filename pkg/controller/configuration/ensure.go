@@ -65,7 +65,7 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Config
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		// @step: retrieve a list of policies
+		// @step: retrieve a list of policies in the cluster
 		policies := &terraformv1alpha1.PolicyList{}
 		if err := c.cc.List(ctx, policies); err != nil {
 			cond.Failed(err, "Failed to list the policies in cluster")
@@ -158,9 +158,11 @@ func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha
 		}
 
 		// @step: ensure we have the backend.tf key in the secret
-		backend, ok := secret.Data["backend.tf"]
+		backend, ok := secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey]
 		if !ok || len(backend) == 0 {
-			cond.ActionRequired(fmt.Sprintf("Backend template secret %q does not contain the backend.tf key", reference))
+			cond.ActionRequired(fmt.Sprintf("Backend template secret %q does not contain the %s key",
+				reference, terraformv1alpha1.TerraformBackendConfigMapKey),
+			)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -215,41 +217,91 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		if len(configuration.Spec.ValueFrom) == 0 {
+		switch {
+		case len(configuration.Spec.ValueFrom) == 0:
 			return reconcile.Result{}, nil
 		}
 
 		for i, x := range configuration.Spec.ValueFrom {
-			secret := &v1.Secret{}
-			secret.Namespace = configuration.Namespace
-			secret.Name = x.Secret
-
-			found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
-			if err != nil {
-				cond.Failed(err, "Failed to retrieve the secret spec.valueFrom[%d]", i)
-
-				return reconcile.Result{}, err
-			}
-
-			// @step: we either error or move on if the secret is not found
 			switch {
-			case !found && !x.Optional:
-				cond.ActionRequired("Secret spec.valueFrom[%d] (%s/%s) does not exist", i, configuration.Namespace, secret.Name)
-				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			case x.Secret != nil && x.Context != nil:
+				cond.Failed(fmt.Errorf("spec.valuefrom[%d] secret and context cannot be used together", i), "options are mutually exclusive")
 
-			case !found:
-				continue
-			}
+				return reconcile.Result{}, controller.ErrIgnore
 
-			// @step: we need to ensure the key is present in the secret
-			if (secret.Data == nil || len(secret.Data[x.Key]) == 0) && !x.Optional {
-				cond.ActionRequired("Secret spec.valueFrom[%d] (%s/%s) does not contain key: %q", i, configuration.Namespace, secret.Name, x.Key)
+			// @step: if the value is from a secret, we need to check it exists
+			case x.Secret != nil:
+				secret, found, err := kubernetes.GetSecretIfExists(ctx, c.cc, configuration.Namespace, *x.Secret)
+				if err != nil {
+					cond.Failed(err, "Failed to retrieve the secret spec.valueFrom[%d]", i)
 
-				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
-			}
+					return reconcile.Result{}, err
+				}
 
-			if secret.Data != nil {
-				state.valueFrom[x.GetName()] = string(secret.Data[x.Key])
+				// @step: we either error or move on if the secret is not found
+				if !found {
+					if !x.Optional {
+						cond.ActionRequired("spec.valueFrom[%d].secret (%s/%s) does not exist", i, configuration.Namespace, secret.Name)
+
+						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+					continue
+				}
+
+				// @step: we need to ensure the key is present in the secret
+				if (secret.Data == nil || len(secret.Data[x.Key]) == 0) && !x.Optional {
+					cond.ActionRequired("spec.valueFrom[%d] (%s/%s) does not contain key: %q", i, configuration.Namespace, secret.Name, x.Key)
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+				}
+
+				if secret.Data != nil {
+					state.valueFrom[x.GetName()] = string(secret.Data[x.Key])
+				}
+
+			case x.Context != nil:
+				config := &terraformv1alpha1.Context{}
+				config.Name = *x.Context
+
+				// @step: first we check for the terranetes context resource
+				found, err := kubernetes.GetIfExists(ctx, c.cc, config)
+				if err != nil {
+					cond.Failed(err, "Failed to retrieve the context spec.valueFrom[%d].context: %s", i, config.Name)
+
+					return reconcile.Result{}, err
+				}
+				if !found {
+					if !x.Optional {
+						cond.ActionRequired("spec.valueFrom[%d].context (%s) does not exist", i, config.Name)
+
+						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+					continue
+				}
+
+				// @step: we need to check terranetes context has a value
+				value, found := config.Spec.GetVariableValue(x.Key)
+				if !found {
+					if !x.Optional {
+						cond.ActionRequired("spec.valueFrom[%d] does not contain key: %s", i, x.Key)
+
+						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+					continue
+				}
+				if len(value) == 0 {
+					if !x.Optional {
+						cond.ActionRequired("spec.valueFrom[%d] key: %s is empty", i, x.Key)
+
+						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+					continue
+				}
+
+				state.valueFrom[x.GetName()] = gjson.ParseBytes(value).Get("value").String()
+
+			default:
+				cond.Failed(fmt.Errorf("spec.valueFrom[%d] not has no type", i), "missing type in spec.valueFrom[%d]", i)
 			}
 		}
 

@@ -154,19 +154,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		WithEventFilter(predicate.Or(
 			&predicate.AnnotationChangedPredicate{},
 			&predicate.GenerationChangedPredicate{},
-			/*
-				&predicate.Funcs{
-					CreateFunc: func(e event.CreateEvent) bool {
-						return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-					},
-					UpdateFunc: func(e event.UpdateEvent) bool {
-						return !(e.ObjectNew.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-					},
-					GenericFunc: func(e event.GenericEvent) bool {
-						return !(e.Object.GetLabels()[terraformv1alpha1.ReconcileAnnotation] == "false")
-					},
-				},
-			*/
 		)).
 		Watches(
 			// We use this it keep a local cache of all namespaces in the cluster
