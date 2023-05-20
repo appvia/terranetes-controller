@@ -53,6 +53,25 @@ func TestReconcile(t *testing.T) {
 	RunSpecs(t, "Running Test Suite")
 }
 
+func makeFakeController(cc client.Client) *Controller {
+	recorder := &controllertests.FakeRecorder{}
+	ctrl := &Controller{
+		cc:                  cc,
+		kc:                  kfake.NewSimpleClientset(),
+		cache:               cache.New(5*time.Minute, 10*time.Minute),
+		recorder:            recorder,
+		EnableInfracosts:    false,
+		EnableWatchers:      true,
+		ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
+		InfracostsImage:     "infracosts/infracost:latest",
+		ControllerNamespace: "terraform-system",
+		PolicyImage:         "bridgecrew/checkov:2.0.1140",
+		TerraformImage:      "hashicorp/terraform:1.1.9",
+	}
+
+	return ctrl
+}
+
 var _ = Describe("Configuration Controller Default Injection", func() {
 	logrus.SetOutput(ioutil.Discard)
 
@@ -77,20 +96,8 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 				configuration,
 			})...)
 
-		recorder = &controllertests.FakeRecorder{}
-		ctrl = &Controller{
-			cc:                  cc,
-			kc:                  kfake.NewSimpleClientset(),
-			cache:               cache.New(5*time.Minute, 10*time.Minute),
-			recorder:            recorder,
-			EnableInfracosts:    false,
-			EnableWatchers:      true,
-			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
-			InfracostsImage:     "infracosts/infracost:latest",
-			ControllerNamespace: "terraform-system",
-			PolicyImage:         "bridgecrew/checkov:2.0.1140",
-			TerraformImage:      "hashicorp/terraform:1.1.9",
-		}
+		ctrl = makeFakeController(cc)
+		recorder = ctrl.recorder.(*controllertests.FakeRecorder)
 		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
 	})
 
@@ -221,7 +228,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 	var rerr error
 	var ctrl *Controller
 	var configuration *terraformv1alpha1.Configuration
-	var recorder *controllertests.FakeRecorder
 
 	namespace := "default"
 
@@ -245,20 +251,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 				secret,
 			})...)
 
-		recorder = &controllertests.FakeRecorder{}
-		ctrl = &Controller{
-			cc:                  cc,
-			kc:                  kfake.NewSimpleClientset(),
-			cache:               cache.New(5*time.Minute, 10*time.Minute),
-			recorder:            recorder,
-			EnableInfracosts:    false,
-			EnableWatchers:      true,
-			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
-			InfracostsImage:     "infracosts/infracost:latest",
-			ControllerNamespace: "terraform-system",
-			PolicyImage:         "bridgecrew/checkov:2.0.1140",
-			TerraformImage:      "hashicorp/terraform:1.1.9",
-		}
+		ctrl = makeFakeController(cc)
 		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
 	})
 
@@ -416,6 +409,95 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).ToNot(BeEmpty())
 					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal("{\"hello\":\"world\",\"test\":\"should_be_me\"}\n"))
 				})
+			})
+		})
+	})
+})
+
+var _ = Describe("Configuration Controller, no reconciliation", func() {
+	logrus.SetOutput(ioutil.Discard)
+
+	var cc client.Client
+	var result reconcile.Result
+	var rerr error
+	var ctrl *Controller
+	var configuration *terraformv1alpha1.Configuration
+
+	namespace := "default"
+
+	BeforeEach(func() {
+		secret := fixtures.NewValidAWSProviderSecret(namespace, "aws")
+		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
+
+		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
+			append([]runtime.Object{
+				fixtures.NewValidAWSReadyProvider("aws", secret),
+				secret,
+			})...)
+
+		ctrl = makeFakeController(cc)
+		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
+	})
+
+	When("creating or updating a configuration", func() {
+		Context("with no reconciliation annotation present", func() {
+			BeforeEach(func() {
+				configuration.Annotations = map[string]string{
+					terraformv1alpha1.ReconcileAnnotation: "false",
+				}
+				Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).ToNot(HaveOccurred())
+				Expect(result.Requeue).To(BeFalse())
+			})
+
+			It("should not create any jobs", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.Background(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(0))
+			})
+
+			It("should indicate that the configuration is not reconciling", func() {
+				Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonWarning))
+				Expect(cond.Message).To(Equal("Configuration has reconciling annotation set as false, ignoring changes"))
+			})
+		})
+
+		Context("with a reconciliation annotation is not present", func() {
+			BeforeEach(func() {
+				Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).ToNot(HaveOccurred())
+				Expect(result.Requeue).To(BeFalse())
+			})
+
+			It("should a terraform plan job", func() {
+				list := &batchv1.JobList{}
+
+				Expect(cc.List(context.Background(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(1))
+			})
+
+			It("should indicate that the configuration is reconciling", func() {
+				Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
 			})
 		})
 	})
