@@ -49,10 +49,13 @@ import (
 
 // ensureReconcileAnnotation is responsible for ignoring the configuration if the annotation is set
 func (c *Controller) ensureReconcileAnnotation(configuration *terraformv1alpha1.Configuration) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: check if we are ignoring the configuration
 		if configuration.GetAnnotations()[terraformv1alpha1.ReconcileAnnotation] == "false" {
+			cond.Warning("Configuration has reconciling annotation set as false, ignoring changes")
+
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
