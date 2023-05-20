@@ -122,7 +122,7 @@ type PolicySpec struct {
 	Defaults []DefaultVariables `json:"defaults,omitempty"`
 }
 
-// +kubebuilder:webhook:name=policies.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/policies,verbs=delete,groups="terraform.appvia.io",resources=policies,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:name=policies.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/policies,verbs=create;delete;update,groups="terraform.appvia.io",resources=policies,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

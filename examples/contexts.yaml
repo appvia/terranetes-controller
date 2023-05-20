@@ -1,0 +1,26 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Context
+metadata:
+  name: default
+spec:
+  #
+  ## All variables MUST follow the pattern of 'description' and 'value'. The
+  ## value can be any complex or simple type (boolean, int, map, object etc)
+  #
+  variables:
+    # Is the name of the variable
+    vpc_id:
+      # Provides a description to the consumer of the input
+      description: Is the network identifier we are residing
+      # The value of the value
+      value: vpc-1223133113
+    public_subnets_ids:
+      # Provides a description to the consumer of the input
+      description: |
+        Is a collection of subnet id's which are publicly available i.e.
+        they are attached to an internet gateway
+      # The value of the value
+      value:
+        - subnet-12312312312
+        - subnet-32332321312

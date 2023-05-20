@@ -20,9 +20,24 @@ package kubernetes
 import (
 	"context"
 
+	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// GetSecretIfExists retrieves a secret if it exists
+func GetSecretIfExists(ctx context.Context, cc client.Client, namespace, name string) (*v1.Secret, bool, error) {
+	secret := &v1.Secret{}
+	secret.Namespace = namespace
+	secret.Name = name
+
+	exists, err := GetIfExists(ctx, cc, secret)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return secret, exists, nil
+}
 
 // GetIfExists retrieves an object if it exists
 func GetIfExists(ctx context.Context, cc client.Client, object client.Object) (bool, error) {

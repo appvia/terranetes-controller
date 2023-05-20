@@ -38,6 +38,7 @@ rules:
     resources:
       - configmaps
       - configurations
+      - contexts
       - events
       - jobs
       - namespaces
@@ -54,6 +55,8 @@ rules:
     resources:
       - configurations
       - configurations/status
+      - contexts
+      - contexts/status
       - policies
       - policies/status
       - providers
