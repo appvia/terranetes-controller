@@ -16,6 +16,10 @@ gcp-auth.json
 /values.yaml
 test/results/
 *.kubeconfig
+me
+out
+me.yml
+me.yaml
 
 # Terraform Related
 terraform.tfstate
