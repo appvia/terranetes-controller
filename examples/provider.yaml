@@ -10,6 +10,17 @@ spec:
   source: secret
   # Provider can be google, aws, azurerm, alicloud, azurestack, googleworkspace etc
   provider: aws
+  # Provides configuration for the contextual data preloader (currently only
+  # available for aws)
+  preload:
+    # Indicates if the preloading should be enabled
+    enabled: false
+    # Is the EKS cluster we use to pivot network and settings around
+    cluster: wayfinder-production
+    # Is the cloud region the cluster above resides
+    region: eu-west-2
+    # Is the terranetes context resource we should provision
+    context: wayfinder
   # Used when spec.source is secret.
   secretRef:
     namespace: terraform-system

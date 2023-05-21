@@ -6,6 +6,8 @@ package tools
 import (
 	_ "github.com/go-bindata/go-bindata/v3/go-bindata"
 	_ "github.com/go-swagger/go-swagger/cmd/swagger"
+	_ "github.com/golang/mock/gomock"
+	_ "github.com/golang/mock/mockgen"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/mikefarah/yq/v3"
 	_ "github.com/mitchellh/gox"

@@ -44,3 +44,11 @@ func TestContainsList(t *testing.T) {
 	assert.True(t, ContainsList(a, b))
 	assert.False(t, ContainsList([]string{"x"}, b))
 }
+
+func TestUnique(t *testing.T) {
+	assert.Equal(t, []string{"a", "b", "c"}, Unique([]string{"a", "b", "b", "c"}))
+}
+
+func TestSorted(t *testing.T) {
+	assert.Equal(t, []string{"a", "b", "c"}, Sorted([]string{"c", "a", "b"}))
+}

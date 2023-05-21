@@ -21,7 +21,13 @@ import (
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
 
+const (
+	// ConditionProviderPreload indicate the status of the provider preloading
+	ConditionProviderPreload corev1alpha1.ConditionType = "PreloadReady"
+)
+
 // DefaultProviderConditions returns the default conditions for a provider
 var DefaultProviderConditions = []corev1alpha1.ConditionSpec{
 	{Type: corev1alpha1.ConditionReady, Name: "Provider Ready"},
+	{Type: ConditionProviderPreload, Name: "Preload Data"},
 }

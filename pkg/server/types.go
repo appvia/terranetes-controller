@@ -63,6 +63,8 @@ type Config struct {
 	Namespace string
 	// PolicyImage is the image to use for policy
 	PolicyImage string
+	// PreloadImage is the image to use for the preload job
+	PreloadImage string
 	// RegisterCRDs indicated we register our crds
 	RegisterCRDs bool
 	// ResyncPeriod is the period to resync the controller manager

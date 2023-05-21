@@ -63,6 +63,7 @@ controller:
   images:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
+    preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
   costs:
     secret: infracost-api
 EOF
@@ -217,6 +218,7 @@ controller:
   images:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
+    preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
   costs:
     secret: infracost-api
 EOF

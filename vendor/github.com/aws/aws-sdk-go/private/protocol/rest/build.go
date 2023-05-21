@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
-	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -18,6 +18,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/private/protocol"
+)
+
+const (
+	floatNaN    = "NaN"
+	floatInf    = "Infinity"
+	floatNegInf = "-Infinity"
 )
 
 // Whether the byte value can be sent without escaping in AWS URLs
@@ -127,9 +133,6 @@ func buildLocationElements(r *request.Request, v reflect.Value, buildGETQuery bo
 	}
 
 	r.HTTPRequest.URL.RawQuery = query.Encode()
-	if !aws.BoolValue(r.Config.DisableRestProtocolURICleaning) {
-		cleanPath(r.HTTPRequest.URL)
-	}
 }
 
 func buildBody(r *request.Request, v reflect.Value) {
@@ -237,19 +240,6 @@ func buildQueryString(query url.Values, v reflect.Value, name string, tag reflec
 	return nil
 }
 
-func cleanPath(u *url.URL) {
-	hasSlash := strings.HasSuffix(u.Path, "/")
-
-	// clean up path, removing duplicate `/`
-	u.Path = path.Clean(u.Path)
-	u.RawPath = path.Clean(u.RawPath)
-
-	if hasSlash && !strings.HasSuffix(u.Path, "/") {
-		u.Path += "/"
-		u.RawPath += "/"
-	}
-}
-
 // EscapePath escapes part of a URL path in Amazon style
 func EscapePath(path string, encodeSep bool) string {
 	var buf bytes.Buffer
@@ -302,7 +292,16 @@ func convertType(v reflect.Value, tag reflect.StructTag) (str string, err error)
 	case int64:
 		str = strconv.FormatInt(value, 10)
 	case float64:
-		str = strconv.FormatFloat(value, 'f', -1, 64)
+		switch {
+		case math.IsNaN(value):
+			str = floatNaN
+		case math.IsInf(value, 1):
+			str = floatInf
+		case math.IsInf(value, -1):
+			str = floatNegInf
+		default:
+			str = strconv.FormatFloat(value, 'f', -1, 64)
+		}
 	case time.Time:
 		format := tag.Get("timestampFormat")
 		if len(format) == 0 {
