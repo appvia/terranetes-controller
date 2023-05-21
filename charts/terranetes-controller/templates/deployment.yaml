@@ -74,6 +74,7 @@ spec:
             - --infracost-image={{ .Values.controller.images.infracost }}
             - --metrics-port={{ .Values.controller.metricsPort }}
             - --policy-image={{ .Values.controller.images.policy }}
+            - --preload-image={{ .Values.controller.images.preload }}
             - --terraform-image={{ .Values.controller.images.terraform }}
             {{- if .Values.controller.templates.job }}
             - --job-template={{ .Values.controller.templates.job }}

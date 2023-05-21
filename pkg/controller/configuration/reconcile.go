@@ -58,7 +58,7 @@ type state struct {
 	tfstate *v1.Secret
 }
 
-// Reconcile is called to handle the reconciliation of the provider resource
+// Reconcile is called to handle the reconciliation of the resource
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	configuration := &terraformv1alpha1.Configuration{}
 

@@ -31,7 +31,7 @@ func NewTerranettesContext(name string) *terraformv1alpha1.Context {
 			Raw: []byte(`{"description": "netwrk", "value": "vpc-123456"}`),
 		},
 		"public_subnets": {
-			Raw: []byte(`{"description": "netwrk", "value": ["subnet-123456", "subnet-123456"]`),
+			Raw: []byte(`{"description": "netwrk", "value": ["subnet-123456", "subnet-123456"]}`),
 		},
 	}
 

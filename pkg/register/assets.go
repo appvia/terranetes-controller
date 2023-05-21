@@ -920,6 +920,25 @@ spec:
                   description: Configuration is optional configuration to the provider. This is terraform provider specific.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
+                preload:
+                  description: Preload defines the preload options for this the provider is being used to preload data from the cloud provider.
+                  properties:
+                    cluster:
+                      description: Cluster is the name of the kubernetes cluster we use to pivot the data around
+                      type: string
+                    context:
+                      description: Context is the context name of the Context we should create from the preload implementation
+                      type: string
+                    enabled:
+                      description: Enabled indicates if the preloader is enabled
+                      type: boolean
+                    interval:
+                      description: Interval is the interval to run the preloader
+                      type: string
+                    region:
+                      description: Region is the cloud region the cluster is location in
+                      type: string
+                  type: object
                 provider:
                   description: ProviderType defines the cloud provider which is being used, currently supported providers are aws, google or azurerm.
                   type: string
@@ -1069,6 +1088,10 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
+                lastPreloadTime:
+                  description: LastPreloadTime is the last time the provider was used to run a preload job
+                  format: date-time
+                  type: string
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:

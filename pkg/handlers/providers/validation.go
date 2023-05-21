@@ -101,5 +101,17 @@ func (v *validator) validate(ctx context.Context, provider *terraformv1alpha1.Pr
 		}
 	}
 
+	// @step: validate any preloading configuration
+	if provider.Spec.Preload != nil {
+		switch {
+		case provider.Spec.Preload.Context == "":
+			return errors.New("spec.preload.context: is required")
+		case provider.Spec.Preload.Cluster == "":
+			return errors.New("spec.preload.cluster: is required")
+		case provider.Spec.Preload.Region == "":
+			return errors.New("spec.preload.region: is required")
+		}
+	}
+
 	return nil
 }

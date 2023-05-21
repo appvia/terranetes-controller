@@ -21,10 +21,86 @@ import (
 	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
+
+// NewRunningPreloadJob returns a new running preload job
+func NewRunningPreloadJob(namespace, provider string) *batchv1.Job {
+	job := &batchv1.Job{}
+	job.Name = fmt.Sprintf("preload-%s", "test")
+	job.Namespace = namespace
+	job.Labels = map[string]string{
+		terraformv1alpha1.PreloadJobLabel:      "true",
+		terraformv1alpha1.PreloadProviderLabel: provider,
+	}
+	job.Status.Active = 1
+	job.Status.Failed = 0
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionFalse,
+		},
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionFalse,
+		},
+	}
+
+	return job
+}
+
+// NewCompletedPreloadJob returns a new running preload job
+func NewCompletedPreloadJob(namespace, provider string) *batchv1.Job {
+	job := &batchv1.Job{}
+	job.Name = fmt.Sprintf("preload-%s", "test")
+	job.Namespace = namespace
+	job.Labels = map[string]string{
+		terraformv1alpha1.PreloadJobLabel:      "true",
+		terraformv1alpha1.PreloadProviderLabel: provider,
+	}
+	job.Status.Active = 0
+	job.Status.Failed = 0
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionFalse,
+		},
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	return job
+}
+
+// NewFailedPreloadJob returns a new running preload job
+func NewFailedPreloadJob(namespace, provider string) *batchv1.Job {
+	job := &batchv1.Job{}
+	job.Name = fmt.Sprintf("preload-%s", "test")
+	job.Namespace = namespace
+	job.Labels = map[string]string{
+		terraformv1alpha1.PreloadJobLabel:      "true",
+		terraformv1alpha1.PreloadProviderLabel: provider,
+	}
+	job.Status.Active = 0
+	job.Status.Failed = 1
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionTrue,
+		},
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionFalse,
+		},
+	}
+
+	return job
+}
 
 // NewTerraformJob returns a new terraform job
 func NewTerraformJob(configuration *terraformv1alpha1.Configuration, namespace, stage string) *batchv1.Job {

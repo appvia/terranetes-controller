@@ -19,12 +19,14 @@ package v1alpha1
 
 import (
 	"bytes"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
@@ -47,10 +49,19 @@ var ProviderGVK = schema.GroupVersionKind{
 var (
 	// DefaultProviderAnnotation indicates the default provider for all unset configurations
 	DefaultProviderAnnotation = "terranetes.appvia.io/default-provider"
+	// PreloadJobLabel is used to label the preload job
+	PreloadJobLabel = "terranetes.appvia.io/preload-job"
+	// PreloadProviderLabel is used to label the preload provider
+	PreloadProviderLabel = "terranetes.appvia.io/preload-provider-name"
 )
 
 // ProviderType is the type of cloud
 type ProviderType string
+
+// String returns the string representation of the provider type
+func (p *ProviderType) String() string {
+	return string(*p)
+}
 
 const (
 	// AliCloudProviderType is the Alibaba Cloud provider type
@@ -121,6 +132,35 @@ const (
 	SourceInjected = "injected"
 )
 
+// PreloadConfiguration defines the definitions for preload options
+type PreloadConfiguration struct {
+	// Cluster is the name of the kubernetes cluster we use to pivot the data around
+	// +kubebuilder:validation:Optional
+	Cluster string `json:"cluster,omitempty"`
+	// Context is the context name of the Context we should create from the preload
+	// implementation
+	// +kubebuilder:validation:Optional
+	Context string `json:"context,omitempty"`
+	// Enabled indicates if the preloader is enabled
+	// +kubebuilder:validation:Optional
+	Enabled *bool `json:"enabled,omitempty"`
+	// Interval is the interval to run the preloader
+	// +kubebuilder:validation:Optional
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Region is the cloud region the cluster is location in
+	// +kubebuilder:validation:Optional
+	Region string `json:"region,omitempty"`
+}
+
+// GetIntervalOrDefault returns the interval or the default
+func (p *PreloadConfiguration) GetIntervalOrDefault(value time.Duration) time.Duration {
+	if p.Interval == nil || p.Interval.Duration == 0 {
+		return value
+	}
+
+	return p.Interval.Duration
+}
+
 // ProviderSpec defines the desired state of a provider
 // +k8s:openapi-gen=true
 type ProviderSpec struct {
@@ -128,6 +168,10 @@ type ProviderSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"configuration,omitempty"`
+	// Preload defines the preload options for this the provider is being used to preload
+	// data from the cloud provider.
+	// +kubebuilder:validation:Optional
+	Preload *PreloadConfiguration `json:"preload,omitempty"`
 	// ProviderType defines the cloud provider which is being used, currently supported providers are
 	// aws, google or azurerm.
 	// +kubebuilder:validation:Required
@@ -199,6 +243,15 @@ type Provider struct {
 	Status ProviderStatus `json:"status,omitempty"`
 }
 
+// IsPreloadingEnabled returns true if the provider is enabled for preloading
+func (p *Provider) IsPreloadingEnabled() bool {
+	if p.Spec.Preload != nil && pointer.BoolDeref(p.Spec.Preload.Enabled, false) {
+		return true
+	}
+
+	return false
+}
+
 // GetNamespacedName returns the namespaced name type
 func (p *Provider) GetNamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: p.Name}
@@ -208,6 +261,10 @@ func (p *Provider) GetNamespacedName() types.NamespacedName {
 // +k8s:openapi-gen=true
 type ProviderStatus struct {
 	corev1alpha1.CommonStatus `json:",inline"`
+	// LastPreloadTime is the last time the provider was used to run a preload
+	// job
+	// +kubebuilder:validation:Optional
+	LastPreloadTime *metav1.Time `json:"lastPreloadTime,omitempty"`
 }
 
 // GetCommonStatus returns the common status
