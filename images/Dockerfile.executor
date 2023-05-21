@@ -10,6 +10,7 @@ ENV VERSION=$VERSION
 
 RUN cd /go/src/github.com/appvia/terranetes-controller && make source
 RUN cd /go/src/github.com/appvia/terranetes-controller && make step
+RUN cd /go/src/github.com/appvia/terranetes-controller && make preload
 
 FROM alpine:3.17
 
@@ -19,6 +20,7 @@ RUN apk add ca-certificates bash openssh git
 
 COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/source /bin/source
 COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/step /bin/step
+COPY --from=builder /go/src/github.com/appvia/terranetes-controller/bin/preload /bin/preload
 
 COPY images/assets/ssh_config /etc/ssh/ssh_config
 

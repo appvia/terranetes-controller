@@ -39,6 +39,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/controller/drift"
 	"github.com/appvia/terranetes-controller/pkg/controller/namespace"
 	"github.com/appvia/terranetes-controller/pkg/controller/policy"
+	"github.com/appvia/terranetes-controller/pkg/controller/preload"
 	"github.com/appvia/terranetes-controller/pkg/controller/provider"
 	"github.com/appvia/terranetes-controller/pkg/register"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -194,6 +195,14 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		EnableWebhooks:            config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the namespace controller, error: %w", err)
+	}
+
+	if err := (&preload.Controller{
+		ControllerNamespace: config.Namespace,
+		ContainerImage:      config.PreloadImage,
+		EnableWebhooks:      config.EnableWebhooks,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the preload controller, error: %w", err)
 	}
 
 	return &Server{

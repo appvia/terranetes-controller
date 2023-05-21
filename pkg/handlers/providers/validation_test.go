@@ -162,6 +162,78 @@ var _ = Describe("Provider Validation", func() {
 		})
 	})
 
+	When("with a preloading configuration", func() {
+		var provider *terraformv1alpha1.Provider
+
+		Context("and the context name is invalid", func() {
+			expected := "spec.preload.context: is required"
+
+			BeforeEach(func() {
+				provider = fixtures.NewValidAWSProvider("other", fixtures.NewValidAWSProviderSecret(namespace, "other"))
+				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{}
+			})
+
+			It("should throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
+			It("should throw an error on update", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+		})
+
+		Context("and the cluster name is not defined", func() {
+			expected := "spec.preload.cluster: is required"
+
+			BeforeEach(func() {
+				provider = fixtures.NewValidAWSProvider("other", fixtures.NewValidAWSProviderSecret(namespace, "other"))
+				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
+					Context: "test",
+				}
+			})
+
+			It("should throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
+			It("should throw an error on update", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+		})
+
+		Context("and the cloud region is not defined", func() {
+			expected := "spec.preload.region: is required"
+
+			BeforeEach(func() {
+				provider = fixtures.NewValidAWSProvider("other", fixtures.NewValidAWSProviderSecret(namespace, "other"))
+				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
+					Context: "test",
+					Cluster: "test",
+				}
+			})
+
+			It("should throw an error on creation", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
+			It("should throw an error on update", func() {
+				err := v.ValidateCreate(ctx, provider)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+		})
+	})
+
 	When("creating a provider with default annotation defined", func() {
 		var provider *terraformv1alpha1.Provider
 
@@ -224,5 +296,6 @@ var _ = Describe("Provider Validation", func() {
 				Expect(err.Error()).To(Equal(expected))
 			})
 		})
+
 	})
 })

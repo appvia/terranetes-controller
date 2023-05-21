@@ -154,6 +154,17 @@ func (c *ConditionManager) InProgress(message string, args ...interface{}) {
 	})
 }
 
+// Disabled sets the condition to disabled
+func (c *ConditionManager) Disabled(message string, args ...interface{}) {
+	c.transition(c.condition, func() {
+		c.condition.ObservedGeneration = c.resource.GetGeneration()
+		c.condition.Status = metav1.ConditionFalse
+		c.condition.Reason = corev1alpha1.ReasonDisabled
+		c.condition.Message = fmt.Sprintf(message, args...)
+		c.condition.Detail = ""
+	})
+}
+
 // Deleting sets the condition to deleting
 func (c *ConditionManager) Deleting(message string, args ...interface{}) {
 	c.transition(c.condition, func() {

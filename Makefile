@@ -97,7 +97,7 @@ schema-gen:
 
 ### BUILD ###
 
-build: controller source step tnctl
+build: controller source step tnctl preload
 	@echo "--> Compiling the project ($(VERSION))"
 
 controller: golang
@@ -111,6 +111,10 @@ tnctl: golang
 source: golang
 	@echo "--> Compiling the source binary ($(VERSION))"
 	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/source cmd/source/*.go
+
+preload: golang
+	@echo "--> Compiling the preload binary ($(VERSION))"
+	CGO_ENABLED=0 go build -ldflags "${LFLAGS}" -tags=jsoniter -o bin/preload cmd/preload/*.go
 
 step: golang
 	@echo "--> Compiling the step binary ($(VERSION))"

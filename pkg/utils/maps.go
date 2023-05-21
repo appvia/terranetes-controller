@@ -17,6 +17,18 @@
 
 package utils
 
+// ListKeys return a list of keys from a map
+func ListKeys(m map[string]any) []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+
+	return keys
+}
+
 // MergeStringMaps merges maps together
 func MergeStringMaps(a, b map[string]string) map[string]string {
 	m := make(map[string]string)

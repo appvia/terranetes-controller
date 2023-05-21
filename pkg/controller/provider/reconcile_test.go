@@ -72,13 +72,13 @@ var _ = Describe("Provider Controller", func() {
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 		})
 
 		It("should indicate the secret is missing", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
 
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
@@ -106,7 +106,7 @@ var _ = Describe("Provider Controller", func() {
 
 				It("should indicate the provider is ready", func() {
 					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions).To(HaveLen(2))
 					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
@@ -129,7 +129,7 @@ var _ = Describe("Provider Controller", func() {
 
 				It("should indicate the provider is ready", func() {
 					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions).To(HaveLen(2))
 					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
@@ -153,7 +153,7 @@ var _ = Describe("Provider Controller", func() {
 
 				It("should indicate the provider is ready", func() {
 					Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-					Expect(provider.Status.Conditions).To(HaveLen(1))
+					Expect(provider.Status.Conditions).To(HaveLen(2))
 					Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 					Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionFalse))
 					Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonActionRequired))
@@ -176,12 +176,12 @@ var _ = Describe("Provider Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 		})
 
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
 		})
@@ -204,12 +204,12 @@ var _ = Describe("Provider Controller", func() {
 
 		It("should have the conditions", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 		})
 
 		It("should indicate the provider is ready", func() {
 			Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-			Expect(provider.Status.Conditions).To(HaveLen(1))
+			Expect(provider.Status.Conditions).To(HaveLen(2))
 			Expect(provider.Status.Conditions[0].Type).To(Equal(corev1alpha1.ConditionReady))
 			Expect(provider.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
 			Expect(provider.Status.Conditions[0].Reason).To(Equal(corev1alpha1.ReasonReady))

@@ -17,6 +17,8 @@
 
 package utils
 
+import "sort"
+
 // Contains checks a list has a value in it
 func Contains(v string, l []string) bool {
 	for _, x := range l {
@@ -37,4 +39,26 @@ func ContainsList(v []string, l []string) bool {
 	}
 
 	return false
+}
+
+// Sorted returns a sorted list of values
+func Sorted(slice []string) []string {
+	sorted := make([]string, len(slice))
+	copy(sorted, slice)
+	sort.Strings(sorted)
+
+	return sorted
+}
+
+// Unique returns a list of unique values
+func Unique(slice []string) []string {
+	var list []string
+
+	for _, item := range slice {
+		if !Contains(item, list) {
+			list = append(list, item)
+		}
+	}
+
+	return list
 }
