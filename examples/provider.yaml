@@ -20,7 +20,7 @@ spec:
     # Is the cloud region the cluster above resides
     region: eu-west-2
     # Is the terranetes context resource we should provision
-    context: wayfinder
+    context: default
   # Used when spec.source is secret.
   secretRef:
     namespace: terraform-system
