@@ -38,11 +38,11 @@ require (
 	golang.org/x/oauth2 v0.8.0
 	golang.org/x/tools v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.26.3
+	k8s.io/api v0.27.2
 	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.27.2
 	k8s.io/cli-runtime v0.26.3
-	k8s.io/client-go v0.26.3
+	k8s.io/client-go v0.27.2
 	k8s.io/code-generator v0.27.2
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
@@ -242,7 +242,7 @@ require (
 	github.com/quasilyte/gogrep v0.5.0 // indirect
 	github.com/quasilyte/regex/syntax v0.0.0-20210819130434-b3f0c404a727 // indirect
 	github.com/quasilyte/stdinfo v0.0.0-20220114132959-f7386bf02567 // indirect
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryancurrah/gomodguard v1.3.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.4.0 // indirect
