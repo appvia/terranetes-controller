@@ -6,12 +6,14 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
+	github.com/aws/aws-sdk-go v1.44.266
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-bindata/go-bindata/v3 v3.1.3
 	github.com/go-swagger/go-swagger v0.30.4
+	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/gorilla/mux v1.8.0
@@ -38,11 +40,11 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.3
-	k8s.io/apimachinery v0.27.1
+	k8s.io/apimachinery v0.27.2
 	k8s.io/cli-runtime v0.26.3
 	k8s.io/client-go v0.26.3
 	k8s.io/code-generator v0.27.1
-	k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a
+	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 	mvdan.cc/sh/v3 v3.6.0
 	sigs.k8s.io/controller-runtime v0.14.6
@@ -75,7 +77,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/ashanbrown/forbidigo v1.5.1 // indirect
 	github.com/ashanbrown/makezero v1.1.1 // indirect
-	github.com/aws/aws-sdk-go v1.44.266 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/bkielbasa/cyclop v1.2.0 // indirect
@@ -130,7 +131,6 @@ require (
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golangci/check v0.0.0-20180506172741-cfe4005ccda2 // indirect
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a // indirect
