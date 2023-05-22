@@ -44,6 +44,7 @@ jobs:
           go-version: '1.20'
       - name: Check Binaries
         run: |
+          make preload
           make source
           make step
           make tnctl
