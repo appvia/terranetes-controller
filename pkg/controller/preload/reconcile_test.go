@@ -66,6 +66,31 @@ var _ = Describe("Preload Controller", func() {
 	})
 
 	When("a provider has been provisioned", func() {
+		When("the provider has no conditions yet", func() {
+			BeforeEach(func() {
+				provider = fixtures.NewValidAWSNotReadyProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
+				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
+					Cluster: "test",
+					Context: "test",
+					Enabled: pointer.BoolPtr(true),
+					Region:  "test",
+				}
+				provider.Status.Conditions = nil
+
+				Expect(cc.Create(context.Background(), provider)).To(Succeed())
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, provider, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).NotTo(HaveOccurred())
+				Expect(result.Requeue).To(BeFalse())
+			})
+
+			It("should requeue", func() {
+				Expect(result.RequeueAfter).To(Equal(time.Second * 15))
+			})
+		})
+
 		When("and the provider is not ready", func() {
 			BeforeEach(func() {
 				provider = fixtures.NewValidAWSNotReadyProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
