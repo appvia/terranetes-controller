@@ -65,6 +65,9 @@ func (c *Controller) ensureReady(provider *terraformv1alpha1.Provider) controlle
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		case provider.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady) == nil:
+			return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
+
 		case provider.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady).Status != metav1.ConditionTrue:
 			cond.InProgress("Waiting for provider to be ready")
 
