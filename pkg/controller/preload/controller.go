@@ -69,6 +69,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		Named(controllerName).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		WithEventFilter(&predicate.ResourceVersionChangedPredicate{}).
 		Watches(
 			&source.Kind{Type: &batchv1.Job{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []ctrl.Request {
