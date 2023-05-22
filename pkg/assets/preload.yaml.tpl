@@ -12,8 +12,8 @@ spec:
   backoffLimit: 1
   completions: 1
   parallelism: 1
-  # retain the jobs for 6 hours
-  ttlSecondsAfterFinished: 28800
+  # retain the jobs for 3 hours
+  ttlSecondsAfterFinished: 10800
   template:
     metadata:
       labels:
