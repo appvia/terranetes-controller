@@ -387,7 +387,7 @@ var _ = Describe("Preload Controller", func() {
 				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderPreload))
 				Expect(cond.Status).To(Equal(metav1.ConditionTrue))
 				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
-				Expect(cond.Message).To(Equal("Contextual data successfully loaded into context: test-context"))
+				Expect(cond.Message).To(Equal("Contextual data successfully loaded"))
 			})
 		})
 
