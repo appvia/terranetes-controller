@@ -125,7 +125,7 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		Value:       aws.BoolValue(resp.Cluster.ResourcesVpcConfig.EndpointPublicAccess),
 	})
 	data.Add("eks_public_access_cidrs", preload.Entry{
-		Description: "The CIDR blocks that are allowed access to the EKS cluster",
+		Description: "The CIDR blocks that are allowed access to the EKS cluster when public access is enabled",
 		Value:       aws.StringValueSlice(resp.Cluster.ResourcesVpcConfig.PublicAccessCidrs),
 	})
 	data.Add("eks_role_arn", preload.Entry{
@@ -145,23 +145,23 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		Value:       aws.StringValue(resp.Cluster.KubernetesNetworkConfig.ServiceIpv6Cidr),
 	})
 	data.Add("eks_subnet_ids", preload.Entry{
-		Description: "The subnets used by the EKS cluster",
+		Description: "The subnets associated to the EKS cluster definition, where nodegroups live",
 		Value:       aws.StringValueSlice(resp.Cluster.ResourcesVpcConfig.SubnetIds),
 	})
 	data.Add("eks_tags", preload.Entry{
-		Description: "The tags attached to the EKS cluster",
+		Description: "The resource tags associated to the EKS cluster",
 		Value:       ToMapTags(resp.Cluster.Tags),
 	})
 	data.Add("eks_version", preload.Entry{
-		Description: "The Kubernetes version of the EKS cluster",
+		Description: "The current Kubernetes version of the EKS cluster",
 		Value:       aws.StringValue(resp.Cluster.Version),
 	})
 	data.Add("eks_vpc_id", preload.Entry{
-		Description: "The ID of the VPC used by the EKS cluster",
+		Description: "The ID of the VPC where the EKS cluster is deployed",
 		Value:       aws.StringValue(resp.Cluster.ResourcesVpcConfig.VpcId),
 	})
 	data.Add("vpc_id", preload.Entry{
-		Description: "The ID of the VPC used by the EKS cluster",
+		Description: "The ID of the VPC where the EKS cluster is deployed",
 		Value:       aws.StringValue(resp.Cluster.ResourcesVpcConfig.VpcId),
 	})
 
@@ -192,15 +192,15 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 	}
 
 	data.Add("private_subnet_ids", preload.Entry{
-		Description: "A list of all subnets associated to the EKS cluster network which are labeled private",
+		Description: "A list of all subnets associated to the EKS cluster network which are tagged private",
 		Value:       []string{},
 	})
 	data.Add("public_subnet_ids", preload.Entry{
-		Description: "A list of all subnets associated to the EKS cluster network which are labeled public",
+		Description: "A list of all subnets associated to the EKS cluster network which are tagged public",
 		Value:       []string{},
 	})
 	data.Add("subnet_ids", preload.Entry{
-		Description: "A list of all subnets associated to the EKS cluster network",
+		Description: "A list of all subnets associated to the network the EKS cluster is deployed in",
 		Value:       []string{},
 	})
 
@@ -229,19 +229,19 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 
 	// @step: build all the route tables ids
 	data.Add("eks_route_tables_ids", preload.Entry{
-		Description: "A list of all route tables id associate to the subnets which are part of the EKS cluster",
+		Description: "A list of all route tables ids associated to the subnets in the EKS definition",
 		Value:       []string{},
 	})
 	data.Add("route_tables_ids", preload.Entry{
-		Description: "A list of all route tables id associated to the network the EKS cluster is part of",
+		Description: "A list of all route tables ids associated to the network the EKS cluster is part of",
 		Value:       []string{},
 	})
 	data.Add("private_route_tables_ids", preload.Entry{
-		Description: "A list of all route tables id which are associated to subnets labeled private in the network the EKS cluster is part of",
+		Description: "A list of all route tables ids which are associated to subnets labeled private in the network the EKS cluster is part of",
 		Value:       []string{},
 	})
 	data.Add("public_route_tables_ids", preload.Entry{
-		Description: "A list of all route tables id which are associated to subnets labeled public in the network the EKS cluster is part of",
+		Description: "A list of all route tables ids which are associated to subnets labeled public in the network the EKS cluster is part of",
 		Value:       []string{},
 	})
 
@@ -287,7 +287,7 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 	for k, value := range discoveredSubnets {
 		name := strings.ReplaceAll(strings.ToLower(k), " ", "_")
 		data.Add(fmt.Sprintf("network_%s_subnet_ids", name), preload.Entry{
-			Description: fmt.Sprintf("A list of all subnets id associate to the network %s", k),
+			Description: fmt.Sprintf("A list of all subnets ids associate to the network %s", k),
 			Value:       utils.Unique(utils.Sorted(value)),
 		})
 	}
@@ -308,7 +308,7 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 	for k, value := range discoveredRouteTables {
 		name := strings.ReplaceAll(strings.ToLower(k), " ", "_")
 		data.Add(fmt.Sprintf("network_%s_route_tables_ids", name), preload.Entry{
-			Description: fmt.Sprintf("A list of all route tables id associate to the network %s", k),
+			Description: fmt.Sprintf("A list of all route tables ids associate to the network tagged as %s", k),
 			Value:       utils.Unique(utils.Sorted(value)),
 		})
 	}
@@ -322,7 +322,7 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		}
 		name := strings.ReplaceAll(strings.ToLower(value), "-", "_")
 		data.Add(fmt.Sprintf("route_table_%s_id", name), preload.Entry{
-			Description: fmt.Sprintf("The route table id of the route table %s", value),
+			Description: fmt.Sprintf("The route table id of the route table named %s", value),
 			Value:       aws.StringValue(route.RouteTableId),
 		})
 	}
