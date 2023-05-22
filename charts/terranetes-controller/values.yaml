@@ -124,6 +124,8 @@ providers:
 #    secret: NAME
 #    # When using source injected we should have a service account
 #    serviceAccount: SERV
+#    # When using preload this is copied into the provider
+#    preload: {}
 rbac:
   # Indicates we allow all service account in the controller namespace the role of
   # executor. This makes rolling out multiple providers backed to multiple services easier.
