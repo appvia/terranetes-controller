@@ -146,7 +146,7 @@ func (c *Controller) ensurePreloadStatus(provider *terraformv1alpha1.Provider, s
 
 				return reconcile.Result{}, nil
 			}
-			cond.Success("Contextual data successfully loaded into context: %s", txt.Name)
+			cond.Success("Contextual data successfully loaded")
 		}
 
 		return reconcile.Result{}, nil
