@@ -104,6 +104,10 @@ func (p *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		Description: "The security group ID attached to the EKS cluster",
 		Value:       aws.StringValue(resp.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId),
 	})
+	data.Add("eks_cluster_security_group_ids", preload.Entry{
+		Description: "The security group IDs attached to the EKS cluster",
+		Value:       []string{aws.StringValue(resp.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId)},
+	})
 	data.Add("eks_endpoint", preload.Entry{
 		Description: "The endpoint for the EKS cluster",
 		Value:       aws.StringValue(resp.Cluster.Endpoint),
