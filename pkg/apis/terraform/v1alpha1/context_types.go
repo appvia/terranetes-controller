@@ -59,12 +59,12 @@ type ContextSpec struct {
 }
 
 // GetVariableValue returns the string value of the a variable
-func (c *ContextSpec) GetVariableValue(name string) ([]byte, bool) {
+func (c *ContextSpec) GetVariableValue(name string) (runtime.RawExtension, bool) {
 	if found := c.HasVariable(name); !found {
-		return nil, false
+		return runtime.RawExtension{}, false
 	}
 
-	return c.Variables[name].Raw, true
+	return c.Variables[name], true
 }
 
 // HasVariables returns true if the context has variables defined

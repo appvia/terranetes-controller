@@ -240,6 +240,11 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 				Key:     "foo",
 				Name:    "test",
 			},
+			{
+				Context: pointer.String("default"),
+				Key:     "complex",
+				Name:    "complex",
+			},
 		}
 		configuration.Spec.Variables = &runtime.RawExtension{
 			Raw: []byte(`{"hello":"world"}`),
@@ -262,8 +267,10 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 				"foo": {
 					Raw: []byte(`{"description": "foo", "value": "should_be_me"}`),
 				},
+				"complex": {
+					Raw: []byte(`{"description": "complex", "value": ["subnet0", "subnet1", "subnet2"]}`),
+				},
 			}
-
 			Expect(cc.Create(context.Background(), txt)).To(Succeed())
 		})
 
@@ -275,6 +282,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			Context("and the context is optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom[0].Optional = true
+					configuration.Spec.ValueFrom[1].Optional = true
 					Expect(cc.Create(context.Background(), configuration)).To(Succeed())
 
 					result, _, rerr = controllertests.Roll(context.Background(), ctrl, configuration, 0)
@@ -285,13 +293,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					Expect(result.Requeue).To(BeFalse())
 				})
 
-				It("should create the terraform plan", func() {
-					list := &batchv1.JobList{}
-
-					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
-					Expect(len(list.Items)).To(Equal(1))
-				})
-
 				It("should have the appropriate conditions", func() {
 					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
@@ -299,6 +300,13 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
 					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
 					Expect(cond.Message).To(Equal("Terraform plan is running"))
+				})
+
+				It("should create the terraform plan", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
 				})
 
 				It("should have the job configuration secret", func() {
@@ -403,11 +411,13 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					secret.Namespace = ctrl.ControllerNamespace
 					secret.Name = configuration.GetTerraformConfigSecretName()
 
+					expected := "{\"complex\":[\"subnet0\",\"subnet1\",\"subnet2\"],\"hello\":\"world\",\"test\":\"should_be_me\"}\n"
+
 					found, err := kubernetes.GetIfExists(context.Background(), cc, secret)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(found).To(BeTrue())
 					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).ToNot(BeEmpty())
-					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal("{\"hello\":\"world\",\"test\":\"should_be_me\"}\n"))
+					Expect(string(secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey])).To(Equal(expected))
 				})
 			})
 		})

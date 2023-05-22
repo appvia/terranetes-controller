@@ -283,7 +283,7 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 				}
 
 				// @step: we need to check terranetes context has a value
-				value, found := config.Spec.GetVariableValue(x.Key)
+				raw, found := config.Spec.GetVariableValue(x.Key)
 				if !found {
 					if !x.Optional {
 						cond.ActionRequired("spec.valueFrom[%d] does not contain key: %s", i, x.Key)
@@ -292,7 +292,7 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 					}
 					continue
 				}
-				if len(value) == 0 {
+				if len(raw.Raw) == 0 {
 					if !x.Optional {
 						cond.ActionRequired("spec.valueFrom[%d] key: %s is empty", i, x.Key)
 
@@ -301,7 +301,13 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 					continue
 				}
 
-				state.valueFrom[x.GetName()] = gjson.ParseBytes(value).Get("value").String()
+				av := make(map[string]interface{})
+				if err := json.NewDecoder(bytes.NewBuffer(raw.Raw)).Decode(&av); err != nil {
+					cond.Failed(err, "Failed to decode the context spec.valueFrom[%d].context: %s", i, config.Name)
+
+					return reconcile.Result{}, err
+				}
+				state.valueFrom[x.GetName()] = av["value"]
 
 			default:
 				cond.Failed(fmt.Errorf("spec.valueFrom[%d] not has no type", i), "missing type in spec.valueFrom[%d]", i)

@@ -53,7 +53,7 @@ type state struct {
 	// must reside in the same namespace as the controller
 	additionalJobSecrets []string
 	// valueFrom is a map of keys to values
-	valueFrom map[string]string
+	valueFrom map[string]interface{}
 	// tfstate is the secret containing the terraform state
 	tfstate *v1.Secret
 }
@@ -83,7 +83,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		).Set(status)
 	}()
 
-	state := &state{valueFrom: make(map[string]string), backendTemplate: terraform.KubernetesBackendTemplate}
+	state := &state{valueFrom: make(map[string]interface{}), backendTemplate: terraform.KubernetesBackendTemplate}
 
 	finalizer := controller.NewFinalizer(c.cc, controllerName)
 	if finalizer.IsDeletionCandidate(configuration) {
