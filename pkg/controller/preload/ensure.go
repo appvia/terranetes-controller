@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,8 +49,13 @@ func (c *Controller) ensurePreloadEnabled(provider *terraformv1alpha1.Provider) 
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
-		case !provider.IsPreloadingEnabled(), provider.Spec.Provider != terraformv1alpha1.AWSProviderType:
+		case !provider.IsPreloadingEnabled():
 			cond.Disabled("Loading contextual data is not enabled")
+
+			return reconcile.Result{}, controller.ErrIgnore
+
+		case provider.Spec.Provider != terraformv1alpha1.AWSProviderType:
+			cond.Warning("Loading contextual is supported on AWS only")
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -66,6 +72,8 @@ func (c *Controller) ensureReady(provider *terraformv1alpha1.Provider) controlle
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
 		case provider.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady) == nil:
+			log.Debug("provider is not ready, waiting for it to be ready")
+
 			return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 
 		case provider.GetCommonStatus().GetCondition(corev1alpha1.ConditionReady).Status != metav1.ConditionTrue:
