@@ -304,6 +304,13 @@ func (e *eksPreloader) findCluster(_ context.Context, cluster *eks.Cluster, data
 		Description: "The ID of the VPC where the EKS cluster is deployed",
 		Value:       aws.StringValue(cluster.ResourcesVpcConfig.VpcId),
 	})
+
+	if cluster.Identity != nil && cluster.Identity.Oidc != nil {
+		data.Add("eks_oidc_issuer", preload.Entry{
+			Description: "The OIDC issuer URL of the EKS cluster",
+			Value:       aws.StringValue(cluster.Identity.Oidc.Issuer),
+		})
+	}
 }
 
 // findAccount is responsible for extracting anything related to the account we are living in
