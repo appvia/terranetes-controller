@@ -348,12 +348,19 @@ func (e *eksPreloader) findSecurityGroups(ctx context.Context, data *preload.Dat
 	// @step: iterate the security groups and if they have name fields we can use them
 	for _, sg := range resp.SecurityGroups {
 		if name, found := GetTagValue(sg.Tags, "Name"); found {
-			qualified := fmt.Sprintf("security_group_%s_id", SanitizeName(name))
 
-			data.Add(qualified, preload.Entry{
-				Description: fmt.Sprintf("The security group ID associated to the security group tagged with Name: %s", name),
-				Value:       aws.StringValue(sg.GroupId),
-			})
+			data.Add(fmt.Sprintf("security_group_%s_id", SanitizeName(name)),
+				preload.Entry{
+					Description: fmt.Sprintf("The security group ID associated to the security group tagged with Name: %s", name),
+					Value:       aws.StringValue(sg.GroupId),
+				},
+			)
+			data.Add(fmt.Sprintf("security_group_%s_ids", SanitizeName(name)),
+				preload.Entry{
+					Description: fmt.Sprintf("The security group ID associated to the security group tagged with Name: %s as a list", name),
+					Value:       []string{aws.StringValue(sg.GroupId)},
+				},
+			)
 		}
 	}
 
