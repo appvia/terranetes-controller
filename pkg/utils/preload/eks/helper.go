@@ -20,12 +20,18 @@ package eks
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
+
+// SanitizeName sanitizes the given name
+func SanitizeName(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), "-", "_")
+}
 
 // IsAWSErrorType returns true if the given error is an AWS error
 // nolint:errorlint
