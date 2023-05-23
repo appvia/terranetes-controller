@@ -22,7 +22,6 @@ import (
 	"context"
 	"encoding/json"
 
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -65,35 +64,22 @@ func (c *Command) makeContext(ctx context.Context, data preload.Data) error {
 	if err != nil {
 		return err
 	}
-	switch {
-	case !found:
+	if !found {
 		c.logger.Info("no existing context found, creating a new one")
 
 		return cc.Create(ctx, txt)
-
-	case found && c.EnableOverride:
-		log.Info("existing context found, updating all values")
-		// @step: we are permitted to override the entire context
-		txt.ResourceVersion = current.ResourceVersion
-
-		return cc.Update(ctx, txt)
 	}
 
-	c.logger.Info("existing context found, updating only new values")
-
-	// @step: else we only add values which aren't there already
+	// @step: update the values in the context
 	original := current.DeepCopy()
 
 	for _, key := range data.Keys() {
-		if _, found := current.Spec.Variables[key]; !found {
-			encoded, err := data.Get(key).Marshal()
-			if err != nil {
-				return err
-			}
-			current.Spec.Variables[key] = runtime.RawExtension{Raw: encoded}
+		encoded, err := data.Get(key).Marshal()
+		if err != nil {
+			return err
 		}
+		current.Spec.Variables[key] = runtime.RawExtension{Raw: encoded}
 	}
-
 	if err := cc.Patch(ctx, current, client.MergeFrom(original)); err != nil {
 		return err
 	}
