@@ -100,6 +100,11 @@ func (e *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		return nil, fmt.Errorf("unknown cluster status: %s", aws.StringValue(resp.Cluster.Status))
 	}
 
+	// @step: find details on the account
+	if err := e.findAccount(ctx, &data); err != nil {
+		return nil, err
+	}
+
 	// @step: extract the cluster details
 	e.findCluster(ctx, resp.Cluster, &data)
 
@@ -212,10 +217,6 @@ func (e *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 	data.Get("private_route_tables_ids").Value = utils.Unique(utils.Sorted(data.Get("private_route_tables_ids").Value.([]string)))
 	data.Get("public_route_tables_ids").Value = utils.Unique(utils.Sorted(data.Get("public_route_tables_ids").Value.([]string)))
 
-	// @step: find details on the account
-	if err := e.findAccount(ctx, &data); err != nil {
-		return nil, err
-	}
 	// @step: lets discover the security groups
 	if err := e.findSecurityGroups(ctx, &data); err != nil {
 		return nil, err
@@ -309,6 +310,15 @@ func (e *eksPreloader) findCluster(_ context.Context, cluster *eks.Cluster, data
 		data.Add("eks_oidc_issuer", preload.Entry{
 			Description: "The OIDC issuer URL of the EKS cluster",
 			Value:       aws.StringValue(cluster.Identity.Oidc.Issuer),
+		})
+
+		// @step: the arn is not available in the response, we just need to construct it
+		data.Add("eks_oidc_issuer_arn", preload.Entry{
+			Description: "The ARN of the OIDC issuer URL of the EKS cluster",
+			Value: fmt.Sprintf("arn:aws:iam::%s:oidc-provider/%s",
+				data.Get("account_id").Value.(string),
+				strings.TrimPrefix(aws.StringValue(cluster.Identity.Oidc.Issuer), "https://"),
+			),
 		})
 	}
 }
