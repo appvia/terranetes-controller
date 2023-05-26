@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -42,6 +43,7 @@ var _ = Describe("Namespace Validation", func() {
 	var cc client.Client
 	var v *validator
 	var err error
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
@@ -51,7 +53,9 @@ var _ = Describe("Namespace Validation", func() {
 	When("attempting to delete a namespace", func() {
 		Context("with a namespace that has no configuration resources", func() {
 			It("should fail", func() {
-				Expect(v.ValidateDelete(ctx, fixtures.NewNamespace("default"))).To(Succeed())
+				warnings, err = v.ValidateDelete(ctx, fixtures.NewNamespace("default"))
+				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -66,10 +70,11 @@ var _ = Describe("Namespace Validation", func() {
 				})
 
 				It("should fail due to the namespace being protected", func() {
-					err = v.ValidateDelete(ctx, fixtures.NewNamespace("default"))
+					warnings, err = v.ValidateDelete(ctx, fixtures.NewNamespace("default"))
 
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("deletion of namespace default is prevented, ensure Terranetes Configurations are deleted first"))
+					Expect(warnings).To(BeEmpty())
 				})
 			})
 		})
@@ -77,13 +82,17 @@ var _ = Describe("Namespace Validation", func() {
 
 	When("creating a namespace", func() {
 		It("should succeed", func() {
-			Expect(v.ValidateCreate(ctx, fixtures.NewNamespace("default"))).To(Succeed())
+			warnings, err = v.ValidateCreate(ctx, fixtures.NewNamespace("default"))
+			Expect(err).To(Succeed())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
 	When("updating a namespace", func() {
 		It("should succeed", func() {
-			Expect(v.ValidateUpdate(ctx, nil, fixtures.NewNamespace("default"))).To(Succeed())
+			warnings, err = v.ValidateUpdate(ctx, nil, fixtures.NewNamespace("default"))
+			Expect(err).To(Succeed())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 })

@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -38,6 +39,7 @@ var _ = Describe("Checking Configuration Validation", func() {
 	var cc client.Client
 	var v *validator
 	var err error
+	var warnings admission.Warnings
 	var configuration *terraformv1alpha1.Configuration
 
 	namespace := "default"
@@ -58,9 +60,10 @@ var _ = Describe("Checking Configuration Validation", func() {
 
 	When("not passing a configuration", func() {
 		It("should fail", func() {
-			err = v.ValidateCreate(ctx, &v1.Namespace{})
+			warnings, err = v.ValidateCreate(ctx, &v1.Namespace{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("expected a Configuration, but got: *v1.Namespace"))
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -77,16 +80,19 @@ var _ = Describe("Checking Configuration Validation", func() {
 
 		It("should fail when no plan name", func() {
 			configuration.Spec.Plan.Name = ""
-			err := v.ValidateCreate(ctx, configuration)
+
+			warnings, err = v.ValidateCreate(ctx, configuration)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("spec.plan.name is required"))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should fail when no plan revision", func() {
 			configuration.Spec.Plan.Revision = ""
-			err := v.ValidateCreate(ctx, configuration)
+			warnings, err := v.ValidateCreate(ctx, configuration)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("spec.plan.revision is required"))
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -95,12 +101,13 @@ var _ = Describe("Checking Configuration Validation", func() {
 			BeforeEach(func() {
 				configuration.Spec.Auth = &v1.SecretReference{}
 
-				err = v.ValidateCreate(ctx, configuration)
+				warnings, err = v.ValidateCreate(ctx, configuration)
 			})
 
 			It("should fail", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.auth.name is required"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
@@ -118,15 +125,17 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should fail on creating", func() {
-				err = v.ValidateCreate(ctx, configuration)
+				warnings, err = v.ValidateCreate(ctx, configuration)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should fail on updating", func() {
-				err = v.ValidateUpdate(ctx, nil, configuration)
+				warnings, err = v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -138,15 +147,17 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should fail on creation", func() {
-				err := v.ValidateCreate(ctx, configuration)
+				warnings, err := v.ValidateCreate(ctx, configuration)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should fail on update", func() {
-				err := v.ValidateUpdate(ctx, nil, configuration)
+				warnings, err := v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -156,21 +167,25 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should not fail", func() {
-				err := v.ValidateCreate(ctx, configuration)
+				warnings, err := v.ValidateCreate(ctx, configuration)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 
-				err = v.ValidateUpdate(ctx, nil, configuration)
+				warnings, err = v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
 		Context("we have no configuration keys", func() {
 			It("should not fail", func() {
-				err := v.ValidateCreate(ctx, configuration)
+				warnings, err := v.ValidateCreate(ctx, configuration)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 
-				err = v.ValidateUpdate(ctx, nil, configuration)
+				warnings, err = v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
@@ -192,9 +207,10 @@ var _ = Describe("Checking Configuration Validation", func() {
 					after := before.DeepCopy()
 					after.Spec.TerraformVersion = "v1.1.0"
 
-					err := v.ValidateUpdate(ctx, before, after)
+					warnings, err := v.ValidateUpdate(ctx, before, after)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("spec.terraformVersion has been disabled and cannot be changed"))
+					Expect(warnings).To(BeEmpty())
 				})
 
 				It("should not fail if version is being removed", func() {
@@ -202,8 +218,9 @@ var _ = Describe("Checking Configuration Validation", func() {
 					after := before.DeepCopy()
 					after.Spec.TerraformVersion = ""
 
-					err := v.ValidateUpdate(ctx, before, after)
+					warnings, err := v.ValidateUpdate(ctx, before, after)
 					Expect(err).To(Succeed())
+					Expect(warnings).To(BeEmpty())
 				})
 
 				It("should not fail if version in the same prior to versioning disabled", func() {
@@ -215,8 +232,9 @@ var _ = Describe("Checking Configuration Validation", func() {
 					after.Spec.TerraformVersion = "v1.1.9"
 					after.Spec.EnableAutoApproval = true
 
-					err := v.ValidateUpdate(ctx, before, after)
+					warnings, err := v.ValidateUpdate(ctx, before, after)
 					Expect(err).To(Succeed())
+					Expect(warnings).To(BeEmpty())
 				})
 			})
 		})
@@ -230,34 +248,38 @@ var _ = Describe("Checking Configuration Validation", func() {
 		It("should fail when no provider is found", func() {
 			configuration.Spec.ProviderRef = nil
 
-			err := v.ValidateCreate(ctx, configuration)
+			warnings, err := v.ValidateCreate(ctx, configuration)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("spec.providerRef is required"))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should fail when no provider name is found", func() {
 			configuration.Spec.ProviderRef.Name = ""
 
-			err := v.ValidateCreate(ctx, configuration)
+			warnings, err := v.ValidateCreate(ctx, configuration)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("spec.providerRef.name is required"))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should fail when no module is found", func() {
 			configuration.Spec.Module = ""
 
-			err := v.ValidateCreate(ctx, configuration)
+			warnings, err := v.ValidateCreate(ctx, configuration)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("spec.module is required"))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		Context("specifying value from inputs", func() {
 			It("should fail when no inputs are found", func() {
 				configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{}}
-				err = v.ValidateCreate(ctx, configuration)
+				warnings, err = v.ValidateCreate(ctx, configuration)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.valueFrom[0] requires either context or secret"))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should fail when both context and secret are found", func() {
@@ -268,9 +290,10 @@ var _ = Describe("Checking Configuration Validation", func() {
 						Context: pointer.String("context"),
 					},
 				}
-				err = v.ValidateCreate(ctx, configuration)
+				warnings, err = v.ValidateCreate(ctx, configuration)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.valueFrom[0] requires either context or secret, not both"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -288,9 +311,10 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should deny the configuration of the module", func() {
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.module: source has been denied by module policy, contact an administrator"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -308,13 +332,15 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should allow the configuration of the module", func() {
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should allow the configuration of the module", func() {
-				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -340,17 +366,19 @@ var _ = Describe("Checking Configuration Validation", func() {
 
 				Expect(cc.Delete(ctx, fixtures.NewPolicy("allow"))).To(Succeed())
 
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.module: source has been denied by module policy, contact an administrator"))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should be allowed by the second policy", func() {
 				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
 				configuration.Spec.Module = "allow"
-				err := v.ValidateCreate(ctx, configuration)
+				warnings, err := v.ValidateCreate(ctx, configuration)
 
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -368,15 +396,17 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should deny the creation of the configuration", func() {
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should deny the update of the configuration", func() {
-				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -394,13 +424,15 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should allow the creation of the configuration", func() {
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should allow the update of the configuration", func() {
-				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -418,15 +450,17 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 
 			It("should deny the creation of the configuration", func() {
-				err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should deny the update of the configuration", func() {
-				err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -447,16 +481,18 @@ var _ = Describe("Checking Configuration Validation", func() {
 				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
 				configuration.Labels = map[string]string{"does_match": "true"}
 
-				err := v.ValidateCreate(ctx, configuration)
+				warnings, err := v.ValidateCreate(ctx, configuration)
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should allow the update of the configuration", func() {
 				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
 				configuration.Labels = map[string]string{"does_match": "true"}
 
-				err := v.ValidateUpdate(ctx, nil, configuration)
+				warnings, err := v.ValidateUpdate(ctx, nil, configuration)
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -469,18 +505,20 @@ var _ = Describe("Checking Configuration Validation", func() {
 			It("should be denied due to versioning", func() {
 				configuration := fixtures.NewValidBucketConfiguration(namespace, "test")
 				configuration.Spec.TerraformVersion = "bad"
-				err := v.ValidateCreate(ctx, configuration)
 
+				warnings, err := v.ValidateCreate(ctx, configuration)
 				Expect(err).ToNot(Succeed())
 				Expect(err.Error()).To(Equal("spec.terraformVersion changes have been disabled"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
 
 	When("deleting a configuration", func() {
 		It("should not error", func() {
-			err := v.ValidateDelete(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+			warnings, err := v.ValidateDelete(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 })

@@ -33,11 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/cloudresources"
+	"github.com/appvia/terranetes-controller/pkg/schema"
 )
 
 const controllerName = "cloudresource.terraform.appvia.io"
@@ -64,11 +64,11 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/cloudresources", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(&terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc)),
+			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/cloudresources", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(&terraformv1alpha1.CloudResource{}, cloudresources.NewMutator(c.cc)),
+			admission.WithCustomDefaulter(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewMutator(c.cc)),
 		)
 	}
 
@@ -82,8 +82,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			&predicate.ResourceVersionChangedPredicate{},
 		)).
 		Watches(
-			&source.Kind{Type: &terraformv1alpha1.Plan{}},
-			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			&terraformv1alpha1.Plan{},
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 				list := &terraformv1alpha1.CloudResourceList{}
 				if err := c.cc.List(context.Background(), list,
 					client.MatchingLabels(map[string]string{
@@ -116,8 +116,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			),
 		).
 		Watches(
-			&source.Kind{Type: &terraformv1alpha1.Configuration{}},
-			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			&terraformv1alpha1.Configuration{},
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 				logger := log.WithFields(log.Fields{
 					"name":      o.GetName(),
 					"namespace": o.GetNamespace(),

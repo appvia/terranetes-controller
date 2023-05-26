@@ -54,7 +54,11 @@ var _ = Describe("Plan Controller", func() {
 	var plan *terraformv1alpha1.Plan
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Plan{}).
+			Build()
+
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:       cc,

@@ -41,18 +41,18 @@ func NewValidator(cc client.Client, namespace string) admission.CustomValidator 
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj.(*terraformv1alpha1.Provider))
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, v.validate(ctx, obj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.validate(ctx, newObj.(*terraformv1alpha1.Provider))
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, v.validate(ctx, newObj.(*terraformv1alpha1.Provider))
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
 
 // validate handles the generic validation of a provider

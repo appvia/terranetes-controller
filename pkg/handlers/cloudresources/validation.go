@@ -46,33 +46,33 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	o, ok := obj.(*terraformv1alpha1.CloudResource)
 	if !ok {
-		return fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, obj)
+		return admission.Warnings{}, fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, obj)
 	}
 
-	return validate(ctx, v.cc, o)
+	return admission.Warnings{}, validate(ctx, v.cc, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	var before *terraformv1alpha1.CloudResource
 
 	if newObj != nil {
 		o, ok := newObj.(*terraformv1alpha1.CloudResource)
 		if !ok {
-			return fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, newObj)
+			return admission.Warnings{}, fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, newObj)
 		}
 		before = o
 	}
 
-	return validate(ctx, v.cc, before)
+	return admission.Warnings{}, validate(ctx, v.cc, before)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
 
 // validate is responsible for validating the configuration plan

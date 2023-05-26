@@ -130,12 +130,12 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	if config.EnableWebhooks {
 		log.Info("creating the webhook server for validation and mutations")
-		options.WebhookServer = &webhook.Server{
+		options.WebhookServer = webhook.NewServer(webhook.Options{
 			CertDir:  config.TLSDir,
 			CertName: config.TLSCert,
 			KeyName:  config.TLSKey,
 			Port:     config.WebhookPort,
-		}
+		})
 	}
 
 	log.Info("creating a new manager for the controllers")

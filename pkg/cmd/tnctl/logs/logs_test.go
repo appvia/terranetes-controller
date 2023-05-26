@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -62,7 +61,10 @@ var _ = Describe("Logs Command", func() {
 	var err error
 
 	BeforeEach(func() {
-		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			Build()
 		kc = k8sfake.NewSimpleClientset()
 		streams, _, _, stderr = genericclioptions.NewTestIOStreams()
 		configuration = fixtures.NewValidBucketConfiguration("default", "bucket")
@@ -179,8 +181,7 @@ var _ = Describe("Logs Command", func() {
 
 		Context("configuration has been destroyed", func() {
 			BeforeEach(func() {
-				configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-				Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+				Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
 
 				pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
 				Expect(cc.Create(context.Background(), pod)).To(Succeed())
@@ -220,7 +221,7 @@ var _ = Describe("Logs Command", func() {
 			cond := cloudresource.Status.GetCondition(terraformv1alpha1.ConditionConfigurationReady)
 			cond.Status = metav1.ConditionTrue
 			cond.Reason = corev1alpha1.ReasonReady
-			Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+			Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 
 			command.SetArgs([]string{"--timeout", "10ms", "--namespace", cloudresource.Namespace, "cloudresource", cloudresource.Name})
 		})
@@ -245,7 +246,7 @@ var _ = Describe("Logs Command", func() {
 		Context("cloudresource has no conditions", func() {
 			BeforeEach(func() {
 				cloudresource.Status.Conditions = nil
-				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+				Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 
 				err = command.ExecuteContext(context.Background())
 			})
@@ -261,7 +262,7 @@ var _ = Describe("Logs Command", func() {
 				cond := cloudresource.Status.GetCondition(terraformv1alpha1.ConditionConfigurationReady)
 				cond.Status = metav1.ConditionFalse
 				cond.Reason = corev1alpha1.ReasonReady
-				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+				Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 
 				err = command.ExecuteContext(context.Background())
 			})
@@ -278,7 +279,7 @@ var _ = Describe("Logs Command", func() {
 				cond.Status = metav1.ConditionFalse
 				cond.Reason = corev1alpha1.ReasonError
 				cond.Message = "configuration failed"
-				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+				Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 
 				err = command.ExecuteContext(context.Background())
 			})
@@ -300,7 +301,7 @@ var _ = Describe("Logs Command", func() {
 					condition := cloudresource.Status.GetCondition(stage)
 					condition.Reason = corev1alpha1.ReasonInProgress
 					condition.Status = metav1.ConditionTrue
-					Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+					Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 
 					// create the watcher
 					pod := fixtures.NewConfigurationPodWatcher(cloudresource, string(stage))
@@ -338,12 +339,14 @@ var _ = Describe("Logs Command", func() {
 
 		Context("cloudresource has been destroyed", func() {
 			BeforeEach(func() {
-				cloudresource.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-				configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 				cloudresource.Finalizers = []string{"does-not-matter"}
 				configuration.Finalizers = []string{"does-not-matter"}
 				Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
 				Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+				Expect(cc.Delete(context.Background(), cloudresource)).To(Succeed())
+				Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
+				Expect(cc.Get(context.Background(), cloudresource.GetNamespacedName(), cloudresource)).To(Succeed())
+				Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 
 				pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
 				Expect(cc.Create(context.Background(), pod)).To(Succeed())

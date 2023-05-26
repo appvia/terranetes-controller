@@ -42,12 +42,12 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, nil, obj.(*terraformv1alpha1.Context))
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, v.validate(ctx, nil, obj.(*terraformv1alpha1.Context))
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	var before, after *terraformv1alpha1.Context
 
 	if newObj != nil {
@@ -57,7 +57,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		before = oldObj.(*terraformv1alpha1.Context)
 	}
 
-	return v.validate(ctx, before, after)
+	return admission.Warnings{}, v.validate(ctx, before, after)
 }
 
 // validate is called to ensure the configuration is valid and incline with current policies
@@ -89,11 +89,12 @@ func (v *validator) validate(_ context.Context, _, current *terraformv1alpha1.Co
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
 	current := obj.(*terraformv1alpha1.Context)
 
 	if current.GetAnnotations()[terraformv1alpha1.OrphanAnnotation] == "true" {
-		return nil
+		return warnings, nil
 	}
 
 	// @choice: unless the zero validation annotation is present we should not be
@@ -101,10 +102,10 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	list := &terraformv1alpha1.ConfigurationList{}
 
 	if err := v.cc.List(ctx, list); err != nil {
-		return err
+		return warnings, err
 	}
 	if len(list.Items) == 0 {
-		return nil
+		return warnings, nil
 	}
 
 	var inuse []string
@@ -118,8 +119,8 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	}
 
 	if len(inuse) > 0 {
-		return fmt.Errorf("resource in use by configuration(s): %v", strings.Join(inuse, ", "))
+		return warnings, fmt.Errorf("resource in use by configuration(s): %v", strings.Join(inuse, ", "))
 	}
 
-	return nil
+	return warnings, nil
 }

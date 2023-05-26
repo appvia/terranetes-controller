@@ -41,6 +41,7 @@ import (
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	controllertests "github.com/appvia/terranetes-controller/test"
 	"github.com/appvia/terranetes-controller/test/fixtures"
@@ -64,7 +65,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 
 		configuration.Finalizers = []string{controllerName}
-		configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 		state := fixtures.NewTerraformState(configuration)
 		state.Namespace = "terraform-system"
 
@@ -72,8 +72,17 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 
 		cc = fake.NewClientBuilder().
 			WithScheme(schema.GetScheme()).
-			WithRuntimeObjects(secret, provider, namespace, configuration, state).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
 			Build()
+
+		Expect(cc.Create(context.Background(), secret)).To(Succeed())
+		Expect(cc.Create(context.Background(), provider)).To(Succeed())
+		Expect(cc.Create(context.Background(), namespace)).To(Succeed())
+		Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Create(context.Background(), state)).To(Succeed())
+
+		Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 
 		recorder := &controllertests.FakeRecorder{}
 		ctrl = &Controller{
@@ -101,7 +110,11 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 
 		Context("we have a orphaned annotation", func() {
 			BeforeEach(func() {
-				configuration.Annotations[terraformv1alpha1.OrphanAnnotation] = "true"
+				configuration.Annotations = utils.MergeStringMaps(configuration.Annotations,
+					map[string]string{
+						terraformv1alpha1.OrphanAnnotation: "true",
+					},
+				)
 				Expect(cc.Update(context.Background(), configuration)).To(Succeed())
 
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
@@ -122,7 +135,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		Context("and the provider is not ready", func() {
 			BeforeEach(func() {
 				provider.Status.GetCondition(corev1alpha1.ConditionReady).Status = metav1.ConditionFalse
-				Expect(cc.Status().Update(context.Background(), provider)).ToNot(HaveOccurred())
+				Expect(cc.Update(context.Background(), provider)).ToNot(HaveOccurred())
 
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
 			})

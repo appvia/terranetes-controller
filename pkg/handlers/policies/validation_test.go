@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -44,6 +45,7 @@ var _ = Describe("Module Constraints", func() {
 	var v *validator
 	var policy *terraformv1alpha1.Policy
 	var cc client.Client
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
@@ -94,17 +96,21 @@ var _ = Describe("Module Constraints", func() {
 		It("should error on invalid selectors", func() {
 			for _, c := range cases {
 				policy.Spec.Constraints.Modules.Selector = c.Selector
-				err = v.ValidateCreate(context.TODO(), policy)
+
+				warnings, err = v.ValidateCreate(context.TODO(), policy)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(c.Expect.Error()))
+				Expect(warnings).To(BeEmpty())
 			}
 		})
 
 		It("should fail on invalid regex", func() {
 			policy.Spec.Constraints.Modules.Allowed = []string{"^^.[]$$"}
-			err = v.ValidateCreate(context.TODO(), policy)
+
+			warnings, err = v.ValidateCreate(context.TODO(), policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.constraints.modules.allowed[0] is invalid"))
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 })
@@ -114,6 +120,7 @@ var _ = Describe("Policy Validation", func() {
 	var v *validator
 	var policy *terraformv1alpha1.Policy
 	var cc client.Client
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
@@ -218,13 +225,17 @@ var _ = Describe("Policy Validation", func() {
 		for _, c := range cases {
 			It(c.CheckName, func() {
 				c.Change(policy.Spec.Constraints.Checkov)
-				err = v.ValidateCreate(context.TODO(), policy)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal(c.Expected))
 
-				err = v.ValidateUpdate(context.TODO(), nil, policy)
+				warnings, err = v.ValidateCreate(context.TODO(), policy)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(c.Expected))
+				Expect(warnings).To(BeEmpty())
+
+				warnings, err = v.ValidateUpdate(context.TODO(), nil, policy)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(c.Expected))
+				Expect(warnings).To(BeEmpty())
+				Expect(warnings).To(BeEmpty())
 			})
 		}
 	})
@@ -235,6 +246,7 @@ var _ = Describe("Defaults Validation", func() {
 	var cc client.Client
 	var policy *terraformv1alpha1.Policy
 	var err error
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
@@ -246,12 +258,13 @@ var _ = Describe("Defaults Validation", func() {
 			BeforeEach(func() {
 				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{{}}
 
-				err = (&validator{cc: cc}).ValidateCreate(context.TODO(), policy)
+				warnings, err = (&validator{cc: cc}).ValidateCreate(context.TODO(), policy)
 			})
 
 			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("spec.defaults[0]: must specify at least one variable or secret"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
@@ -261,6 +274,7 @@ var _ = Describe("Policy Delete Validation", func() {
 	var configurations []*terraformv1alpha1.Configuration
 	var policy *terraformv1alpha1.Policy
 	var err error
+	var warnings admission.Warnings
 
 	JustBeforeEach(func() {
 		if policy == nil {
@@ -271,12 +285,13 @@ var _ = Describe("Policy Delete Validation", func() {
 			b.WithRuntimeObjects(x)
 		}
 
-		err = (&validator{cc: b.Build()}).ValidateDelete(context.TODO(), policy)
+		warnings, err = (&validator{cc: b.Build()}).ValidateDelete(context.TODO(), policy)
 	})
 
 	When("deleting the policy with no configurations present", func() {
 		It("it should delete", func() {
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
