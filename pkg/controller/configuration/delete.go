@@ -31,6 +31,7 @@ import (
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -68,6 +69,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
 			WithName(configuration.GetName()).
+			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
 			WithNamespace(configuration.GetNamespace()).
 			WithStage(terraformv1alpha1.StageTerraformDestroy).
 			WithUID(string(configuration.GetUID())).
@@ -76,6 +78,9 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
+			AdditionalLabels: utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
+				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
+			}),
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
 			ExecutorSecrets:  c.ExecutorSecrets,
