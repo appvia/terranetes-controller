@@ -160,9 +160,9 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		return err
 	}
 
-	if strings.HasPrefix(location, "http") {
-		location = strings.TrimPrefix(location, "http://")
-		location = strings.TrimPrefix(location, "https://")
+	// @step: just to keep the same behaviour as the previous version
+	if strings.HasPrefix(location, "https://github.com") {
+		location = strings.Replace(location, "https://github.com", "git::https://github.com", 1)
 	}
 
 	log.WithFields(log.Fields{
