@@ -12,7 +12,7 @@ RUN cd /go/src/github.com/appvia/terranetes-controller && make source
 RUN cd /go/src/github.com/appvia/terranetes-controller && make step
 RUN cd /go/src/github.com/appvia/terranetes-controller && make preload
 
-FROM alpine:3.17
+FROM alpine:3.18
 
 RUN apk add ca-certificates curl unzip
 
