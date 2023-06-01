@@ -921,7 +921,7 @@ spec:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 preload:
-                  description: Preload defines the preload options for this the provider is being used to preload data from the cloud provider.
+                  description: Preload defines the configuration for the preloading of contextual data from the cloud vendor.
                   properties:
                     cluster:
                       description: Cluster is the name of the kubernetes cluster we use to pivot the data around
