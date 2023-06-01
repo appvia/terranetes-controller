@@ -77,6 +77,7 @@ func main() {
 }
 
 // Run is called to execute the action
+// nolint: gocyclo
 func Run(ctx context.Context, source, destination string, timeout time.Duration, tmpdir bool) error {
 	if source == "" {
 		return errors.New("no source defined")
@@ -88,7 +89,8 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		return errors.New("timeout can not be less than zero")
 	}
 
-	uri, err := url.Parse(source)
+	unprefixed := strings.TrimPrefix(source, "git::")
+	uri, err := url.Parse(unprefixed)
 	if err != nil {
 		return fmt.Errorf("failed to parse source url: %w", err)
 	}
@@ -118,20 +120,33 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 			location = fmt.Sprintf("%s?sshkey=%s", source, encoded)
 		}
 
-	case os.Getenv("GIT_USERNAME") != "" && os.Getenv("GIT_PASSWORD") != "":
-		data, err := template.New(gitConfig, map[string]string{
-			"Source": fmt.Sprintf("%s://%s:%s@%s%s",
+	case os.Getenv("GIT_PASSWORD") != "" || os.Getenv("GIT_USERNAME") != "":
+		var src string
+
+		switch {
+		case os.Getenv("GIT_PASSWORD") != "" && os.Getenv("GIT_USERNAME") == "":
+			src = fmt.Sprintf("%s://%s@%s%s",
+				uri.Scheme,
+				os.Getenv("GIT_PASSWORD"),
+				uri.Hostname(), uri.Path,
+			)
+
+		default:
+			src = fmt.Sprintf("%s://%s:%s@%s%s",
 				uri.Scheme,
 				os.Getenv("GIT_USERNAME"),
 				os.Getenv("GIT_PASSWORD"),
 				uri.Hostname(), uri.Path,
-			),
-			"Destination": source,
+			)
+		}
+
+		data, err := template.New(gitConfig, map[string]string{
+			"Source":      src,
+			"Destination": unprefixed,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create git config template: %w", err)
 		}
-
 		filename := os.ExpandEnv(
 			path.Join("${HOME}", utils.GetEnv("GIT_CONFIG", ".gitconfig")),
 		)
