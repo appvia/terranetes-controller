@@ -168,8 +168,7 @@ type ProviderSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"configuration,omitempty"`
-	// Preload defines the preload options for this the provider is being used to preload
-	// data from the cloud provider.
+	// Preload defines the configuration for the preloading of contextual data from the cloud vendor.
 	// +kubebuilder:validation:Optional
 	Preload *PreloadConfiguration `json:"preload,omitempty"`
 	// ProviderType defines the cloud provider which is being used, currently supported providers are
