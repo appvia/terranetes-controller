@@ -61,6 +61,19 @@ func NewValidAWSReadyProvider(name string, secret *v1.Secret) *terraformv1alpha1
 	return provider
 }
 
+// NewAuthenticationSecret returns a valid provider secret for a configuration
+func NewAuthenticationSecret(namespace, name string) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Namespace = namespace
+	secret.Name = name
+	secret.Data = map[string][]byte{
+		"GIT_USERNAME": []byte("test"),
+		"GIT_PASSWORD": []byte("test"),
+	}
+
+	return secret
+}
+
 // NewValidAWSProviderSecret returns a valid provider secret for aws
 func NewValidAWSProviderSecret(namespace, name string) *v1.Secret {
 	secret := &v1.Secret{}

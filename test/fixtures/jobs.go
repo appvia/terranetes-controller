@@ -125,3 +125,58 @@ func NewTerraformJob(configuration *terraformv1alpha1.Configuration, namespace, 
 
 	return job
 }
+
+// NewCompletedTerraformJob returns a new completed terraform job
+func NewCompletedTerraformJob(configuration *terraformv1alpha1.Configuration, stage string) *batchv1.Job {
+	job := NewTerraformJob(configuration, configuration.Namespace, stage)
+	job.Status.Active = 0
+	job.Status.Failed = 0
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionFalse,
+		},
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	return job
+}
+
+// NewFailedTerraformJob returns a new failed terraform job
+func NewFailedTerraformJob(configuration *terraformv1alpha1.Configuration, stage string) *batchv1.Job {
+	job := NewTerraformJob(configuration, configuration.Namespace, stage)
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionTrue,
+		},
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionFalse,
+		},
+	}
+
+	return job
+}
+
+// NewRunningTerraformJob returns a running terraform job
+func NewRunningTerraformJob(configuration *terraformv1alpha1.Configuration, stage string) *batchv1.Job {
+	job := NewTerraformJob(configuration, configuration.Namespace, stage)
+	job.Status.Active = 1
+	job.Status.Failed = 0
+	job.Status.Conditions = []batchv1.JobCondition{
+		{
+			Type:   batchv1.JobComplete,
+			Status: v1.ConditionFalse,
+		},
+		{
+			Type:   batchv1.JobFailed,
+			Status: v1.ConditionFalse,
+		},
+	}
+
+	return job
+}
