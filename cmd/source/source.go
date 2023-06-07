@@ -89,11 +89,6 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		return errors.New("timeout can not be less than zero")
 	}
 
-	unprefixed := strings.TrimPrefix(source, "git::")
-	uri, err := url.Parse(unprefixed)
-	if err != nil {
-		return fmt.Errorf("failed to parse source url: %w", err)
-	}
 	location := source
 
 	// @step: check for an ssh key in the environment variables and provision a configuration
@@ -121,28 +116,13 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		}
 
 	case os.Getenv("GIT_PASSWORD") != "" || os.Getenv("GIT_USERNAME") != "":
-		var src string
-
-		switch {
-		case os.Getenv("GIT_PASSWORD") != "" && os.Getenv("GIT_USERNAME") == "":
-			src = fmt.Sprintf("%s://%s@%s%s",
-				uri.Scheme,
-				os.Getenv("GIT_PASSWORD"),
-				uri.Hostname(), uri.Path,
-			)
-
-		default:
-			src = fmt.Sprintf("%s://%s:%s@%s%s",
-				uri.Scheme,
-				os.Getenv("GIT_USERNAME"),
-				os.Getenv("GIT_PASSWORD"),
-				uri.Hostname(), uri.Path,
-			)
+		src, dest, err := sanitizeSource(location)
+		if err != nil {
+			return fmt.Errorf("failed to parse source url: %w", err)
 		}
-
 		data, err := template.New(gitConfig, map[string]string{
 			"Source":      src,
-			"Destination": unprefixed,
+			"Destination": dest,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create git config template: %w", err)
@@ -264,4 +244,40 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 
 	//nolint:gosec
 	return exec.Command("cp", []string{"-rT", "/tmp/source/", destination}...).Run()
+}
+
+// sanitizeSource is responsible for sanitizing the source url
+func sanitizeSource(location string) (string, string, error) {
+	var source, destination string
+
+	uri, err := url.Parse(strings.TrimPrefix(location, "git::"))
+	if err != nil {
+		return "", "", err
+	}
+	path := uri.Path
+
+	if strings.Contains(uri.Path, "//") {
+		path = strings.Split(uri.Path, "//")[0]
+	}
+
+	destination = fmt.Sprintf("%s://%s%s", uri.Scheme, uri.Host, path)
+
+	switch {
+	case os.Getenv("GIT_PASSWORD") != "" && os.Getenv("GIT_USERNAME") == "":
+		source = fmt.Sprintf("%s://%s@%s%s",
+			uri.Scheme,
+			os.Getenv("GIT_PASSWORD"),
+			uri.Hostname(), path,
+		)
+
+	default:
+		source = fmt.Sprintf("%s://%s:%s@%s%s",
+			uri.Scheme,
+			os.Getenv("GIT_USERNAME"),
+			os.Getenv("GIT_PASSWORD"),
+			uri.Hostname(), path,
+		)
+	}
+
+	return source, destination, nil
 }
