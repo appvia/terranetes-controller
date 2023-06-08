@@ -236,6 +236,47 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			})
 		})
 
+		Context("and the configuration variables have changed", func() {
+			BeforeEach(func() {
+				configuration.Spec.Variables.Raw = []byte(`{"before": "changed"}`)
+				Expect(cc.Update(context.Background(), configuration)).ToNot(HaveOccurred())
+
+				// this is the secret before we reconcile
+				secret := v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+				secret.Data = map[string][]byte{
+					"before": []byte("test"),
+				}
+				Expect(cc.Create(context.Background(), &secret)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should requeue", func() {
+				Expect(rerr).ToNot(HaveOccurred())
+				Expect(result.Requeue).To(BeFalse())
+			})
+
+			It("should indicate the status in the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform destroy is running"))
+			})
+
+			It("should update configuration variables", func() {
+				name := configuration.GetTerraformConfigSecretName()
+				secret, found, err := kubernetes.GetSecretIfExists(context.Background(), cc, ctrl.ControllerNamespace, name)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+				Expect(secret.Data).To(HaveKey("variables.tfvars.json"))
+				Expect(string(secret.Data["variables.tfvars.json"])).To(ContainSubstring(`{"before":"changed"}`))
+			})
+		})
+
 		Context("and using authentication secret", func() {
 			BeforeEach(func() {
 				configuration.Spec.Auth = &v1.SecretReference{Name: "auth"}
