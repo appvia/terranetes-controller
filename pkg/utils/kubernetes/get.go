@@ -35,6 +35,9 @@ func GetSecretIfExists(ctx context.Context, cc client.Client, namespace, name st
 	if err != nil {
 		return nil, false, err
 	}
+	if !exists {
+		return nil, false, nil
+	}
 
 	return secret, exists, nil
 }

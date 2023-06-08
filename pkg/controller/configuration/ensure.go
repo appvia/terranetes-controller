@@ -244,7 +244,7 @@ func (c *Controller) ensureValueFromSecret(configuration *terraformv1alpha1.Conf
 				// @step: we either error or move on if the secret is not found
 				if !found {
 					if !x.Optional {
-						cond.ActionRequired("spec.valueFrom[%d].secret (%s/%s) does not exist", i, configuration.Namespace, secret.Name)
+						cond.ActionRequired("spec.valueFrom[%d].secret (%s/%s) does not exist", i, configuration.Namespace, *x.Secret)
 
 						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 					}
