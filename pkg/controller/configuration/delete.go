@@ -98,6 +98,12 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 
 		// @step: we can requeue or move on depending on the status
 		if !found {
+			if err := c.cc.Create(ctx, runner); err != nil {
+				cond.Failed(err, "Failed to create the terraform destroy job")
+
+				return reconcile.Result{}, err
+			}
+
 			if c.EnableWatchers {
 				// @step: retrieve the current state of the namespace
 				ns := &v1.Namespace{}
@@ -118,13 +124,9 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 						return reconcile.Result{}, err
 					}
 
-					if err := c.cc.Create(ctx, runner); err != nil {
-						cond.Failed(err, "Failed to create the terraform destroy job")
-
-						return reconcile.Result{}, err
-					}
 				}
 			}
+			cond.InProgress("Terraform destroy is running")
 
 			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
@@ -144,7 +146,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			cond.InProgress("Terraform destroy is running")
 		}
 
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 }
 
