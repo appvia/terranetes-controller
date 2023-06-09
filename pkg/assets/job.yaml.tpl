@@ -91,6 +91,11 @@ spec:
                 name: {{ . }}
                 optional: false
           {{- end }}
+          {{- range .ExecutorSecrets }}
+            - secretRef:
+                name: {{ . }}
+                optional: true
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: /run/config

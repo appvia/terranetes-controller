@@ -1482,6 +1482,11 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(len(list.Items)).To(Equal(1))
 
 			job := list.Items[0]
+			Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+			Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(3))
+			Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[1].SecretRef.Name).To(Equal("secret1"))
+			Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[2].SecretRef.Name).To(Equal("secret2"))
+
 			Expect(job.Spec.Template.Spec.Containers).To(HaveLen(1))
 			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom).To(HaveLen(3))
 			Expect(job.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name).To(Equal("aws"))
