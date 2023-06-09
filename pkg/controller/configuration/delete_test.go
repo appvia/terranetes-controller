@@ -168,6 +168,88 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			})
 		})
 
+		Context("and we are using policy injected secrets", func() {
+			var secret *v1.Secret
+
+			BeforeEach(func() {
+				policy := fixtures.NewPolicy("injected")
+				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+					{
+						Secrets: []string{"foo"},
+					},
+				}
+				secret = &v1.Secret{}
+				secret.Name = "foo"
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Data = map[string][]byte{"foo": []byte("bar")}
+
+				Expect(cc.Create(context.Background(), policy)).ToNot(HaveOccurred())
+				Expect(cc.Create(context.Background(), secret)).ToNot(HaveOccurred())
+			})
+
+			Context("and the secret is missing", func() {
+				BeforeEach(func() {
+					Expect(cc.Delete(context.Background(), secret)).ToNot(HaveOccurred())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should indicate the status in the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+					Expect(cond.Message).To(Equal("Default secret (terraform-system/foo) does not exist, please contact administrator"))
+				})
+
+				It("should not delete the configuration", func() {
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				})
+			})
+
+			Context("and the secret is available", func() {
+				BeforeEach(func() {
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should indicate the status in the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+					Expect(cond.Message).To(Equal("Terraform destroy is running"))
+				})
+
+				It("should have a secret included in the terraform destroy job ", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.Background(), list,
+						client.InNamespace(ctrl.ControllerNamespace),
+						client.MatchingLabels(map[string]string{
+							terraformv1alpha1.ConfigurationStageLabel: terraformv1alpha1.StageTerraformDestroy,
+						},
+						))).ToNot(HaveOccurred())
+
+					Expect(list.Items).To(HaveLen(1))
+
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(2))
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[0].EnvFrom[0].SecretRef.Name).To(Equal(configuration.GetTerraformConfigSecretName()))
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[0].EnvFrom[1].SecretRef.Name).To(Equal(secret.Name))
+
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[1].EnvFrom).To(HaveLen(1))
+					Expect(list.Items[0].Spec.Template.Spec.InitContainers[1].EnvFrom[0].SecretRef.Name).To(Equal(secret.Name))
+
+					Expect(list.Items[0].Spec.Template.Spec.Containers[0].Name).To(Equal("terraform"))
+					Expect(list.Items[0].Spec.Template.Spec.Containers[0].EnvFrom).To(HaveLen(2))
+					Expect(list.Items[0].Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name).To(Equal(provider.Name))
+					Expect(list.Items[0].Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.Name).To(Equal(secret.Name))
+				})
+			})
+		})
+
 		Context("and the configuration is using value from", func() {
 			BeforeEach(func() {
 				configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
