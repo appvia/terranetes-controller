@@ -133,6 +133,8 @@ func (c *Controller) ensurePreloadStatus(provider *terraformv1alpha1.Provider, s
 		// @step: what was the result of the job?
 		switch {
 		case jobs.IsFailed(job):
+			totalFailure.Inc()
+
 			cond.Failed(nil, "Contextual data failed to load, please check the logs")
 
 		case jobs.IsComplete(job):
@@ -157,6 +159,8 @@ func (c *Controller) ensurePreloadStatus(provider *terraformv1alpha1.Provider, s
 
 				return reconcile.Result{}, nil
 			}
+
+			totalSuccess.Inc()
 			cond.Success("Contextual data successfully loaded")
 		}
 
