@@ -44,6 +44,7 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/configurations"
+	ksutils "github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/utils/policies"
 )
 
@@ -212,10 +213,20 @@ func (c *Controller) findMatchingPolicy(
 		return nil, nil
 	}
 
-	namespace, found := c.cache.Get(configuration.Namespace)
-	if !found {
-		return nil, fmt.Errorf("namespace: %q was not found in the cache", configuration.Namespace)
+	// @step: check the cache for the result
+	entry, found := c.cache.Get(configuration.Namespace)
+	if found {
+		return policies.FindMatchingPolicy(ctx, configuration, entry.(client.Object), list)
 	}
 
-	return policies.FindMatchingPolicy(ctx, configuration, namespace.(client.Object), list)
+	namespace := &v1.Namespace{}
+	namespace.Name = configuration.Namespace
+
+	if found, err := ksutils.GetIfExists(ctx, c.cc, namespace); err != nil {
+		return nil, err
+	} else if !found {
+		return nil, fmt.Errorf("namespace: %q was not found in the cache or api", configuration.Namespace)
+	}
+
+	return policies.FindMatchingPolicy(ctx, configuration, namespace, list)
 }
