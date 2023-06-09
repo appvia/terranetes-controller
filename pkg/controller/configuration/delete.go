@@ -78,6 +78,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		// @step: generate the destroy job
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
+			AdditionalJobSecrets: state.additionalJobSecrets,
 			AdditionalLabels: utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
 				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
 			}),
