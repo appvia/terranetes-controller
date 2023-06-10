@@ -48,12 +48,12 @@ var _ = Describe("Context Validation", func() {
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
 		v = &validator{cc: cc}
+		c = fixtures.NewTerranettesContext("default")
 	})
 
 	When("creating or updating a terraform context", func() {
 		Context("and there are no variables", func() {
 			BeforeEach(func() {
-				c = fixtures.NewTerranettesContext("default")
 				c.Spec.Variables = nil
 
 				err = v.ValidateCreate(context.Background(), c)
@@ -67,7 +67,6 @@ var _ = Describe("Context Validation", func() {
 		Context("and there are variables", func() {
 			Context("but the value is empty", func() {
 				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("default")
 					c.Spec.Variables = map[string]runtime.RawExtension{
 						"foo": runtime.RawExtension{},
 					}
@@ -84,9 +83,23 @@ var _ = Describe("Context Validation", func() {
 				})
 			})
 
+			Context("and the variables are invalid", func() {
+				BeforeEach(func() {
+					c.Spec.Variables = map[string]runtime.RawExtension{
+						"foo": runtime.RawExtension{Raw: []byte("invalid")},
+					}
+
+					err = v.ValidateCreate(context.Background(), c)
+				})
+
+				It("should return an error", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("spec.variable[\"foo\"] invalid input"))
+				})
+			})
+
 			Context("but it does not contain a description", func() {
 				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("default")
 					c.Spec.Variables = map[string]runtime.RawExtension{
 						"foo": runtime.RawExtension{
 							Raw: []byte(`{"value": "bar"}`),
@@ -107,7 +120,6 @@ var _ = Describe("Context Validation", func() {
 
 			Context("but it does not contain a value", func() {
 				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("default")
 					c.Spec.Variables = map[string]runtime.RawExtension{
 						"foo": runtime.RawExtension{
 							Raw: []byte(`{"description": "bar"}`),
@@ -128,7 +140,6 @@ var _ = Describe("Context Validation", func() {
 
 			Context("and contains all required fields", func() {
 				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("default")
 					c.Spec.Variables = map[string]runtime.RawExtension{
 						"foo": runtime.RawExtension{
 							Raw: []byte(`{"description": "bar", "value": "baz"}`),
@@ -151,14 +162,13 @@ var _ = Describe("Context Validation", func() {
 				cr := fixtures.NewValidBucketConfiguration("default", fmt.Sprintf("test-%d", i))
 				cr.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 					{
-						Context: pointer.String("foo"),
+						Context: pointer.String(c.Name),
 						Key:     "bar",
 						Name:    "baz",
 					},
 				}
 				Expect(cc.Create(context.Background(), cr)).To(Succeed())
 			}
-
 			cr := fixtures.NewValidBucketConfiguration("default", "ignore")
 			cr.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 				{
@@ -172,7 +182,6 @@ var _ = Describe("Context Validation", func() {
 
 		Context("and the annotation is set", func() {
 			BeforeEach(func() {
-				c = fixtures.NewTerranettesContext("foo")
 				c.Annotations = map[string]string{
 					terraformv1alpha1.OrphanAnnotation: "true",
 				}
@@ -185,30 +194,45 @@ var _ = Describe("Context Validation", func() {
 			})
 		})
 
-		Context("and the annotation is not set", func() {
-			Context("but we do not have any present references", func() {
-				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("no_reference")
+		Context("and the orphan annotation is not set", func() {
 
-					err = v.ValidateDelete(context.Background(), c)
-				})
-
-				It("should not return an error", func() {
-					Expect(err).To(BeNil())
-				})
-			})
-
-			Context("and we have present references", func() {
-				BeforeEach(func() {
-					c = fixtures.NewTerranettesContext("foo")
-
-					err = v.ValidateDelete(context.Background(), c)
-				})
-
+			Context("but we have configurations referencing the context", func() {
 				It("should return an error", func() {
+					err = v.ValidateDelete(context.Background(), c)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("resource in use by configuration(s): default/test-0, default/test-1"))
 				})
+			})
+
+			Context("but we have configurations referencing the context", func() {
+				BeforeEach(func() {
+					c = fixtures.NewTerranettesContext("not_referenced")
+				})
+
+				It("should not return an error", func() {
+					err = v.ValidateDelete(context.Background(), c)
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+
+		Context("and the orphan annotation is set to true", func() {
+			BeforeEach(func() {
+				c.Annotations = map[string]string{terraformv1alpha1.OrphanAnnotation: "true"}
+				cr := fixtures.NewValidBucketConfiguration("default", "test")
+				cr.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
+					{
+						Context: pointer.String(c.Name),
+						Key:     "bar",
+						Name:    "baz",
+					},
+				}
+				Expect(cc.Create(context.Background(), cr)).To(Succeed())
+			})
+
+			It("should not return an error, regardless of reference", func() {
+				err = v.ValidateDelete(context.Background(), c)
+				Expect(err).To(BeNil())
 			})
 		})
 	})
