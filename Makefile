@@ -125,7 +125,7 @@ step: golang
 test:
 	@echo "--> Running the tests"
 	@rm -f cover.out || true
-	@go test -cover -v ./...
+	@go test -cover -coverprofile=cover.out -v ./...
 
 ### IMAGES ###
 
@@ -226,7 +226,7 @@ bench:
 
 coverage:
 	@echo "--> Running go coverage"
-	@go test -coverprofile cover.out
+	@go test -coverprofile cover.out ./...
 	@go tool cover -html=cover.out -o cover.html
 
 golangci-lint:
