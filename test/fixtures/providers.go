@@ -86,3 +86,18 @@ func NewValidAWSProviderSecret(namespace, name string) *v1.Secret {
 
 	return secret
 }
+
+// NewValidAzureProviderSecret returns a valid provider secret for aws
+func NewValidAzureProviderSecret(namespace, name string) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Namespace = namespace
+	secret.Name = name
+	secret.Data = map[string][]byte{
+		"ARM_CLIENT_ID":       []byte("test"),
+		"ARM_CLIENT_SECRET":   []byte("test"),
+		"ARM_SUBSCRIPTION_ID": []byte("test"),
+		"ARM_TENANT_ID":       []byte("test"),
+	}
+
+	return secret
+}

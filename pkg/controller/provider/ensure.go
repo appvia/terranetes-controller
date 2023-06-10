@@ -114,3 +114,20 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 		return reconcile.Result{}, nil
 	}
 }
+
+// ensurePreloadEnabled ensures that the provider is setup for preloading
+func (c *Controller) ensurePreloadEnabled(provider *terraformv1alpha1.Provider) controller.EnsureFunc {
+	cond := controller.ConditionMgr(provider, terraformv1alpha1.ConditionProviderPreload, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		switch {
+		case !provider.IsPreloadingEnabled():
+			cond.Disabled("Loading contextual data is not enabled")
+
+		case provider.Spec.Provider != terraformv1alpha1.AWSProviderType:
+			cond.Warning("Loading contextual is supported on AWS only")
+		}
+
+		return reconcile.Result{}, nil
+	}
+}

@@ -46,5 +46,6 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	return controller.DefaultEnsureHandler.Run(ctx, c.cc, provider, []controller.EnsureFunc{
 		c.ensureProviderSecret(provider),
+		c.ensurePreloadEnabled(provider),
 	})
 }

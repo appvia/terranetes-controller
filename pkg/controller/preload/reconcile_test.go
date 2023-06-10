@@ -66,37 +66,6 @@ var _ = Describe("Preload Controller", func() {
 	})
 
 	When("a provider has been provisioned", func() {
-		When("using an unsupported provider", func() {
-			BeforeEach(func() {
-				provider = fixtures.NewValidAWSReadyProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
-				provider.Spec.Provider = "unsupported"
-				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
-					Cluster: "test",
-					Context: "test",
-					Enabled: pointer.BoolPtr(true),
-					Region:  "test",
-				}
-
-				Expect(cc.Create(context.Background(), provider)).To(Succeed())
-				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, provider, 0)
-			})
-
-			It("should not error", func() {
-				Expect(rerr).NotTo(HaveOccurred())
-				Expect(result.Requeue).To(BeFalse())
-			})
-
-			It("should update the conditions to warning", func() {
-				Expect(cc.Get(context.TODO(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
-
-				cond := provider.GetCommonStatus().GetCondition(terraformv1alpha1.ConditionProviderPreload)
-				Expect(cond.Type).To(Equal(terraformv1alpha1.ConditionProviderPreload))
-				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonWarning))
-				Expect(cond.Message).To(Equal("Loading contextual is supported on AWS only"))
-			})
-		})
-
 		When("the provider has no conditions yet", func() {
 			BeforeEach(func() {
 				provider = fixtures.NewValidAWSNotReadyProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
