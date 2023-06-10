@@ -74,4 +74,16 @@ var _ = Describe("Namespace Validation", func() {
 			})
 		})
 	})
+
+	When("creating a namespace", func() {
+		It("should succeed", func() {
+			Expect(v.ValidateCreate(ctx, fixtures.NewNamespace("default"))).To(Succeed())
+		})
+	})
+
+	When("updating a namespace", func() {
+		It("should succeed", func() {
+			Expect(v.ValidateUpdate(ctx, nil, fixtures.NewNamespace("default"))).To(Succeed())
+		})
+	})
 })
