@@ -126,6 +126,8 @@ providers:
 #    serviceAccount: SERV
 #    # When using preload this is copied into the provider
 #    preload: {}
+#    # Additional provider configuration
+#    configuration: {}
 rbac:
   # Indicates we allow all service account in the controller namespace the role of
   # executor. This makes rolling out multiple providers backed to multiple services easier.
