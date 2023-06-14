@@ -33,11 +33,13 @@ linters:
 
 linters-settings:
   depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages-with-error-message:
-      - github.com/davecgh/go-spew/spew: "used for debugging - should not appear in the codebase"
-      - io/ioutil: "deprecated in go1.16 - see https://golang.org/doc/go1.16#ioutil"
+    rules:
+      main:
+        deny:
+          - pkg: github.com/davecgh/go-spew/spew
+            desc: used for debugging
+          - pkg: io/ioutil
+            desc: deprecated in go1.16
 
   gosimple:
     go: "1.17"
