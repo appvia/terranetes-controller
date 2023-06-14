@@ -4,6 +4,7 @@
 {{- $name := $provider.name | required (printf ".Values.providers[%d].name is required." $index) -}}
 {{- $source := $provider.source | required (printf ".Values.providers[%d].source is required." $index) -}}
 {{- $preload := default $provider.preload "" }}
+{{- $configuration := default $provider.configuration "" }}
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Provider
@@ -26,6 +27,10 @@ spec:
   {{- if $preload }}
   preload:
     {{ $preload | toYaml | nindent 4  }}
+  {{- end }}
+  {{- if $configuration }}
+  configuration:
+    {{- $configuration | toYaml | nindent 4  }}
   {{- end }}
   {{- if eq $provider.source "secret" }}
   secretRef:
