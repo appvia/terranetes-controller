@@ -528,7 +528,7 @@ var _ = Describe("Configuration Controller", func() {
 
 	verifyPolicyArguments := []string{
 		"--comment=Evaluating Against Security Policy",
-		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
+		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data >/dev/null",
 		"--command=/bin/cat /run/results_cli.txt",
 		"--namespace=$(KUBE_NAMESPACE)",
 		"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -2132,7 +2132,7 @@ terraform {
 
 			expected := []string{
 				"--comment=Evaluating Against Security Policy",
-				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
+				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data >/dev/null",
 				"--command=/bin/cat /run/results_cli.txt",
 				"--namespace=$(KUBE_NAMESPACE)",
 				"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -2338,7 +2338,7 @@ terraform {
 				Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
 				Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal([]string{
 					"--comment=Evaluating Against Security Policy",
-					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run >/dev/null",
+					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data >/dev/null",
 					"--command=/bin/cat /run/results_cli.txt",
 					"--namespace=$(KUBE_NAMESPACE)",
 					"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
