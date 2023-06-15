@@ -96,7 +96,7 @@ github.com/ashanbrown/forbidigo/forbidigo
 # github.com/ashanbrown/makezero v1.1.1
 ## explicit; go 1.12
 github.com/ashanbrown/makezero/makezero
-# github.com/aws/aws-sdk-go v1.44.281
+# github.com/aws/aws-sdk-go v1.44.282
 ## explicit; go 1.11
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn
@@ -649,8 +649,6 @@ github.com/json-iterator/go
 # github.com/julz/importas v0.1.0
 ## explicit; go 1.15
 github.com/julz/importas
-# github.com/junk1tm/musttag v0.5.0
-## explicit; go 1.19
 # github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 ## explicit
 github.com/kballard/go-shellquote
