@@ -43,7 +43,7 @@ require (
 	k8s.io/apimachinery v0.27.2
 	k8s.io/cli-runtime v0.26.3
 	k8s.io/client-go v0.26.3
-	k8s.io/code-generator v0.27.2
+	k8s.io/code-generator v0.27.3
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 	mvdan.cc/sh/v3 v3.6.0
@@ -184,7 +184,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/julz/importas v0.1.0 // indirect
-	github.com/junk1tm/musttag v0.5.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kisielk/errcheck v1.6.3 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
