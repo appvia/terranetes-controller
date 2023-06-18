@@ -17,6 +17,10 @@ spec:
         - jsonPath: .spec.module
           name: Module
           type: string
+        - jsonPath: .spec.plan.name
+          name: Plan
+          priority: 1
+          type: string
         - jsonPath: .spec.writeConnectionSecretToRef.name
           name: Secret
           type: string
@@ -65,6 +69,19 @@ spec:
                 module:
                   description: Module is the URL to the source of the terraform module. The format of the URL is a direct implementation of terraform's module reference. Please see the following repository for more details https://github.com/hashicorp/go-getter
                   type: string
+                plan:
+                  description: Plan is an optional reference to a plan this configuration is associated with. If not set and a policy exists to enforce a plan, the configuration will be rejected.
+                  properties:
+                    name:
+                      description: Name is the name of the plan this configuration is associated with
+                      type: string
+                    revision:
+                      description: Revision is the revision of the plan this configuration is associated with
+                      type: string
+                  required:
+                    - name
+                    - revision
+                  type: object
                 providerRef:
                   description: ProviderRef is the reference to the provider which should be used to execute this configuration.
                   properties:
@@ -124,7 +141,6 @@ spec:
                   type: object
               required:
                 - module
-                - providerRef
               type: object
             status:
               description: ConfigurationStatus defines the observed state of a terraform

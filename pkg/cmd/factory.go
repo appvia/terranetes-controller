@@ -56,6 +56,8 @@ type Factory interface {
 type factory struct {
 	// cc is the kubernetes runtime client
 	cc client.Client
+	// kc is the kubernetes client
+	kc k8sclient.Interface
 	// cfg is the configuration provider
 	cfg ConfigInterface
 	// streams is the input and output streams for the command
@@ -127,6 +129,10 @@ func (f *factory) Stdout() io.Writer {
 
 // GetKubeClient returns the kubernetes client
 func (f *factory) GetKubeClient() (k8sclient.Interface, error) {
+	if f.kc != nil {
+		return f.kc, nil
+	}
+
 	return kubernetes.NewKubeClient()
 }
 

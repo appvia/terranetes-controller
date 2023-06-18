@@ -54,3 +54,8 @@ func NewWithFuncs(tpl string, methods template.FuncMap, params interface{}) ([]b
 func New(tpl string, data interface{}) ([]byte, error) {
 	return NewWithFuncs(tpl, nil, data)
 }
+
+// NewWithBytes is called to render a template
+func NewWithBytes(tpl []byte, data interface{}) ([]byte, error) {
+	return NewWithFuncs(string(tpl), nil, data)
+}

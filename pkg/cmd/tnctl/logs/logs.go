@@ -36,7 +36,14 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
-var longLogsHelp = `
+var longDescription = `
+Retrieves and follows the logs from a cloudresource or native configuration
+
+Viewing the logs for a configuration
+$ tnctl logs configuration NAME --follow
+
+Viewing the logs for a cloudresource
+$ tnctl logs cloudresource NAME --follow
 `
 
 // Command represents the options
@@ -50,40 +57,29 @@ type Command struct {
 	Follow bool
 	// Stage override the stage to look for
 	Stage string
+	// WaitInterval is the interval to wait for the logs
+	WaitInterval time.Duration
 }
 
 // NewCommand returns a new instance of the get command
 func NewCommand(factory cmd.Factory) *cobra.Command {
 	o := &Command{Factory: factory}
 
-	c := &cobra.Command{
-		Use:     "logs NAME [OPTIONS]",
-		Short:   "Displays the latest logs for the given Configuration name",
-		Long:    longLogsHelp,
-		PreRunE: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			o.Name = args[0]
-
-			return o.Run(cmd.Context())
-		},
-		ValidArgsFunction: cmd.AutoCompleteConfigurations(factory),
+	cmd := &cobra.Command{
+		Use:   "logs KIND",
+		Short: "Displays the latest logs for the resource",
+		Long:  longDescription,
 	}
-	c.SetErr(o.GetStreams().ErrOut)
-	c.SetOut(o.GetStreams().Out)
+	cmd.SetIn(o.GetStreams().In)
+	cmd.SetErr(o.GetStreams().ErrOut)
+	cmd.SetOut(o.GetStreams().Out)
 
-	flags := c.Flags()
-	flags.BoolVarP(&o.Follow, "follow", "f", false, "Follow the logs")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace of the Configuration resource")
-	flags.StringVar(&o.Stage, "stage", "", "Select the stage to show logs for, else defaults to the current Configuration state")
+	cmd.AddCommand(
+		NewCloudResourceLogsCommand(factory),
+		NewConfigurationLogsCommand(factory),
+	)
 
-	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
-	cmd.RegisterFlagCompletionFunc(c, "stage", cmd.AutoCompleteWithList([]string{
-		terraformv1alpha1.StageTerraformApply,
-		terraformv1alpha1.StageTerraformDestroy,
-		terraformv1alpha1.StageTerraformPlan,
-	}))
-
-	return c
+	return cmd
 }
 
 // Run executes the command
@@ -91,8 +87,10 @@ func (o *Command) Run(ctx context.Context) error {
 	switch {
 	case o.Name == "":
 		return cmd.ErrMissingArgument("name")
+
 	case o.Namespace == "":
 		return cmd.ErrMissingArgument("namespace")
+
 	case o.Stage != "" && !utils.Contains(o.Stage, []string{
 		terraformv1alpha1.StageTerraformApply,
 		terraformv1alpha1.StageTerraformDestroy,
@@ -101,6 +99,7 @@ func (o *Command) Run(ctx context.Context) error {
 		return errors.New("invalid stage (must be one of: plan, apply or destroy)")
 	}
 
+	// @step: retrieve the configuration
 	cc, err := o.GetClient()
 	if err != nil {
 		return err
@@ -110,11 +109,9 @@ func (o *Command) Run(ctx context.Context) error {
 	configuration.Name = o.Name
 	configuration.Namespace = o.Namespace
 
-	found, err := kubernetes.GetIfExists(ctx, cc, configuration)
-	if err != nil {
+	if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
 		return err
-	}
-	if !found {
+	} else if !found {
 		return fmt.Errorf("resource %q not found", o.Name)
 	}
 
@@ -142,7 +139,7 @@ func (o *Command) Run(ctx context.Context) error {
 		return o.showLogs(ctx, terraformv1alpha1.StageTerraformPlan, configuration)
 	}
 
-	return errors.New("neither plan, apply or destroy have been run for this configuration")
+	return errors.New("neither plan, apply or destroy have been run for this resource")
 }
 
 // showLogs is a helper function to show the logs for all the containers under a build
@@ -161,8 +158,12 @@ func (o *Command) showLogs(ctx context.Context, stage string, configuration *ter
 
 	var list *v1.PodList
 
+	if o.WaitInterval == 0 {
+		o.WaitInterval = 2 * time.Second
+	}
+
 	// @step: find the pods associated to this configuration
-	err = utils.Retry(ctx, 3, true, 3*time.Second, func() (bool, error) {
+	err = utils.Retry(ctx, 3, true, o.WaitInterval, func() (bool, error) {
 		list, err = cc.CoreV1().Pods(configuration.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: strings.Join(labels, ","),
 		})
@@ -173,7 +174,7 @@ func (o *Command) showLogs(ctx context.Context, stage string, configuration *ter
 		return len(list.Items) > 0, nil
 	})
 	if err != nil {
-		return fmt.Errorf("no pods found for configuration %q", configuration.Name)
+		return fmt.Errorf("no pods found for resource %q", configuration.Name)
 	}
 
 	// @step: get the latest in the list

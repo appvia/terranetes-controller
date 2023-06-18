@@ -1,0 +1,65 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: CloudResource
+metadata:
+  name: fake
+spec:
+  ## Is the plan this cloud configuration is associated to
+  ## You can use $ kubectl get plans to view the plans available in the cluster
+  plan:
+    ## Is the name of the plan to use
+    name:  fake
+    ## Plan can have multiple revisions, this field determines the version
+    ## which you want this cloud resource to use
+    revision: v0.0.3
+
+  ## Is a reference to the provider which contains the cloud credentials.
+  ## This field may of may not be optional depending on how the platform has
+  ## configured the provider
+  providerRef:
+    ## Is the name of the provider to use
+    name: aws
+
+  ##
+  ## If you need to use a private git repository, use the git format as below
+  ##
+  # module: git::ssh://git@github.com/ORG/REPOSITORY?ref=<TAG|BRANCH|COMMIT>
+  ##
+  ## For private repositories we need credentials. Assuming the source is git you can use the
+  ## command: $ kubectl -n NAMESPACE create secret generic ssh-key --from-file=SSH_KEY_AUTH=ida.rsa
+  ## to push the private key and then reference secret in the auth as below. For HTTP authentication
+  ## $ kubectl -n NAMESPACE create secret generic auth --from-literal=GIT_USERNAME=git --from-literal=GIT_PASSWORD=pass
+  #
+  # auth:
+  #   name: ssh-key
+  #
+  ## All module references have the ability to extract specific folders from within the source. Similar
+  ## to terraform module syntax use the '//PATH/TO/DIRECTORY. Lets assume you wish to extract modules/bucket from
+  ## a repository github.com/appvia/terraform, the module source would look like
+  #
+  # module: https://github.com/appvia/terraform//modules/bucket?ref=<TAG|COMMIT|BRANCH>
+  #
+  ## The syntax is the same regardless of the protocol, so a private git
+  ## repository for the same example above would look like
+  #
+  # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
+  #
+
+  # Allows you to source in terraform inputs from one of more kubernetes secrets
+  valueFrom:
+    - # Retrieve the value from a specific context
+      context: default
+      # Is the key with the context resource which we should use. The translates
+      # to spec.variables.KEY.value
+      key: vpc
+      # Is the name which the value should be presented to terraform as
+      name: vpc_id
+      # Indicates the value, or context is not found is optional and will not
+      # fail the terraform run
+      optional: true
+
+  writeConnectionSecretToRef:
+    name: test
+
+  variables:
+    sentence: Has been overridden

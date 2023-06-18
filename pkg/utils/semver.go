@@ -23,6 +23,16 @@ import (
 	"github.com/Masterminds/semver"
 )
 
+// LatestSemverVersion returns the latest semver version from a list of versions.
+func LatestSemverVersion(versions []string) (string, error) {
+	list, err := SortSemverVersions(versions)
+	if err != nil {
+		return "", err
+	}
+
+	return list[len(list)-1], nil
+}
+
 // SortSemverVersions sorts a list of semver versions in ascending order.
 func SortSemverVersions(versions []string) ([]string, error) {
 	vs := make([]*semver.Version, len(versions))

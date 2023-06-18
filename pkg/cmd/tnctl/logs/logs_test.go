@@ -20,7 +20,9 @@ package logs
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,40 +44,52 @@ import (
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
-func TestReconcile(t *testing.T) {
+func TestLogsCommand(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Running Test Suite")
 }
 
 var _ = Describe("Logs Command", func() {
 	logrus.SetOutput(ioutil.Discard)
-	ctx := context.Background()
 
 	var cc client.Client
 	var kc *k8sfake.Clientset
-	var factory cmd.Factory
 	var streams genericclioptions.IOStreams
 	var configuration *terraformv1alpha1.Configuration
-	var stdout *bytes.Buffer
+	var cloudresource *terraformv1alpha1.CloudResource
 	var command *cobra.Command
+	var stderr *bytes.Buffer
 	var err error
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
 		kc = k8sfake.NewSimpleClientset()
+		streams, _, _, stderr = genericclioptions.NewTestIOStreams()
+		configuration = fixtures.NewValidBucketConfiguration("default", "bucket")
+		cloudresource = fixtures.NewCloudResource("default", "bucket")
+		cloudresource.Status.ConfigurationName = configuration.Name
 
-		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
-		factory = &fixtures.Factory{
-			RuntimeClient: cc,
-			KubeClient:    kc,
-			Streams:       streams,
-		}
+		controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
+		controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultCloudResourceConditions, cloudresource)
+
+		factory, err := cmd.NewFactory(
+			cmd.WithClient(cc),
+			cmd.WithKubeClient(kc),
+			cmd.WithStreams(streams),
+		)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(factory).ToNot(BeNil())
+		Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
+
 		command = NewCommand(factory)
 	})
 
 	When("no configuration provided", func() {
 		BeforeEach(func() {
-			err = command.Execute()
+			command.SetArgs([]string{"configuration"})
+
+			err = command.ExecuteContext(context.Background())
 		})
 
 		It("should return an error", func() {
@@ -86,163 +100,290 @@ var _ = Describe("Logs Command", func() {
 
 	When("namespace does not exists", func() {
 		BeforeEach(func() {
-			command.SetArgs([]string{"--namespace", "does-not-exist", "missing"})
-			err = command.Execute()
+			command.SetArgs([]string{"--namespace", "does-not-exist", "configuration", "missing"})
+
+			err = command.ExecuteContext(context.Background())
 		})
 
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("resource \"missing\" not found"))
-			_ = stdout
 		})
 	})
 
-	When("configuration found but no conditions", func() {
+	When("retriving a configurations logs", func() {
 		BeforeEach(func() {
-			configuration = fixtures.NewValidBucketConfiguration("default", "test")
-			command.SetArgs([]string{configuration.Name})
+			command.SetArgs([]string{"--timeout", "10ms", "--namespace", configuration.Namespace, "configuration", configuration.Name})
 		})
 
-		When("configuration has no status", func() {
+		Context("configuration has no conditions", func() {
 			BeforeEach(func() {
-				Expect(cc.Create(ctx, configuration)).To(Succeed())
-				err = command.Execute()
+				configuration.Status.Conditions = nil
+				Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+
+				err = command.ExecuteContext(context.Background())
 			})
 
 			It("should have an error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("neither plan, apply or destroy have been run for this configuration"))
+				Expect(err.Error()).To(Equal("neither plan, apply or destroy have been run for this resource"))
+			})
+		})
+
+		for _, stage := range []corev1alpha1.ConditionType{
+			terraformv1alpha1.ConditionTerraformPlan,
+			terraformv1alpha1.ConditionTerraformApply,
+		} {
+			name := strings.ToLower(string(stage))
+
+			Context(fmt.Sprintf("and we are in the %s stage", name), func() {
+				BeforeEach(func() {
+					condition := configuration.Status.GetCondition(stage)
+					condition.Reason = corev1alpha1.ReasonInProgress
+					condition.Status = metav1.ConditionTrue
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+
+					// create the watcher
+					pod := fixtures.NewConfigurationPodWatcher(configuration, string(stage))
+					Expect(cc.Create(context.Background(), pod)).To(Succeed())
+				})
+
+				Context("but no pods exist", func() {
+					BeforeEach(func() {
+						pod := fixtures.NewConfigurationPodWatcher(configuration, string(stage))
+						Expect(cc.Delete(context.Background(), pod)).To(Succeed())
+
+						err = command.ExecuteContext(context.Background())
+					})
+
+					It("should not error", func() {
+						Expect(err).To(HaveOccurred())
+					})
+
+					It("should print a message", func() {
+						Expect(err.Error()).To(Equal("no pods found for resource \"bucket\""))
+					})
+				})
+
+				Context("and pods exist", func() {
+					BeforeEach(func() {
+						err = command.ExecuteContext(context.Background())
+					})
+
+					It("should not error", func() {
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+		}
+
+		Context("configuration has been destroyed", func() {
+			BeforeEach(func() {
+				configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+				Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+
+				pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
+				Expect(cc.Create(context.Background(), pod)).To(Succeed())
+			})
+
+			Context("but no pods exist", func() {
+				BeforeEach(func() {
+					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
+					Expect(cc.Delete(context.Background(), pod)).To(Succeed())
+
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not error", func() {
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("should print a message", func() {
+					Expect(err.Error()).To(Equal("resource \"bucket\" not found"))
+				})
+			})
+
+			Context("and pods exist", func() {
+				BeforeEach(func() {
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not error", func() {
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
 	})
 
-	When("configuration is found", func() {
+	When("retriving a cloudresource logs", func() {
 		BeforeEach(func() {
-			configuration = fixtures.NewValidBucketConfiguration("default", "test")
-			controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
-			command.SetArgs([]string{"--namespace", configuration.Namespace, configuration.Name})
+			cond := cloudresource.Status.GetCondition(terraformv1alpha1.ConditionConfigurationReady)
+			cond.Status = metav1.ConditionTrue
+			cond.Reason = corev1alpha1.ReasonReady
+			Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
+
+			command.SetArgs([]string{"--timeout", "10ms", "--namespace", cloudresource.Namespace, "cloudresource", cloudresource.Name})
 		})
 
-		When("no pod exists", func() {
+		Context("cloudresource does not exist", func() {
 			BeforeEach(func() {
-				Expect(cc.Create(ctx, configuration)).To(Succeed())
-				err = command.Execute()
+				Expect(cc.Delete(context.Background(), cloudresource)).To(Succeed())
+
+				err = command.ExecuteContext(context.Background())
 			})
 
-			It("should not error", func() {
+			It("should return an error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("no pods found for configuration \"test\""))
+				Expect(err.Error()).To(Equal("cloudresource (default/bucket) does not exist"))
+			})
+
+			It("should print a message", func() {
+				Expect(stderr.String()).To(ContainSubstring("Error: cloudresource (default/bucket) does not exist"))
 			})
 		})
 
-		When("configuration is in plan phase and pod exists", func() {
-			When("pod is not ready", func() {
-				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
-					condition.Reason = corev1alpha1.ReasonInProgress
-					condition.Status = metav1.ConditionTrue
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
+		Context("cloudresource has no conditions", func() {
+			BeforeEach(func() {
+				cloudresource.Status.Conditions = nil
+				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
 
-					err = command.Execute()
-				})
-
-				It("should error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("no pods found for configuration \"test\""))
-				})
+				err = command.ExecuteContext(context.Background())
 			})
 
-			When("pod is ready", func() {
-				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
-					condition.Reason = corev1alpha1.ReasonInProgress
-					condition.Status = metav1.ConditionTrue
-
-					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformPlan)
-					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
-					Expect(err).To(Succeed())
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
-
-					err = command.Execute()
-				})
-
-				It("should not error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+			It("should have an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("cloudresource (default/bucket) has no conditions yet"))
 			})
 		})
 
-		When("configuration in apply phase", func() {
-			When("no pod exists", func() {
-				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
-					condition.Reason = corev1alpha1.ReasonInProgress
-					condition.Status = metav1.ConditionTrue
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
+		Context("and the configuration has not been provisioned", func() {
+			BeforeEach(func() {
+				cond := cloudresource.Status.GetCondition(terraformv1alpha1.ConditionConfigurationReady)
+				cond.Status = metav1.ConditionFalse
+				cond.Reason = corev1alpha1.ReasonReady
+				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
 
-					err = command.Execute()
-				})
-
-				It("should error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("no pods found for configuration \"test\""))
-				})
+				err = command.ExecuteContext(context.Background())
 			})
 
-			When("pod exists", func() {
-				BeforeEach(func() {
-					condition := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
-					condition.Reason = corev1alpha1.ReasonInProgress
-					condition.Status = metav1.ConditionTrue
-
-					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformApply)
-					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
-					Expect(err).To(Succeed())
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
-
-					err = command.Execute()
-				})
-
-				It("should not error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
+			It("should have an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("cloudresource (default/bucket) has no configuration yet"))
 			})
 		})
 
-		When("configuration in destroy phase", func() {
-			When("no pod exists", func() {
-				BeforeEach(func() {
-					configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-					configuration.Finalizers = []string{"do-not-remove"}
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
+		Context("and the configuration has failed", func() {
+			BeforeEach(func() {
+				cond := cloudresource.Status.GetCondition(terraformv1alpha1.ConditionConfigurationReady)
+				cond.Status = metav1.ConditionFalse
+				cond.Reason = corev1alpha1.ReasonError
+				cond.Message = "configuration failed"
+				Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
 
-					err = command.Execute()
-				})
-
-				It("should error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("no pods found for configuration \"test\""))
-				})
+				err = command.ExecuteContext(context.Background())
 			})
 
-			When("pod exists", func() {
+			It("should have an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("cloudresource (default/bucket) failed to provison configuration: configuration failed"))
+			})
+		})
+
+		for _, stage := range []corev1alpha1.ConditionType{
+			terraformv1alpha1.ConditionTerraformPlan,
+			terraformv1alpha1.ConditionTerraformApply,
+		} {
+			name := strings.ToLower(string(stage))
+
+			Context(fmt.Sprintf("and we are in the %s stage", name), func() {
 				BeforeEach(func() {
-					configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-					configuration.Finalizers = []string{"do-not-remove"}
-					Expect(cc.Create(ctx, configuration)).To(Succeed())
+					condition := cloudresource.Status.GetCondition(stage)
+					condition.Reason = corev1alpha1.ReasonInProgress
+					condition.Status = metav1.ConditionTrue
+					Expect(cc.Status().Update(context.Background(), cloudresource)).To(Succeed())
 
-					// create the pod for apply
-					pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
-					_, err = kc.CoreV1().Pods(configuration.Namespace).Create(ctx, pod, metav1.CreateOptions{})
-					Expect(err).To(Succeed())
+					// create the watcher
+					pod := fixtures.NewConfigurationPodWatcher(cloudresource, string(stage))
+					Expect(cc.Create(context.Background(), pod)).To(Succeed())
+				})
 
-					err = command.Execute()
+				Context("but no pods exist", func() {
+					BeforeEach(func() {
+						pod := fixtures.NewConfigurationPodWatcher(cloudresource, string(stage))
+						Expect(cc.Delete(context.Background(), pod)).To(Succeed())
+
+						err = command.ExecuteContext(context.Background())
+					})
+
+					It("should not error", func() {
+						Expect(err).To(HaveOccurred())
+					})
+
+					It("should print a message", func() {
+						Expect(err.Error()).To(Equal("no pods found for resource \"bucket\""))
+					})
+				})
+
+				Context("and pods exist", func() {
+					BeforeEach(func() {
+						err = command.ExecuteContext(context.Background())
+					})
+
+					It("should not error", func() {
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+		}
+
+		Context("cloudresource has been destroyed", func() {
+			BeforeEach(func() {
+				cloudresource.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+				configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+				cloudresource.Finalizers = []string{"does-not-matter"}
+				configuration.Finalizers = []string{"does-not-matter"}
+				Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
+				Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+
+				pod := fixtures.NewConfigurationPodWatcher(configuration, terraformv1alpha1.StageTerraformDestroy)
+				Expect(cc.Create(context.Background(), pod)).To(Succeed())
+			})
+
+			Context("and the configuration does not exist", func() {
+				BeforeEach(func() {
+					configuration.Finalizers = nil
+					Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+
+					err = command.ExecuteContext(context.Background())
 				})
 
 				It("should not error", func() {
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("resource \"bucket\" not found"))
+				})
+			})
+
+			Context("but no pods exist", func() {
+				BeforeEach(func() {
+					pod := fixtures.NewConfigurationPodWatcher(cloudresource, terraformv1alpha1.StageTerraformDestroy)
+					Expect(cc.Delete(context.Background(), pod)).To(Succeed())
+
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("no pods found for resource \"bucket\""))
+				})
+			})
+
+			Context("and pods exist", func() {
+				BeforeEach(func() {
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not error", func() {
+					Expect(err).To(HaveOccurred())
 				})
 			})
 		})

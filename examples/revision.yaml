@@ -1,0 +1,42 @@
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Revision
+metadata:
+  name: fake.v3
+spec:
+  ## Defines we are a member of a package
+  plan:
+    ## Is the name of the package we are a part of
+    name: fake
+    ## Is a collection of categories
+    categories: [mysql, aws, fake]
+    ## Is a description for what this plan provides
+    description: Provides a dummy terraform module for testing
+    ## Is the version of the package
+    revision: v0.0.3
+
+  dependencies:
+    - provider:
+        cloud: aws
+    - terranetes:
+        version: ">=0.3.26"
+    - context:
+        name: default
+        cloud: aws
+
+  ## Is a list of inputs the user is permitted to override
+  inputs:
+    - key: sentence
+      description: Hello
+      required: true
+      default:
+        value: hello from second additon
+    - key: vpc_id
+      description: Hello
+
+  configuration:
+    ## Using a public repository
+    module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/dummy?ref=master
+    ## Where to write any secrets
+    writeConnectionSecretToRef:
+      name: outputs

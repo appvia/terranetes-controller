@@ -25,21 +25,20 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/describe/assets"
-	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 // Command represents the available get command options
 type Command struct {
 	cmd.Factory
-	// Names is the name of the resource we are describing
-	Names []string
+	// Name is the name of the resource we are describing
+	Name string
 	// Namespace is the namespace of the resource
 	Namespace string
 	// ShowPassedChecks is a flag to show passed checks
@@ -52,88 +51,65 @@ terraform configurations, displaying in a human friendly format.
 The command also extracts any integration details which have been
 produced by infracosts or checkov scans.
 
-Describe all configurations in a namespace
-$ tnctl describe -n apps
+Describe a configuration in a namespace
+$ tnctl describe configuration -n apps NAME
 
-Describe a single configuration called 'test'
-$ tnctl describe -n apps test
+Describe a cloudresource in a namespace
+$ tnctl describe cloudresource -n apps NAME
 `
 
 // NewCommand returns a new instance of the get command
 func NewCommand(factory cmd.Factory) *cobra.Command {
-	options := &Command{Factory: factory}
-
-	c := &cobra.Command{
-		Use:   "describe [NAME...]",
-		Args:  cobra.MaximumNArgs(1),
+	cmd := &cobra.Command{
+		Use:   "describe KIND",
 		Short: "Used to describe the current state of the configuration",
 		Long:  strings.TrimPrefix(longDescription, "\n"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			options.Names = args
-
-			return options.Run(cmd.Context())
-		},
-		ValidArgsFunction: cmd.AutoCompleteConfigurations(options.Factory),
 	}
 
-	flags := c.Flags()
-	flags.BoolVar(&options.ShowPassedChecks, "show-passed-checks", true, "Indicates we should show passed checks")
-	flags.StringVarP(&options.Namespace, "namespace", "n", "default", "Namespace of the resource/s")
+	cmd.AddCommand(
+		NewDescribeCloudResourceCommand(factory),
+		NewDescribeConfigurationCommand(factory),
+	)
 
-	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
-
-	return c
+	return cmd
 }
 
 // Run is called to execute the get command
 func (o *Command) Run(ctx context.Context) error {
-	if o.Namespace == "" {
+	switch {
+	case o.Namespace == "":
 		return fmt.Errorf("namespace is required")
-	}
-	if len(o.Names) == 0 {
-		o.Names = append(o.Names, "*")
+	case o.Name == "":
+		return fmt.Errorf("name is required")
 	}
 
+	// @step: get a client to the cluster
 	cc, err := o.GetClient()
 	if err != nil {
 		return err
 	}
 
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(terraformv1alpha1.ConfigurationGVK)
-	err = cc.List(context.Background(), list, client.InNamespace(o.Namespace))
-	if err != nil {
+	// @step: retrieve the configuration
+	configuration := &terraformv1alpha1.Configuration{}
+	configuration.Namespace = o.Namespace
+	configuration.Name = o.Name
+
+	if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
 		return err
+	} else if !found {
+		return fmt.Errorf("noo configurations found in namespace %q", o.Namespace)
 	}
-	if len(list.Items) == 0 {
-		o.Println("No terraform configurations found in namespace %q", o.Namespace)
-
-		return nil
-	}
-
-	resourceFilter := func(resource client.Object) bool {
-		switch {
-		case utils.Contains("*", o.Names):
-			return true
-		case utils.Contains(resource.GetName(), o.Names):
-			return true
-		}
-		return false
-	}
-
-	// @step: retrieve all pods related to builds in the namespace
-	pods := &v1.PodList{}
-	_ = cc.List(context.Background(), pods,
-		client.HasLabels([]string{terraformv1alpha1.ConfigurationNameLabel}),
-		client.InNamespace(o.Namespace),
-	)
 
 	// @step: retrieve a list of all secrets related to the builds
 	secrets := &v1.SecretList{}
-	_ = cc.List(context.Background(), secrets,
-		client.HasLabels([]string{terraformv1alpha1.ConfigurationNameLabel}),
+	if err = cc.List(context.Background(), secrets,
 		client.InNamespace(o.Namespace),
-	)
+		client.MatchingLabels(map[string]string{
+			terraformv1alpha1.CloudResourceNameLabel: configuration.Name,
+		}),
+	); err != nil {
+		return err
+	}
 
 	findSecret := func(name, key string) (map[string]interface{}, bool) {
 		if len(secrets.Items) == 0 {
@@ -170,41 +146,33 @@ func (o *Command) Run(ctx context.Context) error {
 		return findSecret(name, key)
 	}
 
-	for i := 0; i < len(list.Items); i++ {
-		resource := &list.Items[i]
-
-		if !resourceFilter(resource) {
-			continue
-		}
-
-		annotations := resource.GetAnnotations()
-		if annotations != nil {
-			delete(annotations, "kubectl.kubernetes.io/last-applied-configuration")
-			resource.SetAnnotations(annotations)
-		}
-
-		data := map[string]interface{}{
-			"EnablePassedPolicy": o.ShowPassedChecks,
-			"Name":               resource.GetName(),
-			"Namespace":          resource.GetNamespace(),
-			"Object":             resource.Object,
-		}
-
-		// @step: check if the configuration has a policy report
-		if report, found := findPolicyReport(resource); found {
-			data["Policy"] = report
-		}
-		// @step: check if we have a cost report
-		if report, found := findCostReport(resource); found {
-			data["Cost"] = report["projects"].([]interface{})[0]
-		}
-
-		x, err := template.New(string(assets.MustAsset("describe.yaml.tpl")), data)
-		if err != nil {
-			return err
-		}
-		o.Println("%s", x)
+	annotations := configuration.GetAnnotations()
+	if annotations != nil {
+		delete(annotations, "kubectl.kubernetes.io/last-applied-configuration")
+		configuration.SetAnnotations(annotations)
 	}
+
+	data := map[string]interface{}{
+		"EnablePassedPolicy": o.ShowPassedChecks,
+		"Name":               configuration.GetName(),
+		"Namespace":          configuration.GetNamespace(),
+		"Object":             configuration,
+	}
+
+	// @step: check if the configuration has a policy report
+	if report, found := findPolicyReport(configuration); found {
+		data["Policy"] = report
+	}
+	// @step: check if we have a cost report
+	if report, found := findCostReport(configuration); found {
+		data["Cost"] = report["projects"].([]interface{})[0]
+	}
+
+	x, err := template.New(string(assets.MustAsset("describe.yaml.tpl")), data)
+	if err != nil {
+		return err
+	}
+	o.Println("%s", x)
 
 	return nil
 }

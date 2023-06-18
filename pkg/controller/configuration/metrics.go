@@ -25,7 +25,9 @@ import (
 func init() {
 	metrics.Registry.MustRegister(
 		hourlyCostMetric,
+		inSyncMetric,
 		monthlyCostMetric,
+		statusMetric,
 	)
 }
 

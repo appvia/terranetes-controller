@@ -34,13 +34,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/appvia/terranetes-controller/pkg/apiserver"
+	"github.com/appvia/terranetes-controller/pkg/controller/cloudresource"
 	"github.com/appvia/terranetes-controller/pkg/controller/configuration"
 	ctrlcontext "github.com/appvia/terranetes-controller/pkg/controller/context"
 	"github.com/appvia/terranetes-controller/pkg/controller/drift"
 	"github.com/appvia/terranetes-controller/pkg/controller/namespace"
+	"github.com/appvia/terranetes-controller/pkg/controller/plan"
 	"github.com/appvia/terranetes-controller/pkg/controller/policy"
 	"github.com/appvia/terranetes-controller/pkg/controller/preload"
 	"github.com/appvia/terranetes-controller/pkg/controller/provider"
+	"github.com/appvia/terranetes-controller/pkg/controller/revision"
 	"github.com/appvia/terranetes-controller/pkg/register"
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	k8sutils "github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -145,15 +148,17 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		log.Info("enabling the infracost integration")
 	}
 
+	// @step: ensure the contexts controller is enabled
 	if err := (&ctrlcontext.Controller{
 		EnableWebhooks: config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to add the contexts controller: %w", err)
 	}
 
+	// @step: ensure the configuration controller is enabled
 	if err := (&configuration.Controller{
-		ControllerNamespace:     config.Namespace,
 		BackendTemplate:         config.BackendTemplate,
+		ControllerNamespace:     config.Namespace,
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWatchers:          config.EnableWatchers,
@@ -169,6 +174,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the configuration controller, error: %w", err)
 	}
 
+	// @step: ensure the drift controller is enabled
 	if err := (&drift.Controller{
 		CheckInterval:  config.DriftControllerInterval,
 		DriftInterval:  config.DriftInterval,
@@ -177,6 +183,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the drift controller, error: %w", err)
 	}
 
+	// @step: ensure the provider controller is enabled
 	if err := (&provider.Controller{
 		ControllerNamespace: config.Namespace,
 		EnableWebhooks:      config.EnableWebhooks,
@@ -184,12 +191,14 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the provider controller, error: %w", err)
 	}
 
+	// @step: ensure the policy controller is enabled
 	if err := (&policy.Controller{
 		EnableWebhooks: config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the policy controller, error: %w", err)
 	}
 
+	// @step: ensure the namespace controller is enabled
 	if err := (&namespace.Controller{
 		EnableNamespaceProtection: config.EnableNamespaceProtection,
 		EnableWebhooks:            config.EnableWebhooks,
@@ -197,9 +206,30 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create the namespace controller, error: %w", err)
 	}
 
+	// @step: ensure the plan controller
+	if err := (&plan.Controller{}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the plan controller, error: %w", err)
+	}
+
+	// @step: ensure the revision controller is enabled
+	if err := (&revision.Controller{
+		EnableWebhooks: config.EnableWebhooks,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the revision controller, error: %w", err)
+	}
+
+	// @step: ensure the cloudresource controller is enabled
+	if err := (&cloudresource.Controller{
+		EnableTerraformVersions: config.EnableTerraformVersions,
+		EnableWebhooks:          config.EnableWebhooks,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the cloudresource controller, error: %w", err)
+	}
+
+	// @step: ensure the preload controller is enabled
 	if err := (&preload.Controller{
-		ControllerNamespace: config.Namespace,
 		ContainerImage:      config.PreloadImage,
+		ControllerNamespace: config.Namespace,
 		EnableWebhooks:      config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the preload controller, error: %w", err)
