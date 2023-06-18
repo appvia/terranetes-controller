@@ -72,6 +72,8 @@ github.com/OpenPeeDeeP/depguard/v2/internal/utils
 # github.com/Songmu/retry v0.1.0
 ## explicit
 github.com/Songmu/retry
+# github.com/adrg/strutil v0.3.0
+## explicit; go 1.14
 # github.com/agext/levenshtein v1.2.3
 ## explicit
 github.com/agext/levenshtein
