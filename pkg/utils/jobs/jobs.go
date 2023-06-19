@@ -181,7 +181,7 @@ func (r *Render) NewTerraformDestroy(options Options) (*batchv1.Job, error) {
 func (r *Render) createTerraformFromTemplate(options Options, stage string) (*batchv1.Job, error) {
 	var arguments string
 
-	if r.configuration.HasVariables() {
+	if r.configuration.Spec.HasVariables() {
 		arguments = fmt.Sprintf("--var-file %s", terraformv1alpha1.TerraformVariablesConfigMapKey)
 	}
 
@@ -203,7 +203,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Source":         string(r.provider.Spec.Source),
 		},
 		"EnableInfraCosts":       options.EnableInfraCosts,
-		"EnableVariables":        r.configuration.HasVariables(),
+		"EnableVariables":        r.configuration.Spec.HasVariables(),
 		"ExecutorSecrets":        options.ExecutorSecrets,
 		"ImagePullPolicy":        "IfNotPresent",
 		"Policy":                 options.PolicyConstraint,

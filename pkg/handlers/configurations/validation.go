@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,29 +33,34 @@ import (
 
 type validator struct {
 	cc client.Client
-	// versioning indicates that configurations can be overridden
-	versioning bool
+	// enableVersions indicates the terraform version can be changed
+	enableVersions bool
 }
 
 // NewValidator is validation handler
 func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
-	return &validator{cc: cc, versioning: versioning}
+	return &validator{cc: cc, enableVersions: versioning}
 }
 
 // ValidateCreate is called when a new resource is created
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, nil, obj.(*terraformv1alpha1.Configuration))
+	o, ok := obj.(*terraformv1alpha1.Configuration)
+	if !ok {
+		return fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.ConfigurationKind, obj)
+	}
+
+	return v.validate(ctx, nil, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	var before, after *terraformv1alpha1.Configuration
+	var after, before *terraformv1alpha1.Configuration
 
-	if newObj != nil {
-		after = newObj.(*terraformv1alpha1.Configuration)
-	}
 	if oldObj != nil {
 		before = oldObj.(*terraformv1alpha1.Configuration)
+	}
+	if newObj != nil {
+		after = newObj.(*terraformv1alpha1.Configuration)
 	}
 
 	return v.validate(ctx, before, after)
@@ -67,27 +71,41 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	return nil
 }
 
-// validate is called to ensure the configuration is valid and incline with current policies
+// validate is called to validate the configuration
 func (v *validator) validate(ctx context.Context, before, configuration *terraformv1alpha1.Configuration) error {
 	creating := before == nil
 
 	// @step: let us check the provider
 	switch {
 	case configuration.Spec.ProviderRef == nil:
-		return errors.New("no spec.providerRef is defined")
-	case configuration.Spec.ProviderRef.Name == "":
-		return errors.New("spec.providerRef.name is empty")
+		return errors.New("spec.providerRef is required")
+	case configuration.Spec.Module == "":
+		return errors.New("spec.module is required")
+	}
+
+	if configuration.Spec.Plan != nil {
+		if err := configuration.Spec.Plan.IsValid(); err != nil {
+			return err
+		}
+	}
+	if configuration.Spec.Auth != nil {
+		if configuration.Spec.Auth.Name == "" {
+			return errors.New("spec.auth.name is required")
+		}
+	}
+	if err := configuration.Spec.ProviderRef.IsValid(); err != nil {
+		return err
 	}
 
 	// @step: perform some checks which are dependent on if the resource is being created or updated
 	switch creating {
 	case true:
-		if configuration.Spec.TerraformVersion != "" && !v.versioning {
+		if configuration.Spec.TerraformVersion != "" && !v.enableVersions {
 			return errors.New("spec.terraformVersion changes have been disabled")
 		}
 
 	default:
-		if !v.versioning {
+		if !v.enableVersions {
 			switch {
 			case configuration.Spec.TerraformVersion == "":
 				break
@@ -100,11 +118,13 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 	}
 
 	// @step: check the configuration secret
-	if err := validateConnectionSecret(configuration); err != nil {
-		return err
+	if configuration.Spec.WriteConnectionSecretToRef != nil {
+		if err := configuration.Spec.WriteConnectionSecretToRef.IsValid(); err != nil {
+			return err
+		}
 	}
 	// @step: check the configuration valud froms are valid
-	if err := validateValueFrom(configuration); err != nil {
+	if err := configuration.Spec.ValueFrom.IsValid(); err != nil {
 		return err
 	}
 
@@ -128,45 +148,10 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 	if err := v.cc.List(ctx, list); err != nil {
 		return err
 	}
-	if len(list.Items) == 0 {
-		return nil
-	}
-
 	// @step: validate the configuration against all module constraints
-	if err := validateModuleConstriants(configuration, list, namespace); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateValueFrom checks the value froms are valid
-func validateValueFrom(configuration *terraformv1alpha1.Configuration) error {
-	for i, v := range configuration.Spec.ValueFrom {
-		switch {
-		case v.Context == nil && v.Secret == nil:
-			return fmt.Errorf("spec.valueFrom[%d] requires either context or secret", i)
-
-		case v.Context != nil && v.Secret != nil:
-			return fmt.Errorf("spec.valueFrom[%d] requires either context or secret, not both", i)
-		}
-	}
-
-	return nil
-}
-
-// validateConnectionSecret checks if the secret is valid
-func validateConnectionSecret(configuration *terraformv1alpha1.Configuration) error {
-	switch {
-	case configuration.Spec.WriteConnectionSecretToRef == nil:
-		return nil
-	case configuration.Spec.WriteConnectionSecretToRef.Name == "":
-		return errors.New("spec.writeConnectionSecretToRef.name is empty")
-	}
-
-	for i, key := range configuration.Spec.WriteConnectionSecretToRef.Keys {
-		if strings.Contains(key, ":") && len(strings.Split(key, ":")) != 2 {
-			return fmt.Errorf("spec.writeConnectionSecretToRef.keys[%d] contains invalid key: %s, should be KEY:NEWNAME", i, key)
+	if len(list.Items) > 0 {
+		if err := validateModuleConstriants(configuration, list, namespace); err != nil {
+			return err
 		}
 	}
 

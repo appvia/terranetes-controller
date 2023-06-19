@@ -21,14 +21,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/spf13/cobra"
 )
 
 // Command represents the available get command options
@@ -38,6 +37,8 @@ type Command struct {
 	Names []string
 	// Namespace is the namespace of the resource
 	Namespace string
+	// Kind is the kind of resource
+	Kind string
 }
 
 var longDescription = `
@@ -47,30 +48,27 @@ effectively changes the terraform.appvia.io/apply annotation
 from 'false' to 'true'.
 
 Approve one or more configurations
-$ tnctl approve NAME
+$ tnctl approve configuration NAME
+
+Approve one or more cloudresource
+$ tnctl approve cloudresource NAME
 `
 
-// NewCommand returns a new instance of the get command
+// NewCommand creates and returns the command
 func NewCommand(factory cmd.Factory) *cobra.Command {
-	options := &Command{Factory: factory}
-
 	c := &cobra.Command{
-		Use:   "approve NAME",
-		Short: "Approves a terraform configuration for release",
-		Args:  cobra.MinimumNArgs(1),
-		Long:  strings.TrimPrefix(longDescription, "\n"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			options.Names = args
-
-			return options.Run(cmd.Context())
-		},
-		ValidArgsFunction: cmd.AutoCompleteConfigurations(options.Factory),
+		Use:   "approve KIND",
+		Long:  longDescription,
+		Short: "Approves either a configuration or cloudresource",
 	}
+	c.SetErr(factory.GetStreams().ErrOut)
+	c.SetOut(factory.GetStreams().Out)
+	c.SetIn(factory.GetStreams().In)
 
-	flags := c.Flags()
-	flags.StringVarP(&options.Namespace, "namespace", "n", "default", "Namespace of the resource/s")
-
-	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
+	c.AddCommand(
+		NewApproveConfigurationCommand(factory),
+		NewApproveCloudResourceCommand(factory),
+	)
 
 	return c
 }
@@ -90,36 +88,48 @@ func (o *Command) Run(ctx context.Context) error {
 		return err
 	}
 
-	for _, resource := range o.Names {
-		configuration := &terraformv1alpha1.Configuration{}
-		configuration.Namespace = o.Namespace
-		configuration.Name = resource
+	for _, name := range o.Names {
+		var resource client.Object
+		switch o.Kind {
+		case terraformv1alpha1.ConfigurationKind:
+			resource = &terraformv1alpha1.Configuration{}
+		default:
+			resource = &terraformv1alpha1.CloudResource{}
+		}
+		resource.SetNamespace(o.Namespace)
+		resource.SetName(name)
 
-		found, err := kubernetes.GetIfExists(ctx, cc, configuration)
+		found, err := kubernetes.GetIfExists(ctx, cc, resource)
 		if err != nil {
 			return err
 		}
 		if !found {
-			return fmt.Errorf("configuration %s not found", resource)
+			return fmt.Errorf("resource %s not found", resource.GetName())
 		}
 
-		original := configuration.DeepCopy()
+		original := resource.DeepCopyObject()
 
-		// @step: update the configuration if required
+		// @step: update the resource if required
 		switch {
-		case configuration.Annotations == nil:
+		case resource.GetAnnotations() == nil:
 			continue
-		case configuration.Annotations[terraformv1alpha1.ApplyAnnotation] == "":
+		case resource.GetAnnotations()[terraformv1alpha1.ApplyAnnotation] == "":
 			continue
-		case configuration.Annotations[terraformv1alpha1.ApplyAnnotation] == "true":
+		case resource.GetAnnotations()[terraformv1alpha1.ApplyAnnotation] == "true":
 			continue
 		}
-		configuration.Annotations[terraformv1alpha1.ApplyAnnotation] = "true"
+		resource.GetAnnotations()[terraformv1alpha1.ApplyAnnotation] = "true"
 
-		if err := cc.Patch(ctx, configuration, client.MergeFrom(original)); err != nil {
+		if err := cc.Patch(ctx, resource, client.MergeFrom(original.(client.Object))); err != nil {
 			return err
 		}
-		o.Println("%s Configuration %s has been approved", cmd.IconGood, resource)
+
+		switch {
+		case o.Kind == terraformv1alpha1.ConfigurationKind:
+			o.Println("%s Configuration %s has been approved", cmd.IconGood, resource.GetName())
+		default:
+			o.Println("%s CloudResource %s has been approved", cmd.IconGood, resource.GetName())
+		}
 	}
 
 	return nil

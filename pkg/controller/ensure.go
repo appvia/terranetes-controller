@@ -54,6 +54,18 @@ func RequeueAfter(d time.Duration) EnsureFunc {
 	}
 }
 
+// RequeueUnless is a helper function to return a requeue result unless a requeue is already set or an error is present
+func RequeueUnless(result reconcile.Result, err error, duration time.Duration) (reconcile.Result, error) {
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if result.Requeue || result.RequeueAfter > 0 {
+		return result, nil
+	}
+
+	return reconcile.Result{RequeueAfter: duration}, nil
+}
+
 // Run is a generic handler for running the ensure methods
 func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Object, ensures []EnsureFunc) (result reconcile.Result, rerr error) {
 	original := resource.DeepCopyObject().(client.Object)

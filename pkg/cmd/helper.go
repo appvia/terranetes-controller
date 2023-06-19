@@ -74,6 +74,33 @@ func AutoCompleteWithList(list []string) AutoCompletionFunc {
 	}
 }
 
+// AutoCompleteCloudresources registers a completion function for a flag
+func AutoCompleteCloudresources(factory Factory) AutoCompletionFunc {
+	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		namespace, _ := cmd.Flags().GetString("namespace")
+		if namespace == "" {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		cc, err := factory.GetClient()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		list := &terraformv1alpha1.CloudResourceList{}
+		if err := cc.List(context.Background(), list, client.InNamespace(namespace)); err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		var resources []string
+		for _, resource := range list.Items {
+			resources = append(resources, resource.GetName())
+		}
+
+		return resources, cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
 // AutoCompleteConfigurations registers a completion function for a flag
 func AutoCompleteConfigurations(factory Factory) AutoCompletionFunc {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -111,6 +138,15 @@ func AutoCompletionAvailableProviders(factory Factory) AutoCompletionFunc {
 
 		return list, cobra.ShellCompDirectiveNoFileComp
 	}
+}
+
+// AutoCompletionStages returns a completion function for stage names
+func AutoCompletionStages() AutoCompletionFunc {
+	return AutoCompleteWithList([]string{
+		terraformv1alpha1.StageTerraformApply,
+		terraformv1alpha1.StageTerraformDestroy,
+		terraformv1alpha1.StageTerraformPlan,
+	})
 }
 
 // AutoCompleteNamespaces registers a completion function for a flag

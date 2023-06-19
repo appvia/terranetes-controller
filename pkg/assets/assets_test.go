@@ -36,7 +36,10 @@ func TestJobTemplateParsable(t *testing.T) {
 }
 
 func TestAssetNames(t *testing.T) {
-	assert.Equal(t, []string{"job.yaml.tpl", "preload.yaml.tpl"}, AssetNames())
+	assert.Equal(t, []string{
+		"job.yaml.tpl",
+		"preload.yaml.tpl",
+	}, AssetNames())
 }
 
 func TestAsset(t *testing.T) {

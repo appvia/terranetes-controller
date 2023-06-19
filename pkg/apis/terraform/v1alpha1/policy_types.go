@@ -18,6 +18,7 @@
 package v1alpha1
 
 import (
+	"bytes"
 	"regexp"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,6 +104,25 @@ type DefaultVariables struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Variables runtime.RawExtension `json:"variables,omitempty"`
+}
+
+// HasVariables returns true if the policy has variables
+func (d *DefaultVariables) HasVariables() bool {
+	switch {
+	case len(d.Variables.Raw) == 0:
+		return false
+	case bytes.Equal(d.Variables.Raw, []byte("{}")):
+		return false
+	case bytes.Equal(d.Variables.Raw, []byte("")):
+		return false
+	}
+
+	return true
+}
+
+// HasSelectors returns true if the policy has selectors
+func (d *DefaultVariables) HasSelectors() bool {
+	return d.Selector.Namespace != nil || len(d.Selector.Modules) > 0
 }
 
 // PolicySpec defines the desired state of a provider

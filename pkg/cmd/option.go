@@ -19,8 +19,16 @@ package cmd
 
 import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// WithKubeClient sets the kubernetes client
+func WithKubeClient(client kubernetes.Interface) OptionFunc {
+	return func(f *factory) {
+		f.kc = client
+	}
+}
 
 // WithClient sets the kubernetes client
 func WithClient(client client.Client) OptionFunc {

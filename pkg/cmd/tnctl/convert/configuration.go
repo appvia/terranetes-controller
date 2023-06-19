@@ -97,7 +97,7 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 
 	// @step: parse the variables if defined into a map
 	var variables map[string]interface{}
-	if configuration.HasVariables() {
+	if configuration.Spec.HasVariables() {
 		variables = make(map[string]interface{})
 
 		err := json.NewDecoder(bytes.NewReader(configuration.Spec.Variables.Raw)).Decode(&variables)

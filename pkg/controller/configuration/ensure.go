@@ -53,6 +53,7 @@ func (c *Controller) ensureReconcileAnnotation(configuration *terraformv1alpha1.
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		// @step: check if we are ignoring the configuration
+		// nolint:goconst
 		if configuration.GetAnnotations()[terraformv1alpha1.ReconcileAnnotation] == "false" {
 			cond.Warning("Configuration has reconciling annotation set as false, ignoring changes")
 
@@ -562,7 +563,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 		secret.Data[terraformv1alpha1.TerraformProviderConfigMapKey] = cfg
 
 		// @step: we need to generate the value from the variables
-		variables, err := configuration.GetVariables()
+		variables, err := configuration.Spec.GetVariables()
 		if err != nil {
 			cond.Failed(err, "Failed to retrieve the variables for the configuration")
 
@@ -711,6 +712,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		if !found {
 			// @step: if auto approval is not enabled we should annotate the configuration with the need to approve.
 			if !configuration.Spec.EnableAutoApproval && !configuration.NeedsApproval() {
+
 				original := configuration.DeepCopy()
 				if configuration.Annotations == nil {
 					configuration.Annotations = map[string]string{}
@@ -721,6 +723,32 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 					cond.Failed(err, "Failed to create or update the terraform configuration")
 
 					return reconcile.Result{}, err
+				}
+
+				// @step: if the configuration is part of a managed plan, we should update the cloudresource
+				// to reflect the need to approve
+				if configuration.IsManaged() {
+					cloudresource := &terraformv1alpha1.CloudResource{}
+					cloudresource.Namespace = configuration.Namespace
+					cloudresource.Name = configuration.GetLabels()[terraformv1alpha1.CloudResourceNameLabel]
+
+					if found, err := kubernetes.GetIfExists(ctx, c.cc, cloudresource); err != nil {
+						cond.Failed(err, "Failed to retrieve the cloudresource: %q which this configuration is part of", cloudresource.Name)
+
+						return reconcile.Result{}, err
+					} else if !found {
+						cond.Failed(err, "CloudResource: %q which this configuration is part of is missing", cloudresource.Name)
+
+						return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+					original := cloudresource.DeepCopy()
+					cloudresource.Annotations[terraformv1alpha1.ApplyAnnotation] = "false"
+
+					if err := c.cc.Patch(ctx, cloudresource, client.MergeFrom(original)); err != nil {
+						cond.Failed(err, "Failed to create or update the cloudresource: %q", cloudresource.Name)
+
+						return reconcile.Result{}, err
+					}
 				}
 
 				return controller.RequeueImmediate, nil

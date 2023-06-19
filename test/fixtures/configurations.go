@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
@@ -49,15 +50,15 @@ func NewValidBucketConfiguration(namespace, name string) *terraformv1alpha1.Conf
 }
 
 // NewConfigurationPodWatcher returns a new configuration pod
-func NewConfigurationPodWatcher(configuration *terraformv1alpha1.Configuration, stage string) *v1.Pod {
+func NewConfigurationPodWatcher(resource client.Object, stage string) *v1.Pod {
 	pod := &v1.Pod{}
-	pod.Namespace = configuration.Namespace
+	pod.Namespace = resource.GetNamespace()
 	pod.Name = "test-configuration-1234"
 	pod.Labels = map[string]string{
-		terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.GetGeneration()),
-		terraformv1alpha1.ConfigurationNameLabel:       configuration.Name,
+		terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", resource.GetGeneration()),
+		terraformv1alpha1.ConfigurationNameLabel:       resource.GetName(),
 		terraformv1alpha1.ConfigurationStageLabel:      stage,
-		terraformv1alpha1.ConfigurationUIDLabel:        string(configuration.UID),
+		terraformv1alpha1.ConfigurationUIDLabel:        string(resource.GetUID()),
 	}
 	pod.Status.Phase = v1.PodSucceeded
 	pod.Spec.Containers = []v1.Container{{Name: "terraform"}}
