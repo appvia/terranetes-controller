@@ -71,6 +71,10 @@ EOF
   [[ "$status" -eq 0 ]]
   runit "kubectl get crd contexts.terraform.appvia.io"
   [[ "$status" -eq 0 ]]
+  runit "kubectl get crd plans.terraform.appvia.io"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl get crd revisions.terraform.appvia.io"
+  [[ "$status" -eq 0 ]]
 }
 
 @test "We should have the controller webhooks enabled" {

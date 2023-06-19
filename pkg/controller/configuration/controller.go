@@ -182,21 +182,23 @@ func (c *Controller) Add(mgr manager.Manager) error {
 				}
 			}),
 			// we only care about jobs in our namespace
-			builder.WithPredicates(predicate.Funcs{
-				GenericFunc: func(e event.GenericEvent) bool {
-					return e.Object.GetNamespace() == c.ControllerNamespace
+			builder.WithPredicates(predicate.And(
+				predicate.Funcs{
+					GenericFunc: func(e event.GenericEvent) bool {
+						return e.Object.GetNamespace() == c.ControllerNamespace
+					},
+					CreateFunc: func(e event.CreateEvent) bool {
+						return e.Object.GetNamespace() == c.ControllerNamespace
+					},
+					UpdateFunc: func(e event.UpdateEvent) bool {
+						return e.ObjectNew.GetNamespace() == c.ControllerNamespace
+					},
+					DeleteFunc: func(e event.DeleteEvent) bool {
+						return false
+					},
 				},
-				CreateFunc: func(e event.CreateEvent) bool {
-					return e.Object.GetNamespace() == c.ControllerNamespace
-				},
-				UpdateFunc: func(e event.UpdateEvent) bool {
-					return e.ObjectNew.GetNamespace() == c.ControllerNamespace
-				},
-				DeleteFunc: func(e event.DeleteEvent) bool {
-					return false
-				},
-			}),
-			builder.WithPredicates(&predicate.ResourceVersionChangedPredicate{})).
+				&predicate.ResourceVersionChangedPredicate{},
+			))).
 		Complete(c)
 }
 

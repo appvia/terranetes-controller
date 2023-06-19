@@ -23,7 +23,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,15 +33,14 @@ import (
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
-func TestReconcile(t *testing.T) {
+func TestHandler(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Running Test Suite")
 }
 
 var _ = Describe("Configuration Mutation", func() {
-
 	var handler *mutator
-	var before, after *terraformv1alpha1.Configuration
+	var configuration *terraformv1alpha1.Configuration
 	var cc client.Client
 	var err error
 
@@ -52,334 +50,234 @@ var _ = Describe("Configuration Mutation", func() {
 			ns.Labels = map[string]string{"app": "test"}
 			cc = fake.NewClientBuilder().WithRuntimeObjects(ns).WithScheme(schema.GetScheme()).Build()
 			handler = &mutator{cc: cc}
-			before = fixtures.NewValidBucketConfiguration("app", "test")
-			after = before.DeepCopy()
+
+			configuration = fixtures.NewValidBucketConfiguration("app", "test")
 		})
 
-		Context("and we have no policies", func() {
+		Context("and we no have provider reference", func() {
 			BeforeEach(func() {
-				err = handler.Default(context.Background(), after)
+				configuration.Spec.ProviderRef = nil
 			})
 
-			It("should not throw an error", func() {
-				Expect(err).ToNot(HaveOccurred())
+			Context("and no default provider", func() {
+				BeforeEach(func() {
+					err = handler.Default(context.Background(), configuration)
+				})
+
+				It("should not inject a provider reference", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(configuration.Spec.ProviderRef).To(BeNil())
+				})
 			})
 
-			It("should remain unchanged", func() {
-				Expect(before).To(Equal(after))
-				Expect(err).ToNot(HaveOccurred())
+			Context("and a provider configured", func() {
+				BeforeEach(func() {
+					secret := fixtures.NewValidAWSProviderSecret("terraform-system", "aws")
+					provider := fixtures.NewValidAWSReadyProvider("aws", secret)
+					provider.Annotations = map[string]string{terraformv1alpha1.DefaultProviderAnnotation: "true"}
+
+					Expect(cc.Create(context.Background(), secret)).To(Succeed())
+					Expect(cc.Create(context.Background(), provider)).To(Succeed())
+				})
+
+				Context("with a single provider configured as default", func() {
+					It("should inject a provider reference", func() {
+						err = handler.Default(context.Background(), configuration)
+
+						Expect(err).ToNot(HaveOccurred())
+						Expect(configuration.Spec.ProviderRef).ToNot(BeNil())
+						Expect(configuration.Spec.ProviderRef.Name).To(Equal("aws"))
+					})
+				})
+
+				Context("with multiple providers configured as default", func() {
+					BeforeEach(func() {
+						secret := fixtures.NewValidAWSProviderSecret("terraform-system", "aws1")
+						provider := fixtures.NewValidAWSReadyProvider("aws1", secret)
+						provider.Annotations = map[string]string{terraformv1alpha1.DefaultProviderAnnotation: "true"}
+
+						Expect(cc.Create(context.Background(), secret)).To(Succeed())
+						Expect(cc.Create(context.Background(), provider)).To(Succeed())
+					})
+
+					It("should fail with an error", func() {
+						err = handler.Default(context.Background(), configuration)
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("only one provider can be default, please contact your administrator"))
+					})
+				})
 			})
 		})
 
-		Context("and we have zero matching policies", func() {
+		When("and the configuration has a plan reference", func() {
 			BeforeEach(func() {
-				policy := fixtures.NewPolicy("mutate")
-				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
-					{
-						Selector: terraformv1alpha1.DefaultVariablesSelector{
-							Namespace: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"app": "no_match"},
-							},
-						},
-						Variables: runtime.RawExtension{
-							Raw: []byte(`{"foo": "bar"}`),
-						},
-					},
+				configuration.Spec.Plan = &terraformv1alpha1.PlanReference{
+					Name:     "test",
+					Revision: "v0.0.1",
 				}
-				Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
-				err = handler.Default(context.Background(), after)
+				err = handler.Default(context.Background(), configuration)
 			})
 
-			It("should not throw an error", func() {
+			It("should inject the labels", func() {
 				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should remain unchanged", func() {
-				Expect(before).To(Equal(after))
-				Expect(err).ToNot(HaveOccurred())
+				Expect(configuration.Labels).To(HaveKeyWithValue(terraformv1alpha1.ConfigurationPlanLabel, "test"))
+				Expect(configuration.Labels).To(HaveKeyWithValue(terraformv1alpha1.ConfigurationRevisionVersion, "v0.0.1"))
 			})
 		})
 
-		Context("and we have a matching namespace selector", func() {
-			BeforeEach(func() {
-				policy := fixtures.NewPolicy("mutate")
-				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
-					{
-						Selector: terraformv1alpha1.DefaultVariablesSelector{
-							Namespace: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"app": "test"},
-							},
-						},
-						Variables: runtime.RawExtension{
-							Raw: []byte(`{"is": "changed"}`),
-						},
-					},
-				}
-				Expect(cc.Create(context.Background(), policy)).To(Succeed())
-
-				err = handler.Default(context.Background(), after)
-			})
-
-			It("should not throw an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should have injected the default variables", func() {
-				Expect(before).ToNot(Equal(after))
-				Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"is":"changed","name":"test"}`)))
-			})
-		})
-
-		Context("and we have matching namespace selector but no initial variables", func() {
-			BeforeEach(func() {
-				before.Spec.Variables.Raw = []byte("")
-				after = before.DeepCopy()
-
-				policy := fixtures.NewPolicy("test")
-				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
-					{
-						Selector: terraformv1alpha1.DefaultVariablesSelector{
-							Namespace: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"app": "test"},
-							},
-						},
-						Variables: runtime.RawExtension{
-							Raw: []byte(`{"foo": "bar"}`),
-						},
-					},
-				}
-				Expect(cc.Create(context.Background(), policy)).To(Succeed())
-
-				err = handler.Default(context.Background(), after)
-			})
-
-			It("should not throw an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should have changed", func() {
-				Expect(before).ToNot(Equal(after))
-				Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"foo":"bar"}`)))
-			})
-		})
-
-		Context("and we have module selectors", func() {
+		When("and we may policies injected default variables", func() {
 			var policy *terraformv1alpha1.Policy
 
-			BeforeEach(func() {
-				before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
-				after = before.DeepCopy()
+			// these are the variables which we start with
+			original := `{"foo": "bar", "list": ["a", "b", "c"]}`
+			// these are the variables we are injecting in the policy
+			injected := `{"inject": "me", "nested": {"foo": "bar"}}`
+			// this is the combined result
+			expected := `{"foo": "bar", "list": ["a", "b", "c"], "inject": "me", "nested": {"foo": "bar"}}`
 
-				policy = fixtures.NewPolicy("test")
+			BeforeEach(func() {
+				configuration.Spec.Variables.Raw = []byte(original)
+				policy = fixtures.NewPolicy("defaults")
 				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
 					{
-						Selector: terraformv1alpha1.DefaultVariablesSelector{
-							Modules: []string{before.Spec.Module},
-						},
-						Variables: runtime.RawExtension{
-							Raw: []byte(`{"foo": "bar"}`),
-						},
+						Variables: runtime.RawExtension{Raw: []byte(injected)},
 					},
 				}
 			})
 
-			Context("which is not matching", func() {
-				BeforeEach(func() {
-					policy.Spec.Defaults[0].Selector.Modules = []string{"not-matching"}
-					Expect(cc.Create(context.Background(), policy)).To(Succeed())
-
-					err = handler.Default(context.Background(), after)
+			Context("but no policies currently defined", func() {
+				It("should not inject any variables", func() {
+					err = handler.Default(context.Background(), configuration)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(configuration.Spec.Variables.Raw).To(Equal([]byte(original)))
 				})
+			})
 
-				It("should not throw an error", func() {
+			CommonChecks := func(variables string) {
+				It("should not fail", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("should not have changed", func() {
-					Expect(before).To(Equal(after))
-					Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
+				It("should have injected the variables from policy ", func() {
+					Expect(configuration.Spec.Variables.Raw).To(MatchJSON(variables))
 				})
-			})
+			}
 
-			Context("which is matching", func() {
-				BeforeEach(func() {
-					Expect(cc.Create(context.Background(), policy)).To(Succeed())
-
-					err = handler.Default(context.Background(), after)
-				})
-
-				It("should not throw an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should have changed", func() {
-					Expect(before).ToNot(Equal(after))
-					Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"foo":"bar","name":"existing"}`)))
-				})
-			})
-		})
-
-		Context("and we are using multiple selectors", func() {
-			var policy *terraformv1alpha1.Policy
-
-			BeforeEach(func() {
-				before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
-				after = before.DeepCopy()
-
-				policy = fixtures.NewPolicy("test")
-				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
-					{
-						Selector: terraformv1alpha1.DefaultVariablesSelector{
-							Modules: []string{before.Spec.Module},
-							Namespace: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"app": "test"},
-							},
-						},
-						Variables: runtime.RawExtension{
-							Raw: []byte(`{"foo": "bar"}`),
-						},
-						Secrets: []string{"test"},
-					},
-				}
-			})
-
-			Context("which is not matching", func() {
-				BeforeEach(func() {
-					policy.Spec.Defaults[0].Selector.Modules = []string{"which_does_not_match"}
-					Expect(cc.Create(context.Background(), policy)).To(Succeed())
-
-					err = handler.Default(context.Background(), after)
-				})
-
-				It("should not throw an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not have changed", func() {
-					Expect(before).To(Equal(after))
-					Expect(before.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
-					Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
-				})
-			})
-
-			Context("which is matching", func() {
+			Context("and a match all policy", func() {
 				BeforeEach(func() {
 					Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
-					err = handler.Default(context.Background(), after)
+					err = handler.Default(context.Background(), configuration)
 				})
 
-				It("should not throw an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should have changed", func() {
-					Expect(before).ToNot(Equal(after))
-					Expect(before.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
-					Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"foo":"bar","name":"existing"}`)))
-				})
-			})
-		})
-
-		Context("with a policy defining default secrets", func() {
-			BeforeEach(func() {
-				before.Spec.Variables.Raw = []byte(`{"name":"existing"}`)
-				after = before.DeepCopy()
-
-				policy := fixtures.NewPolicy("test")
-				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
-					{
-						Secrets: []string{"test"},
-					},
-				}
-
-				err = handler.Default(context.Background(), after)
+				CommonChecks(expected)
 			})
 
-			It("should not throw an error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should not have changed", func() {
-				Expect(before).To(Equal(after))
-				Expect(after.Spec.Variables.Raw).To(Equal([]byte(`{"name":"existing"}`)))
-				Expect(err).ToNot(HaveOccurred())
-			})
-		})
-
-		Context("with no provider reference defined in the configuration", func() {
-			var provider *terraformv1alpha1.Provider
-
-			BeforeEach(func() {
-				before.Spec.ProviderRef.Name = ""
-				after = before.DeepCopy()
-
-				secret := fixtures.NewValidAWSProviderSecret("terraform-system", "default")
-				provider = fixtures.NewValidAWSReadyProvider("default", secret)
-				provider.Annotations = map[string]string{
-					terraformv1alpha1.DefaultProviderAnnotation: "true",
-				}
-
-				Expect(cc.Create(context.Background(), secret)).To(Succeed())
-			})
-
-			Context("and no default provider defined", func() {
+			Context("and a matching module selector", func() {
 				BeforeEach(func() {
-					provider.Annotations = map[string]string{}
-					Expect(cc.Create(context.Background(), provider)).To(Succeed())
+					policy.Spec.Defaults[0].Selector.Modules = []string{configuration.Spec.Module}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
-					err = handler.Default(context.Background(), after)
+					err = handler.Default(context.Background(), configuration)
 				})
 
-				It("should not throw an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should not have changed", func() {
-					Expect(before).To(Equal(after))
-					Expect(after.Spec.ProviderRef.Name).To(Equal(""))
-				})
+				CommonChecks(expected)
 			})
 
-			Context("and a default provider defined", func() {
+			Context("and a matching module regexe", func() {
 				BeforeEach(func() {
-					Expect(cc.Create(context.Background(), provider)).To(Succeed())
+					policy.Spec.Defaults[0].Selector.Modules = []string{"^.*$"}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
-					err = handler.Default(context.Background(), after)
+					err = handler.Default(context.Background(), configuration)
 				})
 
-				It("should not throw an error", func() {
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("should have changed", func() {
-					Expect(before).ToNot(Equal(after))
-					Expect(after.Spec.ProviderRef.Name).To(Equal(provider.Name))
-					Expect(before.Spec.ProviderRef.Name).To(BeEmpty())
-				})
+				CommonChecks(expected)
 			})
 
-			Context("and multiple default providers defined", func() {
+			Context("and a matching label selector", func() {
 				BeforeEach(func() {
-					additional := fixtures.NewValidAWSReadyProvider("additional", &v1.Secret{})
-					additional.Annotations = map[string]string{
-						terraformv1alpha1.DefaultProviderAnnotation: "true",
+					policy.Spec.Defaults[0].Selector.Namespace = &metav1.LabelSelector{
+						MatchLabels: map[string]string{"app": "test"},
 					}
-					Expect(cc.Create(context.Background(), provider)).To(Succeed())
-					Expect(cc.Create(context.Background(), additional)).To(Succeed())
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
-					err = handler.Default(context.Background(), after)
+					err = handler.Default(context.Background(), configuration)
 				})
 
-				It("should throw an error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("only one provider can be default, please contact your administrator"))
+				CommonChecks(expected)
+			})
+
+			Context("and a matching label expression", func() {
+				BeforeEach(func() {
+					policy.Spec.Defaults[0].Selector.Namespace = &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "app",
+								Operator: metav1.LabelSelectorOpIn,
+								Values:   []string{"test"},
+							},
+						},
+					}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					err = handler.Default(context.Background(), configuration)
 				})
 
-				It("should have not changed", func() {
-					Expect(before).To(Equal(after))
+				CommonChecks(expected)
+			})
+
+			Context("and a matching label and module selector", func() {
+				BeforeEach(func() {
+					policy.Spec.Defaults[0].Selector.Modules = []string{configuration.Spec.Module}
+					policy.Spec.Defaults[0].Selector.Namespace = &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "app",
+								Operator: metav1.LabelSelectorOpIn,
+								Values:   []string{"test"},
+							},
+						},
+					}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					err = handler.Default(context.Background(), configuration)
 				})
+
+				CommonChecks(expected)
+			})
+
+			Context("and no matching modules selector", func() {
+				BeforeEach(func() {
+					policy.Spec.Defaults[0].Selector.Modules = []string{"no_match"}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					err = handler.Default(context.Background(), configuration)
+				})
+
+				CommonChecks(original)
+			})
+
+			Context("and module match but a label mismatch", func() {
+				BeforeEach(func() {
+					policy.Spec.Defaults[0].Selector.Modules = []string{configuration.Spec.Module}
+					policy.Spec.Defaults[0].Selector.Namespace = &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "app",
+								Operator: metav1.LabelSelectorOpIn,
+								Values:   []string{"no_match"},
+							},
+						},
+					}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					err = handler.Default(context.Background(), configuration)
+				})
+
+				CommonChecks(original)
 			})
 		})
 	})

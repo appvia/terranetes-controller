@@ -54,32 +54,27 @@ type Command struct {
 	Name string
 	// Namespace is the namespace the configuration resides in
 	Namespace string
+	// Kind is the kind of configuration
+	Kind string
 	// WatchLogs indicates we should watch the logs after restarting the configuration
 	WatchLogs bool
 }
 
 // NewCommand creates and returns the command
 func NewCommand(factory cmd.Factory) *cobra.Command {
-	o := &Command{Factory: factory}
-
 	c := &cobra.Command{
-		Use:   "retry [OPTIONS] NAME",
+		Use:   "retry KIND",
 		Long:  longUsage,
-		Short: "Attempts to restart a configuration",
-		Args:  cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			o.Name = args[0]
-
-			return o.Run(cmd.Context())
-		},
-		ValidArgsFunction: cmd.AutoCompleteConfigurations(factory),
+		Short: "Attempts to trigger the resource to retry",
 	}
+	c.SetErr(factory.GetStreams().ErrOut)
+	c.SetOut(factory.GetStreams().Out)
+	c.SetIn(factory.GetStreams().In)
 
-	flags := c.Flags()
-	flags.BoolVarP(&o.WatchLogs, "watch", "w", true, "Watch the logs after restarting the configuration")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace the configuration resides")
-
-	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
+	c.AddCommand(
+		NewRetryCloudResourceCommand(factory),
+		NewRetryConfigurationCommand(factory),
+	)
 
 	return c
 }
@@ -91,39 +86,59 @@ func (o *Command) Run(ctx context.Context) error {
 		return err
 	}
 
-	// @step: retrieve the configuration
-	configuration := &terraformv1alpha1.Configuration{}
-	configuration.Name = o.Name
-	configuration.Namespace = o.Namespace
+	var resource client.Object
 
-	if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
+	// @step: retrieve the configuration
+	switch o.Kind {
+	case terraformv1alpha1.CloudResourceKind:
+		resource = &terraformv1alpha1.CloudResource{}
+
+	default:
+		resource = &terraformv1alpha1.Configuration{}
+	}
+
+	resource.SetName(o.Name)
+	resource.SetNamespace(o.Namespace)
+
+	if found, err := kubernetes.GetIfExists(ctx, cc, resource); err != nil {
 		return err
 	} else if !found {
-		return fmt.Errorf("configuration (%s/%s) does not exist", o.Namespace, o.Name)
+		return fmt.Errorf("resource (%s/%s) does not exist", o.Namespace, o.Name)
 	}
 
-	original := configuration.DeepCopy()
+	original := resource.DeepCopyObject()
 
-	// @step: update the configuration retry annotation
-	if configuration.Annotations == nil {
-		configuration.Annotations = map[string]string{}
+	// @step: update the retry annotation
+	if resource.GetAnnotations() == nil {
+		resource.SetAnnotations(map[string]string{})
 	}
-	configuration.Annotations[terraformv1alpha1.RetryAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
+	resource.GetAnnotations()[terraformv1alpha1.RetryAnnotation] = fmt.Sprintf("%d", time.Now().Unix())
 
-	// @step: update the configuration
-	if err := cc.Patch(ctx, configuration, client.MergeFrom(original)); err != nil {
+	// @step: update the resource
+	if err := cc.Patch(ctx, resource, client.MergeFrom(original.(client.Object))); err != nil {
 		return err
 	}
-	o.Println("%s configuration %q has been marked for retry", cmd.IconGood, o.Name)
+	o.Println("%s Resource %q has been marked for retry", cmd.IconGood, o.Name)
 
 	if o.WatchLogs {
 		return nil
 	}
 
+	if o.Kind == terraformv1alpha1.CloudResourceKind {
+		return (&logs.CloudResourceLogsCommand{
+			Factory:      o.Factory,
+			Follow:       true,
+			Name:         o.Name,
+			Namespace:    o.Namespace,
+			WaitInterval: 3 * time.Second,
+		}).Run(ctx)
+	}
+
 	return (&logs.Command{
-		Factory:   o.Factory,
-		Namespace: o.Namespace,
-		Name:      o.Name,
-		Follow:    true,
+		Factory:      o.Factory,
+		Follow:       true,
+		Name:         o.Name,
+		Namespace:    o.Namespace,
+		WaitInterval: 3 * time.Second,
 	}).Run(ctx)
 }

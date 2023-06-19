@@ -48,7 +48,7 @@ import (
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
-func TestReconcile(t *testing.T) {
+func TestController(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Running Test Suite")
 }

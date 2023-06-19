@@ -94,6 +94,7 @@ run_checks() {
     "${UNITS}/error-handler.bats"
     "${UNITS}/clean-protection.bats"
     "${UNITS}/custom-state-backend.bats"
+    "${UNITS}/cloudresource.bats"
     "${UNITS}/contexts.bats"
   )
   local CONSTRAINTS_FILES=(

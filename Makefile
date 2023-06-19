@@ -248,6 +248,10 @@ check: test
 
 ### UTILITIES ###
 
+develop-environment:
+	@echo "--> Creating a development environment"
+	@hack/create-development.sh
+
 trigger-aws-e2e:
 	@echo "--> Triggering the e2e tests on ${GIT_BRANCH} branch (AWS)"
 	@gh workflow run e2e.yaml --ref ${GIT_BRANCH} -f cloud=aws -f use_helm=false -f version=ci

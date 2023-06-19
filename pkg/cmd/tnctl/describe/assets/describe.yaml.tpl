@@ -1,18 +1,18 @@
-Name:         {{ .Object.metadata.name }}
-Namespace:    {{ .Object.metadata.namespace }}
-Created:      {{ .Object.metadata.creationTimestamp }}
-Status:       {{ default "Unknown" .Object.status.resourceStatus }}
-{{- if .Object.metadata.annotations }}
+Name:         {{ .Object.Name }}
+Namespace:    {{ .Object.Namespace }}
+Created:      {{ .Object.CreationTimestamp }}
+Status:       {{ default "Unknown" .Object.Status.ResourceStatus }}
+{{- if .Object.Annotations }}
 Annotations:
-{{- range $key, $value := .Object.metadata.annotations }}
+{{- range $key, $value := .Object.Annotations }}
 {{- printf "%-28s %-20s" $key $value | nindent 14 }}
 {{- end }}
 {{- else }}
 Annotations:  None
 {{- end }}
-{{- if .Object.metadata.labels }}
+{{- if .Object.Labels }}
 Labels:
-{{- range $key, $value := .Object.metadata.labels }}
+{{- range $key, $value := .Object.Labels }}
 {{- printf "%-28s %-20s" $key $value | nindent 14 }}
 {{- end }}
 {{- else }}
@@ -21,10 +21,10 @@ Labels:       None
 
 Conditions:
 ==========
-{{- if .Object.status.conditions }}
+{{- if .Object.Status.Conditions }}
 {{ printf "%-18s %-18s %s" "Name" "Reason" "Message" }}
-{{- range $condition := .Object.status.conditions }}
-{{ printf "%-18s %-18s %s" .name .reason (default "" .message) }}
+{{- range $condition := .Object.Status.Conditions }}
+{{ printf "%-18s %-18s %s" .Name .Reason (default "" .Message) }}
 {{- end }}
 {{- else }}
  None
@@ -32,15 +32,15 @@ Conditions:
 
 Configuration:
 =============
-{{- if .Object.spec.auth }}
-Authentication: {{ .Object.metadata.namespace }}/{{ .Object.spec.auth.name }}
+{{- if .Object.Spec.Auth }}
+Authentication: {{ .Object.Namespace }}/{{ .Object.Spec.Auth.Name }}
 {{- else }}
 Authentication: None
 {{- end }}
-Module:         {{ .Object.spec.module }}
-Provider:       {{ .Object.spec.providerRef.name }}
-{{- if .Object.spec.writeConnectionSecretToRef }}
-Secret:         {{ .Object.metadata.namespace }}/{{ .Object.spec.writeConnectionSecretToRef.name }}
+Module:         {{ .Object.Spec.Module }}
+Provider:       {{ .Object.Spec.ProviderRef.Name }}
+{{- if .Object.Spec.WriteConnectionSecretToRef }}
+Secret:         {{ .Object.Namespace }}/{{ .Object.Spec.WriteConnectionSecretToRef.Name }}
 {{- else }}
 Secret:         None
 {{- end }}

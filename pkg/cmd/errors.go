@@ -25,3 +25,8 @@ import (
 func ErrMissingArgument(argument string) error {
 	return fmt.Errorf("missing required argument: %q", argument)
 }
+
+// ErrInvalidArgument is returned when an argument is invalid
+func ErrInvalidArgument(argument, value string) error {
+	return fmt.Errorf("invalid argument: %q = %s", argument, value)
+}

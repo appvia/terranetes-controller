@@ -23,12 +23,11 @@ import (
 	"fmt"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	jsonpatch "github.com/evanphx/json-patch"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils"
@@ -56,26 +55,41 @@ func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
 		return err
 	}
 
+	// @step: add labels if configuration is using a plan
+	m.mutateOnPlan(o)
+
 	// @step: retrieve a list of all policies
 	list := &terraformv1alpha1.PolicyList{}
 	if err := m.cc.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list policies: %w", err)
 	}
-	if len(list.Items) == 0 {
-		return nil
-	}
-
-	if err := m.mutateOnDefaults(ctx, list, o); err != nil {
+	// @step: inject any default variables from a policy
+	if err := m.mutateOnPolicyDefaults(ctx, list, o); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// mutateOnPlan is used to inject any default labels on the configuration
+func (m *mutator) mutateOnPlan(o *terraformv1alpha1.Configuration) {
+	if o.Spec.Plan == nil {
+		return
+	}
+	if o.Labels == nil {
+		o.Labels = make(map[string]string)
+	}
+
+	o.Labels = utils.MergeStringMaps(o.Labels, map[string]string{
+		terraformv1alpha1.ConfigurationPlanLabel:       o.Spec.Plan.Name,
+		terraformv1alpha1.ConfigurationRevisionVersion: o.Spec.Plan.Revision,
+	})
+}
+
 // mutateOnProviderDefault is used to fill in a provider default if required
 func (m *mutator) mutateOnProviderDefault(ctx context.Context, o *terraformv1alpha1.Configuration) error {
 	switch {
-	case o.Spec.ProviderRef.Name != "":
+	case o.Spec.ProviderRef != nil:
 		return nil
 	}
 
@@ -112,16 +126,19 @@ func (m *mutator) mutateOnProviderDefault(ctx context.Context, o *terraformv1alp
 	return nil
 }
 
-// mutateOnDefaults is called to validate the module policy enforced
-func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alpha1.PolicyList, o *terraformv1alpha1.Configuration) error {
+// mutateOnPolicyDefaults is called to validate the module policy enforced
+func (m *mutator) mutateOnPolicyDefaults(ctx context.Context, list *terraformv1alpha1.PolicyList, o *terraformv1alpha1.Configuration) error {
+	if len(list.Items) == 0 {
+		return nil
+	}
 
+	// @step: we need to retrieve the namespace of the configuration
 	namespace := &v1.Namespace{}
 	namespace.Name = o.Namespace
-	found, err := kubernetes.GetIfExists(ctx, m.cc, namespace)
-	if err != nil {
+
+	if found, err := kubernetes.GetIfExists(ctx, m.cc, namespace); err != nil {
 		return fmt.Errorf("failed to get namespace: %w", err)
-	}
-	if !found {
+	} else if !found {
 		return fmt.Errorf("failed to find namespace %s", o.Namespace)
 	}
 
@@ -129,42 +146,48 @@ func (m *mutator) mutateOnDefaults(ctx context.Context, list *terraformv1alpha1.
 
 	// @step: iterate over the policies and update the configuration if required
 	for _, policy := range list.Items {
-		switch {
-		case len(policy.Spec.Defaults) == 0:
-			continue
-		}
-
 		for _, x := range policy.Spec.Defaults {
-			switch {
-			case len(x.Variables.Raw) == 0:
-				continue
-			case utils.Contains(string(x.Variables.Raw), []string{"{}", ""}):
+			var filtered bool
+
+			if !x.HasVariables() {
 				continue
 			}
 
-			match, err := isMatch(x.Selector, o, namespace)
+			// @step: if the policy a wildcard and applies to all configurations
+			if !x.HasSelectors() {
+				filtered = true
+			} else {
+				// @step: does the policy match the configuration
+				matched, err := isMatch(x.Selector, o, namespace)
+				switch {
+				case err != nil:
+					return fmt.Errorf("failed to match selector: %w", err)
+				case matched:
+					filtered = true
+				}
+			}
+			// did we have a match?
+			if !filtered {
+				continue
+			}
+
+			names = append(names, policy.Name)
+
+			// @step: create a patch for the configuration
+			patch, err := jsonpatch.CreateMergePatch([]byte(`{}`), x.Variables.Raw)
 			if err != nil {
-				return fmt.Errorf("failed to match selector: %w", err)
+				return fmt.Errorf("failed to create merge patch: %w", err)
 			}
-			if match {
-				names = append(names, policy.Name)
-
-				patch, err := jsonpatch.CreateMergePatch([]byte(`{}`), x.Variables.Raw)
-				if err != nil {
-					return fmt.Errorf("failed to create merge patch: %w", err)
-				}
-				if !o.HasVariables() {
-					o.Spec.Variables = &runtime.RawExtension{Raw: patch}
-
-					continue
-				}
-
-				modified, err := jsonpatch.MergePatch(o.Spec.Variables.Raw, patch)
-				if err != nil {
-					return fmt.Errorf("failed to merge patch: %w", err)
-				}
-				o.Spec.Variables.Raw = modified
+			if !o.Spec.HasVariables() {
+				o.Spec.Variables = &runtime.RawExtension{Raw: patch}
+				continue
 			}
+
+			modified, err := jsonpatch.MergePatch(o.Spec.Variables.Raw, patch)
+			if err != nil {
+				return fmt.Errorf("failed to merge patch: %w", err)
+			}
+			o.Spec.Variables.Raw = modified
 		}
 	}
 

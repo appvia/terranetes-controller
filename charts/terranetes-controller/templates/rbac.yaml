@@ -52,15 +52,18 @@ rules:
       - batch
       - terraform.appvia.io
     resources:
+      - cloudresources
       - configmaps
       - configurations
       - contexts
       - events
       - jobs
       - namespaces
+      - plans
       - pods
       - policies
       - providers
+      - revisions
       - secrets
     verbs:
       - get
@@ -70,13 +73,28 @@ rules:
       - terraform.appvia.io
     resources:
       - configurations
+      - plans
+      - plans/status
+    verbs:
+      - create
+      - delete
+  - apiGroups:
+      - terraform.appvia.io
+    resources:
+      - configurations
       - configurations/status
       - contexts
       - contexts/status
+      - cloudresources
+      - cloudresources/status
+      - plans
+      - plans/status
       - policies
       - policies/status
       - providers
       - providers/status
+      - revisions
+      - revisions/status
     verbs:
       - patch
       - update

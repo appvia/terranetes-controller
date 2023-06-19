@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -50,6 +51,9 @@ func NewConfiguration(namespace, name string) *Configuration {
 		},
 	}
 }
+
+// ValueFromList is a list of value from sources
+type ValueFromList []ValueFromSource
 
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
@@ -95,6 +99,12 @@ const (
 	ConfigurationNamespaceLabel = "terraform.appvia.io/namespace"
 	// ConfigurationStageLabel is the label used to identify a configuration stage
 	ConfigurationStageLabel = "terraform.appvia.io/stage"
+	// ConfigurationPlanLabel is the label which contains the plan name for a configuration
+	ConfigurationPlanLabel = RevisionPlanNameLabel
+	// ConfigurationRevisionLabelName is the name of the revision being used
+	ConfigurationRevisionLabelName = RevisionLabel
+	// ConfigurationRevisionVersion is the version of the revision
+	ConfigurationRevisionVersion = "terranetes.appvia.io/revision-version"
 )
 
 const (
@@ -128,6 +138,15 @@ type ProviderReference struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
+// IsValid returns an error if the provider is invalid
+func (p *ProviderReference) IsValid() error {
+	if p.Name == "" {
+		return errors.New("spec.providerRef.name is required")
+	}
+
+	return nil
+}
+
 // WriteConnectionSecret defines the options around the secret produced by the terraform code
 type WriteConnectionSecret struct {
 	// Name is the of the secret where you want to the terraform output to be written. The terraform outputs
@@ -140,6 +159,21 @@ type WriteConnectionSecret struct {
 	// which keys we want from that output.
 	// +kubebuilder:validation:Optional
 	Keys []string `json:"keys,omitempty"`
+}
+
+// IsValid checks if the write connection secret is valid
+func (w *WriteConnectionSecret) IsValid() error {
+	if w.Name == "" {
+		return errors.New("spec.writeConnectionSecretToRef.name is required")
+	}
+
+	for i, key := range w.Keys {
+		if strings.Contains(key, ":") && len(strings.Split(key, ":")) != 2 {
+			return fmt.Errorf("spec.writeConnectionSecretToRef.keys[%d] contains invalid key: %s, should be KEY:NEWNAME", i, key)
+		}
+	}
+
+	return nil
 }
 
 // HasKeys returns true if the keys are not empty
@@ -212,6 +246,43 @@ type ValueFromSource struct {
 	Secret *string `json:"secret,omitempty"`
 }
 
+// IsValid checks if all the value from are valid, else returns an error
+func (v *ValueFromSource) IsValid(path string) error {
+	switch {
+	case v.Context == nil && v.Secret == nil:
+		return fmt.Errorf("%s requires either context or secret", path)
+
+	case v.Context != nil && v.Secret != nil:
+		return fmt.Errorf("%s requires either context or secret, not both", path)
+	}
+
+	if v.Secret != nil {
+		switch {
+		case v.Name == "":
+			return fmt.Errorf("%s requires a name to be set", path)
+		}
+	}
+	if v.Context != nil {
+		switch {
+		case v.Key == "":
+			return fmt.Errorf("%s requires a key", path)
+		}
+	}
+
+	return nil
+}
+
+// IsValid checks the value from source is valid, else returns an error
+func (v *ValueFromList) IsValid() error {
+	for i, x := range *v {
+		if err := x.IsValid(fmt.Sprintf("spec.valueFrom[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // GetName returns the name or the key if not set
 func (v *ValueFromSource) GetName() string {
 	if len(v.Name) == 0 {
@@ -219,6 +290,28 @@ func (v *ValueFromSource) GetName() string {
 	}
 
 	return v.Name
+}
+
+// PlanReference are the fields related to a configuration plan
+type PlanReference struct {
+	// Name is the name of the plan this configuration is associated with
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// Revision is the revision of the plan this configuration is associated with
+	// +kubebuilder:validation:Required
+	Revision string `json:"revision"`
+}
+
+// IsValid returns an error if the plan reference is not valid
+func (p *PlanReference) IsValid() error {
+	switch {
+	case p.Name == "":
+		return errors.New("spec.plan.name is required")
+	case p.Revision == "":
+		return errors.New("spec.plan.revision is required")
+	}
+
+	return nil
 }
 
 // ConfigurationSpec defines the desired state of a terraform
@@ -243,10 +336,14 @@ type ConfigurationSpec struct {
 	// repository for more details https://github.com/hashicorp/go-getter
 	// +kubebuilder:validation:Required
 	Module string `json:"module"`
+	// Plan is an optional reference to a plan this configuration is associated with. If
+	// not set and a policy exists to enforce a plan, the configuration will be rejected.
+	// +kubebuilder:validation:Optional
+	Plan *PlanReference `json:"plan,omitempty"`
 	// ProviderRef is the reference to the provider which should be used to execute this
 	// configuration.
-	// +kubebuilder:validation:Required
-	ProviderRef *ProviderReference `json:"providerRef"`
+	// +kubebuilder:validation:Optional
+	ProviderRef *ProviderReference `json:"providerRef,omitempty"`
 	// WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
 	// any module outputs are written to this secret. The outputs are automatically uppercased
 	// and ready to be consumed as environment variables.
@@ -262,7 +359,7 @@ type ConfigurationSpec struct {
 	// ValueFromSource is a collection of value from sources, where the source of the value
 	// is taken from a secret
 	// +kubebuilder:validation:Optional
-	ValueFrom []ValueFromSource `json:"valueFrom,omitempty"`
+	ValueFrom ValueFromList `json:"valueFrom,omitempty"`
 	// TerraformVersion provides the ability to override the default terraform version. Before
 	// changing this field its best to consult with platform administrator. As the
 	// value of this field is used to change the tag of the terraform container image.
@@ -281,6 +378,7 @@ type ConfigurationSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
+// +kubebuilder:printcolumn:name="Plan",type="string",JSONPath=".spec.plan.name",priority=1
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
 // +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
 // +kubebuilder:printcolumn:name="Synchronized",type="string",JSONPath=".status.resourceStatus"
@@ -323,6 +421,13 @@ const (
 	UnknownResourceStatus ResourceStatus = ""
 )
 
+// ConfigurationRevisionStatus defines the observed state of Configuration
+type ConfigurationRevisionStatus struct {
+	// Revision is the revision number of the configuration
+	// +kubebuilder:validation:Optional
+	Revision string `json:"revision,omitempty"`
+}
+
 // ConfigurationStatus defines the observed state of a terraform
 // +k8s:openapi-gen=true
 type ConfigurationStatus struct {
@@ -356,27 +461,32 @@ func (c *Configuration) GetNamespacedName() types.NamespacedName {
 }
 
 // GetVariables returns the variables for the configuration
-func (c *Configuration) GetVariables() (map[string]interface{}, error) {
+func (c *ConfigurationSpec) GetVariables() (map[string]interface{}, error) {
 	if !c.HasVariables() {
 		return map[string]interface{}{}, nil
 	}
 
 	values := make(map[string]interface{})
-	if err := json.NewDecoder(bytes.NewReader(c.Spec.Variables.Raw)).Decode(&values); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(c.Variables.Raw)).Decode(&values); err != nil {
 		return nil, err
 	}
 
 	return values, nil
 }
 
+// HasValueFrom returns true if the configuration has a value from
+func (c *ConfigurationSpec) HasValueFrom() bool {
+	return len(c.ValueFrom) > 0
+}
+
 // HasVariables returns true if the configuration has variables
-func (c *Configuration) HasVariables() bool {
+func (c *ConfigurationSpec) HasVariables() bool {
 	switch {
-	case c.Spec.Variables == nil:
+	case c.Variables == nil:
 		return false
-	case c.Spec.Variables.Raw == nil, len(c.Spec.Variables.Raw) <= 0:
+	case c.Variables.Raw == nil, len(c.Variables.Raw) <= 0:
 		return false
-	case bytes.Equal(c.Spec.Variables.Raw, []byte("{}")):
+	case bytes.Equal(c.Variables.Raw, []byte("{}")):
 		return false
 	}
 
@@ -438,6 +548,20 @@ func (c *Configuration) HasApproval() bool {
 // NeedsApproval returns true if the configuration needs approval
 func (c *Configuration) NeedsApproval() bool {
 	return c.GetAnnotations()[ApplyAnnotation] == "false"
+}
+
+// IsManaged returns true if the configuration is managed
+func (c *Configuration) IsManaged() bool {
+	switch {
+	case c.Spec.Plan == nil:
+		return false
+	case len(c.OwnerReferences) == 0:
+		return false
+	case c.GetLabels()[CloudResourceNameLabel] == "":
+		return false
+	}
+
+	return true
 }
 
 // GetTerraformConfigSecretName returns the name of the configuration secret

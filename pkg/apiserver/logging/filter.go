@@ -22,9 +22,8 @@ import (
 	"net/http"
 
 	"github.com/felixge/httpsnoop"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 // Logger returns the middleware method for the router

@@ -25,8 +25,8 @@ spec:
   #
   # module: https://github.com/appvia/terraform//modules/bucket?ref=<TAG|COMMIT|BRANCH>
   #
-  ## The syntax is the same regardless of the protocol, so a private git repository for the same example
-  ## above would look like
+  ## The syntax is the same regardless of the protocol, so a private git
+  ## repository for the same example above would look like
   #
   # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
   #
@@ -34,31 +34,39 @@ spec:
   providerRef:
     name: aws
 
+  ## Used when the resource being applied from a plan
+  #
+  # plan:
+  ##  Is the name of plan to use $ kubectl get plans
+  #   name: <NAME>
+  ##  Is the revision of the plan to use, not setting this takes the latest
+  ##  semvar version. You van list the revisions via $ kubectl get revisions
+  #   revision: <VERSION>
+
   # Allows you to source in terraform inputs from one of more kubernetes secrets
   valueFrom:
-    -
-      # Retrieve the value from a specific context
+    - # Retrieve the value from a specific context
       context: default
       # Is the key with the context resource which we should use. The translates
       # to spec.variables.KEY.value
       key: vpc
       # Is the name which the value should be presented to terraform as
       name: vpc_id
-      # Indicates the value, or context is not found is optional and will not fail the
-      # terraform run
+      # Indicates the value, or context is not found is optional and will not
+      # fail the terraform run
       optional: true
-    -
-      # Is the name of the local kubernetes secret which contains the value
+    - # Is the name of the local kubernetes secret which contains the value
       secret: database_secret
       # Is the key inside the secret i.e. data.<NAME>
       key: DB_HOST
-      # Is optional but recommended. This specifies the name of the variable presented
-      # to terraform. Note, by default if left blank the key is used instead. You can also
-      # remap names where i.e DB_HOST and be remapped to database_hostname when consumed
+      # Is optional but recommended. This specifies the name of the variable
+      # presented to terraform. Note, by default if left blank the key is used
+      # instead. You can also remap names where i.e DB_HOST and be remapped to
+      # database_hostname when consumed
       name: database_hostname
-      # Indicates if the secret is optional - by default, any unresolved secret will defer
-      # execution and wait for the secret to become available. By setting to true, the controller
-      # will ignore a missing secret and or key
+      # Indicates if the secret is optional - by default, any unresolved secret
+      # will defer execution and wait for the secret to become available. By
+      # setting to true, the controller will ignore a missing secret and or key
       optional: true
 
   writeConnectionSecretToRef:
@@ -69,7 +77,8 @@ spec:
       - s3_bucket_region
 
   variables:
-    # -- The name of the bucket. If omitted, Terraform will assign a random, unique name
+    # -- The name of the bucket. If omitted, Terraform will assign a random,
+    # unique name
     bucket: terranetes-controller-ci-bucket
     # -- The canned ACL to apply
     acl: private
@@ -86,7 +95,8 @@ spec:
     block_public_policy: true
     # -- Whether Amazon S3 should ignore public ACLs for this bucket
     ignore_public_acls: true
-    # -- Whether Amazon S3 should restrict public bucket policies for this bucket
+    # -- Whether Amazon S3 should restrict public bucket policies for this
+    # bucket
     restrict_public_buckets: true
     # -- Map containing server-side encryption configuration
     server_side_encryption_configuration:

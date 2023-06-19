@@ -21,11 +21,13 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -36,7 +38,7 @@ import (
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
-func TestReconcile(t *testing.T) {
+func TestApproveCommand(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Running Test Suite")
 }
@@ -45,114 +47,145 @@ var _ = Describe("Approve Command", func() {
 	logrus.SetOutput(ioutil.Discard)
 
 	var cc client.Client
-	var factory cmd.Factory
+	var configuration *terraformv1alpha1.Configuration
+	var cloudresource *terraformv1alpha1.CloudResource
 	var streams genericclioptions.IOStreams
+	var stderr *bytes.Buffer
 	var stdout *bytes.Buffer
-	var command *Command
+	var command *cobra.Command
 	var err error
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
-		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
-		factory, _ = cmd.NewFactory(
+		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
+		streams, _, stdout, stderr = genericclioptions.NewTestIOStreams()
+		factory, _ := cmd.NewFactory(
 			cmd.WithClient(cc),
 			cmd.WithStreams(streams),
 		)
-		command = &Command{Factory: factory}
-		command.Names = []string{"test"}
-		command.Namespace = "default"
+		command = NewCommand(factory)
+
+		configuration = fixtures.NewValidBucketConfiguration("default", "bucket")
+		cloudresource = fixtures.NewCloudResource("default", "bucket")
+
+		Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
 	})
 
-	When("the command is created", func() {
-		It("should create a new command", func() {
-			Expect(NewCommand(factory)).ToNot(BeNil())
-		})
-	})
-
-	When("name is not provided", func() {
+	When("approving a configuration", func() {
 		BeforeEach(func() {
-			command.Names = nil
-			err = command.Run(context.Background())
+			os.Args = []string{"approve", "configuration", configuration.Name}
 		})
 
-		It("should return an error", func() {
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("name is required"))
-		})
-
-		It("should be empty", func() {
-			Expect(stdout.String()).To(BeEmpty())
-		})
-	})
-
-	When("namespace is not provided", func() {
-		BeforeEach(func() {
-			command.Namespace = ""
-			err = command.Run(context.Background())
-		})
-
-		It("should return an error", func() {
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("namespace is required"))
-		})
-
-		It("should be empty", func() {
-			Expect(stdout.String()).To(BeEmpty())
-		})
-	})
-
-	When("configuration does not exist", func() {
-		BeforeEach(func() {
-			err = command.Run(context.Background())
-		})
-
-		It("should return an error", func() {
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("configuration test not found"))
-		})
-	})
-
-	When("configuration exists", func() {
-		var configuration *terraformv1alpha1.Configuration
-
-		BeforeEach(func() {
-			configuration = fixtures.NewValidBucketConfiguration("default", "test")
-			configuration.Annotations = map[string]string{terraformv1alpha1.ApplyAnnotation: "false"}
-		})
-
-		When("no approval annotation already exists", func() {
+		Context("when no names provided", func() {
 			BeforeEach(func() {
-				configuration.Annotations[terraformv1alpha1.ApplyAnnotation] = "true"
-				Expect(cc.Create(context.Background(), configuration)).To(Succeed())
-
-				err = command.Run(context.Background())
+				os.Args = []string{"approve", "configuration"}
 			})
 
-			It("should not error", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should be empty", func() {
-				Expect(stdout.String()).To(BeEmpty())
+			It("should return an error", func() {
+				Expect(command.Execute()).ToNot(Succeed())
+				Expect(stderr.String()).To(Equal("Error: requires at least 1 arg(s), only received 0\n"))
 			})
 		})
 
-		When("no approval annotation already exists", func() {
+		Context("when the configuration is not found", func() {
 			BeforeEach(func() {
-				Expect(cc.Create(context.Background(), configuration)).To(Succeed())
-				err = command.Run(context.Background())
+				Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
+
+				err = command.ExecuteContext(context.Background())
 			})
 
-			It("should not error", func() {
-				Expect(err).ToNot(HaveOccurred())
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("resource bucket not found"))
 			})
 
-			It("should not be empty", func() {
-				Expect(stdout.String()).ToNot(BeEmpty())
+			It("should print the error message", func() {
+				Expect(stderr.String()).To(Equal("Error: resource bucket not found\n"))
+			})
+		})
+
+		Context("when the configuration is found", func() {
+			Context("but the configuration does not require approval", func() {
+				BeforeEach(func() {
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not return an error", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 
-			It("should indicates approval", func() {
-				Expect(stdout.String()).To(ContainSubstring("Configuration test has been approved\n"))
+			Context("and the configuration requires approval", func() {
+				BeforeEach(func() {
+					configuration.Annotations = map[string]string{terraformv1alpha1.ApplyAnnotation: "false"}
+					Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should have approve the configuration", func() {
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
+					Expect(configuration.GetAnnotations()).ToNot(BeEmpty())
+					Expect(configuration.GetAnnotations()[terraformv1alpha1.ApplyAnnotation]).To(Equal("true"))
+				})
+
+				It("should print the approved message", func() {
+					Expect(stdout.String()).To(ContainSubstring("Configuration bucket has been approved\n"))
+				})
+			})
+		})
+	})
+
+	When("approving a cloudresource", func() {
+		BeforeEach(func() {
+			os.Args = []string{"approve", "cloudresource", cloudresource.Name}
+		})
+
+		Context("when the cloudresource is not found", func() {
+			BeforeEach(func() {
+				Expect(cc.Delete(context.Background(), cloudresource)).To(Succeed())
+
+				err = command.ExecuteContext(context.Background())
+			})
+
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("resource bucket not found"))
+			})
+
+			It("should print the error message", func() {
+				Expect(stderr.String()).To(Equal("Error: resource bucket not found\n"))
+			})
+		})
+
+		Context("when the cloudresource is found", func() {
+			Context("but the cloudresource does not require approval", func() {
+				BeforeEach(func() {
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should not return an error", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("and the cloudresource requires approval", func() {
+				BeforeEach(func() {
+					cloudresource.Annotations = map[string]string{terraformv1alpha1.ApplyAnnotation: "false"}
+					Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
+
+					err = command.ExecuteContext(context.Background())
+				})
+
+				It("should have approve the cloudresource", func() {
+					Expect(cc.Get(context.Background(), cloudresource.GetNamespacedName(), cloudresource)).To(Succeed())
+					Expect(cloudresource.GetAnnotations()).ToNot(BeEmpty())
+					Expect(cloudresource.GetAnnotations()[terraformv1alpha1.ApplyAnnotation]).To(Equal("true"))
+				})
+
+				It("should print the approved message", func() {
+					Expect(stdout.String()).To(ContainSubstring("CloudResource bucket has been approved\n"))
+				})
 			})
 		})
 	})
