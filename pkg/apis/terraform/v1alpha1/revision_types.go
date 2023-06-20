@@ -74,6 +74,9 @@ type RevisionDefinition struct {
 	// cache, etc.
 	// +kubebuilder:validation:Optional
 	Categories []string `json:"categories,omitempty"`
+	// ChangeLog provides a human readable list of changes for this revision
+	// +kubebuilder:validation:Optional
+	ChangeLog string `json:"changeLog,omitempty"`
 	// Revision is the version of the revision, such as 1.0.0, 1.0.1, etc.
 	// +kubebuilder:validation:Required
 	Revision string `json:"revision"`

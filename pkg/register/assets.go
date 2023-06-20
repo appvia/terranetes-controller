@@ -174,7 +174,7 @@ spec:
                         description: Key is the key in the secret which we should used for the value
                         type: string
                       name:
-                        description: Name is the name which we use when injecting the value into the terraform code i.e. the secret maye contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
+                        description: Name is the name which we use when injecting the value into the terraform code i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
                         type: string
                       optional:
                         description: Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is not contained in the secret, we ignore the error
@@ -550,7 +550,7 @@ spec:
                         description: Key is the key in the secret which we should used for the value
                         type: string
                       name:
-                        description: Name is the name which we use when injecting the value into the terraform code i.e. the secret maye contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
+                        description: Name is the name which we use when injecting the value into the terraform code i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
                         type: string
                       optional:
                         description: Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is not contained in the secret, we ignore the error
@@ -1819,7 +1819,7 @@ spec:
                             description: Key is the key in the secret which we should used for the value
                             type: string
                           name:
-                            description: Name is the name which we use when injecting the value into the terraform code i.e. the secret maye contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
+                            description: Name is the name which we use when injecting the value into the terraform code i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note, for backwards compatiability if no name is provided, we using the key at the name
                             type: string
                           optional:
                             description: Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is not contained in the secret, we ignore the error
@@ -1919,6 +1919,9 @@ spec:
                       items:
                         type: string
                       type: array
+                    changeLog:
+                      description: ChangeLog provides a human readable list of changes for this revision
+                      type: string
                     description:
                       description: Description is a short description of the revision and its purpose, capabilities, etc.
                       type: string

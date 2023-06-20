@@ -20,8 +20,9 @@ package assets
 import (
 	"testing"
 
-	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 func TestJobTemplateParsable(t *testing.T) {
