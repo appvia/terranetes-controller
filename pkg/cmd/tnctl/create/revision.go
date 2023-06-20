@@ -45,6 +45,8 @@ type RevisionCommand struct {
 	Name string
 	// Description is a description of the revision
 	Description string
+	// EnableDefaultVariables indicates if we should enable the default variables
+	EnableDefaultVariables bool
 	// Contexts is a list of contexts from the cluster
 	Contexts *terraformv1alpha1.ContextList
 	// Policies is a list of policies from the cluster
@@ -104,6 +106,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 
 	flags := c.Flags()
 	flags.BoolVar(&o.Interactive, "interactive", true, "Indicates if interactively prompting for information")
+	flags.BoolVar(&o.EnableDefaultVariables, "enable-default-variables", false, "Indicates if default variables should be included")
 	flags.StringVar(&o.Description, "description", "", "A human readable description of the revision and what is provides")
 	flags.StringVarP(&o.Name, "name", "n", "", "This name of the revision")
 	flags.StringVarP(&o.Revision, "version", "r", "", "The semvar version of this revision")
@@ -346,14 +349,19 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 	for _, variable := range module.Variables {
 		switch {
 		case !isSelected(variable.Name):
-			//o.Variables[variable.Name] = variable.Default
+			if o.EnableDefaultVariables {
+				o.Variables[variable.Name] = variable.Default
+			}
 
 		default:
 			// @step: check if we have any suggestions from the contexts
 			input, found := SuggestContextualInput(variable.Description, o.Contexts, 0.6)
 			if !found {
 				o.Inputs = append(o.Inputs, Input{
-					Default:     map[string]interface{}{"value": variable.Default},
+					Default: map[string]interface{}{
+						"example": variable.Type,
+						"value":   variable.Default,
+					},
 					Description: variable.Description,
 					Key:         variable.Name,
 					Required:    variable.Required,
