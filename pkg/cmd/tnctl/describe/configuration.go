@@ -20,8 +20,9 @@ package describe
 import (
 	"strings"
 
-	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/spf13/cobra"
+
+	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
 // NewDescribeConfigurationCommand returns a new instance of the get command
