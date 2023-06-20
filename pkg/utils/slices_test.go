@@ -23,6 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMaxChars(t *testing.T) {
+	v := MaxChars("hello", 3)
+	assert.Equal(t, "hel", v)
+}
+
 func TestContainsOK(t *testing.T) {
 	list := []string{"a", "b", "c"}
 

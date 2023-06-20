@@ -55,7 +55,7 @@ func NewDescribeCloudResourceCommand(factory cmd.Factory) *cobra.Command {
 
 			return o.Run(cmd.Context())
 		},
-		ValidArgsFunction: cmd.AutoCompleteCloudresources(o.Factory),
+		ValidArgsFunction: cmd.AutoCompleteCloudResources(o.Factory),
 	}
 
 	flags := c.Flags()

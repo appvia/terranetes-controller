@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022  Appvia Ltd <info@appvia.io>
+ * Copyright (C) 2023  Appvia Ltd <info@appvia.io>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,33 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package convert
+package create
 
-import (
-	"github.com/spf13/cobra"
-
-	"github.com/appvia/terranetes-controller/pkg/cmd"
-)
-
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
-
-// NewCommand creates and returns a new command
-func NewCommand(factory cmd.Factory) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "convert COMMAND",
-		Short: "Used to convert between different formats",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
-	}
-
-	cmd.AddCommand(
-		NewConfigurationCommand(factory),
-		NewCloudResourceCommand(factory),
-	)
-
-	return cmd
+// Input defines an input to the cloud resource, we use this internally
+// to the command to pass options around
+type Input struct {
+	// Key is the key of the input
+	Key string `json:"key"`
+	// Description is the description of the input
+	Description string `json:"description"`
+	// Default is the default value of the input
+	Default interface{} `json:"default"`
+	// Required is a flag to indicate if the input is required
+	Required bool `json:"required"`
+	// Context is an optional name of the context the input comes from
+	Context string `json:"context"`
 }

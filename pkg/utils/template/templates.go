@@ -22,7 +22,18 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"sigs.k8s.io/yaml"
 )
+
+// ToYaml converts a map to yaml
+func ToYaml(data interface{}) (string, error) {
+	encoded, err := yaml.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
 
 // GetTxtFunc returns a defaults list of methods for text templating
 func GetTxtFunc() map[string]any {
@@ -36,6 +47,7 @@ func NewWithFuncs(tpl string, methods template.FuncMap, params interface{}) ([]b
 	for key, method := range methods {
 		funcs[key] = method
 	}
+	funcs["toYaml"] = ToYaml
 
 	tm, err := template.New("main").Funcs(funcs).Parse(tpl)
 	if err != nil {

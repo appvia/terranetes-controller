@@ -23,13 +23,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClosness(t *testing.T) {
-	h := Closness("This is a sentence about a kubernetes controller", []string{
+func TestCloseness(t *testing.T) {
+	h := Closeness("This is a sentence about a kubernetes controller", []string{
 		"This have nothing to do with anything",
 		"This is related to kubernetes, but not anything else",
 		"This is entirely about kubernetes and controllers",
+	}, Filter{})
+	assert.NotEmpty(t, h.Scores)
+}
+
+func TestClosenessWithMin(t *testing.T) {
+	h := Closeness("This is a sentence about a kubernetes controller", []string{
+		"This have nothing to do with anything",
+		"This is related to kubernetes, but not anything else",
+		"This is entirely about kubernetes and controllers",
+		"This is a sentence about a kubernetes controllers",
+	}, Filter{
+		Min: 0.9,
 	})
 	assert.NotEmpty(t, h.Scores)
+	assert.Equal(t, 1, len(h.Scores))
+}
+
+func TestClosenessWithTopN(t *testing.T) {
+	h := Closeness("This is a sentence about a kubernetes controller", []string{
+		"This have nothing to do with anything",
+		"This is related to kubernetes, but not anything else",
+		"This is entirely about kubernetes and controllers",
+		"This is a sentence about a kubernetes controllers",
+		"This is a about a kubernetes controllers",
+	}, Filter{
+		TopN: 2,
+		Min:  0.5,
+	})
+	assert.NotEmpty(t, h.Scores)
+	assert.Equal(t, 2, len(h.Scores))
 }
 
 func TestClosest(t *testing.T) {
@@ -46,6 +74,23 @@ func TestClosest(t *testing.T) {
 				"The network associated to the cluster",
 			},
 			Expected: "The network vpc id which the cluster resides in",
+		},
+		{
+			Sentence: "The EKS oidc provider arn",
+			List: []string{
+				"The ARN of the OIDC issuer URL of the EKS cluster",
+				"The ID of the VPC where the EKS cluster is deployed",
+				"The OIDC issuer URL of the EKS cluster",
+			},
+			Expected: "The ARN of the OIDC issuer URL of the EKS cluster",
+		},
+		{
+			Sentence: "The subnet where the cluster is deployed",
+			List: []string{
+				"The subnets associated to the EKS cluster definition, where nodegroup",
+				"Subnets associated to the EKS cluster definition",
+			},
+			Expected: "The subnets associated to the EKS cluster definition, where nodegroup",
 		},
 	}
 	for _, c := range cases {

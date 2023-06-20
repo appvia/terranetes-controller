@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022  Appvia Ltd <info@appvia.io>
+ * Copyright (C) 2023  Appvia Ltd <info@appvia.io>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,33 +15,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package convert
+package similarity
 
 import (
-	"github.com/spf13/cobra"
-
-	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"reflect"
+	"testing"
 )
 
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
-
-// NewCommand creates and returns a new command
-func NewCommand(factory cmd.Factory) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "convert COMMAND",
-		Short: "Used to convert between different formats",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
+func TestTokenize(t *testing.T) {
+	cases := []struct {
+		Sentence string
+		Expected []string
+	}{
+		{
+			Sentence: "This is a test",
+			Expected: []string{"test"},
+		},
+		{
+			Sentence: "This is a tests",
+			Expected: []string{"test"},
+		},
+		{
+			Sentence: "The clusters the networks is running in",
+			Expected: []string{"cluster", "network", "running"},
 		},
 	}
 
-	cmd.AddCommand(
-		NewConfigurationCommand(factory),
-		NewCloudResourceCommand(factory),
-	)
-
-	return cmd
+	for i, c := range cases {
+		tokens := Tokenize(c.Sentence)
+		if !reflect.DeepEqual(tokens, c.Expected) {
+			t.Errorf("case %d: expected %v, got %v", i, c.Expected, tokens)
+		}
+	}
 }

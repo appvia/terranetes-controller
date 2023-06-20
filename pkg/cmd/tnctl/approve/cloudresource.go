@@ -39,7 +39,7 @@ func NewApproveCloudResourceCommand(factory cmd.Factory) *cobra.Command {
 
 			return o.Run(cmd.Context())
 		},
-		ValidArgsFunction: cmd.AutoCompleteCloudresources(factory),
+		ValidArgsFunction: cmd.AutoCompleteCloudResources(factory),
 	}
 
 	flags := c.Flags()

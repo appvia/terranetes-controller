@@ -9,6 +9,10 @@ spec:
   ## value can be any complex or simple type (boolean, int, map, object etc)
   #
   variables:
+    environment:
+      description: Is the name of the environment we are provisioning
+      value: dev
+
     # Is the name of the variable
     vpc_id:
       # Provides a description to the consumer of the input

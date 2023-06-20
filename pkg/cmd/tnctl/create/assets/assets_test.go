@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022  Appvia Ltd <info@appvia.io>
+ * Copyright (C) 2023  Appvia Ltd <info@appvia.io>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ import (
 )
 
 func TestJobTemplateParsable(t *testing.T) {
-	tl, err := Asset("job.yaml.tpl")
+	tl, err := Asset("tnctl.revision.yaml.tpl")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, tl)
 
@@ -36,13 +36,12 @@ func TestJobTemplateParsable(t *testing.T) {
 
 func TestAssetNames(t *testing.T) {
 	assert.Equal(t, []string{
-		"job.yaml.tpl",
-		"preload.yaml.tpl",
+		"tnctl.revision.yaml.tpl",
 	}, AssetNames())
 }
 
 func TestAsset(t *testing.T) {
-	b, err := Asset("job.yaml.tpl")
+	b, err := Asset("tnctl.revision.yaml.tpl")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
 
@@ -59,5 +58,5 @@ func TestMustAssetNotThere(t *testing.T) {
 }
 
 func TestMustAsset(t *testing.T) {
-	assert.NotEmpty(t, MustAsset("job.yaml.tpl"))
+	assert.NotEmpty(t, MustAsset("tnctl.revision.yaml.tpl"))
 }
