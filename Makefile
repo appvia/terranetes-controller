@@ -49,6 +49,7 @@ apis: golang
 	@$(MAKE) controller-gen
 	@$(MAKE) register-gen
 	@$(MAKE) schema-gen
+	@$(MAKE) mock-gen
 	@$(MAKE) gofmt
 
 check-apis: apis
@@ -61,6 +62,11 @@ check-api-sync:
 		git --no-pager diff ;\
 		exit 1; \
 	fi
+
+mock-gen:
+	@echo "--> Generating Mocks"
+	@go run github.com/golang/mock/mockgen -package mocks github.com/aws/aws-sdk-go/service/ec2/ec2iface EC2API > pkg/utils/preload/eks/mocks/ec2_zz.go
+	@go run github.com/golang/mock/mockgen -package mocks github.com/aws/aws-sdk-go/service/eks/eksiface EKSAPI > pkg/utils/preload/eks/mocks/eks_zz.go
 
 controller-gen:
 	@echo "--> Generating deepcopies, CRDs and webhooks"
