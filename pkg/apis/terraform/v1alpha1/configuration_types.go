@@ -238,7 +238,7 @@ type ValueFromSource struct {
 	// +kubebuilder:validation:Required
 	Key string `json:"key"`
 	// Name is the name which we use when injecting the value into the terraform code
-	// i.e. the secret maye contain data.DB_HOST but you call this database_hostname. Note,
+	// i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
 	// for backwards compatiability if no name is provided, we using the key at the name
 	Name string `json:"name,omitempty"`
 	// Secret is the name of the secret in the configuration namespace

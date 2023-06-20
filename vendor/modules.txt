@@ -72,8 +72,6 @@ github.com/OpenPeeDeeP/depguard/v2/internal/utils
 # github.com/Songmu/retry v0.1.0
 ## explicit
 github.com/Songmu/retry
-# github.com/adrg/strutil v0.3.0
-## explicit; go 1.14
 # github.com/agext/levenshtein v1.2.3
 ## explicit
 github.com/agext/levenshtein
@@ -257,6 +255,9 @@ github.com/fsnotify/fsnotify
 # github.com/fzipp/gocyclo v0.6.0
 ## explicit; go 1.18
 github.com/fzipp/gocyclo
+# github.com/gertd/go-pluralize v0.2.1
+## explicit; go 1.17
+github.com/gertd/go-pluralize
 # github.com/ghodss/yaml v1.0.0
 ## explicit
 github.com/ghodss/yaml

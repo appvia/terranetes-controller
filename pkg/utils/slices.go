@@ -19,6 +19,18 @@ package utils
 
 import "sort"
 
+// MaxChars returns the maximum character length of a list of strings
+func MaxChars(slice string, max int) string {
+	switch {
+	case len(slice) == 0:
+		return ""
+	case len(slice) <= max:
+		return slice
+	}
+
+	return slice[:max]
+}
+
 // Contains checks a list has a value in it
 func Contains(v string, l []string) bool {
 	for _, x := range l {

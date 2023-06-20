@@ -74,8 +74,8 @@ func AutoCompleteWithList(list []string) AutoCompletionFunc {
 	}
 }
 
-// AutoCompleteCloudresources registers a completion function for a flag
-func AutoCompleteCloudresources(factory Factory) AutoCompletionFunc {
+// AutoCompleteCloudResources registers a completion function for a flag
+func AutoCompleteCloudResources(factory Factory) AutoCompletionFunc {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		namespace, _ := cmd.Flags().GetString("namespace")
 		if namespace == "" {

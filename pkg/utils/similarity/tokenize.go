@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022  Appvia Ltd <info@appvia.io>
+ * Copyright (C) 2023  Appvia Ltd <info@appvia.io>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,33 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package convert
+package similarity
 
 import (
-	"github.com/spf13/cobra"
+	"strings"
 
-	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/bbalet/stopwords"
+	"github.com/gertd/go-pluralize"
 )
 
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
+var (
+	plural = pluralize.NewClient()
+)
 
-// NewCommand creates and returns a new command
-func NewCommand(factory cmd.Factory) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "convert COMMAND",
-		Short: "Used to convert between different formats",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
-	}
-
-	cmd.AddCommand(
-		NewConfigurationCommand(factory),
-		NewCloudResourceCommand(factory),
+// Tokenize extracts inforamtion from the input
+func Tokenize(sentence string) []string {
+	list := wordRe.FindAllString(
+		stopwords.CleanString(sentence, "en", true), -1,
 	)
 
-	return cmd
+	for i := 0; i < len(list); i++ {
+		list[i] = plural.Singular(strings.ToLower(list[i]))
+	}
+
+	return list
 }

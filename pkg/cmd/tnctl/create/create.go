@@ -15,38 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package retry
+package create
 
 import (
 	"github.com/spf13/cobra"
 
-	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
-// NewRetryCloudResourceCommand creates and returns the command
-func NewRetryCloudResourceCommand(factory cmd.Factory) *cobra.Command {
-	o := &Command{Factory: factory}
+// Command are the options for the command
+type Command struct {
+	cmd.Factory
+}
 
+// NewCommand creates and returns a new command
+func NewCommand(factory cmd.Factory) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "cloudresource [OPTIONS] NAME",
-		Long:  longUsage,
-		Short: "Attempts to restart a cloud resource",
-		Args:  cobra.MinimumNArgs(1),
+		Use:   "create COMMAND",
+		Short: "Used to create a resource",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o.Name = args[0]
-			o.Kind = terraformv1alpha1.CloudResourceKind
-
-			return o.Run(cmd.Context())
+			return cmd.Help()
 		},
-		ValidArgsFunction: cmd.AutoCompleteCloudResources(factory),
 	}
 
-	flags := c.Flags()
-	flags.BoolVarP(&o.WatchLogs, "watch", "w", true, "Watch the logs after restarting the resource")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "The namespace the resource resides")
-
-	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
+	c.AddCommand(
+		NewRevisionCommand(factory),
+	)
 
 	return c
 }
