@@ -60,7 +60,7 @@ func NewCloudResourceLogsCommand(factory cmd.Factory) *cobra.Command {
 
 			return o.Run(cmd.Context())
 		},
-		ValidArgsFunction: cmd.AutoCompleteCloudresources(factory),
+		ValidArgsFunction: cmd.AutoCompleteCloudResources(factory),
 	}
 	c.SetIn(o.GetStreams().In)
 	c.SetErr(o.GetStreams().ErrOut)

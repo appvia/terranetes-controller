@@ -32,15 +32,34 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
+	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 // ConfigurationCommand are the options for the command
 type ConfigurationCommand struct {
 	cmd.Factory
-	// Path is the location of the file containing the configuration
-	Path string
+	// File is the location of the file containing the configuration
+	File string
+	// Name is the name of the resource
+	Name string
+	// Namespace is the namespace of the resource
+	Namespace string
 }
+
+var longDescription = `
+Provides the abiliy to convert configurations and cloudresources back
+into terraform modules.
+
+Convert a configuration in the cluster into a terraform module:
+$ tnctl convert configuration -n my-namespace my-configuration
+
+Convert a configuration file into a terraform module:
+$ tnctl convert configuration -f my-configuration.yaml
+
+Convert a cloudresource in the cluster into a terraform module:
+$ tnctl convert cloudresource -n my-namespace my-cloudresource
+`
 
 // moduleName is the template we use to generate the terraform code
 var moduleTemplate = `module "main" {
@@ -56,33 +75,71 @@ func NewConfigurationCommand(factory cmd.Factory) *cobra.Command {
 	o := &ConfigurationCommand{
 		Factory: factory,
 	}
-	cmd := &cobra.Command{
-		Use:     "configuration PATH",
+	c := &cobra.Command{
+		Use:     "configuration [OPTIONS] [NAME|-f FILE]",
 		Aliases: []string{"config"},
 		Args:    cobra.ExactArgs(1),
-		Short:   "Convert configuration yaml into a terraform module",
+		Short:   "Converts configuration back to a terraform module",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o.Path = args[0]
-
 			return o.Run(cmd.Context())
 		},
+		ValidArgsFunction: cmd.AutoCompleteConfigurations(factory),
 	}
+	c.SetErr(o.GetStreams().ErrOut)
+	c.SetIn(o.GetStreams().In)
+	c.SetOut(o.GetStreams().Out)
 
-	return cmd
+	flags := c.Flags()
+	flags.StringVar(&o.Name, "name", "", "Name of the resource")
+	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace of the resource")
+	flags.StringVarP(&o.File, "file", "f", "", "Path to the configuration file")
+
+	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
+
+	return c
 }
 
 // Run is the entry point for the command
 func (o *ConfigurationCommand) Run(ctx context.Context) error {
-	content, err := os.ReadFile(o.Path)
-	if err != nil {
-		return fmt.Errorf("failed to read configuration file: %w", err)
+	switch {
+	case o.File != "":
+		break
+	case o.Name != "" && o.Namespace != "":
+		break
+	default:
+		return errors.New("either file or name and namespace must be provided")
 	}
 
+	// @step: retrieve the configuration
 	configuration := &terraformv1alpha1.Configuration{}
-	if err := yaml.Unmarshal(content, configuration); err != nil {
-		return err
+	switch {
+	case o.File != "":
+		content, err := os.ReadFile(o.File)
+		if err != nil {
+			return fmt.Errorf("failed to read configuration file: %w", err)
+		}
+
+		if err := yaml.Unmarshal(content, configuration); err != nil {
+			return err
+		}
+
+	default:
+		cc, err := o.GetClient()
+		if err != nil {
+			return err
+		}
+
+		configuration.Namespace = o.Namespace
+		configuration.Name = o.Name
+
+		if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
+			return err
+		} else if !found {
+			return fmt.Errorf("configuration (%s/%s) does not exist", o.Namespace, o.Name)
+		}
 	}
 
+	// @step: ensure we have a valid configuration
 	switch {
 	case configuration.Spec.Module == "":
 		return errors.New("spec.module name is required")

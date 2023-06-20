@@ -19,14 +19,30 @@ package similarity
 
 import (
 	"regexp"
+	"sort"
 
-	"github.com/bbalet/stopwords"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // WordCount is the word count against the input
 type WordCount struct {
-	Word        string
+	// Word is the token we found
+	Word string
+	// Occurrences is the number of times the word was found
 	Occurrences int
+}
+
+// Filter are the filters to apply to similarity
+type Filter struct {
+	// Min is the minimum similarity to return
+	Min float64
+	// TopN is the number of top matches to return
+	TopN int
+}
+
+// IsEmpty returns true if the filter is empty
+func (f *Filter) IsEmpty() bool {
+	return f.Min == 0 && f.TopN == 0
 }
 
 // Score is similarity score
@@ -36,11 +52,11 @@ type Score struct {
 	// Similarity is the probability of the sentence being similar
 	Similarity float64
 	// Words is the word count against the input
-	Words []WordCount
+	Words map[string]int
 }
 
-// Histogram are the scores
-type Histogram struct {
+// Similarity are the scores
+type Similarity struct {
 	// Input is the input sentence
 	Input string
 	// Scores is a list of scores
@@ -50,7 +66,7 @@ type Histogram struct {
 }
 
 // Hightest returns the highest score
-func (h *Histogram) Hightest() Score {
+func (h *Similarity) Hightest() Score {
 	var highest float64
 	var index int
 
@@ -67,8 +83,8 @@ func (h *Histogram) Hightest() Score {
 func (h *Score) Matches() int {
 	count := 0
 
-	for _, w := range h.Words {
-		count += w.Occurrences
+	for _, total := range h.Words {
+		count += total
 	}
 
 	return count
@@ -79,19 +95,9 @@ var (
 	wordRe = regexp.MustCompile(`\w+`)
 )
 
-// ClosestN returns the closest N strings to the given string
-func ClosestN(sentence string, list []string, n int) []Score {
-	h := Closness(sentence, list)
-	if len(h.Scores) <= n {
-		return h.Scores
-	}
-
-	return nil
-}
-
 // Closest returns the closest string to the given string
 func Closest(sentence string, list []string) string {
-	hist := Closness(sentence, list)
+	hist := Closeness(sentence, list, Filter{})
 	var highest float64
 	var closest string
 
@@ -105,40 +111,76 @@ func Closest(sentence string, list []string) string {
 	return closest
 }
 
-// Closness returns the closest string to the given string
-func Closness(sentence string, list []string) Histogram {
-	h := Histogram{
+// Closeness returns the closest string to the given string
+func Closeness(sentence string, list []string, filter Filter) Similarity {
+	var scores []Score
+
+	h := Similarity{
 		Input:  sentence,
-		Scores: make([]Score, len(list)),
+		Tokens: Tokenize(sentence),
 	}
 
-	// @step: grab the words out of the sentence
-	expected := wordRe.FindAllString(
-		stopwords.CleanString(sentence, "en", true), -1,
-	)
-	h.Tokens = expected
+	for _, input := range list {
+		score := Score{Input: input, Words: make(map[string]int)}
+		tokens := Tokenize(input)
 
-	for i := 0; i < len(list); i++ {
-		h.Scores[i].Input = list[i]
-		h.Scores[i].Words = make([]WordCount, len(h.Tokens))
+		// @step: count the occurrences of each word in the expected
+		for _, expected := range h.Tokens {
+			if utils.Contains(expected, tokens) {
+				score.Words[expected]++
+			}
+		}
 
-		tokens := wordRe.FindAllString(
-			stopwords.CleanString(list[i], "en", true), -1,
-		)
+		if len(score.Words) > 0 {
+			score.Similarity = (float64(score.Matches()) / float64(len(h.Tokens)))
+			scores = append(scores, score)
+		}
+	}
 
-		for j := 0; j < len(h.Tokens); j++ {
-			h.Scores[i].Words[j].Word = h.Tokens[j]
+	if filter.IsEmpty() {
+		h.Scores = scores
 
-			for p := 0; p < len(tokens); p++ {
-				if h.Tokens[j] == tokens[p] {
-					h.Scores[i].Words[j].Occurrences++
+		return h
+	}
+
+	// @step: do we have a minimum similarity?
+	if filter.Min > 0 {
+		var list []Score
+
+		for _, score := range scores {
+			if score.Similarity >= filter.Min {
+				list = append(list, score)
+			}
+		}
+		scores = list
+	}
+
+	// @step: do have a top items?
+	if filter.TopN > 0 {
+		var list []Score
+		var similarities []float64
+
+		for _, score := range scores {
+			similarities = append(similarities, score.Similarity)
+		}
+		sort.Float64s(similarities)
+
+		if len(similarities) > filter.TopN {
+			similarities = similarities[:filter.TopN]
+		}
+
+		for _, similarity := range similarities {
+			for _, score := range scores {
+				if score.Similarity == similarity {
+					list = append(list, score)
+					break
 				}
 			}
 		}
-		if h.Scores[i].Matches() > 0 {
-			h.Scores[i].Similarity = (float64(h.Scores[i].Matches()) / float64(len(h.Tokens)))
-		}
+		scores = list
 	}
+
+	h.Scores = scores
 
 	return h
 }

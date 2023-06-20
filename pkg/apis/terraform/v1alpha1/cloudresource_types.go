@@ -132,8 +132,8 @@ func (c *CloudResourceSpec) HasVariables() bool {
 	return true
 }
 
-// HasValueFroms returns true if the configuration has variables
-func (c *CloudResourceSpec) HasValueFroms() bool {
+// HasValueFrom returns true if the configuration has variables
+func (c *CloudResourceSpec) HasValueFrom() bool {
 	return len(c.ValueFrom) > 0
 }
 
