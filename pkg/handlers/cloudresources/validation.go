@@ -26,6 +26,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -76,6 +77,8 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 
 // validate is responsible for validating the configuration plan
 func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudResource) error {
+	var values map[string]interface{}
+
 	if err := o.Spec.Plan.IsValid(); err != nil {
 		return err
 	}
@@ -92,7 +95,7 @@ func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudR
 			return err
 		}
 	}
-	if o.Spec.HasValueFroms() {
+	if o.Spec.HasValueFrom() {
 		if err := o.Spec.ValueFrom.IsValid(); err != nil {
 			return err
 		}
@@ -139,17 +142,20 @@ func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudR
 		return errors.New("spec.providerRef is required")
 	}
 
-	// @step: lets checks if the variables already defined on the configuration
+	// @step: lets checks if the variables already defined on the cloudresource
 	// are permitted by the revision
 	permitted := rv.ListOfInputs()
 
+	// @step: lets decode cloudresource variables
 	if o.Spec.HasVariables() {
-		// @step: first we need to decode the variables from the preinjected configuration
-		values := make(map[string]interface{})
+		values = make(map[string]interface{})
+
 		if err := json.NewDecoder(bytes.NewReader(o.Spec.Variables.Raw)).Decode(&values); err != nil {
 			return fmt.Errorf("failed to decode variables: %w", err)
 		}
+	}
 
+	if o.Spec.HasVariables() {
 		// @step: then we need iterate the variables and check if they are permitted
 		for key := range values {
 			if !utils.Contains(key, permitted) {
@@ -163,7 +169,30 @@ func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudR
 	// @step: we need to check the only variables added are permitted by the plan
 	for i, x := range o.Spec.ValueFrom {
 		if !utils.Contains(x.Name, permitted) {
-			return fmt.Errorf("spec.valueFrom[%d] input is not permitted by revision: %s", i, o.Spec.Plan.Revision)
+			return fmt.Errorf("spec.valueFrom[%d].%s input is not permitted by revision: %s",
+				i, x.Name, o.Spec.Plan.Revision)
+		}
+	}
+
+	// @step: now we need to ensure any variables defined in the revision are present
+	for _, input := range rv.Spec.Inputs {
+		if pointer.BoolDeref(input.Required, false) && input.Default == nil {
+			var found bool
+
+			if o.Spec.HasVariables() {
+				if _, ok := values[input.Key]; ok {
+					found = true
+				}
+			}
+			for _, x := range o.Spec.ValueFrom {
+				if x.Name == input.Key {
+					found = true
+				}
+			}
+
+			if !found {
+				return fmt.Errorf("spec.variables.%s is required variable for revision: %s", input.Key, o.Spec.Plan.Revision)
+			}
 		}
 	}
 

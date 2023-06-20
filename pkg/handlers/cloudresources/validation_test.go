@@ -206,9 +206,21 @@ var _ = Describe("Checking CloudResource Validation", func() {
 				Expect(cc.Update(context.Background(), revision)).To(Succeed())
 			})
 
+			It("should fail when inputs are not provided", func() {
+				expected := "spec.variables.database_name is required variable for revision: v0.0.1"
+
+				err := v.ValidateCreate(context.Background(), cloudresource)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+
+				err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expected))
+			})
+
 			It("should fail cloud resource input not permitted in variables", func() {
 				cloudresource.Spec.Variables = &runtime.RawExtension{
-					Raw: []byte(`{"not_permitted": "mydb"}`),
+					Raw: []byte(`{"not_permitted": "mydb"`),
 				}
 				expected := "spec.variables.not_permitted is not permitted by revision: v0.0.1"
 
@@ -229,7 +241,7 @@ var _ = Describe("Checking CloudResource Validation", func() {
 						Secret: pointer.String("mysecret"),
 					},
 				}
-				expected := "spec.valueFrom[0] input is not permitted by revision: v0.0.1"
+				expected := "spec.valueFrom[0].my_name input is not permitted by revision: v0.0.1"
 
 				err := v.ValidateCreate(context.Background(), cloudresource)
 				Expect(err).To(HaveOccurred())
