@@ -615,7 +615,9 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			state.checkovConstraint = policy
 
 			if policy.Source == nil {
-				config, err := terraform.NewCheckovPolicy(policy)
+				config, err := terraform.NewCheckovPolicy(map[string]interface{}{
+					"Policy": policy,
+				})
 				if err != nil {
 					cond.Failed(err, "Failed to parse the checkov policy template")
 

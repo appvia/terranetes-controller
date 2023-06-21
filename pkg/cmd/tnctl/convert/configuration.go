@@ -188,7 +188,10 @@ func (o *ConfigurationCommand) RenderPolicy(ctx context.Context, configuration *
 	}
 
 	// @step: render the policy
-	generated, err := terraform.NewCheckovPolicy(policy)
+	generated, err := terraform.NewCheckovPolicy(map[string]interface{}{
+		"Framework": "terraform",
+		"Policy":    policy,
+	})
 	if err != nil {
 		return err
 	}
