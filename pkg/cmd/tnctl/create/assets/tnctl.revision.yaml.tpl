@@ -2,7 +2,7 @@
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Revision
 metadata:
-  name: {{ .Plan.Name }}-{{ .Plan.Revision }}
+  name: {{ default .Plan.Name "PLAN_NAME" }}-{{ .Plan.Revision }}
   {{- if .Annotations }}
   annotations:
     {{- range $key, $value := .Annotations }}
@@ -21,13 +21,13 @@ spec:
   plan:
     ## Is the name of the plan this revision is part-of. Revisions are
     ## grouped together by spec.plan.name to create a plan.
-    name: {{ .Plan.Name }}
+    name: {{ default .Plan.Name "PLAN_NAME" }}
     ## Provides the user with a collection of categories this plan
     ## provides.
     categories: []
     ## Is a human readable description of the plan and what the cloud
     ## resource provides.
-    description: {{ default .Plan.Description "ADD PLAN DESCRIPTION" }}
+    description: {{ default .Plan.Description "PLAN DESCRIPTION" }}
     ## Is the semvar version of this revision
     revision: {{ .Plan.Revision }}
 
