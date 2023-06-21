@@ -18,6 +18,7 @@
 package cloudresource
 
 import (
+	"context"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -76,6 +77,40 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			&predicate.GenerationChangedPredicate{},
 			&predicate.ResourceVersionChangedPredicate{},
 		)).
+		Watches(
+			&source.Kind{Type: &terraformv1alpha1.Plan{}},
+			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+				list := &terraformv1alpha1.CloudResourceList{}
+				if err := c.cc.List(context.Background(), list,
+					client.MatchingLabels(map[string]string{
+						terraformv1alpha1.CloudResourcePlanNameLabel: o.GetName(),
+					}),
+				); err != nil {
+					log.WithError(err).Error("failed to list cloudresources")
+
+					return nil
+				}
+				if len(list.Items) == 0 {
+					return nil
+				}
+
+				var requests []reconcile.Request
+
+				for _, x := range list.Items {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name:      x.Name,
+							Namespace: x.Namespace,
+						},
+					})
+				}
+
+				return requests
+			}),
+			builder.WithPredicates(
+				&predicate.GenerationChangedPredicate{},
+			),
+		).
 		Watches(
 			&source.Kind{Type: &terraformv1alpha1.Configuration{}},
 			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
