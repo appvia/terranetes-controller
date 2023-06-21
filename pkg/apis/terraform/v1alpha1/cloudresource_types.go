@@ -151,6 +151,7 @@ func (c *CloudResourceSpec) HasValueFrom() bool {
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
 // +kubebuilder:printcolumn:name="Configuration",type="string",JSONPath=".status.configurationName"
 // +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
+// +kubebuilder:printcolumn:name="Update",type="string",JSONPath=".status."
 // +kubebuilder:printcolumn:name="Synchronized",type="string",JSONPath=".status.resourceStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type CloudResource struct {
@@ -189,7 +190,11 @@ type CloudResourceStatus struct {
 	Resources int `json:"resources,omitempty"`
 	// ResourceStatus indicates the status of the resources and if the resources are insync with the
 	// configuration
+	// +kubebuilder:validation:Optional
 	ResourceStatus ResourceStatus `json:"resourceStatus,omitempty"`
+	// UpdateAvailable indicates if there is a new version of the plan available
+	// +kubebuilder:validation:Optional
+	UpdateAvailable string `json:"updateAvailable,omitempty"`
 }
 
 // GetNamespacedName returns the namespaced resource type

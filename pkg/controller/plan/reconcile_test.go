@@ -67,12 +67,12 @@ var _ = Describe("Plan Controller", func() {
 			plan = fixtures.NewConfigurationPlan("test")
 			plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 				{
-					Name:    "test",
-					Version: "0.0.1",
+					Name:     "test",
+					Revision: "0.0.1",
 				},
 				{
-					Name:    "test-1",
-					Version: "0.0.2",
+					Name:     "test-1",
+					Revision: "0.0.2",
 				},
 			}
 			Expect(cc.Create(context.Background(), plan)).To(Succeed())
@@ -104,8 +104,8 @@ var _ = Describe("Plan Controller", func() {
 			BeforeEach(func() {
 				plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 					{
-						Name:    "test",
-						Version: "BAD",
+						Name:     "test",
+						Revision: "BAD",
 					},
 				}
 				Expect(cc.Update(context.Background(), plan)).To(Succeed())
@@ -169,7 +169,7 @@ var _ = Describe("Plan Controller", func() {
 				found, err := kubernetes.GetIfExists(context.Background(), cc, plan)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
-				Expect(plan.Status.Latest.Version).To(Equal("0.0.2"))
+				Expect(plan.Status.Latest.Revision).To(Equal("0.0.2"))
 				Expect(plan.Status.Latest.Name).To(Equal("test-1"))
 			})
 		})

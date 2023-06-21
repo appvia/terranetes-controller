@@ -77,6 +77,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensurePlanExists(cloudresource, state),
 			c.ensureRevisionExists(cloudresource, state),
 			c.ensureConfigurationExists(cloudresource, state),
+			c.ensureUpdateStatus(cloudresource, state),
 			c.ensureConfigurationStatus(cloudresource, state),
 		})
 	if err != nil {

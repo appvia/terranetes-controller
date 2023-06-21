@@ -34,3 +34,45 @@ func TestVersionIncrement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "0.0.2", version)
 }
+
+func TestVersionLessThan(t *testing.T) {
+	cases := []struct {
+		Version string
+		Latest  string
+		Expect  bool
+	}{
+		{
+			Version: "v0.0.1",
+			Latest:  "v0.0.2",
+			Expect:  true,
+		},
+		{
+			Version: "v0.0.1",
+			Latest:  "v0.0.1",
+			Expect:  false,
+		},
+		{
+			Version: "v0.0.2",
+			Latest:  "v0.0.1",
+			Expect:  false,
+		},
+		{
+			Version: "v0.1.0",
+			Latest:  "v0.0.1",
+			Expect:  false,
+		},
+		{
+			Version: "v0.1.0",
+			Latest:  "v0.2.1",
+			Expect:  true,
+		},
+	}
+
+	for i, c := range cases {
+		result, err := VersionLessThan(c.Version, c.Latest)
+		assert.NoError(t, err)
+		assert.Equal(t, c.Expect, result, "case %d, version: %s, latest: %s, got: %T ",
+			i, c.Version, c.Latest, result,
+		)
+	}
+}

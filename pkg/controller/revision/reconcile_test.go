@@ -127,8 +127,8 @@ var _ = Describe("Revisions Controller", func() {
 				plan := fixtures.NewConfigurationPlan(revision.Spec.Plan.Name)
 				plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 					{
-						Version: "v0.0.0",
-						Name:    "another",
+						Revision: "v0.0.0",
+						Name:     "another",
 					},
 				}
 				Expect(cc.Create(context.Background(), plan)).To(Succeed())
@@ -174,8 +174,8 @@ var _ = Describe("Revisions Controller", func() {
 				plan := fixtures.NewConfigurationPlan(revision.Spec.Plan.Name)
 				plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 					{
-						Version: revision.Spec.Plan.Revision,
-						Name:    revision.Spec.Plan.Name,
+						Revision: revision.Spec.Plan.Revision,
+						Name:     revision.Spec.Plan.Name,
 					},
 				}
 				Expect(cc.Create(context.Background(), plan)).To(Succeed())
@@ -229,12 +229,12 @@ var _ = Describe("Revisions Controller", func() {
 			plan = fixtures.NewConfigurationPlan(revision.Spec.Plan.Name)
 			plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 				{
-					Version: "0.0.0",
-					Name:    revision.Spec.Plan.Name,
+					Revision: "0.0.0",
+					Name:     revision.Spec.Plan.Name,
 				},
 				{
-					Version: revision.Spec.Plan.Revision,
-					Name:    revision.Spec.Plan.Name,
+					Revision: revision.Spec.Plan.Revision,
+					Name:     revision.Spec.Plan.Name,
 				},
 			}
 			Expect(cc.Create(context.Background(), plan)).To(Succeed())
@@ -263,8 +263,8 @@ var _ = Describe("Revisions Controller", func() {
 			BeforeEach(func() {
 				plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
 					{
-						Version: "0.0.0",
-						Name:    revision.Spec.Plan.Name,
+						Revision: "0.0.0",
+						Name:     revision.Spec.Plan.Name,
 					},
 				}
 				Expect(cc.Update(context.Background(), plan)).To(Succeed())
