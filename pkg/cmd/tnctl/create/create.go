@@ -21,7 +21,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/appvia/terranetes-controller/pkg/cmd"
-	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/workflow"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/create/configuration"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/create/workflow"
 )
 
 // Command are the options for the command
@@ -41,7 +42,8 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	c.AddCommand(
 		NewRevisionCommand(factory),
-		workflow.NewCreateCommand(factory),
+		configuration.NewCommand(factory),
+		workflow.NewCommand(factory),
 	)
 
 	return c
