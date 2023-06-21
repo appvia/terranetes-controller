@@ -47,7 +47,7 @@ type PlanRevision struct {
 	Name string `json:"name"`
 	// Revision is the version of the revision
 	//+kubebuilder:validation:Required
-	Revision string `json:"version"`
+	Revision string `json:"revision"`
 }
 
 // PlanSpec defines the desired state for a context
