@@ -39,6 +39,7 @@ func TestReconcile(t *testing.T) {
 
 var _ = Describe("Revision Validation", func() {
 	ctx := context.Background()
+	var err error
 	var cc client.Client
 	var v *validator
 	var revision *terraformv1alpha1.Revision
@@ -174,6 +175,67 @@ var _ = Describe("Revision Validation", func() {
 				},
 			}}
 			Expect(v.ValidateCreate(ctx, revision)).To(Succeed())
+		})
+	})
+
+	When("update protection is enabled", func() {
+		var cloudresource *terraformv1alpha1.CloudResource
+
+		BeforeEach(func() {
+			cloudresource = fixtures.NewCloudResource("default", "test")
+			cloudresource.Labels = map[string]string{
+				terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+				terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
+			}
+			cloudresource.Spec.Plan.Name = revision.Spec.Plan.Name
+			cloudresource.Spec.Plan.Revision = revision.Spec.Plan.Revision
+			Expect(cc.Create(ctx, cloudresource)).To(Succeed())
+
+			v.EnableUpdateProtection = true
+		})
+
+		Context("but no cloud resource is referencing the revision", func() {
+			BeforeEach(func() {
+				cloudresource.Labels = map[string]string{
+					terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+					terraformv1alpha1.CloudResourceRevisionLabel: "another_revision",
+				}
+				Expect(cc.Update(ctx, cloudresource)).To(Succeed())
+
+				err = v.ValidateUpdate(ctx, revision, revision)
+			})
+
+			It("should not fail", func() {
+				Expect(err).To(Succeed())
+			})
+		})
+
+		Context("and a cloud resource is referencing the revision", func() {
+			It("should fail", func() {
+				err = v.ValidateUpdate(ctx, revision, revision)
+				Expect(err).ToNot(Succeed())
+				Expect(err.Error()).To(Equal("in use by cloudresource/s, update denied (use terraform.appvia.io/revision.skip-update-protection to override)"))
+			})
+		})
+
+		Context("and a cloud resource is referencing the revision but with skip check annotation", func() {
+			BeforeEach(func() {
+				revision.Annotations = map[string]string{
+					terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation: "true",
+				}
+			})
+
+			It("should not fail", func() {
+				err = v.ValidateUpdate(ctx, revision, revision)
+				Expect(err).To(Succeed())
+			})
+		})
+
+		Context("and we are creating not updating", func() {
+			It("should not fail", func() {
+				err = v.ValidateCreate(ctx, revision)
+				Expect(err).To(Succeed())
+			})
 		})
 	})
 

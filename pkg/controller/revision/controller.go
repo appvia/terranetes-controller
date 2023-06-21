@@ -41,6 +41,8 @@ type Controller struct {
 	recorder record.EventRecorder
 	// EnableWebhooks indicates if the webhooks should be enabled
 	EnableWebhooks bool
+	// EnableUpdateProtection indicates if the update protection should be enabled
+	EnableUpdateProtection bool
 }
 
 const controllerName = "revision.terraform.appvia.io"
@@ -60,7 +62,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/revisions", terraformv1alpha1.GroupName),
 			admission.WithCustomValidator(&terraformv1alpha1.Revision{},
-				revisions.NewValidator(c.cc),
+				revisions.NewValidator(c.cc, c.EnableUpdateProtection),
 			),
 		)
 	}
