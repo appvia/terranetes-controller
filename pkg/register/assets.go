@@ -917,7 +917,7 @@ spec:
                         description: Name is the name of the revision containing the configuration
                         type: string
                       version:
-                        description: Version is the version of the revision
+                        description: Revision is the version of the revision
                         type: string
                     required:
                       - name
@@ -1012,7 +1012,7 @@ spec:
                       description: Name is the name of the revision containing the configuration
                       type: string
                     version:
-                      description: Version is the version of the revision
+                      description: Revision is the version of the revision
                       type: string
                   required:
                     - name
@@ -1913,6 +1913,9 @@ spec:
                       required:
                         description: Required indicates whether this input is required or not by the revision
                         type: boolean
+                      type:
+                        description: Type is the format of the input, such as string, int, bool, etc.
+                        type: string
                     required:
                       - description
                     type: object

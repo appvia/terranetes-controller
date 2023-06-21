@@ -291,6 +291,7 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 						Description: x.Description,
 						Key:         x.Name,
 						Required:    true,
+						Type:        x.Type,
 					})
 
 					continue
@@ -365,6 +366,7 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 					Description: variable.Description,
 					Key:         variable.Name,
 					Required:    variable.Required,
+					Type:        variable.Type,
 				})
 			} else {
 				o.ValueFrom = append(o.ValueFrom, terraformv1alpha1.ValueFromSource{

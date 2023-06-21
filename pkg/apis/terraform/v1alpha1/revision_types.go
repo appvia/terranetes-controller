@@ -128,6 +128,11 @@ type RevisionDependency struct {
 // RevisionInput is a user defined input for a revision, such as a database name or
 // a cache size etc.
 type RevisionInput struct {
+	// Default is the default value for this input, this is a map which must contain
+	// the field 'value' => 'default value'. Default values can be any simple of complex
+	// type, such as string, int, bool, etc.
+	// +kubebuilder:validation:Optional
+	Default *runtime.RawExtension `json:"default,omitempty"`
 	// Description is a short description of the input and its purpose, capabilities, etc.
 	// +kubebuilder:validation:Required
 	Description string `json:"description"`
@@ -138,11 +143,9 @@ type RevisionInput struct {
 	// Required indicates whether this input is required or not by the revision
 	// +kubebuilder:validation:Optional
 	Required *bool `json:"required,omitempty"`
-	// Default is the default value for this input, this is a map which must contain
-	// the field 'value' => 'default value'. Default values can be any simple of complex
-	// type, such as string, int, bool, etc.
+	// Type is the format of the input, such as string, int, bool, etc.
 	// +kubebuilder:validation:Optional
-	Default *runtime.RawExtension `json:"default,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 // IsRequired returns true if the input is required
