@@ -39,8 +39,7 @@ spec:
   ## contextuals requirements, i.e database name, size etc.
   inputs:
     {{- range .Inputs }}
-    -
-      ## Key is the name of the variable in the terraform module
+    - ## Key is the name of the variable in the terraform module
       key: {{ .Key }}
       ## Description is a human readable description of the variable
       description: {{ .Description }}
@@ -51,6 +50,10 @@ spec:
       {{- if get .Default "value" }}
       ## Provides a default value, this can be a simple or complex type
       default: {{ .Default | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Type }}
+      ## Is the format for the input
+      type: {{ .Type }}
       {{- end }}
     {{- end }}
   {{- end }}
