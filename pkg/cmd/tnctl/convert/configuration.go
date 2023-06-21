@@ -25,14 +25,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/utils/policies"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
@@ -45,11 +48,21 @@ type ConfigurationCommand struct {
 	Name string
 	// Namespace is the namespace of the resource
 	Namespace string
+	// IncludeProvider is whether to include the provider in the output
+	IncludeProvider bool
+	// IncludeCheckov is whether to include checkov in the output
+	IncludeCheckov bool
+	// Directory is the path to write the files to
+	Directory string
 }
 
 var longDescription = `
-Provides the abiliy to convert configurations and cloudresources back
+Provides the ability to convert configurations and cloudresources back
 into terraform modules.
+
+Note, if you include --include-provider or --include-checkov, this
+command will use the current kubeconfig context to retrieve the provider
+and checkov policy from the cluster.
 
 Convert a configuration in the cluster into a terraform module:
 $ tnctl convert configuration -n my-namespace my-configuration
@@ -78,9 +91,12 @@ func NewConfigurationCommand(factory cmd.Factory) *cobra.Command {
 	c := &cobra.Command{
 		Use:     "configuration [OPTIONS] [NAME|-f FILE]",
 		Aliases: []string{"config"},
-		Args:    cobra.ExactArgs(1),
 		Short:   "Converts configuration back to a terraform module",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				o.Name = args[0]
+			}
+
 			return o.Run(cmd.Context())
 		},
 		ValidArgsFunction: cmd.AutoCompleteConfigurations(factory),
@@ -90,9 +106,11 @@ func NewConfigurationCommand(factory cmd.Factory) *cobra.Command {
 	c.SetOut(o.GetStreams().Out)
 
 	flags := c.Flags()
-	flags.StringVar(&o.Name, "name", "", "Name of the resource")
-	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace of the resource")
+	flags.BoolVar(&o.IncludeCheckov, "include-checkov", true, "Include checkov in the output")
+	flags.BoolVar(&o.IncludeProvider, "include-provider", true, "Include provider in the output")
+	flags.StringVarP(&o.Directory, "path", "p", ".", "The path to write the files to")
 	flags.StringVarP(&o.File, "file", "f", "", "Path to the configuration file")
+	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace of the resource")
 
 	cmd.RegisterFlagCompletionFunc(c, "namespace", cmd.AutoCompleteNamespaces(factory))
 
@@ -110,39 +128,173 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 		return errors.New("either file or name and namespace must be provided")
 	}
 
+	// @step: render the configuration
+	configuration, err := o.RenderConfiguration(ctx)
+	if err != nil {
+		return err
+	}
+	// @step: render the provider
+	if err := o.RenderProvider(ctx, configuration); err != nil {
+		return err
+	}
+	// @step: render the checkov policy
+	if err := o.RenderPolicy(ctx, configuration); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RenderPolicy renders the checkov policy
+func (o *ConfigurationCommand) RenderPolicy(ctx context.Context, configuration *terraformv1alpha1.Configuration) error {
+	switch {
+	case o.File != "":
+		o.Println("Skipping checkov policy as file was provided")
+
+		return nil
+
+	case !o.IncludeCheckov:
+		return nil
+	}
+
+	// @step: retrieve a client
+	cc, err := o.GetClient()
+	if err != nil {
+		return err
+	}
+
+	namespace := &v1.Namespace{}
+	namespace.Name = configuration.Namespace
+
+	if found, err := kubernetes.GetIfExists(ctx, cc, namespace); err != nil {
+		return err
+	} else if !found {
+		return fmt.Errorf("namespace %q not found", configuration.Namespace)
+	}
+
+	// @step: retrieve a list of policies in the cluster
+	list := &terraformv1alpha1.PolicyList{}
+	if err := cc.List(ctx, list); err != nil {
+		return err
+	}
+
+	// @step: find the policy matching the configuration
+	policy, err := policies.FindMatchingPolicy(ctx, configuration, namespace, list)
+	if err != nil {
+		return err
+	}
+	if policy == nil {
+		return nil
+	}
+
+	// @step: render the policy
+	generated, err := terraform.NewCheckovPolicy(policy)
+	if err != nil {
+		return err
+	}
+
+	// @step: write the policy to disk
+	wr, err := os.OpenFile(filepath.Join(o.Directory, ".checkov.yml"), os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	if _, err := wr.Write(generated); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RenderProvider retrieves the provider from the cluster and renders it
+func (o *ConfigurationCommand) RenderProvider(ctx context.Context, configuration *terraformv1alpha1.Configuration) error {
+	switch {
+	case o.File != "":
+		o.Println("Skipping provider as file was provided")
+
+		return nil
+
+	case !o.IncludeProvider:
+		return nil
+	}
+
+	// @step: retrieve a client
+	cc, err := o.GetClient()
+	if err != nil {
+		return err
+	}
+
+	// @step: retrieve the provider
+	provider := &terraformv1alpha1.Provider{}
+	provider.Name = configuration.Spec.ProviderRef.Name
+
+	if found, err := kubernetes.GetIfExists(ctx, cc, provider); err != nil {
+		return err
+	} else if !found {
+		return fmt.Errorf("provider: %q does not exist", provider.Name)
+	}
+
+	// @step: render the provider
+	var config []byte
+	if provider.Spec.Configuration != nil {
+		config = provider.Spec.Configuration.Raw
+	}
+
+	template, err := terraform.NewTerraformProvider(provider.Name, config)
+	if err != nil {
+		return err
+	}
+
+	// @step: open the file for writing
+	wr, err := os.OpenFile(filepath.Join(o.Directory, "provider.tf"), os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	// @step: write the provider to the file
+	if _, err := wr.Write(template); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RenderConfiguration retrieves the configuration and renders it
+// nolint:errcheck
+func (o *ConfigurationCommand) RenderConfiguration(ctx context.Context) (*terraformv1alpha1.Configuration, error) {
 	// @step: retrieve the configuration
 	configuration := &terraformv1alpha1.Configuration{}
 	switch {
 	case o.File != "":
 		content, err := os.ReadFile(o.File)
 		if err != nil {
-			return fmt.Errorf("failed to read configuration file: %w", err)
+			return nil, fmt.Errorf("failed to read configuration file: %w", err)
 		}
 
 		if err := yaml.Unmarshal(content, configuration); err != nil {
-			return err
+			return nil, err
 		}
 
 	default:
 		cc, err := o.GetClient()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		configuration.Namespace = o.Namespace
 		configuration.Name = o.Name
 
 		if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
-			return err
+			return nil, err
 		} else if !found {
-			return fmt.Errorf("configuration (%s/%s) does not exist", o.Namespace, o.Name)
+			return nil, fmt.Errorf("configuration (%s/%s) does not exist", o.Namespace, o.Name)
 		}
 	}
 
 	// @step: ensure we have a valid configuration
 	switch {
 	case configuration.Spec.Module == "":
-		return errors.New("spec.module name is required")
+		return nil, errors.New("spec.module name is required")
 	}
 
 	// @step: filter and fix up the source
@@ -159,16 +311,23 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 
 		err := json.NewDecoder(bytes.NewReader(configuration.Spec.Variables.Raw)).Decode(&variables)
 		if err != nil {
-			return fmt.Errorf("failed to parse spec.variables: %w", err)
+			return nil, fmt.Errorf("failed to parse spec.variables: %w", err)
 		}
 	}
 
+	// @step: render the module
 	tmpl, err := terraform.Template(moduleTemplate, map[string]interface{}{
 		"source":    source,
 		"variables": variables,
 	})
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	// @step: open the file for writing
+	wr, err := os.OpenFile(filepath.Join(o.Directory, "main.tf"), os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(tmpl))
@@ -176,13 +335,13 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 		line := scanner.Text()
 		switch {
 		case strings.HasPrefix(line, "  source = "):
-			o.Println(line + "\n")
+			wr.WriteString(line + "\n")
 		case line == "  ":
 			break
 		default:
-			o.Println(line)
+			wr.WriteString(line + "\n")
 		}
 	}
 
-	return nil
+	return configuration, nil
 }

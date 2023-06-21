@@ -91,6 +91,7 @@ func New(factory cmd.Factory) *cobra.Command {
 
 	flags := command.PersistentFlags()
 	flags.Bool("verbose", false, "Enable verbose logging")
+
 	flags.String("config", filepath.Join(os.ExpandEnv("HOME"), ".tnctl.yaml"), "Path to the configuration file")
 	flag.Bool("no-color", false, "Disable color output")
 

@@ -27,30 +27,6 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 )
 
-// checkovPolicyTemplate is the default template used to produce a checkov configuration
-var checkovPolicyTemplate = `framework:
-  - terraform_plan
-soft-fail: true
-compact: true
-{{- if .Policy.Checks }}
-check:
-	{{- range $check := .Policy.Checks }}
-  - {{ $check }}
-  {{- end }}
-{{- end }}
-{{- if .Policy.SkipChecks }}
-skip-check:
-  {{- range .Policy.SkipChecks }}
-  - {{ . }}
-  {{- end }}
-{{- end }}
-{{- if .Policy.External }}
-external-checks-dir:
-  {{- range .Policy.External }}
-  - /run/policy/{{ .Name }}
-  {{- end }}
-{{- end }}`
-
 // GetTerraformImage is called to return the terraform image to use, or the image plus version
 // override
 func GetTerraformImage(configuration *terraformv1alpha1.Configuration, image string) string {
