@@ -109,7 +109,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	flags.BoolVar(&o.EnableDefaultVariables, "enable-default-variables", false, "Indicates if default variables should be included")
 	flags.StringVar(&o.Description, "description", "", "A human readable description of the revision and what is provides")
 	flags.StringVarP(&o.Name, "name", "n", "", "This name of the revision")
-	flags.StringVarP(&o.Revision, "version", "r", "", "The semvar version of this revision")
+	flags.StringVarP(&o.Revision, "revision", "r", "", "The semvar version of this revision")
 
 	return c
 }
@@ -266,7 +266,7 @@ func (o *RevisionCommand) GetRevision() error {
 	}
 
 	// @step: increment the version
-	if version, err := utils.GetVersionIncrement(plan.Status.Latest.Version); err != nil {
+	if version, err := utils.GetVersionIncrement(plan.Status.Latest.Revision); err != nil {
 		o.Revision = "REVISION"
 	} else {
 		o.Revision = version

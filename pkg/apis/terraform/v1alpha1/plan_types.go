@@ -45,9 +45,9 @@ type PlanRevision struct {
 	// Name is the name of the revision containing the configuration
 	//+kubebuilder:validation:Required
 	Name string `json:"name"`
-	// Version is the version of the revision
+	// Revision is the version of the revision
 	//+kubebuilder:validation:Required
-	Version string `json:"version"`
+	Revision string `json:"version"`
 }
 
 // PlanSpec defines the desired state for a context
@@ -80,7 +80,7 @@ func (c *Plan) ListRevisions() []string {
 	var revisions []string
 
 	for _, r := range c.Spec.Revisions {
-		revisions = append(revisions, r.Version)
+		revisions = append(revisions, r.Revision)
 	}
 
 	return revisions
@@ -89,7 +89,7 @@ func (c *Plan) ListRevisions() []string {
 // GetRevision returns the revision with the specified version
 func (c *Plan) GetRevision(version string) (PlanRevision, bool) {
 	for _, r := range c.Spec.Revisions {
-		if r.Version == version {
+		if r.Revision == version {
 			return r, true
 		}
 	}
@@ -100,7 +100,7 @@ func (c *Plan) GetRevision(version string) (PlanRevision, bool) {
 // HasRevision returns true if the plan has the specified revision
 func (c *Plan) HasRevision(version string) bool {
 	for _, x := range c.Spec.Revisions {
-		if x.Version == version {
+		if x.Revision == version {
 			return true
 		}
 	}
@@ -113,7 +113,7 @@ func (c *Plan) RemoveRevision(version string) {
 	var revisions []PlanRevision
 
 	for _, x := range c.Spec.Revisions {
-		if x.Version != version {
+		if x.Revision != version {
 			revisions = append(revisions, x)
 		}
 	}

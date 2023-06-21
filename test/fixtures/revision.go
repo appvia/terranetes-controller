@@ -35,8 +35,8 @@ func NewPlan(name string, revisions ...*terraformv1alpha1.Revision) *terraformv1
 
 	for _, revision := range revisions {
 		plan.Spec.Revisions = append(plan.Spec.Revisions, terraformv1alpha1.PlanRevision{
-			Name:    revision.Name,
-			Version: revision.Spec.Plan.Revision,
+			Name:     revision.Name,
+			Revision: revision.Spec.Plan.Revision,
 		})
 	}
 

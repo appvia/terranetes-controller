@@ -45,8 +45,8 @@ func (c *Controller) ensurePlanExists(revision *terraformv1alpha1.Revision) cont
 
 		} else if !found {
 			plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{{
-				Name:    revision.Name,
-				Version: revision.Spec.Plan.Revision,
+				Name:     revision.Name,
+				Revision: revision.Spec.Plan.Revision,
 			}}
 
 			if err := cc.Create(ctx, plan); err != nil {
@@ -67,8 +67,8 @@ func (c *Controller) ensurePlanExists(revision *terraformv1alpha1.Revision) cont
 
 		// @step: update the revision list
 		plan.Spec.Revisions = append(plan.Spec.Revisions, terraformv1alpha1.PlanRevision{
-			Name:    revision.Name,
-			Version: revision.Spec.Plan.Revision,
+			Name:     revision.Name,
+			Revision: revision.Spec.Plan.Revision,
 		})
 		if err := cc.Patch(ctx, plan, client.MergeFrom(original)); err != nil {
 			cond.Failed(err, "Failed to patch the configuration plan: %v", err)

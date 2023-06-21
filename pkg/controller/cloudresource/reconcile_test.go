@@ -139,7 +139,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 
 		Context("and the revision does not exist in plan", func() {
 			BeforeEach(func() {
-				plan.Spec.Revisions[0].Version = "v1.0.0-not-there"
+				plan.Spec.Revisions[0].Revision = "v1.0.0-not-there"
 				Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
@@ -381,6 +381,42 @@ var _ = Describe("CloudResource Reconcilation", func() {
 						Expect(configuration.Spec.ValueFrom).To(ContainElements(cloudresource.Spec.ValueFrom))
 						Expect(configuration.Spec.Variables).ToNot(BeNil())
 						Expect(string(configuration.Spec.Variables.Raw)).To(Equal("{\"database_name\":\"mydb\",\"database_size\":5,\"test\":\"default\"}"))
+					})
+				})
+
+				Context("and the cloud resource does not have an update available", func() {
+					BeforeEach(func() {
+						result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
+					})
+
+					It("should not return an error", func() {
+						Expect(rerr).ToNot(HaveOccurred())
+					})
+
+					It("should indicate no updates available", func() {
+						Expect(cc.Get(context.TODO(), cloudresource.GetNamespacedName(), cloudresource)).To(Succeed())
+						Expect(cloudresource.Status.UpdateAvailable).To(Equal("None"))
+					})
+				})
+
+				Context("and the cloud resource has an update available", func() {
+					BeforeEach(func() {
+						plan.Spec.Revisions = append(plan.Spec.Revisions, terraformv1alpha1.PlanRevision{
+							Name:     "Updated",
+							Revision: "v3.0.0",
+						})
+						Expect(cc.Update(context.Background(), plan)).To(Succeed())
+
+						result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
+					})
+
+					It("should not return an error", func() {
+						Expect(rerr).ToNot(HaveOccurred())
+					})
+
+					It("should indicate no updates available", func() {
+						Expect(cc.Get(context.TODO(), cloudresource.GetNamespacedName(), cloudresource)).To(Succeed())
+						Expect(cloudresource.Status.UpdateAvailable).To(Equal("Available"))
 					})
 				})
 			})
