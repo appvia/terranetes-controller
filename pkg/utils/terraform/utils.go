@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -35,7 +36,7 @@ const TerraformStateOutputsKey = "outputs"
 var (
 	// CheckovPolicyTemplate is the default template used to produce a checkov configuration
 	CheckovPolicyTemplate = `framework:
-  - terraform_plan
+  - {{ default .Framework "terraform_plan" }}
 soft-fail: true
 compact: true
 {{- if .Policy.Checks }}
@@ -110,10 +111,15 @@ func DecodeState(in []byte) (*State, error) {
 }
 
 // NewCheckovPolicy generates a checkov policy from the configuration
-func NewCheckovPolicy(policy *terraformv1alpha1.PolicyConstraint) ([]byte, error) {
-	return template.New(CheckovPolicyTemplate,
-		map[string]interface{}{"Policy": policy},
-	)
+func NewCheckovPolicy(data map[string]interface{}) ([]byte, error) {
+	switch {
+	case data == nil:
+		return nil, errors.New("no data provided")
+	case data["Policy"] == nil:
+		return nil, errors.New("no policy provided")
+	}
+
+	return template.New(CheckovPolicyTemplate, data)
 }
 
 // NewTerraformProvider generates a terraform provider configuration
