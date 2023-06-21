@@ -43,7 +43,6 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/filters"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
-	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
@@ -616,7 +615,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			state.checkovConstraint = policy
 
 			if policy.Source == nil {
-				config, err := template.New(checkovPolicyTemplate, map[string]interface{}{"Policy": policy})
+				config, err := terraform.NewCheckovPolicy(policy)
 				if err != nil {
 					cond.Failed(err, "Failed to parse the checkov policy template")
 

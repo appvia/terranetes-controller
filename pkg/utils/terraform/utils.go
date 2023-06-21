@@ -25,10 +25,38 @@ import (
 	"io"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
 const TerraformStateOutputsKey = "outputs"
+
+// checkovPolicyTemplate is the default template used to produce a checkov configuration
+var (
+	// CheckovPolicyTemplate is the default template used to produce a checkov configuration
+	CheckovPolicyTemplate = `framework:
+  - terraform_plan
+soft-fail: true
+compact: true
+{{- if .Policy.Checks }}
+check:
+	{{- range $check := .Policy.Checks }}
+  - {{ $check }}
+  {{- end }}
+{{- end }}
+{{- if .Policy.SkipChecks }}
+skip-check:
+  {{- range .Policy.SkipChecks }}
+  - {{ . }}
+  {{- end }}
+{{- end }}
+{{- if .Policy.External }}
+external-checks-dir:
+  {{- range .Policy.External }}
+  - /run/policy/{{ .Name }}
+  {{- end }}
+{{- end }}`
+)
 
 // KubernetesBackendTemplate is responsible for creating the kubernetes backend terraform configuration
 var KubernetesBackendTemplate = `
@@ -79,6 +107,13 @@ func DecodeState(in []byte) (*State, error) {
 	}
 
 	return state, nil
+}
+
+// NewCheckovPolicy generates a checkov policy from the configuration
+func NewCheckovPolicy(policy *terraformv1alpha1.PolicyConstraint) ([]byte, error) {
+	return template.New(CheckovPolicyTemplate,
+		map[string]interface{}{"Policy": policy},
+	)
 }
 
 // NewTerraformProvider generates a terraform provider configuration
