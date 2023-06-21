@@ -39,6 +39,12 @@ type CloudResourceCommand struct {
 	Name string
 	// Namespace is the namespace of the resource
 	Namespace string
+	// IncludeProvider is whether to include the provider in the output
+	IncludeProvider bool
+	// IncludeCheckov is whether to include checkov in the output
+	IncludeCheckov bool
+	// Directory is the path to write the files to
+	Directory string
 }
 
 // NewCloudResourceCommand creates and returns a new command
@@ -61,6 +67,9 @@ func NewCloudResourceCommand(factory cmd.Factory) *cobra.Command {
 	cmd.SetOut(o.GetStreams().Out)
 
 	flags := cmd.Flags()
+	flags.BoolVar(&o.IncludeCheckov, "include-checkov", true, "Include checkov in the output")
+	flags.BoolVar(&o.IncludeProvider, "include-provider", true, "Include provider in the output")
+	flags.StringVarP(&o.Directory, "path", "p", ".", "The path to write the files to")
 	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace of the resource")
 
 	return cmd
@@ -108,8 +117,11 @@ func (o *CloudResourceCommand) Run(ctx context.Context) error {
 	}
 
 	return (&ConfigurationCommand{
-		Factory:   o.Factory,
-		Name:      configuration,
-		Namespace: o.Namespace,
+		Factory:         o.Factory,
+		Directory:       o.Directory,
+		IncludeCheckov:  o.IncludeCheckov,
+		IncludeProvider: o.IncludeProvider,
+		Name:            configuration,
+		Namespace:       o.Namespace,
 	}).Run(ctx)
 }
