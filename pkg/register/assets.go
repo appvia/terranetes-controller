@@ -916,12 +916,12 @@ spec:
                       name:
                         description: Name is the name of the revision containing the configuration
                         type: string
-                      version:
+                      revision:
                         description: Revision is the version of the revision
                         type: string
                     required:
                       - name
-                      - version
+                      - revision
                     type: object
                   type: array
               type: object
@@ -1011,12 +1011,12 @@ spec:
                     name:
                       description: Name is the name of the revision containing the configuration
                       type: string
-                    version:
+                    revision:
                       description: Revision is the version of the revision
                       type: string
                   required:
                     - name
-                    - version
+                    - revision
                   type: object
               type: object
           type: object
