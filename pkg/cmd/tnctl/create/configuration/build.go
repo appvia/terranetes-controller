@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package build
+package configuration
 
 import (
 	"bytes"
@@ -43,14 +43,16 @@ import (
 )
 
 var longBuildHelp = `
-Build is used to automatically generate a compatible terraform
-configuration from a given terraform module. The source for the
-module can be a local directory, a git repository, s3 bucket or
-so forth. As long as you have the credentials and required CLI
-binaries installed.
+Used to automatically generate a compatible terraform configuration
+from a given terraform module. The source for the module can be a
+local directory, a git repository, s3 bucket or so forth. As long
+as you have the credentials and required CLI binaries installed.
 
 Generate a terraform configuration a Github repository
-$ tnctl build github.com/terraform-aws-modules/terraform-aws-vpc
+$ tnctl create configuration github.com/terraform-aws-modules/terraform-aws-vpc
+
+Generate a terraform configuration from a local directory
+$ tnctl create configuration /path/to/terraform-aws-vpc
 `
 
 // Command returns the cobra command for the "build" sub-command.
@@ -86,7 +88,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	o := &Command{Factory: factory}
 
 	c := &cobra.Command{
-		Use:   "build SOURCE [OPTIONS]",
+		Use:   "configuration SOURCE [OPTIONS]",
 		Short: "Can be used to package up the terraform module for consumption",
 		Long:  strings.TrimSuffix(longBuildHelp, "\n"),
 		Args:  cobra.ExactArgs(1),
@@ -159,8 +161,8 @@ func (o *Command) Run(ctx context.Context) error {
 
 	configuration := terraformv1alpha1.NewConfiguration(o.Namespace, o.Name)
 	configuration.Annotations = map[string]string{
-		"terraform.appvia.io/source":  o.Source,
-		"terraform.appvia.io/version": version.Version,
+		"terranetes.appvia.io/source":        o.Source,
+		"terranetes.appvia.io/tnctl.version": version.Version,
 	}
 	configuration.Spec.EnableAutoApproval = o.EnableAutoApproval
 	configuration.Spec.EnableDriftDetection = o.EnableDriftDetection

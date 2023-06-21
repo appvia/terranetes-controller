@@ -36,7 +36,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd/search"
 	"github.com/appvia/terranetes-controller/pkg/cmd/search/github"
 	"github.com/appvia/terranetes-controller/pkg/cmd/search/terraform"
-	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/build"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/create/configuration"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
@@ -268,7 +268,7 @@ func (o *Command) Run(ctx context.Context) (err error) {
 		provider = o.Provider
 	}
 
-	err = (&build.Command{
+	err = (&configuration.Command{
 		Factory:        o.Factory,
 		EnableDefaults: o.EnableDefaults,
 		Name:           o.Name,

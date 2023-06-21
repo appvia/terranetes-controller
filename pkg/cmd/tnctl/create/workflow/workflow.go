@@ -68,8 +68,8 @@ type ModuleCommand struct {
 // NamingConvention is the naming convention for a repository^terraform-\\w-\\w$
 var NamingConvention = regexp.MustCompile(`^terraform\-[\w]+\-[\w]+`)
 
-// NewCreateCommand returns a new instance of the command
-func NewCreateCommand(factory cmd.Factory) *cobra.Command {
+// NewCommand returns a new instance of the command
+func NewCommand(factory cmd.Factory) *cobra.Command {
 	options := &ModuleCommand{Factory: factory}
 
 	c := &cobra.Command{
