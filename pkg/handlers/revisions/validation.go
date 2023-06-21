@@ -40,8 +40,8 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
-	return &validator{cc: cc}
+func NewValidator(cc client.Client, updateProtection bool) admission.CustomValidator {
+	return &validator{cc: cc, EnableUpdateProtection: updateProtection}
 }
 
 // ValidateCreate is called when a new resource is created
@@ -51,21 +51,21 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return fmt.Errorf("expected a Revision but got a %T", obj)
 	}
 
-	return v.validate(ctx, o)
+	return v.validate(ctx, nil, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	o, ok := newObj.(*terraformv1alpha1.Revision)
+	after, ok := newObj.(*terraformv1alpha1.Revision)
 	if !ok {
 		return fmt.Errorf("expected a Revision but got a %T", newObj)
 	}
-
-	if err := v.validate(ctx, o); err != nil {
-		return err
+	before, ok := oldObj.(*terraformv1alpha1.Revision)
+	if !ok {
+		return fmt.Errorf("expected a Revision but got a %T", oldObj)
 	}
 
-	return nil
+	return v.validate(ctx, before, after)
 }
 
 // ValidateDelete is called when a resource is being deleted
@@ -74,7 +74,10 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 // validate is called when a resource is being created or updated
-func (v *validator) validate(ctx context.Context, revision *terraformv1alpha1.Revision) error {
+// nolint:gocyclo
+func (v *validator) validate(ctx context.Context, before, revision *terraformv1alpha1.Revision) error {
+	updating := before != nil
+
 	switch {
 	case revision.Spec.Plan.Name == "":
 		return fmt.Errorf("spec.plan.name is required")
@@ -145,6 +148,30 @@ func (v *validator) validate(ctx context.Context, revision *terraformv1alpha1.Re
 	}
 	if len(existing) > 0 {
 		return fmt.Errorf("spec.plan.revision same version already exists on revision/s: %v", strings.Join(existing, ","))
+	}
+
+	// @step: if update protection is enabled, we need to ensure there isn't any current
+	// cloud resource using the revision
+	if updating && v.EnableUpdateProtection {
+		switch revision.GetAnnotations()[terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation] {
+		case "true":
+			break
+
+		default:
+			list := &terraformv1alpha1.CloudResourceList{}
+			if err := v.cc.List(ctx, list,
+				client.MatchingLabels(map[string]string{
+					terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+					terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
+				},
+				)); err != nil {
+				return fmt.Errorf("failed to retrieved list of cloud resources: %w", err)
+			}
+
+			if len(list.Items) > 0 {
+				return fmt.Errorf("in use by cloudresource/s, update denied (use %s to override)", terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation)
+			}
+		}
 	}
 
 	return nil

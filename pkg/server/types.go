@@ -38,6 +38,9 @@ type Config struct {
 	// into the terraform variables - i.e. namespace and name under a terraform variable
 	// called 'terranetes'
 	EnableContextInjection bool
+	// EnableRevisionUpdateProtection indicates the controller should not allow the
+	// updating of revisions which are currently in use
+	EnableRevisionUpdateProtection bool
 	// EnableNamespaceProtection indicates the controller should protect the namespace
 	// from being deleted if there are any terranetes resources in the namespace
 	EnableNamespaceProtection bool

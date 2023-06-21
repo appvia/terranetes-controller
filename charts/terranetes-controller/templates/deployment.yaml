@@ -64,6 +64,7 @@ spec:
             - --drift-threshold={{ .Values.controller.driftThreshold }}
             - --enable-context-injection={{ .Values.controller.enableContextInjection }}
             - --enable-namespace-protection={{ .Values.controller.enableNamespaceProtection }}
+            - --enable-revision-update-protection={{ .Values.controller.enableRevisionUpdateProtection }}
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhooks={{ .Values.controller.webhooks.enabled }}

@@ -38,6 +38,8 @@ const (
 )
 
 const (
+	// RevisionSkipUpdateProtectionAnnotation is the annotation to skip update protection
+	RevisionSkipUpdateProtectionAnnotation = "terraform.appvia.io/revision.skip-update-protection"
 	// RevisionUsageExampleAnnotation is the annotation for the example
 	RevisionUsageExampleAnnotation = "terraform.appvia.io/revision.usage"
 	// RevisionChangeLogAnnotation is the annotation for the change log

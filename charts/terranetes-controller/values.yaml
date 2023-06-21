@@ -68,6 +68,9 @@ controller:
   # indicates if namespace deletion should be blocked if the namespace contains one
   # or more Configuration resources, forcing the user to delete correctly
   enableNamespaceProtection: false
+  # indicates if the controller should deny updates to Revisions which are currently
+  # in use
+  enableRevisionUpdateProtection: true
   # enableTerraformVersions indicates configurations are permitted to override
   # the terraform version in their spec.
   enableTerraformVersions: true
