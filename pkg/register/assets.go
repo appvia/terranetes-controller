@@ -95,6 +95,9 @@ spec:
         - jsonPath: .status.costs.monthly
           name: Estimated
           type: string
+        - jsonPath: .status.
+          name: Update
+          type: string
         - jsonPath: .status.resourceStatus
           name: Synchronized
           type: string
@@ -415,6 +418,9 @@ spec:
                 resources:
                   description: Resources is the number of managed cloud resources which are currently under management. This field is taken from the terraform state itself.
                   type: integer
+                updateAvailable:
+                  description: UpdateAvailable indicates if there is a new version of the plan available
+                  type: string
               type: object
           type: object
       served: true

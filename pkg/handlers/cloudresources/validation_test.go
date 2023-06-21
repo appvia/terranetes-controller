@@ -167,7 +167,7 @@ var _ = Describe("Checking CloudResource Validation", func() {
 		})
 
 		It("should fail when revision not present in plan", func() {
-			plan.Spec.Revisions[0].Version = "v0.0.2"
+			plan.Spec.Revisions[0].Revision = "v0.0.2"
 			Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
 			err := v.ValidateCreate(context.Background(), cloudresource)

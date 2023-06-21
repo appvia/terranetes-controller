@@ -83,11 +83,11 @@ func mutateOnRevision(ctx context.Context, cc client.Client, o *terraformv1alpha
 	if !found {
 		return fmt.Errorf("spec.plan.name resource %q not found", o.Spec.Plan.Name)
 	}
-	if plan.Status.Latest.Version == "" {
+	if plan.Status.Latest.Revision == "" {
 		return fmt.Errorf("spec.plan.name resource %q does not have a latest revision", o.Spec.Plan.Name)
 	}
 
-	o.Spec.Plan.Revision = plan.Status.Latest.Version
+	o.Spec.Plan.Revision = plan.Status.Latest.Revision
 
 	return nil
 }

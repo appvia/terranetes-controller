@@ -15,31 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package utils
+package cloudresource
 
-import "github.com/Masterminds/semver"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
+)
 
-// GetVersionIncrement returns either an error or the version increment
-func GetVersionIncrement(version string) (string, error) {
-	sem, err := semver.NewVersion(version)
-	if err != nil {
-		return "", err
-	}
-	updated := sem.IncPatch()
-
-	return updated.String(), nil
+func init() {
+	metrics.Registry.MustRegister(
+		cloudResourceUpdate,
+	)
 }
 
-// VersionLessThan returns either an error a bool indicating if the version is greater than the other
-func VersionLessThan(version string, other string) (bool, error) {
-	sem, err := semver.NewVersion(version)
-	if err != nil {
-		return false, err
-	}
-	otherSem, err := semver.NewVersion(other)
-	if err != nil {
-		return false, err
-	}
-
-	return sem.LessThan(otherSem), nil
-}
+var (
+	cloudResourceUpdate = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cloudresource_update_available",
+			Help: "Indicates if the cloud resource has updates available and is running an older revision",
+		},
+		[]string{"namespace", "name"},
+	)
+)

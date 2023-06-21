@@ -343,3 +343,57 @@ func (c *Controller) ensureConfigurationStatus(cloudresource *terraformv1alpha1.
 		return reconcile.Result{}, nil
 	}
 }
+
+// ensureUpdateStatus is responsible for ensuring if there is an updated revision in the plan
+// this state is reflected in the cloud resource
+func (c *Controller) ensureUpdateStatus(cloudresource *terraformv1alpha1.CloudResource, state *state) controller.EnsureFunc {
+	return func(ctx context.Context) (reconcile.Result, error) {
+		logger := log.WithFields(log.Fields{
+			"plan":      state.plan.Name,
+			"name":      cloudresource.Name,
+			"namespace": cloudresource.Namespace,
+		})
+
+		// @step: used to update the metrics for monitoring purposes
+		defer func() {
+			var value float64
+			if cloudresource.Status.UpdateAvailable == "Available" {
+				value = 1
+			}
+
+			cloudResourceUpdate.WithLabelValues(
+				cloudresource.Namespace,
+				cloudresource.Name,
+			).Set(value)
+		}()
+		cloudresource.Status.UpdateAvailable = "None"
+
+		// @step: get a list of the available revisions
+		list := state.plan.ListRevisions()
+		if len(list) == 0 {
+			logger.WithFields(log.Fields{}).Error("no revisions available on plan")
+
+			return reconcile.Result{}, nil
+		}
+
+		// @step: get the latest revision
+		latest, err := utils.LatestSemverVersion(list)
+		if err != nil {
+			logger.Error("unable to get the latest semver version")
+
+			return reconcile.Result{}, nil
+		}
+
+		available, err := utils.VersionLessThan(cloudresource.Spec.Plan.Revision, latest)
+		if err != nil {
+			logger.WithError(err).Error("unable to determine if versions has different")
+
+			return reconcile.Result{}, nil
+		}
+		if available {
+			cloudresource.Status.UpdateAvailable = "Available"
+		}
+
+		return reconcile.Result{}, nil
+	}
+}

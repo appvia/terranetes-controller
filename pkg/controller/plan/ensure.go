@@ -48,7 +48,7 @@ func (c *Controller) ensureLatestOnPlan(plan *terraformv1alpha1.Plan) controller
 
 		var revision terraformv1alpha1.PlanRevision
 		for _, x := range plan.Spec.Revisions {
-			if x.Version == latest {
+			if x.Revision == latest {
 				revision = x
 			}
 		}

@@ -53,7 +53,7 @@ var _ = Describe("Configuration Mutation", func() {
 			cloudresource.Spec.ProviderRef = &terraformv1alpha1.ProviderReference{Name: "aws"}
 
 			plan = fixtures.NewPlan(cloudresource.Spec.Plan.Name)
-			plan.Status.Latest.Version = "v1.0.0"
+			plan.Status.Latest.Revision = "v1.0.0"
 
 			cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
 			handler = &mutator{cc: cc}
@@ -110,7 +110,7 @@ var _ = Describe("Configuration Mutation", func() {
 
 			Context("when the plan does not have a latest version", func() {
 				BeforeEach(func() {
-					plan.Status.Latest.Version = ""
+					plan.Status.Latest.Revision = ""
 					Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
 					err = handler.Default(context.Background(), cloudresource)
