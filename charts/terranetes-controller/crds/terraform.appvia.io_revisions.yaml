@@ -195,6 +195,9 @@ spec:
                       required:
                         description: Required indicates whether this input is required or not by the revision
                         type: boolean
+                      type:
+                        description: Type is the format of the input, such as string, int, bool, etc.
+                        type: string
                     required:
                       - description
                     type: object

@@ -20,14 +20,16 @@ package create
 // Input defines an input to the cloud resource, we use this internally
 // to the command to pass options around
 type Input struct {
-	// Key is the key of the input
-	Key string `json:"key"`
-	// Description is the description of the input
-	Description string `json:"description"`
-	// Default is the default value of the input
-	Default interface{} `json:"default"`
-	// Required is a flag to indicate if the input is required
-	Required bool `json:"required"`
 	// Context is an optional name of the context the input comes from
 	Context string `json:"context"`
+	// Default is the default value of the input
+	Default interface{} `json:"default"`
+	// Description is the description of the input
+	Description string `json:"description"`
+	// Key is the key of the input
+	Key string `json:"key"`
+	// Required is a flag to indicate if the input is required
+	Required bool `json:"required"`
+	// Type is the type of the input
+	Type string `json:"type"`
 }
