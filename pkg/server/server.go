@@ -213,7 +213,8 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	// @step: ensure the revision controller is enabled
 	if err := (&revision.Controller{
-		EnableWebhooks: config.EnableWebhooks,
+		EnableUpdateProtection: config.EnableRevisionUpdateProtection,
+		EnableWebhooks:         config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the revision controller, error: %w", err)
 	}
