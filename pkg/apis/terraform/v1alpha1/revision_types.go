@@ -238,6 +238,7 @@ func (r *RevisionSpec) GetInput(key string) (RevisionInput, bool) {
 // +kubebuilder:printcolumn:name="Plan",type="string",JSONPath=".spec.plan.name"
 // +kubebuilder:printcolumn:name="Description",type="string",JSONPath=".spec.plan.description"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.plan.revision"
+// +kubebuilder:printcolumn:name="InUse",type="integer",JSONPath=".status.inUse"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Revision struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -262,6 +263,9 @@ func (c *Revision) ListOfInputs() []string {
 // +k8s:openapi-gen=true
 type RevisionStatus struct {
 	corev1alpha1.CommonStatus `json:",inline"`
+	// InUse is the number of cloud resources which are currently using this revision
+	// +kubebuilder:validation:Optional
+	InUse int `json:"inUse,omitempty"`
 }
 
 // GetCommonStatus returns the common status
