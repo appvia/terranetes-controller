@@ -146,12 +146,13 @@ func (c *CloudResourceSpec) HasValueFrom() bool {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Plan",type="string",JSONPath=".spec.plan.name",priority=1
-// +kubebuilder:printcolumn:name="Revision",type="string",JSONPath=".spec.plan.revision",priority=1
+// +kubebuilder:resource:path=cloudresources,scope=Namespaced,categories={terraform}
+// +kubebuilder:printcolumn:name="Plan",type="string",JSONPath=".spec.plan.name"
+// +kubebuilder:printcolumn:name="Revision",type="string",JSONPath=".spec.plan.revision"
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
 // +kubebuilder:printcolumn:name="Configuration",type="string",JSONPath=".status.configurationName"
 // +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
-// +kubebuilder:printcolumn:name="Update",type="string",JSONPath=".status."
+// +kubebuilder:printcolumn:name="Update",type="string",JSONPath=".status.updateAvailable"
 // +kubebuilder:printcolumn:name="Synchronized",type="string",JSONPath=".status.resourceStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type CloudResource struct {

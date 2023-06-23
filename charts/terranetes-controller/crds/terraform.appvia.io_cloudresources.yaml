@@ -7,6 +7,8 @@ metadata:
 spec:
   group: terraform.appvia.io
   names:
+    categories:
+      - terraform
     kind: CloudResource
     listKind: CloudResourceList
     plural: cloudresources
@@ -16,11 +18,9 @@ spec:
     - additionalPrinterColumns:
         - jsonPath: .spec.plan.name
           name: Plan
-          priority: 1
           type: string
         - jsonPath: .spec.plan.revision
           name: Revision
-          priority: 1
           type: string
         - jsonPath: .spec.writeConnectionSecretToRef.name
           name: Secret
@@ -31,7 +31,7 @@ spec:
         - jsonPath: .status.costs.monthly
           name: Estimated
           type: string
-        - jsonPath: .status.
+        - jsonPath: .status.updateAvailable
           name: Update
           type: string
         - jsonPath: .status.resourceStatus
