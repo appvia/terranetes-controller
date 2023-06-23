@@ -2752,6 +2752,11 @@ terraform {
 				Expect(cond.Message).To(Equal("Waiting for changes to be approved"))
 			})
 
+			It("should indicate the resource out of sync", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesOutOfSync))
+			})
+
 			It("should have raised a kubernetes event", func() {
 				Expect(recorder.Events).To(HaveLen(1))
 				Expect(recorder.Events[0]).To(Equal("(apps/bucket) Warning Action Required: Waiting for terraform apply annotation to be set to true"))
