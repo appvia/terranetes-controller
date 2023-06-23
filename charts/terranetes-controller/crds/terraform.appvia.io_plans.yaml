@@ -16,7 +16,7 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .status.latest.version
+        - jsonPath: .status.latest.revision
           name: Latest
           type: string
         - jsonPath: .metadata.creationTimestamp

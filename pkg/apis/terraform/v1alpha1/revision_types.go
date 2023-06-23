@@ -145,7 +145,7 @@ type RevisionInput struct {
 	Required *bool `json:"required,omitempty"`
 	// Type is the format of the input, such as string, int, bool, etc.
 	// +kubebuilder:validation:Optional
-	Type string `json:"type,omitempty"`
+	Type *string `json:"type,omitempty"`
 }
 
 // IsRequired returns true if the input is required

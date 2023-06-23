@@ -71,6 +71,8 @@ metadata:
 spec:
   group: terraform.appvia.io
   names:
+    categories:
+      - terraform
     kind: CloudResource
     listKind: CloudResourceList
     plural: cloudresources
@@ -80,11 +82,9 @@ spec:
     - additionalPrinterColumns:
         - jsonPath: .spec.plan.name
           name: Plan
-          priority: 1
           type: string
         - jsonPath: .spec.plan.revision
           name: Revision
-          priority: 1
           type: string
         - jsonPath: .spec.writeConnectionSecretToRef.name
           name: Secret
@@ -95,7 +95,7 @@ spec:
         - jsonPath: .status.costs.monthly
           name: Estimated
           type: string
-        - jsonPath: .status.
+        - jsonPath: .status.updateAvailable
           name: Update
           type: string
         - jsonPath: .status.resourceStatus
@@ -886,7 +886,7 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .status.latest.version
+        - jsonPath: .status.latest.revision
           name: Latest
           type: string
         - jsonPath: .metadata.creationTimestamp
@@ -2059,6 +2059,26 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate/terraform.appvia.io/cloudresources
+  failurePolicy: Fail
+  name: cloudresources.terraform.appvia.io
+  rules:
+  - apiGroups:
+    - terraform.appvia.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cloudresources
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
