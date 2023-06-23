@@ -69,6 +69,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		[]controller.EnsureFunc{
 			finalizer.EnsurePresent(revision),
 			c.ensurePlanExists(revision),
+			c.ensureInUseCount(revision),
 		},
 	)
 	if err != nil {

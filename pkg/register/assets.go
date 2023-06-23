@@ -1743,6 +1743,9 @@ spec:
         - jsonPath: .spec.plan.revision
           name: Version
           type: string
+        - jsonPath: .status.inUse
+          name: InUse
+          type: integer
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -2005,6 +2008,9 @@ spec:
                   x-kubernetes-list-map-keys:
                     - type
                   x-kubernetes-list-type: map
+                inUse:
+                  description: InUse is the number of cloud resources which are currently using this revision
+                  type: integer
                 lastReconcile:
                   description: LastReconcile describes the generation and time of the last reconciliation
                   properties:
