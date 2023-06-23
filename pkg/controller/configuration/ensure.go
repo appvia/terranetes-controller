@@ -1087,6 +1087,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
 			// update the ready condition to reflect the new state
 			readyCond.InProgress("Waiting for changes to be approved")
+			// update the resource status
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 
 			return reconcile.Result{}, controller.ErrIgnore
 
