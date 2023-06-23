@@ -40,6 +40,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/retry"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/search"
 	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/state"
+	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/verify"
 	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
@@ -83,6 +84,7 @@ func New(factory cmd.Factory) *cobra.Command {
 		describe.NewCommand(factory),
 		generate.NewCommand(factory),
 		state.NewCommand(factory),
+		verify.NewCommand(factory),
 		retry.NewCommand(factory),
 		logs.NewCommand(factory),
 	)

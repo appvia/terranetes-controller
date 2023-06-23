@@ -29,6 +29,7 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/utils/policies"
 )
 
 type validator struct {
@@ -185,35 +186,33 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 // validateModuleConstriants evaluates the module constraints and ensure the configuration passes all policies
 func validateModuleConstriants(
 	configuration *terraformv1alpha1.Configuration,
-	policies *terraformv1alpha1.PolicyList,
+	list *terraformv1alpha1.PolicyList,
 	namespace *v1.Namespace) error {
 
-	var list []terraformv1alpha1.Policy
+	var filtered []terraformv1alpha1.Policy
 
 	// @step: first we build a list of policies which apply this configuration.
-	for _, x := range policies.Items {
-		switch {
-		case x.Spec.Constraints == nil, x.Spec.Constraints.Modules == nil:
-			continue
-		}
+	for _, x := range policies.FindModuleConstraints(list) {
 		if x.Spec.Constraints.Modules.Selector != nil {
-			matched, err := kubernetes.IsSelectorMatch(*x.Spec.Constraints.Modules.Selector, configuration.GetLabels(), namespace.GetLabels())
+			matched, err := kubernetes.IsSelectorMatch(*x.Spec.Constraints.Modules.Selector,
+				configuration.GetLabels(),
+				namespace.GetLabels(),
+			)
 			if err != nil {
 				return err
 			} else if !matched {
 				continue
 			}
 		}
-
-		list = append(list, x)
+		filtered = append(filtered, x)
 	}
 
-	if len(list) == 0 {
+	if len(filtered) == 0 {
 		return nil
 	}
 
 	// @step: we then iterate the allowed list; at least one of the policies must be satisfied
-	for _, x := range list {
+	for _, x := range filtered {
 		if found, err := x.Spec.Constraints.Modules.Matches(configuration.Spec.Module); err != nil {
 			return fmt.Errorf("failed to compile the policy: %s, error: %w", x.Name, err)
 		} else if found {

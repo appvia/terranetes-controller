@@ -151,3 +151,14 @@ type PlanList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Plan `json:"items"`
 }
+
+// GetItem returns the item if it exists
+func (p *PlanList) GetItem(name string) (Plan, bool) {
+	for _, item := range p.Items {
+		if item.Name == name {
+			return item, true
+		}
+	}
+
+	return Plan{}, false
+}

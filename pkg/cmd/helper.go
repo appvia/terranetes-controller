@@ -194,7 +194,7 @@ func ListAvailableProviders(ctx context.Context, factory Factory) ([]string, err
 
 	var providers []string
 	for _, provider := range list.Items {
-		providers = append(providers, string(provider.Spec.Provider))
+		providers = append(providers, string(provider.Name))
 	}
 
 	return providers, nil

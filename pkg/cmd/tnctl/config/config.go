@@ -23,11 +23,6 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
-
 // NewCommand creates and returns a new command
 func NewCommand(factory cmd.Factory) *cobra.Command {
 	c := &cobra.Command{

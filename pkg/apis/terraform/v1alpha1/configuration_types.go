@@ -55,6 +55,28 @@ func NewConfiguration(namespace, name string) *Configuration {
 // ValueFromList is a list of value from sources
 type ValueFromList []ValueFromSource
 
+// HasContextReferences returns true if the configuration has context references
+func (v *ValueFromList) HasContextReferences() bool {
+	for _, x := range *v {
+		if x.Context != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+// HasSecretReferences returns true if the configuration has secret references
+func (v *ValueFromList) HasSecretReferences() bool {
+	for _, x := range *v {
+		if x.Secret != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 const (
 	// ApplyAnnotation is the annotation used to mark a resource as a plan rather than apply
 	ApplyAnnotation = "terraform.appvia.io/apply"
