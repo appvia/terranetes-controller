@@ -39,3 +39,12 @@ func NewMatchAllPolicyConstraint(name string) *terraformv1alpha1.Policy {
 
 	return p
 }
+
+// NewMatchAllModuleConstraint returns a policy which matches all modules
+func NewMatchAllModuleConstraint(name string) *terraformv1alpha1.Policy {
+	p := NewPolicy(name)
+	p.Spec.Constraints = &terraformv1alpha1.Constraints{}
+	p.Spec.Constraints.Modules = &terraformv1alpha1.ModuleConstraint{}
+
+	return p
+}

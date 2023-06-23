@@ -127,8 +127,6 @@ func (o *Command) Run(ctx context.Context) error {
 		return cmd.ErrMissingArgument("name")
 	case o.Source == "":
 		return cmd.ErrMissingArgument("source")
-	case o.Provider == "":
-		o.Provider = "NEEDS_VALUE"
 	}
 
 	// @step: default the writer to stdout
@@ -151,6 +149,13 @@ func (o *Command) Run(ctx context.Context) error {
 			o.Printf("failed to remove %s, %s\n", destination, err)
 		}
 	}()
+
+	// @step:
+	if o.Provider == "" {
+		if err := o.promptProvider(ctx); err != nil {
+			return err
+		}
+	}
 
 	// @step: parse the process the module
 	module, diag := tfconfig.LoadModule(destination)
@@ -272,6 +277,47 @@ func (o *Command) Run(ctx context.Context) error {
 
 	fmt.Fprintf(o.Writer, "---\n")
 	fmt.Fprintf(o.Writer, "%s", e)
+
+	return nil
+}
+
+// promptProvider is responsible for retrieving the provider from the cluster
+func (o *Command) promptProvider(ctx context.Context) error {
+	if o.Provider != "" {
+		return nil
+	}
+	o.Provider = "NEEDS_VALUE"
+
+	var answer bool
+	if err := survey.AskOne(&survey.Confirm{
+		Message: fmt.Sprintf("Can we use the %s to retrieve terranetes configuration?", color.YellowString("current kubeconfig")),
+		Help:    "We will interrogate the cluster, retrieving a list of providers",
+		Default: true,
+	}, &answer); err != nil {
+		return err
+	}
+	if !answer {
+		return nil
+	}
+
+	// @step: create a client to the client
+	list, err := cmd.ListAvailableProviders(ctx, o.Factory)
+	if err != nil {
+		return err
+	}
+	if len(list) == 0 {
+		o.Println("%s No providers found in the cluster, skipping selection", cmd.IconBad)
+
+		return nil
+	}
+
+	if err := survey.AskOne(&survey.Select{
+		Message: fmt.Sprintf("Which %s should we use for this configuration?", color.YellowString("provider")),
+		Help:    "Configurations need an associated provider, which contains the cloud credentials",
+		Options: list,
+	}, &o.Provider); err != nil {
+		return err
+	}
 
 	return nil
 }

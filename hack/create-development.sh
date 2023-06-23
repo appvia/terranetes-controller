@@ -43,6 +43,12 @@ create_environment() {
       echo -e "Failed to create the Kubernetes cluster via kind"
       exit 1
     fi
+
+    echo -e "Provision the Images in Kind Cluster"
+    if ! make controller-kind; then
+      echo -e "Failed to provision the Images in Kind Cluster"
+      exit 1
+    fi
   fi
 
   echo -e "Provision the cloud credentials secret in controller namespace"

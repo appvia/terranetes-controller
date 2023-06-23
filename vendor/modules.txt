@@ -225,6 +225,9 @@ github.com/denis-tingaikin/go-header
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
+# github.com/enescakir/emoji v1.0.0
+## explicit; go 1.13
+github.com/enescakir/emoji
 # github.com/esimonov/ifshort v1.0.4
 ## explicit; go 1.17
 github.com/esimonov/ifshort/pkg/analyzer

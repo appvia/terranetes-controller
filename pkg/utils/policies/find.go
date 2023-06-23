@@ -30,6 +30,42 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/weights"
 )
 
+// FindModuleConstraints returns all policies related to module constraints
+func FindModuleConstraints(list *terraformv1alpha1.PolicyList) []terraformv1alpha1.Policy {
+	var filtered []terraformv1alpha1.Policy
+
+	for _, policy := range list.Items {
+		switch {
+		case policy.Spec.Constraints == nil:
+			continue
+		case policy.Spec.Constraints.Modules == nil:
+			continue
+		}
+
+		filtered = append(filtered, policy)
+	}
+
+	return filtered
+}
+
+// FindSecurityPolicyConstraints returns all policies related to security constraints
+func FindSecurityPolicyConstraints(list *terraformv1alpha1.PolicyList) []terraformv1alpha1.Policy {
+	var filtered []terraformv1alpha1.Policy
+
+	for _, policy := range list.Items {
+		switch {
+		case policy.Spec.Constraints == nil:
+			continue
+		case policy.Spec.Constraints.Checkov == nil:
+			continue
+		}
+
+		filtered = append(filtered, policy)
+	}
+
+	return filtered
+}
+
 // FindMatchingPolicy is called to find a match of policy for a given configurations
 func FindMatchingPolicy(
 	ctx context.Context,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022  Appvia Ltd <info@appvia.io>
+ * Copyright (C) 2023  Appvia Ltd <info@appvia.io>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package convert
+package verify
 
 import (
 	"github.com/spf13/cobra"
@@ -23,26 +23,19 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/cmd"
 )
 
-// Command are the options for the command
-type Command struct {
-	cmd.Factory
-}
-
 // NewCommand creates and returns a new command
 func NewCommand(factory cmd.Factory) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "convert COMMAND",
-		Short: "Used to convert between different formats",
+	c := &cobra.Command{
+		Use:   "verify COMMAND",
+		Short: "Used to verify and validate resources",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
 
-	cmd.AddCommand(
-		NewConfigurationCommand(factory),
-		NewCloudResourceCommand(factory),
+	c.AddCommand(
 		NewRevisionCommand(factory),
 	)
 
-	return cmd
+	return c
 }

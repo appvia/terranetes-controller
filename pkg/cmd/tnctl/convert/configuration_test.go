@@ -120,7 +120,7 @@ var _ = Describe("Convert Configuration", func() {
 
 				It("should fail", func() {
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("failed to read configuration file: open missing.yaml: no such file or directory"))
+					Expect(err.Error()).To(Equal("failed to read configuration file: file does not exist"))
 				})
 			})
 		})
@@ -174,7 +174,7 @@ var _ = Describe("Convert Configuration", func() {
 
 					It("should return an error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("provider: \"aws\" does not exist"))
+						Expect(err.Error()).To(Equal("provider: \"\" does not exist in cluster"))
 					})
 				})
 
