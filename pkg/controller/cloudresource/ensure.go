@@ -260,7 +260,9 @@ func (c *Controller) ensureConfigurationExists(cloudresource *terraformv1alpha1.
 				return reconcile.Result{}, err
 			}
 			if resourceVersion != configuration.ResourceVersion {
-				log.Debug("cloud resource configuration has been patched", "resource_version", configuration.ResourceVersion)
+				log.
+					WithField("resource_version", configuration.ResourceVersion).
+					Debug("cloud resource configuration has been updated")
 
 				c.recorder.Event(cloudresource, v1.EventTypeNormal, "ConfigurationUpdated", "Updated the cloud resource configuration")
 			}
@@ -391,7 +393,7 @@ func (c *Controller) ensureUpdateStatus(cloudresource *terraformv1alpha1.CloudRe
 			return reconcile.Result{}, nil
 		}
 		if available {
-			cloudresource.Status.UpdateAvailable = "Available"
+			cloudresource.Status.UpdateAvailable = fmt.Sprintf("Update %s available", latest)
 		}
 
 		return reconcile.Result{}, nil

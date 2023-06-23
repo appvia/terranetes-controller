@@ -21,6 +21,8 @@ out
 me.yml
 me.yaml
 tmp/
+TODO
+TODO.md
 
 # Terraform Related
 terraform.tfstate

@@ -63,14 +63,16 @@ type RevisionCommand struct {
 	Variables map[string]interface{}
 	// ValueFrom is a list of value froms
 	ValueFrom []terraformv1alpha1.ValueFromSource
-	// Interactive is used to determine if the command is running in interactive mode
-	Interactive bool
 	// Output are the outputs from the module
 	Outputs []string
 	// Module is the module to create the revision from
 	Module string
 	// Revision is the version of the revision
 	Revision string
+	// File is where to save the revision
+	File string
+	// Provider is the name of the provider to use
+	Provider string
 }
 
 var revisionCommandDesc = `
@@ -105,11 +107,12 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	c.SetOut(o.GetStreams().Out)
 
 	flags := c.Flags()
-	flags.BoolVar(&o.Interactive, "interactive", true, "Indicates if interactively prompting for information")
-	flags.BoolVar(&o.EnableDefaultVariables, "enable-default-variables", false, "Indicates if default variables should be included")
+	flags.BoolVar(&o.EnableDefaultVariables, "enable-default-variables", true, "Indicates if include variables which have defaults from the terraform module")
 	flags.StringVar(&o.Description, "description", "", "A human readable description of the revision and what is provides")
 	flags.StringVarP(&o.Name, "name", "n", "", "This name of the revision")
 	flags.StringVarP(&o.Revision, "revision", "r", "", "The semvar version of this revision")
+	flags.StringVarP(&o.File, "file", "f", "", "The path to save the revision to")
+	flags.StringVar(&o.Provider, "provider", "aws", "The name of the terranetes provider to use")
 
 	return c
 }
@@ -135,23 +138,23 @@ func (o *RevisionCommand) Run(ctx context.Context) (err error) {
 	}
 
 	// @step: ask the user about using the current kubeconfig to retrieve any contexts
-	if err := o.GetConfiguration(ctx); err != nil {
+	if err := o.retrieveConfiguration(ctx); err != nil {
 		return err
 	}
 	// @step: we need to ask or guess the plan name
-	if err := o.GetPlan(); err != nil {
+	if err := o.retrievePlan(); err != nil {
 		return err
 	}
 	// @step: we need to ask or guess the revision name
-	if err := o.GetRevision(); err != nil {
+	if err := o.retrieveRevision(); err != nil {
 		return err
 	}
 	// @step: retrieve the inputs
-	if err := o.GetInputs(module); err != nil {
+	if err := o.retrieveInputs(module); err != nil {
 		return err
 	}
 	// @step: retrieve the outputs
-	if err := o.GetOutputs(module); err != nil {
+	if err := o.retrieveOutputs(module); err != nil {
 		return err
 	}
 
@@ -163,8 +166,10 @@ func (o *RevisionCommand) Run(ctx context.Context) (err error) {
 		},
 		"Labels": map[string]string{},
 		"Configuration": map[string]interface{}{
+			"ChangeLog": "",
 			"Module":    o.Module,
 			"Outputs":   o.Outputs,
+			"Provider":  o.Provider,
 			"ValueFrom": o.ValueFrom,
 			"Variables": o.Variables,
 		},
@@ -178,22 +183,38 @@ func (o *RevisionCommand) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	o.Println("%s", generated)
+
+	return o.renderRevision(generated)
+}
+
+// renderRevision is used to render the revision
+func (o *RevisionCommand) renderRevision(revision []byte) error {
+	if o.File == "" {
+		o.Println("%s", revision)
+
+		return nil
+	}
+
+	// @step: open and write the revision
+	wr, err := os.OpenFile(o.File, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := wr.Write(revision); err != nil {
+		return err
+	}
+	o.Println("%s Successfully written revision to: %s", cmd.IconGood, o.File)
 
 	return nil
 }
 
-// GetOutputs is used to retrieve the outputs from the module
-func (o *RevisionCommand) GetOutputs(module *tfconfig.Module) error {
+// retrieveOutputs is used to retrieve the outputs from the module
+func (o *RevisionCommand) retrieveOutputs(module *tfconfig.Module) error {
 	switch {
 	case len(o.Outputs) > 0:
 		return nil
 	case len(module.Outputs) == 0:
 		return nil
-	case !o.Interactive:
-		for _, x := range module.Outputs {
-			o.Outputs = append(o.Outputs, x.Name)
-		}
 	}
 
 	var suggestions []string
@@ -216,7 +237,7 @@ func (o *RevisionCommand) GetOutputs(module *tfconfig.Module) error {
 		Message:  "What outputs should be extract into the secret?",
 		Options:  suggestions,
 		PageSize: 20,
-	}, &selected); err != nil {
+	}, &selected, survey.WithKeepFilter(false)); err != nil {
 		return err
 	}
 	for _, x := range selected {
@@ -226,84 +247,48 @@ func (o *RevisionCommand) GetOutputs(module *tfconfig.Module) error {
 	return nil
 }
 
-// GetRevision helps the user retrieve the revision name
-func (o *RevisionCommand) GetRevision() error {
-	switch {
-	case o.Revision != "":
-		return nil
-	case !o.Interactive:
-		o.Name = "REVISION_NAME"
+// retrieveRevision helps the user retrieve the revision name
+func (o *RevisionCommand) retrieveRevision() error {
+	if o.Revision != "" {
 		return nil
 	}
 
-	// @step: used to find a plan in the list
-	findFunc := func(name string) (terraformv1alpha1.Plan, bool) {
-		if o.Plans == nil {
-			return terraformv1alpha1.Plan{}, false
-		}
-
-		for _, x := range o.Plans.Items {
-			if x.Name == name {
-				return x, true
-			}
-		}
-
-		return terraformv1alpha1.Plan{}, false
+	if o.Plans == nil {
+		o.Plans = &terraformv1alpha1.PlanList{}
 	}
 
-	// @step: check if we have a plan name
-	plan, found := findFunc(o.Name)
+	plan, found := o.Plans.GetItem(o.Name)
 	if !found {
 		if err := survey.AskOne(&survey.Input{
 			Message: fmt.Sprintf("What is the version of this %s (in semver format)?", color.YellowString("revision")),
 			Help:    "Revisions must have a version, cloud resource reference both the plan and the version",
 			Default: "v0.0.1",
 		}, &o.Revision); err != nil {
-			return nil
+			return err
 		}
 
 		return nil
 	}
+	o.Revision = "REVISION"
 
-	// @step: increment the version
-	if version, err := utils.GetVersionIncrement(plan.Status.Latest.Revision); err != nil {
-		o.Revision = "REVISION"
-	} else {
+	// @step: increment the from the last revision
+	if version, err := utils.GetVersionIncrement(plan.Status.Latest.Revision); err == nil {
 		o.Revision = version
 	}
 
 	return nil
 }
 
-// GetInputs helps the user retrieve the inputs
-func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
-	switch {
-	case len(o.Inputs) > 0:
-		return nil
-	}
-
-	// @step: we need to ask the user for the inputs
-	if !o.Interactive {
-		for _, x := range module.Variables {
-			if x.Required && x.Default == nil {
-				if o.Contexts != nil {
-					o.Inputs = append(o.Inputs, Input{
-						Description: x.Description,
-						Key:         x.Name,
-						Required:    true,
-						Type:        x.Type,
-					})
-
-					continue
-				}
-			}
-		}
-
-		return nil
-	}
-
-	// @step: calculate the max variable size
+// retrieveInputs helps the user retrieve the inputs
+func (o *RevisionCommand) retrieveInputs(module *tfconfig.Module) error {
 	var length int
+
+	// @step: if the inputs is not empty, we skip asking the user
+	if len(o.Inputs) > 0 {
+		return nil
+	}
+
+	// @step: calculate the max variable size - just of spacing
 	for _, x := range module.Variables {
 		if len(x.Name) > length {
 			length = len(x.Name)
@@ -312,6 +297,7 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 	format := fmt.Sprintf(`%%-%ds (%%s) %%s`, (length + 5))
 
 	var required, optional []string
+
 	// @step: else we need to ask the user for the inputs
 	for _, x := range module.Variables {
 		if x.Required && x.Default == nil {
@@ -330,13 +316,15 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 	var selected []string
 	if err := survey.AskOne(&survey.MultiSelect{
 		Message:  "What variables should be exposed to the developers?",
-		Options:  append(required, optional...),
-		PageSize: 20,
-	}, &selected); err != nil {
+		Help:     "Choose the variables you want to expose to the developers",
+		Options:  append(required, (utils.Sorted(optional))...),
+		PageSize: 15,
+		Default:  required,
+	}, &selected, survey.WithKeepFilter(false)); err != nil {
 		return err
 	}
 
-	isSelected := func(name string) bool {
+	isVariableSelected := func(name string) bool {
 		for _, x := range selected {
 			if name == strings.Split(x, " ")[0] {
 				return true
@@ -348,15 +336,23 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 
 	// @step: inject the inputs
 	for _, variable := range module.Variables {
+
 		switch {
-		case !isSelected(variable.Name):
+		case !isVariableSelected(variable.Name):
 			if o.EnableDefaultVariables {
-				o.Variables[variable.Name] = variable.Default
+				if variable.Default != nil {
+					if m, ok := variable.Default.(map[string]interface{}); ok {
+						if len(m) == 0 {
+							continue
+						}
+					}
+					o.Variables[variable.Name] = variable.Default
+				}
 			}
 
 		default:
 			// @step: check if we have any suggestions from the contexts
-			input, found := SuggestContextualInput(variable.Description, o.Contexts, 0.6)
+			input, found := SuggestContextualInput(variable.Description, o.Contexts, 0.2)
 			if !found {
 				o.Inputs = append(o.Inputs, Input{
 					Default: map[string]interface{}{
@@ -381,14 +377,12 @@ func (o *RevisionCommand) GetInputs(module *tfconfig.Module) error {
 	return nil
 }
 
-// GetPlan is used to retrieve the name of the plan
-func (o *RevisionCommand) GetPlan() error {
+// retrievePlan is used to retrieve the name of the plan
+func (o *RevisionCommand) retrievePlan() error {
 	switch {
 	case o.Name != "":
 		return nil
-	case !o.Interactive:
-		o.Name = "PLAN_NAME"
-		return nil
+
 	case o.Plans == nil:
 		if err := survey.AskOne(&survey.Input{
 			Message: fmt.Sprintf("What is the name of the %s this revision will be part of?", color.YellowString("plan")),
@@ -400,8 +394,19 @@ func (o *RevisionCommand) GetPlan() error {
 
 		return nil
 	}
+	if len(o.Plans.Items) == 0 {
+		if err := survey.AskOne(&survey.Input{
+			Message: fmt.Sprintf("Enter the name of the %s this revision will be part of?", color.YellowString("plan")),
+			Help:    "Revisions are grouped by plan names, i.e. mysql-database, redis-cluster and so on",
+			Default: "my-plan",
+		}, &o.Name); err != nil {
+			return nil
+		}
 
-	// @step: retrieve list of names of the items
+		return nil
+	}
+
+	// @step: else we have plans already in the cluster, lets try and use them
 	var list []string
 	for _, x := range o.Plans.Items {
 		list = append(list, x.Name)
@@ -409,11 +414,10 @@ func (o *RevisionCommand) GetPlan() error {
 
 	// @step: we an produce a list from the current plans
 	if err := survey.AskOne(&survey.Select{
-		Message: fmt.Sprintf("What plan should this %s will be part of? (%s)",
+		Message: fmt.Sprintf("The cluster already contains plans, will the %s will be part of?",
 			color.YellowString("revision"),
-			color.CyanString("Enter to skip"),
 		),
-		Options: list,
+		Options: append(list, "None of these..."),
 	}, &o.Name); err != nil {
 		return nil
 	}
@@ -423,29 +427,29 @@ func (o *RevisionCommand) GetPlan() error {
 		if err := survey.AskOne(&survey.Input{
 			Message: fmt.Sprintf("Enter the name of the %s this revision will be part of?", color.YellowString("plan")),
 			Help:    "Revisions are grouped by plan names, i.e. mysql-database, redis-cluster and so on",
-			Default: "my-revison",
+			Default: "my-plan",
 		}, &o.Name); err != nil {
+
 			return nil
 		}
-		if o.Name == "" {
-			return errors.New("you must provide a name for the plan")
-		}
+	}
+
+	if o.Name == "" {
+		return errors.New("you must provide a name for the plan")
 	}
 
 	return nil
 }
 
-// GetConfiguration is responsible for retrieving such as policies, contexts, plans etc from
+// retrieveConfiguration is responsible for retrieving such as policies, contexts, plans etc from
 // the current kubeconfig
-func (o *RevisionCommand) GetConfiguration(ctx context.Context) error {
+func (o *RevisionCommand) retrieveConfiguration(ctx context.Context) error {
 	switch {
 	case o.Contexts == nil:
 	case o.Plans == nil:
 	case o.Policies == nil:
 	case o.Providers == nil:
 	case o.Revisions == nil:
-	case !o.Interactive:
-		return nil
 	default:
 		return nil
 	}

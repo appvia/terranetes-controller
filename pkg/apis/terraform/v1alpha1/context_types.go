@@ -18,6 +18,9 @@
 package v1alpha1
 
 import (
+	"bytes"
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,6 +59,24 @@ type ContextSpec struct {
 	// a description and a value.
 	// +kubebuilder:validation:Required
 	Variables map[string]runtime.RawExtension `json:"variables"`
+}
+
+// GetVariable returns the variable value if it exists
+func (c *ContextSpec) GetVariable(key string) (interface{}, bool, error) {
+	if !c.HasVariables() {
+		return nil, false, nil
+	}
+	if c.Variables[key].Raw == nil {
+		return nil, false, nil
+	}
+
+	values := make(map[string]interface{})
+	if err := json.NewDecoder(bytes.NewReader(c.Variables[key].Raw)).Decode(&values); err != nil {
+		return nil, false, err
+	}
+	value, found := values["value"]
+
+	return value, found, nil
 }
 
 // GetVariableValue returns the string value of the a variable
@@ -125,4 +146,47 @@ type ContextList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Context `json:"items"`
+}
+
+// HasItem returns true if the list contains the item name
+func (c *ContextList) HasItem(name string) bool {
+	for _, item := range c.Items {
+		if item.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GetItem returns the item if the list contains the item name
+func (c *ContextList) GetItem(name string) (Context, bool) {
+	for _, item := range c.Items {
+		if item.Name == name {
+			return item, true
+		}
+	}
+
+	return Context{}, false
+}
+
+// Merge is called to merge any items which don't exist in the list
+func (c *ContextList) Merge(items []Context) {
+	if c.Items == nil {
+		c.Items = items
+
+		return
+	}
+	var adding []Context
+
+	for i := 0; i < len(items); i++ {
+		if c.HasItem(items[i].Name) {
+			continue
+		}
+		adding = append(adding, items[i])
+	}
+
+	if len(adding) > 0 {
+		c.Items = append(c.Items, adding...)
+	}
 }

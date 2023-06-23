@@ -18,11 +18,26 @@
 package utils
 
 import (
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestWriteYAML(t *testing.T) {
+	values := map[string]interface{}{
+		"foo":  "bar",
+		"list": []interface{}{"item1", "item2"},
+	}
+	tempFile, err := os.CreateTemp(os.TempDir(), "test-write-yaml-*.yaml")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tempFile)
+	defer os.Remove(tempFile.Name())
+
+	err = WriteYAML(tempFile.Name(), values)
+	assert.NoError(t, err)
+}
 
 func TestYAMLDocumentsOK(t *testing.T) {
 	// Given
@@ -35,4 +50,44 @@ foo: bar
 	var docs, err = YAMLDocuments(strings.NewReader(yaml))
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(docs))
+}
+
+func TestLoadYAMLFromReader(t *testing.T) {
+	values := map[string]interface{}{}
+	content := `---
+foo: bar
+list: [item1, item2]
+`
+	err := LoadYAMLFromReader(strings.NewReader(content), &values)
+	assert.NoError(t, err)
+	assert.Equal(t, "bar", values["foo"])
+	assert.Equal(t, []interface{}{"item1", "item2"}, values["list"])
+}
+
+func TestLoadYAMLNoFile(t *testing.T) {
+	values := map[string]interface{}{}
+	err := LoadYAML("no-file.yaml", &values)
+	assert.Error(t, err)
+	assert.Equal(t, "file does not exist", err.Error())
+}
+
+func TestLoadYAMLOK(t *testing.T) {
+	content := `---
+foo: bar
+list: [item1, item2]
+`
+	tempFile, err := os.CreateTemp(os.TempDir(), "test-load-yaml-*.yaml")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tempFile)
+
+	n, err := tempFile.WriteString(content)
+	assert.NoError(t, err)
+	assert.Equal(t, len(content), n)
+	defer os.Remove(tempFile.Name())
+
+	values := map[string]interface{}{}
+	err = LoadYAML(tempFile.Name(), &values)
+	assert.NoError(t, err)
+	assert.Equal(t, "bar", values["foo"])
+	assert.Equal(t, []interface{}{"item1", "item2"}, values["list"])
 }

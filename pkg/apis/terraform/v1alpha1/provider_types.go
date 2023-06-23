@@ -279,3 +279,46 @@ type ProviderList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Provider `json:"items"`
 }
+
+// GetItem returns the item by name from the list
+func (c *ProviderList) GetItem(name string) (Provider, bool) {
+	for _, item := range c.Items {
+		if item.Name == name {
+			return item, true
+		}
+	}
+
+	return Provider{}, false
+}
+
+// HasItem returns true if the list contains the item name
+func (c *ProviderList) HasItem(name string) bool {
+	for _, item := range c.Items {
+		if item.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Merge is called to merge any items which don't exist in the list
+func (c *ProviderList) Merge(items []Provider) {
+	if c.Items == nil {
+		c.Items = items
+
+		return
+	}
+	var adding []Provider
+
+	for i := 0; i < len(items); i++ {
+		if c.HasItem(items[i].Name) {
+			continue
+		}
+		adding = append(adding, items[i])
+	}
+
+	if len(adding) > 0 {
+		c.Items = append(c.Items, adding...)
+	}
+}

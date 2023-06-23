@@ -180,3 +180,36 @@ type PolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Policy `json:"items"`
 }
+
+// HasItem returns true if the list contains the item name
+func (c *PolicyList) HasItem(name string) bool {
+	for _, item := range c.Items {
+		if item.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Merge is called to merge any items which don't exist in the list
+func (c *PolicyList) Merge(items []Policy) {
+	if c.Items == nil {
+		c.Items = items
+
+		return
+	}
+	var adding []Policy
+
+	for i := 0; i < len(items); i++ {
+		if c.HasItem(items[i].Name) {
+			continue
+		}
+
+		adding = append(adding, items[i])
+	}
+
+	if len(adding) > 0 {
+		c.Items = append(c.Items, adding...)
+	}
+}

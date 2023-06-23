@@ -18,6 +18,9 @@
 package v1alpha1
 
 import (
+	"bytes"
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -182,6 +185,43 @@ type RevisionSpec struct {
 	// the revision.
 	// +kubebuilder:validation:Required
 	Plan RevisionDefinition `json:"plan"`
+}
+
+// GetInputDefaultValue returns the default value for the input
+func (r *RevisionSpec) GetInputDefaultValue(key string) (interface{}, bool, error) {
+	if r.Inputs == nil || len(r.Inputs) == 0 {
+		return nil, false, nil
+	}
+
+	input, found := r.GetInput(key)
+	if !found {
+		return nil, false, nil
+	}
+
+	if input.Default == nil {
+		return nil, true, nil
+	}
+
+	values := map[string]interface{}{}
+	if err := json.NewDecoder(bytes.NewReader(input.Default.Raw)).Decode(&values); err != nil {
+		return nil, false, err
+	}
+	if value, found := values["value"]; found {
+		return value, true, nil
+	}
+
+	return nil, false, nil
+}
+
+// GetInput returns the input for the given key
+func (r *RevisionSpec) GetInput(key string) (RevisionInput, bool) {
+	for _, input := range r.Inputs {
+		if input.Key == key {
+			return input, true
+		}
+	}
+
+	return RevisionInput{}, false
 }
 
 // +kubebuilder:webhook:name=revisions.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/revisions,verbs=create;delete;update,groups="terraform.appvia.io",resources=revisions,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1

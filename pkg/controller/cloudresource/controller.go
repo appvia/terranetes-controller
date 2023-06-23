@@ -66,6 +66,10 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			fmt.Sprintf("/validate/%s/cloudresources", terraformv1alpha1.GroupName),
 			admission.WithCustomValidator(&terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc)),
 		)
+		mgr.GetWebhookServer().Register(
+			fmt.Sprintf("/mutate/%s/cloudresources", terraformv1alpha1.GroupName),
+			admission.WithCustomDefaulter(&terraformv1alpha1.CloudResource{}, cloudresources.NewMutator(c.cc)),
+		)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

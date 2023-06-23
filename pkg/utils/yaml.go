@@ -18,10 +18,50 @@
 package utils
 
 import (
+	"errors"
 	"io"
+	"os"
 	"regexp"
 	"strings"
+
+	"sigs.k8s.io/yaml"
 )
+
+// WriteYAML writes a yaml document to a file
+func WriteYAML(path string, data interface{}) error {
+	yamlData, err := yaml.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, yamlData, 0600)
+}
+
+// LoadYAML loads a yaml document into a structure
+func LoadYAML(path string, data interface{}) error {
+	if found, err := FileExists(path); err != nil {
+		return err
+	} else if !found {
+		return errors.New("file does not exist")
+	}
+
+	rd, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	return LoadYAMLFromReader(rd, data)
+}
+
+// LoadYAMLFromReader loads a yaml document from a io reader
+func LoadYAMLFromReader(reader io.Reader, data interface{}) error {
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+
+	return yaml.Unmarshal(content, data)
+}
 
 // YAMLDocuments returns a collection of documents from the reader
 func YAMLDocuments(reader io.Reader) ([]string, error) {

@@ -416,7 +416,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 
 					It("should indicate no updates available", func() {
 						Expect(cc.Get(context.TODO(), cloudresource.GetNamespacedName(), cloudresource)).To(Succeed())
-						Expect(cloudresource.Status.UpdateAvailable).To(Equal("Available"))
+						Expect(cloudresource.Status.UpdateAvailable).To(Equal("Update v3.0.0 available"))
 					})
 				})
 			})

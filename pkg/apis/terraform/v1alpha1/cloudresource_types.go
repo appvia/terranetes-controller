@@ -138,6 +138,7 @@ func (c *CloudResourceSpec) HasValueFrom() bool {
 }
 
 // +kubebuilder:webhook:name=cloudresources.terraform.appvia.io,mutating=false,path=/validate/terraform.appvia.io/cloudresources,verbs=create;update,groups="terraform.appvia.io",resources=cloudresources,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:name=cloudresources.terraform.appvia.io,mutating=true,path=/mutate/terraform.appvia.io/cloudresources,verbs=create;update,groups="terraform.appvia.io",resources=cloudresources,versions=v1alpha1,failurePolicy=fail,sideEffects=None,admissionReviewVersions=v1
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
