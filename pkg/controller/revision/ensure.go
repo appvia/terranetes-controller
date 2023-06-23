@@ -79,3 +79,30 @@ func (c *Controller) ensurePlanExists(revision *terraformv1alpha1.Revision) cont
 		return reconcile.Result{}, nil
 	}
 }
+
+// ensureInUseCount is responsible for ensuring the in-use count is correct
+func (c *Controller) ensureInUseCount(revision *terraformv1alpha1.Revision) controller.EnsureFunc {
+	cond := controller.ConditionMgr(revision, corev1alpha1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		list := &terraformv1alpha1.CloudResourceList{}
+		if err := c.cc.List(ctx, list, client.MatchingLabels{
+			terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+			terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
+		}); err != nil {
+			cond.Failed(err, "Failed to list cloud resources: %v", err)
+
+			return reconcile.Result{}, err
+		}
+		// @step: update the in-use count
+		revision.Status.InUse = len(list.Items)
+
+		// @step: update the prometheus metric
+		revisionTotal.WithLabelValues(
+			revision.Spec.Plan.Name,
+			revision.Spec.Plan.Revision,
+		).Set(float64(revision.Status.InUse))
+
+		return reconcile.Result{}, nil
+	}
+}

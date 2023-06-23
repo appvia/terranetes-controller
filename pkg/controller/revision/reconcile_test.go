@@ -214,6 +214,40 @@ var _ = Describe("Revisions Controller", func() {
 				Expect(plan.HasRevision(revision.Spec.Plan.Revision)).To(BeTrue())
 			})
 		})
+
+		Context("and the revision is in use by a cloud resource", func() {
+			BeforeEach(func() {
+				cloudresource := fixtures.NewCloudResource("default", "test")
+				cloudresource.Labels = map[string]string{
+					terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+					terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
+				}
+				cloudresource.Spec.Plan.Name = revision.Spec.Plan.Name
+				cloudresource.Spec.Plan.Revision = revision.Spec.Plan.Revision
+				Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
+
+				plan := fixtures.NewConfigurationPlan(revision.Spec.Plan.Name)
+				plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
+					{
+						Revision: revision.Spec.Plan.Revision,
+						Name:     revision.Spec.Plan.Name,
+					},
+				}
+				Expect(cc.Create(context.Background(), plan)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, revision, 0)
+			})
+
+			It("should return an error", func() {
+				Expect(rerr).ToNot(HaveOccurred())
+				Expect(result.Requeue).To(BeFalse())
+			})
+
+			It("should update the in use count on the status", func() {
+				Expect(cc.Get(context.Background(), revision.GetNamespacedName(), revision)).To(Succeed())
+				Expect(revision.Status.InUse).To(Equal(1))
+			})
+		})
 	})
 
 	When("a revision is deleted", func() {
