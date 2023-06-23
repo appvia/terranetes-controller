@@ -65,7 +65,7 @@ type PlanSpec struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=plans,scope=Cluster,categories={terraform}
-// +kubebuilder:printcolumn:name="Latest",type="string",JSONPath=".status.latest.version"
+// +kubebuilder:printcolumn:name="Latest",type="string",JSONPath=".status.latest.revision"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Plan struct {
 	metav1.TypeMeta   `json:",inline"`
