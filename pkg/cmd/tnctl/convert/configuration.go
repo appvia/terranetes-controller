@@ -334,7 +334,7 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 	// @step: we need to prompt the user to ask if they want use to resolve them?
 	if o.Configuration.Spec.ValueFrom.HasSecretReferences() {
 		if err := survey.AskOne(&survey.Confirm{
-			Message: "The Configuration contains references to Secrets, do you want to resolve them?",
+			Message: "The resource contains references to Secrets, do you want to resolve them?",
 		}, &answer); err != nil {
 			return err
 		}
@@ -371,7 +371,7 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 
 	if o.Configuration.Spec.ValueFrom.HasContextReferences() {
 		if err := survey.AskOne(&survey.Confirm{
-			Message: "The Configuration contains references to Contexts, do you want to resolve them?",
+			Message: "The resource contains references to Contexts, do you want to resolve them?",
 		}, &answer); err != nil {
 			return err
 		}
