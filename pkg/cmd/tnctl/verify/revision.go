@@ -37,6 +37,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/utils/policies"
+	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
 var longDescription = `
@@ -203,11 +204,11 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 		return err
 	}
 	// @step: generate the terraform plan if requested
-	if err := o.checkTerraformPlan(ctx, revision, o.Directory); err != nil {
+	if err := o.checkTerraformPlan(ctx, revision); err != nil {
 		return err
 	}
 	// @step: check if policy is defined for, it will pass
-	if err := o.checkSecurityPolicy(ctx, revision, o.Directory); err != nil {
+	if err := o.checkSecurityPolicy(ctx); err != nil {
 		return err
 	}
 	// @step: print a summary of the checks
@@ -412,7 +413,7 @@ func (o *RevisionCommand) checkRevisionInputs(revision *terraformv1alpha1.Revisi
 // there is no consistent way to produce a plan without them.
 // AWS https://stackoverflow.com/questions/54269578/terraform-run-plan-without-aws-credentials
 // But can't be done for GCP
-func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terraformv1alpha1.Revision, dir string) error {
+func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terraformv1alpha1.Revision) error {
 	switch {
 	case !o.EnableTerraformPlan:
 		return nil
@@ -439,7 +440,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 		options := []string{
 			"run", "--interactive",
 			"--user", fmt.Sprintf("%d", os.Getuid()),
-			"--volume", fmt.Sprintf("%s:/source", dir),
+			"--volume", fmt.Sprintf("%s:/source", o.Directory),
 			"--workdir", "/source",
 			o.TerraformImage,
 			"init", "-lock=false",
@@ -483,7 +484,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 
 		options = append(options, []string{
 			"--user", fmt.Sprintf("%d", os.Getuid()),
-			"--volume", fmt.Sprintf("%s:/source", dir),
+			"--volume", fmt.Sprintf("%s:/source", o.Directory),
 			"--workdir", "/source",
 			o.TerraformImage,
 			"plan", "-no-color", "-out=plan.tfplan", "-refresh=false", "-lock=false",
@@ -503,7 +504,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 		options = []string{
 			"run", "--interactive", "--rm",
 			"--user", fmt.Sprintf("%d", os.Getuid()),
-			"--volume", fmt.Sprintf("%s:/source", dir),
+			"--volume", fmt.Sprintf("%s:/source", o.Directory),
 			"--workdir", "/source",
 			"--entrypoint", "sh",
 			o.TerraformImage,
@@ -523,7 +524,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 }
 
 // checkSecurityPolicy checks if the revision is permitted by the policy
-func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context, _ *terraformv1alpha1.Revision, dir string) error {
+func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 	return o.Verify.Check("Validating against Checkov Security Policy", func(v CheckInterface) error {
 		switch {
 		case o.Policies == nil:
@@ -556,10 +557,25 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context, _ *terraformv
 
 		v.Info("Found %d security policies to validate against", len(constraints))
 		for _, x := range constraints {
+			// @step: we need to generate the checkov configuration
+			checkov, err := terraform.NewCheckovPolicy(map[string]interface{}{
+				"Framework": framework,
+				"Policy":    x.Spec.Constraints.Checkov,
+			})
+			if err != nil {
+				return err
+			}
+
+			// @step: we need write the checkov configuration
+			err = os.WriteFile(filepath.Join(o.Directory, ".checkov.yml"), []byte(checkov), 0600)
+			if err != nil {
+				return err
+			}
+
 			options := []string{
 				"run", "--interactive",
 				"--user", fmt.Sprintf("%d", os.Getuid()),
-				"--volume", fmt.Sprintf("%s:/source", dir),
+				"--volume", fmt.Sprintf("%s:/source", o.Directory),
 				"--workdir", "/source",
 				o.CheckovImage,
 				"--directory", "/source",
@@ -575,7 +591,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context, _ *terraformv
 			if err != nil {
 				return fmt.Errorf("failed to run checkov: %s, error: %w", string(combined), err)
 			}
-			filename := filepath.Join(dir, "results_json.json")
+			filename := filepath.Join(o.Directory, "results_json.json")
 
 			// @step: read in the results from checkov
 			results, err := os.ReadFile(filename)
@@ -586,7 +602,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context, _ *terraformv
 			// @step: lets start by processing the passed results
 			passed := gjson.GetBytes(results, "results.passed_checks")
 			if passed.Exists() && passed.IsArray() {
-				v.Passed("Revision has passed %d checks in policy: %s", len(passed.Array()), x.Name)
+				v.Passed("Revision has passed %d checks in policy: %q", len(passed.Array()), x.Name)
 			}
 
 			// @step: lets start by processing the failed results
@@ -700,7 +716,7 @@ func (o *RevisionCommand) checkPermittedPolicy(revision *terraformv1alpha1.Revis
 		for _, policy := range policies {
 			permitted, err := policy.Spec.Constraints.Modules.Matches(revision.Spec.Configuration.Module)
 			if err == nil && permitted {
-				c.Passed("Revision is permitted by policy constraint %s", policy.Name)
+				c.Passed("Revision is permitted by policy constraint %q", policy.Name)
 
 				return nil
 			}
@@ -739,7 +755,7 @@ func (o *RevisionCommand) convertRevision(ctx context.Context, revision *terrafo
 		Factory:         o.Factory,
 		Contexts:        o.Contexts,
 		Directory:       o.Directory,
-		IncludeCheckov:  true,
+		IncludeCheckov:  false,
 		IncludeProvider: true,
 		Policies:        o.Policies,
 		Providers:       o.Providers,
