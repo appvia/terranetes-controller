@@ -28,6 +28,12 @@ func TestMaxChars(t *testing.T) {
 	assert.Equal(t, "hel", v)
 }
 
+func TestContainsPrefix(t *testing.T) {
+	assert.True(t, ContainsPrefix("/tmp/revision", []string{"/", "."}))
+	assert.True(t, ContainsPrefix(".", []string{"/", "."}))
+	assert.False(t, ContainsPrefix("abc", []string{"def"}))
+}
+
 func TestContainsOK(t *testing.T) {
 	list := []string{"a", "b", "c"}
 

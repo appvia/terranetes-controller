@@ -17,7 +17,10 @@
 
 package utils
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // MaxChars returns the maximum character length of a list of strings
 func MaxChars(slice string, max int) string {
@@ -29,6 +32,17 @@ func MaxChars(slice string, max int) string {
 	}
 
 	return slice[:max]
+}
+
+// ContainsPrefix checks a list has a value with the prefixes
+func ContainsPrefix(v string, l []string) bool {
+	for _, x := range l {
+		if strings.HasPrefix(v, x) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Contains checks a list has a value in it

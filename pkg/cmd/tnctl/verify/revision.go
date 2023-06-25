@@ -192,7 +192,7 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 		return err
 	}
 	// @step: check if the cloudresource is permitted by the policy
-	if err := o.checkPermittedPolicy(revision); err != nil {
+	if err := o.checkModuleSecurityPolicy(revision); err != nil {
 		return err
 	}
 	// @step: check if the resource has a provider
@@ -710,16 +710,20 @@ func (o *RevisionCommand) checkProvider(revision *terraformv1alpha1.Revision) er
 	})
 }
 
-// checkPermittedPolicy is responsible for checking if the cloudresource is permitted by the policy
-func (o *RevisionCommand) checkPermittedPolicy(revision *terraformv1alpha1.Revision) error {
+// checkModuleSecurityPolicy is responsible for checking if the cloudresource is permitted by the policy
+func (o *RevisionCommand) checkModuleSecurityPolicy(revision *terraformv1alpha1.Revision) error {
 	return o.Verify.Check("Validating Module Policy permits Revision", func(c CheckInterface) error {
 		switch {
 		case o.Policies == nil:
 			fallthrough
+
 		case len(o.Policies.Items) == 0:
 			c.Warning("No module constraint policies found, the Revision will be permitted")
 
 			return nil
+
+		case utils.ContainsPrefix(revision.Spec.Configuration.Module, []string{"/", "."}):
+			c.Warning("Revision is using a local directory, skipping policy check")
 		}
 
 		policies := policies.FindModuleConstraints(o.Policies)
