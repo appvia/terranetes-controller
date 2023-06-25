@@ -19,6 +19,7 @@ package verify
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -108,10 +109,11 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	o := &RevisionCommand{Factory: factory}
 
 	command := &cobra.Command{
-		Use:   "revision [OPTIONS] FILE",
-		Short: "Performs a series of checks against a Revision to ensure it is ready for use",
-		Long:  longDescription,
-		Args:  cobra.MinimumNArgs(1),
+		Use:          "revision [OPTIONS] FILE",
+		Short:        "Performs a series of checks against a Revision to ensure it is ready for use",
+		Long:         longDescription,
+		Args:         cobra.MinimumNArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.File = args[0]
 
@@ -162,9 +164,7 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 	}
 	defer func() {
 		if !o.KeepTempDir {
-			if strings.HasPrefix(o.Directory, os.TempDir()) {
-				_ = os.RemoveAll(o.Directory)
-			}
+			_ = os.RemoveAll(o.Directory)
 		} else {
 			o.Println("Keeping temporary directory: %s", o.Directory)
 		}
@@ -217,7 +217,7 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 	}
 
 	if o.Verify.FailedCount() > 0 {
-		os.Exit(1)
+		return errors.New("revision failed verification checks")
 	}
 
 	return nil
@@ -229,7 +229,7 @@ func (o *RevisionCommand) retrieveSummary() error {
 		emoji.GreenCircle, o.Verify.PassedCount(), o.Verify.WarningCount())
 
 	if o.Verify.FailedCount() > 0 {
-		o.Println("%v Failed (%d)",
+		o.Println("%v Failed: %d",
 			emoji.RedCircle,
 			o.Verify.FailedCount(),
 		)
@@ -284,7 +284,7 @@ func (o *RevisionCommand) retrieveCheckovVersion(ctx context.Context) error {
 	o.CheckovImage = "latest"
 
 	return o.Verify.Check("Retrieving Checkov Version", func(v CheckInterface) error {
-		latest := "Unable to retrieve the checkov version from the cluster, defaulting to latest"
+		latest := "Unable to discover Checkov version from cluster, defaulting to latest"
 
 		// @step: retrieve a client
 		cc, err := o.GetClient()
@@ -338,7 +338,7 @@ func (o *RevisionCommand) retrieveTerraformVersion(ctx context.Context) error {
 	o.TerraformImage = "latest"
 
 	return o.Verify.Check("Retrieving Terraform Version", func(v CheckInterface) error {
-		latest := "Unable to retrieve the terraform version from the cluster, defaulting to latest"
+		latest := "Unable discover Terraform version from cluster, defaulting to latest"
 
 		// @step: retrieve a client
 		cc, err := o.GetClient()
@@ -426,7 +426,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 	}
 
 	return o.Verify.Check("Validating Security Policies against Terraform Plan", func(v CheckInterface) error {
-		v.Info("Checking security policies against terraform plan itself")
+		v.Info("Checking security policies against terraform plan")
 
 		// @step: we need to inject the environment variables for the provider
 		provider, found := o.Providers.GetItem(revision.Spec.Configuration.ProviderRef.Name)
@@ -446,6 +446,7 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 			"init", "-lock=false",
 		}
 		cmd := exec.CommandContext(ctx, "docker", options...)
+
 		combined, err := cmd.CombinedOutput()
 		if err != nil {
 			v.Failed("Unable to perform terraform init: %s", string(combined))
@@ -459,25 +460,43 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 		options = []string{"run", "--interactive", "--rm"}
 		switch provider.Spec.Provider {
 		case terraformv1alpha1.AWSProviderType:
-			for _, environment := range []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
-				if os.Getenv(environment) == "" {
-					v.Failed("Missing environment variable: %s, cannot generate plan", environment)
+			for _, x := range []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"} {
+				if value := os.Getenv(x); value == "" {
+					v.Failed("Missing: %s, in environment", x)
 
 					return nil
 				}
-				options = append(options, "--env="+environment)
+				options = append(options, fmt.Sprintf("--env=%s", x))
 			}
 			for _, x := range []string{"AWS_DEFAULT_REGION", "AWS_REGION", "AWS_SESSION_TOKEN"} {
 				if value := os.Getenv(x); value != "" {
-					options = append(options, fmt.Sprintf("-e=%s", x))
+					options = append(options, fmt.Sprintf("--env=%s", x))
 				}
 			}
 
 		case terraformv1alpha1.GCPProviderType:
+			optional := []string{
+				"GCLOUD_KEYFILE_JSON",
+				"GOOGLE_APPLICATION_CREDENTIALS",
+				"GOOGLE_CLOUD_KEYFILE_JSON",
+				"GOOGLE_CREDENTIALS",
+			}
+			for _, x := range optional {
+				if value := os.Getenv(x); value != "" {
+					options = append(options, fmt.Sprintf("--env=%s", x))
+				}
+			}
 
 		case terraformv1alpha1.AzureProviderType:
 		default:
-			v.Failed("Unsupported provider type: %s, please remove --enable-terraform-plan", provider.Spec.Provider)
+			mandatory := []string{"ARM_CLIENT_ID", "ARM_CLIENT_SECRET", "ARM_SUBSCRIPTION_ID", "ARM_TENANT_ID"}
+			for _, x := range mandatory {
+				if value := os.Getenv(x); value == "" {
+					v.Failed("Missing: %s, in environment", x)
+					return nil
+				}
+				options = append(options, fmt.Sprintf("--env=%s", x))
+			}
 
 			return nil
 		}
@@ -498,9 +517,9 @@ func (o *RevisionCommand) checkTerraformPlan(ctx context.Context, revision *terr
 
 			return nil
 		}
+		v.Info("Successfully generated a terraform plan from Revision")
 
 		v.Info("Converting terraform plan to json for Checkov to verify")
-
 		options = []string{
 			"run", "--interactive", "--rm",
 			"--user", fmt.Sprintf("%d", os.Getuid()),
@@ -681,8 +700,7 @@ func (o *RevisionCommand) checkProvider(revision *terraformv1alpha1.Revision) er
 			v.Warning("No providers were found in the cluster or sources directory")
 
 		case !o.Providers.HasItem(revision.Spec.Configuration.ProviderRef.Name):
-			v.Failed("Provider %q was not found, ensuring this is configured else consumers will have to override",
-				revision.Spec.Configuration.ProviderRef.Name)
+			v.Warning("Provider %q not found or skipped (use-cluster)", revision.Spec.Configuration.ProviderRef.Name)
 
 		default:
 			v.Passed("Provider referenced exists in cluster")
@@ -756,7 +774,7 @@ func (o *RevisionCommand) convertRevision(ctx context.Context, revision *terrafo
 		Contexts:        o.Contexts,
 		Directory:       o.Directory,
 		IncludeCheckov:  false,
-		IncludeProvider: true,
+		IncludeProvider: (len(o.Providers.Items) > 0),
 		Policies:        o.Policies,
 		Providers:       o.Providers,
 		Revision:        revision,
