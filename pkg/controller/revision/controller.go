@@ -31,6 +31,7 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/revisions"
+	"github.com/appvia/terranetes-controller/pkg/schema"
 )
 
 // Controller handles the reconciliation of the policy resource
@@ -57,11 +58,11 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/revisions", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(&terraformv1alpha1.Revision{}, revisions.NewMutator(c.cc)),
+			admission.WithCustomDefaulter(schema.GetScheme(), &terraformv1alpha1.Revision{}, revisions.NewMutator(c.cc)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/revisions", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(&terraformv1alpha1.Revision{},
+			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.Revision{},
 				revisions.NewValidator(c.cc, c.EnableUpdateProtection),
 			),
 		)

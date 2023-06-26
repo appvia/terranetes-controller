@@ -52,7 +52,11 @@ var _ = Describe("CloudResource Deletion", func() {
 	var configuration *terraformv1alpha1.Configuration
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.CloudResource{}).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			Build()
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:       cc,
@@ -72,12 +76,12 @@ var _ = Describe("CloudResource Deletion", func() {
 		configuration.Finalizers = []string{controllerName}
 		controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 		cloudresource.Status.ConfigurationName = configuration.Name
-		cloudresource.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 
 		Expect(cc.Create(context.Background(), revision)).To(Succeed())
 		Expect(cc.Create(context.Background(), plan)).To(Succeed())
-		Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
 		Expect(cc.Create(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
+		Expect(cc.Delete(context.Background(), cloudresource)).To(Succeed())
 	})
 
 	When("cloudresource is deleted", func() {
@@ -125,7 +129,8 @@ var _ = Describe("CloudResource Deletion", func() {
 
 		Context("and the configuration is deleting", func() {
 			BeforeEach(func() {
-				configuration.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+				Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
+				Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 			})
 
 			Context("configuration status has been updated", func() {

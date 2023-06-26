@@ -49,7 +49,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/namespaces", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(&v1.Namespace{}, namespaces.NewValidator(c.cc, c.EnableNamespaceProtection)),
+			admission.WithCustomValidator(mgr.GetScheme(), &v1.Namespace{}, namespaces.NewValidator(c.cc, c.EnableNamespaceProtection)),
 		)
 	}
 

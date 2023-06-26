@@ -23,9 +23,13 @@ import (
 	"testing"
 	"time"
 
+	//"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+
+	//	batchv1 "k8s.io/api/batch/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -55,7 +59,11 @@ var _ = Describe("Preload Controller", func() {
 	var provider *terraformv1alpha1.Provider
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Context{}).
+			WithStatusSubresource(&terraformv1alpha1.Provider{}).
+			Build()
 		recorder := &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:                  cc,

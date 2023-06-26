@@ -54,7 +54,12 @@ var _ = Describe("Revisions Controller", func() {
 	var revision *terraformv1alpha1.Revision
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Plan{}).
+			WithStatusSubresource(&terraformv1alpha1.Revision{}).
+			Build()
+
 		recorder := &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:       cc,
@@ -256,9 +261,8 @@ var _ = Describe("Revisions Controller", func() {
 		BeforeEach(func() {
 			revision = fixtures.NewAWSBucketRevision("test")
 			revision.Finalizers = []string{controllerName}
-			revision.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-
 			Expect(cc.Create(context.Background(), revision)).To(Succeed())
+			Expect(cc.Delete(context.Background(), revision)).To(Succeed())
 
 			plan = fixtures.NewConfigurationPlan(revision.Spec.Plan.Name)
 			plan.Spec.Revisions = []terraformv1alpha1.PlanRevision{
@@ -276,7 +280,7 @@ var _ = Describe("Revisions Controller", func() {
 
 		Context("but no plan exists", func() {
 			BeforeEach(func() {
-				Expect(cc.Delete(context.Background(), fixtures.NewConfigurationPlan(revision.Spec.Plan.Name))).To(Succeed())
+				Expect(cc.Delete(context.Background(), plan)).To(Succeed())
 
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, revision, 0)
 			})
@@ -286,7 +290,7 @@ var _ = Describe("Revisions Controller", func() {
 				Expect(result.Requeue).To(BeFalse())
 			})
 
-			It("should no longer exist", func() {
+			It("should have removed the revision", func() {
 				found, err := kubernetes.GetIfExists(context.Background(), cc, revision)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeFalse())

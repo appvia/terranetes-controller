@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
@@ -139,11 +138,11 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(&terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
+			admission.WithCustomValidator(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(&terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
+			admission.WithCustomDefaulter(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
 		)
 	}
 
@@ -158,8 +157,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		)).
 		Watches(
 			// We use this it keep a local cache of all namespaces in the cluster
-			&source.Kind{Type: &v1.Namespace{}},
-			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+			&v1.Namespace{},
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
 				switch {
 				case !o.GetDeletionTimestamp().IsZero():
 					c.cache.Delete(o.GetName())
@@ -171,9 +170,9 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			}),
 		).
 		Watches(
-			&source.Kind{Type: &batchv1.Job{}},
+			&batchv1.Job{},
 			// allows us to requeue the resource when the job has updated
-			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a client.Object) []reconcile.Request {
 				return []ctrl.Request{
 					{NamespacedName: client.ObjectKey{
 						Namespace: a.GetNamespace(),

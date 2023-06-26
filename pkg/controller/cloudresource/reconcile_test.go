@@ -59,7 +59,10 @@ var _ = Describe("CloudResource Reconcilation", func() {
 	var revision *terraformv1alpha1.Revision
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.CloudResource{}).
+			Build()
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:       cc,
