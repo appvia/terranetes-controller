@@ -20,6 +20,7 @@ package revisions
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -153,8 +154,12 @@ func (v *validator) validate(ctx context.Context, before, revision *terraformv1a
 	// @step: if update protection is enabled, we need to ensure there isn't any current
 	// cloud resource using the revision
 	if updating && v.EnableUpdateProtection {
-		switch revision.GetAnnotations()[terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation] {
-		case "true":
+		switch {
+		// if we have the annotation: true we skip the check
+		case revision.GetAnnotations()[terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation] == "true":
+			break
+		// if nothing has changed in the spec, we allow it
+		case reflect.DeepEqual(before.Spec, revision.Spec):
 			break
 
 		default:
