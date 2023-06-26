@@ -44,6 +44,8 @@ kind: Provider
 metadata:
   name: ${CLOUD}
 spec:
+  configuration:
+    skip_provider_registration: true
   source: secret
   provider: ${CLOUD}
   secretRef:
