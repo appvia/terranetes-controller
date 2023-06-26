@@ -29,6 +29,7 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/test/fixtures"
 )
 
@@ -210,11 +211,34 @@ var _ = Describe("Revision Validation", func() {
 			})
 		})
 
-		Context("and a cloud resource is referencing the revision", func() {
+		Context("and a cloud resource references the revision, and a change in the spec", func() {
+			var updated *terraformv1alpha1.Revision
+
+			BeforeEach(func() {
+				updated = revision.DeepCopy()
+				updated.Spec.Configuration.EnableAutoApproval = true
+			})
+
 			It("should fail", func() {
-				err = v.ValidateUpdate(ctx, revision, revision)
+				err = v.ValidateUpdate(ctx, revision, updated)
 				Expect(err).ToNot(Succeed())
 				Expect(err.Error()).To(Equal("in use by cloudresource/s, update denied (use terraform.appvia.io/revision.skip-update-protection to override)"))
+			})
+		})
+
+		Context("and a cloud resource references the revision, but no change to spec", func() {
+			var updated *terraformv1alpha1.Revision
+
+			BeforeEach(func() {
+				updated = revision.DeepCopy()
+				updated.Annotations = utils.MergeStringMaps(updated.Annotations, map[string]string{
+					terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation: "true",
+				})
+			})
+
+			It("should not fail", func() {
+				err = v.ValidateUpdate(ctx, revision, updated)
+				Expect(err).To(Succeed())
 			})
 		})
 
