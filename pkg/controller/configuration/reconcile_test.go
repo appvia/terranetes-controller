@@ -89,12 +89,16 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
 		configuration.Spec.EnableAutoApproval = true
 
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
-			append([]runtime.Object{
-				fixtures.NewValidAWSReadyProvider("aws", secret),
-				secret,
-				configuration,
-			})...)
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			WithRuntimeObjects(
+				append([]runtime.Object{
+					fixtures.NewValidAWSReadyProvider("aws", secret),
+					secret,
+					configuration,
+				})...).
+			Build()
 
 		ctrl = makeFakeController(cc)
 		recorder = ctrl.recorder.(*controllertests.FakeRecorder)
@@ -250,11 +254,15 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			Raw: []byte(`{"hello":"world"}`),
 		}
 
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
-			append([]runtime.Object{
-				fixtures.NewValidAWSReadyProvider("aws", secret),
-				secret,
-			})...)
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			WithRuntimeObjects(
+				append([]runtime.Object{
+					fixtures.NewValidAWSReadyProvider("aws", secret),
+					secret,
+				})...).
+			Build()
 
 		ctrl = makeFakeController(cc)
 		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
@@ -439,11 +447,15 @@ var _ = Describe("Configuration Controller, no reconciliation", func() {
 		secret := fixtures.NewValidAWSProviderSecret(namespace, "aws")
 		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
 
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme(),
-			append([]runtime.Object{
-				fixtures.NewValidAWSReadyProvider("aws", secret),
-				secret,
-			})...)
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			WithRuntimeObjects(
+				append([]runtime.Object{
+					fixtures.NewValidAWSReadyProvider("aws", secret),
+					secret,
+				})...).
+			Build()
 
 		ctrl = makeFakeController(cc)
 		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
@@ -538,11 +550,18 @@ var _ = Describe("Configuration Controller", func() {
 
 	Setup := func(objects ...runtime.Object) {
 		secret := fixtures.NewValidAWSProviderSecret("default", "aws")
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme(), append([]runtime.Object{
-			fixtures.NewNamespace(cfgNamespace),
-			fixtures.NewValidAWSReadyProvider("aws", secret),
-			secret,
-		}, objects...)...)
+
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Configuration{}).
+			WithRuntimeObjects(
+				append([]runtime.Object{
+					fixtures.NewNamespace(cfgNamespace),
+					fixtures.NewValidAWSReadyProvider("aws", secret),
+					secret,
+				}, objects...)...).
+			Build()
+
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:                  cc,

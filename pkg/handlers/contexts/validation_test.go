@@ -28,6 +28,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -44,6 +45,7 @@ var _ = Describe("Context Validation", func() {
 	var cc client.Client
 	var v *validator
 	var err error
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
@@ -56,11 +58,12 @@ var _ = Describe("Context Validation", func() {
 			BeforeEach(func() {
 				c.Spec.Variables = nil
 
-				err = v.ValidateCreate(context.Background(), c)
+				warnings, err = v.ValidateCreate(context.Background(), c)
 			})
 
 			It("should not return an error", func() {
 				Expect(err).To(BeNil())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -70,12 +73,13 @@ var _ = Describe("Context Validation", func() {
 					c.Spec.Variables = map[string]runtime.RawExtension{
 						"foo": runtime.RawExtension{},
 					}
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 				})
 
 				It("should return an error", func() {
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 					Expect(err).ToNot(BeNil())
+					Expect(warnings).To(BeEmpty())
 				})
 
 				It("should return an error with the correct message", func() {
@@ -89,12 +93,13 @@ var _ = Describe("Context Validation", func() {
 						"foo": runtime.RawExtension{Raw: []byte("invalid")},
 					}
 
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 				})
 
 				It("should return an error", func() {
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("spec.variable[\"foo\"] invalid input"))
+					Expect(warnings).To(BeEmpty())
 				})
 			})
 
@@ -105,12 +110,13 @@ var _ = Describe("Context Validation", func() {
 							Raw: []byte(`{"value": "bar"}`),
 						},
 					}
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 				})
 
 				It("should return an error", func() {
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 					Expect(err).ToNot(BeNil())
+					Expect(warnings).To(BeEmpty())
 				})
 
 				It("should return an error with the correct message", func() {
@@ -125,12 +131,13 @@ var _ = Describe("Context Validation", func() {
 							Raw: []byte(`{"description": "bar"}`),
 						},
 					}
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 				})
 
 				It("should return an error", func() {
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 					Expect(err).ToNot(BeNil())
+					Expect(warnings).To(BeEmpty())
 				})
 
 				It("should return an error with the correct message", func() {
@@ -145,12 +152,13 @@ var _ = Describe("Context Validation", func() {
 							Raw: []byte(`{"description": "bar", "value": "baz"}`),
 						},
 					}
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 				})
 
 				It("should not return an error", func() {
-					err = v.ValidateCreate(context.Background(), c)
+					warnings, err = v.ValidateCreate(context.Background(), c)
 					Expect(err).To(BeNil())
+					Expect(warnings).To(BeEmpty())
 				})
 			})
 		})
@@ -186,11 +194,12 @@ var _ = Describe("Context Validation", func() {
 					terraformv1alpha1.OrphanAnnotation: "true",
 				}
 
-				err = v.ValidateDelete(context.Background(), c)
+				warnings, err = v.ValidateDelete(context.Background(), c)
 			})
 
 			It("should not return an error", func() {
 				Expect(err).To(BeNil())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -198,7 +207,7 @@ var _ = Describe("Context Validation", func() {
 
 			Context("but we have configurations referencing the context", func() {
 				It("should return an error", func() {
-					err = v.ValidateDelete(context.Background(), c)
+					warnings, err = v.ValidateDelete(context.Background(), c)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("resource in use by configuration(s): default/test-0, default/test-1"))
 				})
@@ -210,8 +219,9 @@ var _ = Describe("Context Validation", func() {
 				})
 
 				It("should not return an error", func() {
-					err = v.ValidateDelete(context.Background(), c)
+					warnings, err = v.ValidateDelete(context.Background(), c)
 					Expect(err).To(BeNil())
+					Expect(warnings).To(BeEmpty())
 				})
 			})
 		})
@@ -231,8 +241,9 @@ var _ = Describe("Context Validation", func() {
 			})
 
 			It("should not return an error, regardless of reference", func() {
-				err = v.ValidateDelete(context.Background(), c)
+				warnings, err = v.ValidateDelete(context.Background(), c)
 				Expect(err).To(BeNil())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})

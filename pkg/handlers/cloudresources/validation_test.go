@@ -71,12 +71,14 @@ var _ = Describe("Checking CloudResource Validation", func() {
 
 	When("resource not a cloud resource", func() {
 		It("should return an error", func() {
-			err := v.ValidateCreate(context.Background(), &terraformv1alpha1.Revision{})
+			warnings, err := v.ValidateCreate(context.Background(), &terraformv1alpha1.Revision{})
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("expected a CloudResource, but got: *v1alpha1.Revision"))
 
-			err = v.ValidateUpdate(context.Background(), &terraformv1alpha1.Revision{}, &terraformv1alpha1.Revision{})
+			warnings, err = v.ValidateUpdate(context.Background(), &terraformv1alpha1.Revision{}, &terraformv1alpha1.Revision{})
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("expected a CloudResource, but got: *v1alpha1.Revision"))
 		})
 	})
@@ -85,36 +87,41 @@ var _ = Describe("Checking CloudResource Validation", func() {
 		It("should fail when no plan name is provided", func() {
 			cloudresource.Spec.Plan.Name = ""
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.name is required"))
 		})
 
 		It("should fail when no plan revision", func() {
 			cloudresource.Spec.Plan.Revision = ""
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.revision is required"))
 		})
 
 		It("should fail when connection secret is empty", func() {
 			cloudresource.Spec.WriteConnectionSecretToRef.Name = ""
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.writeConnectionSecretToRef.name is required"))
 
-			err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+			warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.writeConnectionSecretToRef.name is required"))
 		})
 
 		It("should fail when auth secret is empty", func() {
 			cloudresource.Spec.Auth.Name = ""
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.auth.name is required"))
 		})
 
@@ -123,37 +130,42 @@ var _ = Describe("Checking CloudResource Validation", func() {
 
 			cloudresource.Spec.WriteConnectionSecretToRef.Keys = []string{"this:is:invalid"}
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal(expected))
 
-			err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+			warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal(expected))
 		})
 
 		It("should fail when plan does not exist", func() {
 			Expect(cc.Delete(context.Background(), plan)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.name does not exist"))
 		})
 
 		It("should fail when plan not ready", func() {
 			plan.Status.GetCondition(corev1alpha1.ConditionReady).Status = metav1.ConditionFalse
-			Expect(cc.Status().Update(context.Background(), plan)).To(Succeed())
+			Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.name is not is a ready state"))
 		})
 
 		It("should fail when revision does not exist", func() {
 			Expect(cc.Delete(context.Background(), revision)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.revision: does not exist"))
 		})
 
@@ -161,8 +173,9 @@ var _ = Describe("Checking CloudResource Validation", func() {
 			plan.Spec.Revisions = nil
 			Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.revision: v0.0.1 does not exist in plan"))
 		})
 
@@ -170,8 +183,9 @@ var _ = Describe("Checking CloudResource Validation", func() {
 			plan.Spec.Revisions[0].Revision = "v0.0.2"
 			Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.plan.revision: v0.0.1 does not exist in plan"))
 		})
 
@@ -180,8 +194,9 @@ var _ = Describe("Checking CloudResource Validation", func() {
 			revision.Spec.Configuration.ProviderRef = nil
 			Expect(cc.Update(context.Background(), revision)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.providerRef is required"))
 		})
 
@@ -189,8 +204,9 @@ var _ = Describe("Checking CloudResource Validation", func() {
 			cloudresource.Spec.ProviderRef = &terraformv1alpha1.ProviderReference{}
 			Expect(cc.Update(context.Background(), revision)).To(Succeed())
 
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 			Expect(err.Error()).To(Equal("spec.providerRef.name is required"))
 		})
 
@@ -209,12 +225,14 @@ var _ = Describe("Checking CloudResource Validation", func() {
 			It("should fail when inputs are not provided", func() {
 				expected := "spec.variables.database_name is required variable for revision: v0.0.1"
 
-				err := v.ValidateCreate(context.Background(), cloudresource)
+				warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 
-				err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+				warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 			})
 
@@ -224,12 +242,14 @@ var _ = Describe("Checking CloudResource Validation", func() {
 				}
 				expected := "spec.variables.not_permitted is not permitted by revision: v0.0.1"
 
-				err := v.ValidateCreate(context.Background(), cloudresource)
+				warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 
-				err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+				warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 			})
 
@@ -243,21 +263,24 @@ var _ = Describe("Checking CloudResource Validation", func() {
 				}
 				expected := "spec.valueFrom[0].my_name input is not permitted by revision: v0.0.1"
 
-				err := v.ValidateCreate(context.Background(), cloudresource)
+				warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 
-				err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+				warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 				Expect(err).To(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 				Expect(err.Error()).To(Equal(expected))
 			})
 		})
 
 		It("should not fail", func() {
-			err := v.ValidateCreate(context.Background(), cloudresource)
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+			warnings, err = v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})

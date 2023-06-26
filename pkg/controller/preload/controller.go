@@ -18,6 +18,7 @@
 package preload
 
 import (
+	"context"
 	"errors"
 
 	log "github.com/sirupsen/logrus"
@@ -29,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 )
@@ -71,8 +71,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		WithEventFilter(&predicate.ResourceVersionChangedPredicate{}).
 		Watches(
-			&source.Kind{Type: &batchv1.Job{}},
-			handler.EnqueueRequestsFromMapFunc(func(o client.Object) []ctrl.Request {
+			&batchv1.Job{},
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []ctrl.Request {
 				if o.GetLabels()[terraformv1alpha1.PreloadJobLabel] == "true" {
 					return []ctrl.Request{
 						{

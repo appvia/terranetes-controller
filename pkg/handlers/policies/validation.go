@@ -43,17 +43,19 @@ func NewValidator(cc client.Client) admission.CustomValidator {
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	list := &terraformv1alpha1.ConfigurationList{}
 	o := obj.(*terraformv1alpha1.Policy)
 
 	err := v.cc.List(ctx, list, client.InNamespace(""))
 	if err != nil {
-		return err
+		return warnings, err
 	}
 
 	if o.GetAnnotations()[terraformv1alpha1.SkipDefaultsValidationCheck] == "true" {
-		return nil
+		return warnings, nil
 	}
 
 	var using []string
@@ -70,32 +72,33 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	}
 
 	if len(using) > 0 {
-		return fmt.Errorf("policy in use by configurations: %s", strings.Join(using, ", "))
+		return warnings, fmt.Errorf("policy in use by configurations: %s", strings.Join(using, ", "))
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	return v.ValidateUpdate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
 	o := newObj.(*terraformv1alpha1.Policy)
 
 	if err := validateDefaultVariables(o); err != nil {
-		return err
+		return warnings, err
 	}
 	if err := validateCheckovConstraints(o); err != nil {
-		return err
+		return warnings, err
 	}
 	if err := validateModuleConstraint(o); err != nil {
-		return err
+		return warnings, err
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // validateDefaultVariables ensures the default variables are valid

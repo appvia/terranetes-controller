@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/schema"
@@ -44,6 +45,7 @@ var _ = Describe("Revision Validation", func() {
 	var cc client.Client
 	var v *validator
 	var revision *terraformv1alpha1.Revision
+	var warnings admission.Warnings
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).Build()
@@ -57,37 +59,46 @@ var _ = Describe("Revision Validation", func() {
 
 		It("should fail when no plan name", func() {
 			revision.Spec.Plan.Name = ""
-
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.name is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.name is required"))
 		})
 
 		It("should fail when no plan description", func() {
 			revision.Spec.Plan.Description = ""
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.description is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.description is required"))
 		})
 
 		It("should fail when no plan version", func() {
 			revision.Spec.Plan.Revision = ""
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.version is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.version is required"))
 		})
 
 		It("should fail when invalid semver", func() {
 			revision.Spec.Plan.Revision = "BAD"
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.version is not a valid semver"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.version is not a valid semver"))
 		})
 
 		It("should fail if dependencies added by nothing to depend on", func() {
 			revision.Spec.Dependencies = []terraformv1alpha1.RevisionDependency{{}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.dependencies[0] is missing a context, provider or terranetes"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.dependencies[0] is missing a context, provider or terranetes"))
 		})
 
 		It("should fail when context dependency name not set", func() {
@@ -97,8 +108,10 @@ var _ = Describe("Revision Validation", func() {
 				},
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.dependencies[0].context.name is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.dependencies[0].context.name is required"))
 		})
 
 		It("should fail when terranetes dependency version not set", func() {
@@ -108,8 +121,10 @@ var _ = Describe("Revision Validation", func() {
 				},
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.dependencies[0].terranetes.version is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.dependencies[0].terranetes.version is required"))
 		})
 
 		It("should fail when provider dependency cloud not set", func() {
@@ -119,8 +134,10 @@ var _ = Describe("Revision Validation", func() {
 				},
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.dependencies[0].provider.cloud is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.dependencies[0].provider.cloud is required"))
 		})
 
 		It("should fail if input name not set", func() {
@@ -128,25 +145,31 @@ var _ = Describe("Revision Validation", func() {
 				Key: "", Description: "test",
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.inputs[0].key is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.inputs[0].key is required"))
 		})
 
-		It("should if inputs description not set", func() {
+		It("should fail if inputs description not set", func() {
 			revision.Spec.Inputs = []terraformv1alpha1.RevisionInput{{
 				Key: "test", Description: "",
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.inputs[0].description is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.inputs[0].description is required"))
 		})
 
-		It("should if inputs type not set", func() {
+		It("should success if inputs type not set", func() {
 			revision.Spec.Inputs = []terraformv1alpha1.RevisionInput{{
 				Key: "test", Description: "test",
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).To(Succeed())
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(Succeed())
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should if inputs value does not contain anything", func() {
@@ -154,28 +177,34 @@ var _ = Describe("Revision Validation", func() {
 				Key: "test", Description: "test", Default: &runtime.RawExtension{},
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.inputs[0].default.value is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.inputs[0].default.value is required"))
 		})
 
-		It("should if inputs value does not contain field", func() {
+		It("should fail if inputs value does not contain field", func() {
 			revision.Spec.Inputs = []terraformv1alpha1.RevisionInput{{
 				Key: "test", Description: "test", Default: &runtime.RawExtension{
 					Raw: []byte(`{"test": "test"}`),
 				},
 			}}
 
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.inputs[0].default.value is required"))
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.inputs[0].default.value is required"))
 		})
 
-		It("should not failed when field is defined", func() {
+		It("should not fail when field is defined", func() {
 			revision.Spec.Inputs = []terraformv1alpha1.RevisionInput{{
 				Key: "test", Description: "test", Default: &runtime.RawExtension{
 					Raw: []byte(`{"value": "test"}`),
 				},
 			}}
-			Expect(v.ValidateCreate(ctx, revision)).To(Succeed())
+			warnings, err := v.ValidateCreate(ctx, revision)
+			Expect(err).To(Succeed())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -202,12 +231,12 @@ var _ = Describe("Revision Validation", func() {
 					terraformv1alpha1.CloudResourceRevisionLabel: "another_revision",
 				}
 				Expect(cc.Update(ctx, cloudresource)).To(Succeed())
-
-				err = v.ValidateUpdate(ctx, revision, revision)
+				warnings, err = v.ValidateUpdate(ctx, revision, revision)
 			})
 
 			It("should not fail", func() {
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -220,9 +249,10 @@ var _ = Describe("Revision Validation", func() {
 			})
 
 			It("should fail", func() {
-				err = v.ValidateUpdate(ctx, revision, updated)
+				warnings, err = v.ValidateUpdate(ctx, revision, updated)
 				Expect(err).ToNot(Succeed())
 				Expect(err.Error()).To(Equal("in use by cloudresource/s, update denied (use terraform.appvia.io/revision.skip-update-protection to override)"))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -237,8 +267,9 @@ var _ = Describe("Revision Validation", func() {
 			})
 
 			It("should not fail", func() {
-				err = v.ValidateUpdate(ctx, revision, updated)
+				warnings, err = v.ValidateUpdate(ctx, revision, updated)
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -250,15 +281,17 @@ var _ = Describe("Revision Validation", func() {
 			})
 
 			It("should not fail", func() {
-				err = v.ValidateUpdate(ctx, revision, revision)
+				warnings, err = v.ValidateUpdate(ctx, revision, revision)
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
 		Context("and we are creating not updating", func() {
 			It("should not fail", func() {
-				err = v.ValidateCreate(ctx, revision)
+				warnings, err = v.ValidateCreate(ctx, revision)
 				Expect(err).To(Succeed())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
@@ -275,19 +308,28 @@ var _ = Describe("Revision Validation", func() {
 		})
 
 		It("should fail with an error", func() {
-			Expect(v.ValidateCreate(ctx, revision)).ToNot(Succeed())
+			warnings, err = v.ValidateCreate(ctx, revision)
+			Expect(err).ToNot(Succeed())
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should indicate the duplicate revision", func() {
-			Expect(v.ValidateCreate(ctx, revision).Error()).To(Equal("spec.plan.revision same version already exists on revision/s: another,another1"))
+			warnings, err = v.ValidateCreate(ctx, revision)
+			Expect(err).ToNot(Succeed())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.plan.revision same version already exists on revision/s: another,another1"))
 		})
 	})
 
 	It("should not fail creating", func() {
-		Expect(v.ValidateCreate(ctx, revision)).To(Succeed())
+		warnings, err = v.ValidateCreate(ctx, revision)
+		Expect(err).To(Succeed())
+		Expect(warnings).To(BeEmpty())
 	})
 
 	It("should not fail updated", func() {
-		Expect(v.ValidateUpdate(ctx, revision, revision)).To(Succeed())
+		warnings, err = v.ValidateUpdate(ctx, revision, revision)
+		Expect(err).To(Succeed())
+		Expect(warnings).To(BeEmpty())
 	})
 })

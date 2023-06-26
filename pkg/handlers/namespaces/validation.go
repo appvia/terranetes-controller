@@ -42,35 +42,37 @@ func NewValidator(cc client.Client, enabled bool) admission.CustomValidator {
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	// @step: check if the namespace protection is enabled
 	if !v.EnableNamespaceProtection {
-		return nil
+		return warnings, nil
 	}
 
 	ns, ok := obj.(*v1.Namespace)
 	if !ok {
-		return fmt.Errorf("the object %T is not an expected v1.Namespace", obj)
+		return warnings, fmt.Errorf("the object %T is not an expected v1.Namespace", obj)
 	}
 
 	// @step: check if there are any configurations in the namespace
 	list := &terraformv1alpha1.ConfigurationList{}
 	if err := v.cc.List(ctx, list, client.InNamespace(ns.Name)); err != nil {
-		return err
+		return warnings, err
 	}
 	if len(list.Items) > 0 {
-		return fmt.Errorf("deletion of namespace %s is prevented, ensure Terranetes Configurations are deleted first", ns.Name)
+		return warnings, fmt.Errorf("deletion of namespace %s is prevented, ensure Terranetes Configurations are deleted first", ns.Name)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return nil
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }

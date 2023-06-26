@@ -44,35 +44,35 @@ func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	o, ok := obj.(*terraformv1alpha1.Configuration)
 	if !ok {
-		return fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.ConfigurationKind, obj)
+		return admission.Warnings{}, fmt.Errorf("expected a Configuration, but got: %T", obj)
 	}
 
-	return v.validate(ctx, nil, o)
+	return admission.Warnings{}, v.validate(ctx, nil, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	var after, before *terraformv1alpha1.Configuration
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	var before, after *terraformv1alpha1.Configuration
 
-	if oldObj != nil {
-		before = oldObj.(*terraformv1alpha1.Configuration)
-	}
 	if newObj != nil {
 		after = newObj.(*terraformv1alpha1.Configuration)
 	}
+	if oldObj != nil {
+		before = oldObj.(*terraformv1alpha1.Configuration)
+	}
 
-	return v.validate(ctx, before, after)
+	return admission.Warnings{}, v.validate(ctx, before, after)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
 
-// validate is called to validate the configuration
+// validate is called to ensure the configuration is valid and incline with current policies
 func (v *validator) validate(ctx context.Context, before, configuration *terraformv1alpha1.Configuration) error {
 	creating := before == nil
 

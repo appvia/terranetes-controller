@@ -19,6 +19,7 @@ package provider
 
 import (
 	"context"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,7 +53,7 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 		if !found {
 			cond.ActionRequired("Provider secret (%s/%s) not found", secret.Namespace, secret.Name)
 
-			return reconcile.Result{}, controller.ErrIgnore
+			return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 		}
 
 		// @step: ensure the format of the secret is correct
@@ -68,16 +69,22 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 				switch {
 				case secret.Data["ARM_CLIENT_ID"] == nil:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_CLIENT_ID", secret.Namespace, secret.Name)
-					return reconcile.Result{}, controller.ErrIgnore
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+
 				case secret.Data["ARM_CLIENT_SECRET"] == nil:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_CLIENT_SECRET", secret.Namespace, secret.Name)
-					return reconcile.Result{}, controller.ErrIgnore
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+
 				case secret.Data["ARM_SUBSCRIPTION_ID"] == nil:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_SUBSCRIPTION_ID", secret.Namespace, secret.Name)
-					return reconcile.Result{}, controller.ErrIgnore
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 				case secret.Data["ARM_TENANT_ID"] == nil:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the ARM_TENANT_ID", secret.Namespace, secret.Name)
-					return reconcile.Result{}, controller.ErrIgnore
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 				}
 
 			case terraformv1alpha1.GCPProviderType:
@@ -89,7 +96,7 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 						secret.Data["GOOGLE_CREDENTIALS"] == nil:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_CREDENTIALS, GOOGLE_CLOUD_KEYFILE_JSON or GCLOUD_KEYFILE_JSON field", secret.Namespace, secret.Name)
 
-					return reconcile.Result{}, controller.ErrIgnore
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 				}
 
 			case terraformv1alpha1.AWSProviderType:
@@ -97,16 +104,17 @@ func (c *Controller) ensureProviderSecret(provider *terraformv1alpha1.Provider) 
 				case len(secret.Data["AWS_ACCESS_KEY_ID"]) == 0:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the AWS_ACCESS_KEY_ID", secret.Namespace, secret.Name)
 
-					return reconcile.Result{}, controller.ErrIgnore
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 
 				case len(secret.Data["AWS_SECRET_ACCESS_KEY"]) == 0:
 					cond.ActionRequired("Provider secret (%s/%s) is missing the AWS_SECRET_ACCESS_KEY", secret.Namespace, secret.Name)
 
-					return reconcile.Result{}, controller.ErrIgnore
-				case len(secret.Data["AWS_ACCESS_KEY_ID"]) > len(secret.Data["AWS_SECRET_ACCESS_KEY"]):
-					cond.ActionRequired("provider secret (%s/%s) aws access key is larger than secret", secret.Namespace, secret.Name)
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 
-					return reconcile.Result{}, controller.ErrIgnore
+				case len(secret.Data["AWS_ACCESS_KEY_ID"]) > len(secret.Data["AWS_SECRET_ACCESS_KEY"]):
+					cond.ActionRequired("Provider secret (%s/%s) aws access key is larger than secret", secret.Namespace, secret.Name)
+
+					return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 				}
 			}
 		}

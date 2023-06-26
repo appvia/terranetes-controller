@@ -36,6 +36,9 @@ var (
 	ErrIgnore = errors.New("resource is being ignored")
 	// DefaultEnsureHandler is the default sequential runner for a list of ensure functions
 	DefaultEnsureHandler = EnsureRunner{}
+	// ResourceReady is the default message we use for the ready condition, if the
+	// controller has not set a message
+	ResourceReady = "Resource ready"
 )
 
 // EnsureFunc defines a method to ensure a state
@@ -113,7 +116,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	}
 
 	cond := ConditionMgr(resource, corev1alpha1.ConditionReady, nil)
-	cond.Success("Resource ready")
+	cond.Success(ResourceReady)
 
 	status.LastSuccess = &corev1alpha1.LastReconcileStatus{
 		Generation: resource.GetGeneration(),

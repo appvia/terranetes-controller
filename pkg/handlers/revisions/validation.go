@@ -46,72 +46,73 @@ func NewValidator(cc client.Client, updateProtection bool) admission.CustomValid
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	o, ok := obj.(*terraformv1alpha1.Revision)
 	if !ok {
-		return fmt.Errorf("expected a Revision but got a %T", obj)
+		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", obj)
 	}
 
 	return v.validate(ctx, nil, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	after, ok := newObj.(*terraformv1alpha1.Revision)
 	if !ok {
-		return fmt.Errorf("expected a Revision but got a %T", newObj)
+		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", newObj)
 	}
 	before, ok := oldObj.(*terraformv1alpha1.Revision)
 	if !ok {
-		return fmt.Errorf("expected a Revision but got a %T", oldObj)
+		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", oldObj)
 	}
 
 	return v.validate(ctx, before, after)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return admission.Warnings{}, nil
 }
 
 // validate is called when a resource is being created or updated
 // nolint:gocyclo
-func (v *validator) validate(ctx context.Context, before, revision *terraformv1alpha1.Revision) error {
+func (v *validator) validate(ctx context.Context, before, revision *terraformv1alpha1.Revision) (admission.Warnings, error) {
+	var warnings admission.Warnings
 	updating := before != nil
 
 	switch {
 	case revision.Spec.Plan.Name == "":
-		return fmt.Errorf("spec.plan.name is required")
+		return warnings, fmt.Errorf("spec.plan.name is required")
 	case revision.Spec.Plan.Description == "":
-		return fmt.Errorf("spec.plan.description is required")
+		return warnings, fmt.Errorf("spec.plan.description is required")
 	case revision.Spec.Plan.Revision == "":
-		return fmt.Errorf("spec.plan.version is required")
+		return warnings, fmt.Errorf("spec.plan.version is required")
 	}
 
 	// @check the version is semvar
 	if _, err := semver.NewVersion(revision.Spec.Plan.Revision); err != nil {
-		return fmt.Errorf("spec.plan.version is not a valid semver")
+		return warnings, fmt.Errorf("spec.plan.version is not a valid semver")
 	}
 
 	// @step: check the dependencies
 	for i, x := range revision.Spec.Dependencies {
 		switch {
 		case x.Context == nil && x.Provider == nil && x.Terranetes == nil:
-			return fmt.Errorf("spec.plan.dependencies[%d] is missing a context, provider or terranetes", i)
+			return warnings, fmt.Errorf("spec.plan.dependencies[%d] is missing a context, provider or terranetes", i)
 
 		case x.Context != nil:
 			if x.Context.Name == "" {
-				return fmt.Errorf("spec.plan.dependencies[%d].context.name is required", i)
+				return warnings, fmt.Errorf("spec.plan.dependencies[%d].context.name is required", i)
 			}
 
 		case x.Provider != nil:
 			if x.Provider.Cloud == "" {
-				return fmt.Errorf("spec.plan.dependencies[%d].provider.cloud is required", i)
+				return warnings, fmt.Errorf("spec.plan.dependencies[%d].provider.cloud is required", i)
 			}
 
 		case x.Terranetes != nil:
 			if x.Terranetes.Version == "" {
-				return fmt.Errorf("spec.plan.dependencies[%d].terranetes.version is required", i)
+				return warnings, fmt.Errorf("spec.plan.dependencies[%d].terranetes.version is required", i)
 			}
 		}
 	}
@@ -120,14 +121,14 @@ func (v *validator) validate(ctx context.Context, before, revision *terraformv1a
 	for i, x := range revision.Spec.Inputs {
 		switch {
 		case x.Description == "":
-			return fmt.Errorf("spec.plan.inputs[%d].description is required", i)
+			return warnings, fmt.Errorf("spec.plan.inputs[%d].description is required", i)
 
 		case x.Key == "":
-			return fmt.Errorf("spec.plan.inputs[%d].key is required", i)
+			return warnings, fmt.Errorf("spec.plan.inputs[%d].key is required", i)
 
 		case x.Default != nil:
 			if !gjson.ParseBytes(x.Default.Raw).Get("value").Exists() {
-				return fmt.Errorf("spec.plan.inputs[%d].default.value is required", i)
+				return warnings, fmt.Errorf("spec.plan.inputs[%d].default.value is required", i)
 			}
 		}
 	}
@@ -135,7 +136,7 @@ func (v *validator) validate(ctx context.Context, before, revision *terraformv1a
 	// @step: you cannot create revisions with the same plan and version
 	list := &terraformv1alpha1.RevisionList{}
 	if err := v.cc.List(ctx, list); err != nil {
-		return err
+		return warnings, err
 	}
 	var existing []string
 
@@ -148,7 +149,7 @@ func (v *validator) validate(ctx context.Context, before, revision *terraformv1a
 		}
 	}
 	if len(existing) > 0 {
-		return fmt.Errorf("spec.plan.revision same version already exists on revision/s: %v", strings.Join(existing, ","))
+		return warnings, fmt.Errorf("spec.plan.revision same version already exists on revision/s: %v", strings.Join(existing, ","))
 	}
 
 	// @step: if update protection is enabled, we need to ensure there isn't any current
@@ -170,14 +171,14 @@ func (v *validator) validate(ctx context.Context, before, revision *terraformv1a
 					terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
 				},
 				)); err != nil {
-				return fmt.Errorf("failed to retrieved list of cloud resources: %w", err)
+				return warnings, fmt.Errorf("failed to retrieved list of cloud resources: %w", err)
 			}
 
 			if len(list.Items) > 0 {
-				return fmt.Errorf("in use by cloudresource/s, update denied (use %s to override)", terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation)
+				return warnings, fmt.Errorf("in use by cloudresource/s, update denied (use %s to override)", terraformv1alpha1.RevisionSkipUpdateProtectionAnnotation)
 			}
 		}
 	}
 
-	return nil
+	return warnings, nil
 }

@@ -52,13 +52,15 @@ var _ = Describe("Provider Validation", func() {
 
 	When("creating a provider", func() {
 		It("should not error when creating a valid provider", func() {
-			err := v.ValidateCreate(ctx, fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))
+			warnings, err := v.ValidateCreate(ctx, fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should not error when updating a valid provider", func() {
-			err := v.ValidateUpdate(ctx, nil, fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))
+			warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name)))
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -67,11 +69,13 @@ var _ = Describe("Provider Validation", func() {
 			policy := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
 			policy.Spec.Provider = "unknown"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -81,13 +85,15 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.SecretRef = nil
 			msg := "spec.secretRef: secret is required when source is secret"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should throw error when no secret name in reference", func() {
@@ -95,13 +101,15 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.SecretRef.Name = ""
 			msg := "spec.secretRef.name: name is required when source is secret"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should thrown a error when the namespace is not within the job namespace", func() {
@@ -109,13 +117,15 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.SecretRef.Namespace = "not_controller_namespace"
 			msg := "spec.secretRef.namespace: must be in same namespace as the controller"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should throw error when no secret namespace in reference", func() {
@@ -123,13 +133,15 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.SecretRef.Namespace = ""
 			msg := "spec.secretRef.namespace: namespace is required when source is secret"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -140,13 +152,15 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.ServiceAccount = nil
 			msg := "spec.serviceAccount: serviceAccount is required when source is injected"
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 
-			err = v.ValidateUpdate(ctx, nil, policy)
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(msg))
+			Expect(warnings).To(BeEmpty())
 		})
 
 		It("should not throw an error when service account defined", func() {
@@ -155,10 +169,13 @@ var _ = Describe("Provider Validation", func() {
 			policy.Spec.Source = "injected"
 			policy.Spec.ServiceAccount = pointer.String(name)
 
-			err := v.ValidateCreate(ctx, policy)
+			warnings, err := v.ValidateCreate(ctx, policy)
 			Expect(err).ToNot(HaveOccurred())
-			err = v.ValidateUpdate(ctx, nil, policy)
+			Expect(warnings).To(BeEmpty())
+
+			warnings, err = v.ValidateUpdate(ctx, nil, policy)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
 		})
 	})
 
@@ -174,15 +191,17 @@ var _ = Describe("Provider Validation", func() {
 			})
 
 			It("should throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should throw an error on update", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -197,15 +216,17 @@ var _ = Describe("Provider Validation", func() {
 			})
 
 			It("should throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should throw an error on update", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -221,15 +242,17 @@ var _ = Describe("Provider Validation", func() {
 			})
 
 			It("should throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should throw an error on update", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 	})
@@ -246,13 +269,15 @@ var _ = Describe("Provider Validation", func() {
 
 		Context("we have not other providers", func() {
 			It("should not throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should not throw an error on update", func() {
-				err := v.ValidateUpdate(ctx, nil, provider)
+				warnings, err := v.ValidateUpdate(ctx, nil, provider)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -263,13 +288,15 @@ var _ = Describe("Provider Validation", func() {
 			})
 
 			It("should not throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should not throw an error on update", func() {
-				err := v.ValidateUpdate(ctx, nil, provider)
+				warnings, err := v.ValidateUpdate(ctx, nil, provider)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
 			})
 		})
 
@@ -285,17 +312,18 @@ var _ = Describe("Provider Validation", func() {
 			})
 
 			It("should throw an error on creation", func() {
-				err := v.ValidateCreate(ctx, provider)
+				warnings, err := v.ValidateCreate(ctx, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 
 			It("should throw an error on update", func() {
-				err := v.ValidateUpdate(ctx, nil, provider)
+				warnings, err := v.ValidateUpdate(ctx, nil, provider)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(expected))
+				Expect(warnings).To(BeEmpty())
 			})
 		})
-
 	})
 })

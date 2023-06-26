@@ -20,12 +20,10 @@ package revision
 import (
 	"context"
 	"io/ioutil"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -48,18 +46,21 @@ var _ = Describe("Deleting a Revision", func() {
 	var recorder *controllertests.FakeRecorder
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
-		recorder = &controllertests.FakeRecorder{}
-		ctrl = &Controller{
-			cc:       cc,
-			recorder: recorder,
-		}
-		revision = fixtures.NewAWSBucketRevision("test")
-		revision.DeletionTimestamp = &metav1.Time{Time: time.Now()}
-		plan = fixtures.NewPlan(revision.Spec.Plan.Name, revision)
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			WithStatusSubresource(&terraformv1alpha1.Revision{}).
+			Build()
 
-		Expect(cc.Create(context.Background(), plan)).To(Succeed())
+		recorder = &controllertests.FakeRecorder{}
+		ctrl = &Controller{cc: cc, recorder: recorder}
+
+		revision = fixtures.NewAWSBucketRevision("test")
+		revision.Finalizers = []string{controllerName}
 		Expect(cc.Create(context.Background(), revision)).To(Succeed())
+		Expect(cc.Delete(context.Background(), revision)).To(Succeed())
+
+		plan = fixtures.NewPlan(revision.Spec.Plan.Name, revision)
+		Expect(cc.Create(context.Background(), plan)).To(Succeed())
 	})
 
 	When("deleting a revision", func() {
