@@ -26,13 +26,15 @@ teardown() {
 }
 
 @test "We should have a clean environment to verify cloudresources" {
-  runit "kubectl -n ${APP_NAMESPACE} delete cloudresource fake || true"
+  runit "kubectl delete namespace cs-apps || true"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete revision fake.v1 || true"
+  runit "kubectl delete revision fake.v1 || true"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete revision fake.v2 || true"
+  runit "kubectl delete revision fake.v2 || true"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete plan fake || true"
+  runit "kubectl delete plan fake || true"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl create namespace cs-apps || true"
   [[ "$status" -eq 0 ]]
 }
 
@@ -82,123 +84,123 @@ spec:
   variables:
     sentence: Has been overridden
 EOF
-  runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
+  runit "kubectl -n cs-apps apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a managed configuration name for derived cloudresource" {
-  retry 5 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r .status.configurationName | grep ^fake"
+  retry 5 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r .status.configurationName | grep ^fake"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource with a derive configuration" {
-  NAME=$(kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json | jq -r .status.configurationName)
+  NAME=$(kubectl -n cs-apps get cloudresource fake -o json | jq -r .status.configurationName)
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${NAME}"
+  runit "kubectl -n cs-apps get configuration ${NAME}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource running the terraform plan" {
   expected="Terraform plan is running"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Plan'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Plan'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].reason' | grep -q 'InProgress'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].reason' | grep -q 'InProgress'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].status' | grep -q 'False'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].status' | grep -q 'False'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformPlan'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformPlan'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource status of out of sync" {
-  retry 5 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'OutOfSync'"
+  retry 5 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'OutOfSync'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource which successfully ran a plan" {
   expected="Terraform plan is complete"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Plan'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Plan'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformPlan'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformPlan'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[3].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource pending a approval" {
   expected="Waiting for terraform apply annotation to be set to true"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'ActionRequired'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'ActionRequired'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'False'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'False'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to approve the cloudresource" {
-  runit "kubectl -n ${APP_NAMESPACE} annotate cloudresources.terraform.appvia.io fake \"terraform.appvia.io/apply\"=true --overwrite"
+  runit "kubectl -n cs-apps annotate cloudresources.terraform.appvia.io fake \"terraform.appvia.io/apply\"=true --overwrite"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource running the terraform apply" {
   expected="Terraform apply in progress"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'InProgress'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'InProgress'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'False'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'False'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource which successfully ran a apply" {
   expected="Terraform apply is complete"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].name' | grep -q 'Terraform Apply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'Ready'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].reason' | grep -q 'Ready'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'True'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].status' | grep -q 'True'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].type' | grep -q 'TerraformApply'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.conditions[5].message' | grep -q '${expected}'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource status of in sync" {
-  retry 5 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'InSync'"
+  retry 5 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'InSync'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to view the logs from the apply" {
-  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=fake -l terraform.appvia.io/stage=apply -o json | jq -r '.items[0].metadata.name')
+  POD=$(kubectl -n cs-apps get pod -l terraform.appvia.io/configuration=fake -l terraform.appvia.io/stage=apply -o json | jq -r '.items[0].metadata.name')
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'Has been overridden'"
+  runit "kubectl -n cs-apps logs ${POD} 2>&1" "grep -q 'Has been overridden'"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q '\[build\] completed'"
+  runit "kubectl -n cs-apps logs ${POD} 2>&1" "grep -q '\[build\] completed'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource with no upgrades available" {
-  runit "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.updateAvailable' | grep -q 'None'"
+  runit "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.updateAvailable' | grep -q 'None'"
   [[ "$status" -eq 0 ]]
 }
 
@@ -228,38 +230,37 @@ EOF
 }
 
 @test "We should have a cloudresource pending an upgrade" {
-  runit "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.updateAvailable' | grep -q 'Update v0.0.2 available'"
+  runit "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.updateAvailable' | grep -q 'Update v0.0.2 available'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to delete the cloudresource" {
-  runit "kubectl -n ${APP_NAMESPACE} delete cloudresource fake --wait=false"
+  runit "kubectl -n cs-apps delete cloudresource fake --wait=false"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a cloudresource with status deleting" {
-  retry 5 "kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'Deleting'"
+  retry 5 "kubectl -n cs-apps get cloudresource fake -o json" "jq -r '.status.resourceStatus' | grep -q 'Deleting'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have deleted the cloudresource and configuration" {
-  CONFIGURATION_NAME=$(kubectl -n ${APP_NAMESPACE} get cloudresource fake -o json | jq -r .status.configurationName)
+  CONFIGURATION_NAME=$(kubectl -n cs-apps get cloudresource fake -o json | jq -r .status.configurationName)
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake 2>&1" "grep -q 'NotFound'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake 2>&1" "grep -q 'NotFound'"
   [[ "$status" -eq 0 ]]
-  retry 10 "kubectl -n ${APP_NAMESPACE} get configuration ${CONFIGURATION_NAME} 2>&1" "grep -q 'NotFound'"
+  retry 10 "kubectl -n cs-apps get configuration ${CONFIGURATION_NAME} 2>&1" "grep -q 'NotFound'"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should be able to delete the revision" {
-  runit "kubectl -n ${APP_NAMESPACE} delete revision fake.v1"
+  runit "kubectl -n cs-apps delete revision fake.v1"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} delete revision fake.v2"
+  runit "kubectl -n cs-apps delete revision fake.v2"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have deleted the plan due to no revisions available" {
-  retry 10 "kubectl -n ${APP_NAMESPACE} get cloudresource fake 2>&1" "grep -q 'NotFound'"
+  retry 10 "kubectl -n cs-apps get cloudresource fake 2>&1" "grep -q 'NotFound'"
   [[ "$status" -eq 0 ]]
 }
-
