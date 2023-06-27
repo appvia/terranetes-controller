@@ -963,7 +963,7 @@ github.com/quasilyte/stdinfo
 # github.com/rodaine/hclencoder v0.0.1
 ## explicit; go 1.14
 github.com/rodaine/hclencoder
-# github.com/rogpeppe/go-internal v1.10.0
+# github.com/rogpeppe/go-internal v1.10.1-0.20230524175051-ec119421bb97
 ## explicit; go 1.19
 github.com/rogpeppe/go-internal/fmtsort
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -2012,8 +2012,8 @@ mvdan.cc/interfacer/check
 # mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b
 ## explicit
 mvdan.cc/lint
-# mvdan.cc/sh/v3 v3.6.0
-## explicit; go 1.18
+# mvdan.cc/sh/v3 v3.7.0
+## explicit; go 1.19
 mvdan.cc/sh/v3/cmd/shfmt
 mvdan.cc/sh/v3/fileutil
 mvdan.cc/sh/v3/syntax
