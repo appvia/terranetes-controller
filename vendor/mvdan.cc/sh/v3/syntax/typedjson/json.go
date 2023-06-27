@@ -25,7 +25,7 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// Encode is a shortcut for EncodeOptions.Encode, with the default options.
+// Encode is a shortcut for [EncodeOptions.Encode] with the default options.
 func Encode(w io.Writer, node syntax.Node) error {
 	return EncodeOptions{}.Encode(w, node)
 }
@@ -90,18 +90,17 @@ func encodeValue(val reflect.Value) (reflect.Value, string) {
 		encTyp := reflect.StructOf(fields)
 		enc := reflect.New(encTyp).Elem()
 
-		// Pos methods are defined on struct pointer receivers.
-		for i, name := range [...]string{"Pos", "End"} {
-			if fn := val.Addr().MethodByName(name); fn.IsValid() {
-				encodePos(enc.Field(1+i), fn.Call(nil)[0])
-			}
+		// Node methods are defined on struct pointer receivers.
+		if node, _ := val.Addr().Interface().(syntax.Node); node != nil {
+			encodePos(enc.Field(1), node.Pos()) // posField
+			encodePos(enc.Field(2), node.End()) // endField
 		}
 		// Do the rest of the fields.
 		for i := 3; i < encTyp.NumField(); i++ {
 			ftyp := encTyp.Field(i)
 			fval := val.FieldByName(ftyp.Name)
 			if ftyp.Type == exportedPosType {
-				encodePos(enc.Field(i), fval)
+				encodePos(enc.Field(i), fval.Interface().(syntax.Pos))
 			} else {
 				encElem, _ := encodeValue(fval)
 				if encElem.IsValid() {
@@ -110,7 +109,7 @@ func encodeValue(val reflect.Value) (reflect.Value, string) {
 			}
 		}
 
-		// Addr helps prevent an allocation as we use interface{} fields.
+		// Addr helps prevent an allocation as we use any fields.
 		return enc.Addr(), typ.Name()
 	case reflect.Slice:
 		n := val.Len()
@@ -145,10 +144,10 @@ func encodeValue(val reflect.Value) (reflect.Value, string) {
 var (
 	noValue reflect.Value
 
-	anyType         = reflect.TypeOf((*interface{})(nil)).Elem() // interface{}
-	anySliceType    = reflect.SliceOf(anyType)                   // []interface{}
-	posType         = reflect.TypeOf((*syntax.Pos)(nil)).Elem()  // syntax.Pos
-	exportedPosType = reflect.TypeOf((*exportedPos)(nil))        // *exportedPos
+	anyType         = reflect.TypeOf((*any)(nil)).Elem()        // any
+	anySliceType    = reflect.SliceOf(anyType)                  // []any
+	posType         = reflect.TypeOf((*syntax.Pos)(nil)).Elem() // syntax.Pos
+	exportedPosType = reflect.TypeOf((*exportedPos)(nil))       // *exportedPos
 
 	// TODO(v4): derived fields like Type, Pos, and End should have clearly
 	// different names to prevent confusion. For example: _type, _pos, _end.
@@ -173,27 +172,27 @@ type exportedPos struct {
 	Offset, Line, Col uint
 }
 
-func encodePos(encPtr, val reflect.Value) {
-	if !val.MethodByName("IsValid").Call(nil)[0].Bool() {
+func encodePos(encPtr reflect.Value, val syntax.Pos) {
+	if !val.IsValid() {
 		return
 	}
 	enc := reflect.New(exportedPosType.Elem())
 	encPtr.Set(enc)
 	enc = enc.Elem()
 
-	enc.Field(0).Set(val.MethodByName("Offset").Call(nil)[0])
-	enc.Field(1).Set(val.MethodByName("Line").Call(nil)[0])
-	enc.Field(2).Set(val.MethodByName("Col").Call(nil)[0])
+	enc.Field(0).SetUint(uint64(val.Offset()))
+	enc.Field(1).SetUint(uint64(val.Line()))
+	enc.Field(2).SetUint(uint64(val.Col()))
 }
 
-func decodePos(val reflect.Value, enc map[string]interface{}) {
+func decodePos(val reflect.Value, enc map[string]any) {
 	offset := uint(enc["Offset"].(float64))
 	line := uint(enc["Line"].(float64))
 	column := uint(enc["Col"].(float64))
 	val.Set(reflect.ValueOf(syntax.NewPos(offset, line, column)))
 }
 
-// Decode is a shortcut for DecodeOptions.Decode, with the default options.
+// Decode is a shortcut for [DecodeOptions.Decode] with the default options.
 func Decode(r io.Reader) (syntax.Node, error) {
 	return DecodeOptions{}.Decode(r)
 }
@@ -206,7 +205,7 @@ type DecodeOptions struct {
 // Decode writes node to w in its typed JSON form,
 // as described in the package documentation.
 func (opts DecodeOptions) Decode(r io.Reader) (syntax.Node, error) {
-	var enc interface{}
+	var enc any
 	if err := json.NewDecoder(r).Decode(&enc); err != nil {
 		return nil, err
 	}
@@ -260,9 +259,9 @@ var nodeByName = map[string]reflect.Type{
 	"CStyleLoop": reflect.TypeOf((*syntax.CStyleLoop)(nil)).Elem(),
 }
 
-func decodeValue(val reflect.Value, enc interface{}) error {
+func decodeValue(val reflect.Value, enc any) error {
 	switch enc := enc.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		if val.Kind() == reflect.Ptr && val.IsNil() {
 			val.Set(reflect.New(val.Type().Elem()))
 		}
@@ -288,14 +287,14 @@ func decodeValue(val reflect.Value, enc interface{}) error {
 			}
 			if fval.Type() == posType {
 				// TODO: don't panic on bad input
-				decodePos(fval, fv.(map[string]interface{}))
+				decodePos(fval, fv.(map[string]any))
 				continue
 			}
 			if err := decodeValue(fval, fv); err != nil {
 				return err
 			}
 		}
-	case []interface{}:
+	case []any:
 		for _, encElem := range enc {
 			elem := reflect.New(val.Type().Elem()).Elem()
 			if err := decodeValue(elem, encElem); err != nil {
