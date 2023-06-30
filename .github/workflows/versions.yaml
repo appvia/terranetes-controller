@@ -48,6 +48,9 @@ jobs:
           if [[ "${{ matrix.image }}" == "infracost/infracost" ]]; then
             export IMAGE="${{ matrix.image }}:ci-${VERSION##v}"
           fi
+          if [[ "${{ matrix.image }}" == "bridgecrew/checkov" ]]; then
+            export IMAGE="${{ matrix.image }}:${VERSION}-pyston
+          fi
 
           yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
       - name: Raise Pull Request
