@@ -402,6 +402,7 @@ type ConfigurationSpec struct {
 // +kubebuilder:printcolumn:name="Module",type="string",JSONPath=".spec.module"
 // +kubebuilder:printcolumn:name="Plan",type="string",JSONPath=".spec.plan.name",priority=1
 // +kubebuilder:printcolumn:name="Secret",type="string",JSONPath=".spec.writeConnectionSecretToRef.name"
+// +kubebuilder:printcolumn:name="Drift Detection",type="boolean",JSONPath=".spec.enableDriftDetection"
 // +kubebuilder:printcolumn:name="Estimated",type="string",JSONPath=".status.costs.monthly"
 // +kubebuilder:printcolumn:name="Synchronized",type="string",JSONPath=".status.resourceStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
