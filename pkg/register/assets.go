@@ -471,6 +471,9 @@ spec:
         - jsonPath: .spec.writeConnectionSecretToRef.name
           name: Secret
           type: string
+        - jsonPath: .spec.enableDriftDetection
+          name: Drift Detection
+          type: boolean
         - jsonPath: .status.costs.monthly
           name: Estimated
           type: string
