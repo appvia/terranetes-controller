@@ -71,6 +71,7 @@ func NewCloudResourceFromRevision(revision *Revision) (*CloudResource, error) {
 	cloudresource.Spec.Plan.Name = revision.Spec.Plan.Name
 	cloudresource.Spec.Plan.Revision = revision.Spec.Plan.Revision
 	cloudresource.Spec.ProviderRef = revision.Spec.Configuration.ProviderRef
+	cloudresource.Spec.WriteConnectionSecretToRef = revision.Spec.Configuration.WriteConnectionSecretToRef
 
 	values := make(map[string]interface{})
 	for _, v := range revision.Spec.Inputs {
