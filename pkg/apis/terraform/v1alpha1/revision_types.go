@@ -64,6 +64,41 @@ func NewRevision(name string) *Revision {
 	}
 }
 
+// NewCloudResourceFromRevision returns a new cloud resource from a revision
+func NewCloudResourceFromRevision(revision *Revision) (*CloudResource, error) {
+	cloudresource := NewCloudResource("", "")
+	cloudresource.Name = revision.Name
+	cloudresource.Spec.Plan.Name = revision.Spec.Plan.Name
+	cloudresource.Spec.Plan.Revision = revision.Spec.Plan.Revision
+	cloudresource.Spec.ProviderRef = revision.Spec.Configuration.ProviderRef
+
+	values := make(map[string]interface{})
+	for _, v := range revision.Spec.Inputs {
+		if v.Default == nil {
+			continue
+		}
+		value, found, err := revision.Spec.GetInputDefaultValue(v.Key)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		values[v.Key] = value
+	}
+
+	if len(values) > 0 {
+		wr := &bytes.Buffer{}
+		if err := json.NewEncoder(wr).Encode(values); err != nil {
+			return nil, err
+		}
+		cloudresource.Spec.Variables = &runtime.RawExtension{}
+		cloudresource.Spec.Variables.Raw = wr.Bytes()
+	}
+
+	return cloudresource, nil
+}
+
 // RevisionDefinition retains all the information related to the configuration plan
 // such as description, version, category, etc.
 type RevisionDefinition struct {

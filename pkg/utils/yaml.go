@@ -27,6 +27,17 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// WriteYAMLToWriter writes a yaml document to a writer
+func WriteYAMLToWriter(writer io.Writer, data interface{}) error {
+	yamlData, err := yaml.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(yamlData)
+
+	return err
+}
+
 // WriteYAML writes a yaml document to a file
 func WriteYAML(path string, data interface{}) error {
 	yamlData, err := yaml.Marshal(data)
