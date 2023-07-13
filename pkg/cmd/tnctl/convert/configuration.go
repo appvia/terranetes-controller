@@ -364,7 +364,7 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 				if !found {
 					return fmt.Errorf("spec.valueFrom[%d].key: data key %q does not exist in secret", i, x.Key)
 				}
-				o.Configuration.Spec.Variables.Raw, err = sjson.SetBytes(o.Configuration.Spec.Variables.Raw, x.Key, value)
+				o.Configuration.Spec.Variables.Raw, err = sjson.SetBytes(o.Configuration.Spec.Variables.Raw, x.Name, value)
 				if err != nil {
 					return err
 				}
@@ -406,7 +406,7 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 				if !found {
 					return fmt.Errorf("context: %q does not contain the key: %q", *x.Context, x.Key)
 				}
-				o.Configuration.Spec.Variables.Raw, err = sjson.SetBytes(o.Configuration.Spec.Variables.Raw, x.Key, value)
+				o.Configuration.Spec.Variables.Raw, err = sjson.SetBytes(o.Configuration.Spec.Variables.Raw, x.Name, value)
 				if err != nil {
 					return err
 				}
