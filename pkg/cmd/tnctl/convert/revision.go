@@ -50,6 +50,8 @@ type RevisionCommand struct {
 	IncludeProvider bool
 	// IncludeCheckov is whether to include checkov in the output
 	IncludeCheckov bool
+	// IncludeTerraform is whether to include terraform in the output
+	IncludeTerraform bool
 	// Directory is the path to write the files to
 	Directory string
 	// File is the path to the file to containing the revision
@@ -130,14 +132,15 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 	}
 
 	return (&ConfigurationCommand{
-		Factory:         o.Factory,
-		Configuration:   o.configuration,
-		Contexts:        o.Contexts,
-		Directory:       o.Directory,
-		IncludeCheckov:  o.IncludeCheckov,
-		IncludeProvider: o.IncludeProvider,
-		Policies:        o.Policies,
-		Providers:       o.Providers,
+		Factory:          o.Factory,
+		Configuration:    o.configuration,
+		Contexts:         o.Contexts,
+		Directory:        o.Directory,
+		IncludeCheckov:   o.IncludeCheckov,
+		IncludeProvider:  o.IncludeProvider,
+		IncludeTerraform: true,
+		Policies:         o.Policies,
+		Providers:        o.Providers,
 	}).Run(ctx)
 }
 
