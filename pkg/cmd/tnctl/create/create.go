@@ -42,6 +42,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 
 	c.AddCommand(
 		NewRevisionCommand(factory),
+		NewCloudResourceCommand(factory),
 		configuration.NewCommand(factory),
 		workflow.NewCommand(factory),
 	)
