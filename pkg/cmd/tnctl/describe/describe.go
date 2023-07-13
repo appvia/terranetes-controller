@@ -105,7 +105,8 @@ func (o *Command) Run(ctx context.Context) error {
 	if err = cc.List(context.Background(), secrets,
 		client.InNamespace(o.Namespace),
 		client.MatchingLabels(map[string]string{
-			terraformv1alpha1.CloudResourceNameLabel: configuration.Name,
+			terraformv1alpha1.ConfigurationNameLabel: configuration.Name,
+			terraformv1alpha1.ConfigurationUIDLabel:  string(configuration.GetUID()),
 		}),
 	); err != nil {
 		return err
