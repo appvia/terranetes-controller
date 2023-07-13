@@ -18,9 +18,7 @@
 package convert
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -138,7 +136,7 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 		Directory:        o.Directory,
 		IncludeCheckov:   o.IncludeCheckov,
 		IncludeProvider:  o.IncludeProvider,
-		IncludeTerraform: true,
+		IncludeTerraform: o.IncludeTerraform,
 		Policies:         o.Policies,
 		Providers:        o.Providers,
 	}).Run(ctx)
@@ -146,39 +144,14 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 
 // renderCloudResource is responsible for rendering the cloud resource
 func (o *RevisionCommand) renderCloudResource(_ context.Context) error {
-	cloudresource := terraformv1alpha1.NewCloudResource("", "")
-	cloudresource.Name = o.Revision.Name
-	cloudresource.Spec.Plan.Name = o.Revision.Spec.Plan.Name
-	cloudresource.Spec.Plan.Revision = o.Revision.Spec.Plan.Revision
-	cloudresource.Spec.ProviderRef = o.Revision.Spec.Configuration.ProviderRef
-
-	values := make(map[string]interface{})
-	for _, v := range o.Revision.Spec.Inputs {
-		if v.Default == nil {
-			continue
-		}
-		value, found, err := o.Revision.Spec.GetInputDefaultValue(v.Key)
-		if err != nil {
-			return err
-		}
-		if !found {
-			continue
-		}
-		values[v.Key] = value
-	}
-
-	if len(values) > 0 {
-		wr := &bytes.Buffer{}
-		if err := json.NewEncoder(wr).Encode(values); err != nil {
-			return err
-		}
-		cloudresource.Spec.Variables = &runtime.RawExtension{}
-		cloudresource.Spec.Variables.Raw = wr.Bytes()
+	cr, err := terraformv1alpha1.NewCloudResourceFromRevision(o.Revision)
+	if err != nil {
+		return err
 	}
 
 	// @step: render the cloud resource
 	filename := filepath.Join(o.Directory, "cloudresource.yaml")
-	if err := utils.WriteYAML(filename, cloudresource); err != nil {
+	if err := utils.WriteYAML(filename, cr); err != nil {
 		return err
 	}
 

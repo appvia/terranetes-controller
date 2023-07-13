@@ -29,19 +29,18 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
-	"github.com/appvia/terranetes-controller/pkg/cmd/tnctl/convert"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // CloudResourceCommand are the options for the command
 type CloudResourceCommand struct {
 	cmd.Factory
+	// Filename is the name of the file to write the cloud resource to
+	Filename string
 	// Plan is the name of the plan
 	Plan string
 	// Revision is the semvar version of the revision
 	Revision string
-	// SourceDir is the directory a containing resources to source in
-	SourceDir string
 	// Plans is a list of plans available
 	Plans *terraformv1alpha1.PlanList
 	// Revisions is a list of revisions available
@@ -67,6 +66,7 @@ func NewCloudResourceCommand(factory cmd.Factory) *cobra.Command {
 	flags := c.Flags()
 	flags.StringVar(&o.Revision, "revision", "", "The semvar version of this revision")
 	flags.StringVar(&o.Plan, "plan", "", "The name of the plan to use")
+	flags.StringVarP(&o.Filename, "filename", "f", "", "The name of the file to write the cloud resource to")
 
 	return c
 }
@@ -82,7 +82,7 @@ func (o *CloudResourceCommand) Run(ctx context.Context) (err error) {
 		return err
 	}
 	// @step: we need to render the cloud resource
-	if err := o.renderCloudResource(ctx); err != nil {
+	if err := o.renderCloudResource(); err != nil {
 		return err
 	}
 
@@ -90,7 +90,7 @@ func (o *CloudResourceCommand) Run(ctx context.Context) (err error) {
 }
 
 // renderCloudResource renders the cloud resource
-func (o *CloudResourceCommand) renderCloudResource(ctx context.Context) error {
+func (o *CloudResourceCommand) renderCloudResource() error {
 	findRevision := func() terraformv1alpha1.Revision {
 		for _, x := range o.Revisions.Items {
 			switch {
@@ -106,13 +106,18 @@ func (o *CloudResourceCommand) renderCloudResource(ctx context.Context) error {
 	}
 	revision := findRevision()
 
-	return (&convert.RevisionCommand{
-		Factory:          o.Factory,
-		Revision:         &revision,
-		IncludeProvider:  false,
-		IncludeCheckov:   false,
-		IncludeTerraform: false,
-	}).Run(ctx)
+	// @step: convert a revision into a cloud resource
+	cr, err := terraformv1alpha1.NewCloudResourceFromRevision(&revision)
+	if err != nil {
+		return err
+	}
+
+	// @step: write the cloud resource to the file or stdout
+	if o.Filename == "" {
+		return utils.WriteYAMLToWriter(o.GetStreams().Out, cr)
+	}
+
+	return utils.WriteYAML(o.Filename, cr)
 }
 
 // retrieveRevision retrieves the revision from the user or guesses it

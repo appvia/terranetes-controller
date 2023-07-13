@@ -25,6 +25,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWriteYAMLToWriter(t *testing.T) {
+	expected := `foo: bar
+list:
+- item1
+- item2`
+
+	values := map[string]interface{}{
+		"foo":  "bar",
+		"list": []interface{}{"item1", "item2"},
+	}
+	var sb strings.Builder
+	err := WriteYAMLToWriter(&sb, values)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, strings.TrimSpace(sb.String()))
+}
+
 func TestWriteYAML(t *testing.T) {
 	values := map[string]interface{}{
 		"foo":  "bar",
