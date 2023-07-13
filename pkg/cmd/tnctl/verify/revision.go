@@ -551,7 +551,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 		case len(policies.FindSecurityPolicyConstraints(o.Policies)) == 0:
 			fallthrough
 		case len(o.Policies.Items) == 0:
-			v.Skipped("No Checkov Security Policies found in the cluster")
+			v.Warning("No Checkov Security Policies found")
 
 			return nil
 		}
