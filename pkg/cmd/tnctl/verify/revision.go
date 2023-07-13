@@ -774,14 +774,15 @@ func (o *RevisionCommand) convertRevision(ctx context.Context, revision *terrafo
 
 	// we convert the revision we've loaded into terraform code
 	if err := (&convert.RevisionCommand{
-		Factory:         o.Factory,
-		Contexts:        o.Contexts,
-		Directory:       o.Directory,
-		IncludeCheckov:  false,
-		IncludeProvider: (len(o.Providers.Items) > 0),
-		Policies:        o.Policies,
-		Providers:       o.Providers,
-		Revision:        revision,
+		Factory:          o.Factory,
+		Contexts:         o.Contexts,
+		Directory:        o.Directory,
+		IncludeCheckov:   false,
+		IncludeProvider:  (len(o.Providers.Items) > 0),
+		IncludeTerraform: true,
+		Policies:         o.Policies,
+		Providers:        o.Providers,
+		Revision:         revision,
 	}).Run(ctx); err != nil {
 		return fmt.Errorf("failed to convert revision to terraform code, error: %w", err)
 	}

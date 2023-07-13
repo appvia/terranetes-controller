@@ -55,6 +55,8 @@ type ConfigurationCommand struct {
 	IncludeProvider bool
 	// IncludeCheckov is whether to include checkov in the output
 	IncludeCheckov bool
+	// IncludeTerraform is whether to include terraform in the output
+	IncludeTerraform bool
 	// Directory is the path to write the files to
 	Directory string
 	// Configuration is the configuration we are converting
@@ -119,6 +121,7 @@ func NewConfigurationCommand(factory cmd.Factory) *cobra.Command {
 	flags := c.Flags()
 	flags.BoolVar(&o.IncludeCheckov, "include-checkov", true, "Include checkov in the output")
 	flags.BoolVar(&o.IncludeProvider, "include-provider", true, "Include provider in the output")
+	flags.BoolVar(&o.IncludeTerraform, "include-terraform", true, "Include terraform in the output")
 	flags.StringVarP(&o.Directory, "path", "p", ".", "The path to write the files to")
 	flags.StringVarP(&o.File, "file", "f", "", "Path to the configuration file")
 	flags.StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace of the resource")
@@ -372,10 +375,11 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 	if o.Configuration.Spec.ValueFrom.HasContextReferences() {
 		if err := survey.AskOne(&survey.Confirm{
 			Message: "The resource contains references to Contexts, do you want to resolve them?",
+			Default: true,
 		}, &answer); err != nil {
 			return err
 		}
-		if !answer {
+		if answer {
 			if o.Contexts == nil {
 				cc, err := o.GetClient()
 				if err != nil {
@@ -416,6 +420,10 @@ func (o *ConfigurationCommand) resolveConfiguration(ctx context.Context) error {
 // renderConfiguration retrieves the configuration and renders it
 // nolint:errcheck
 func (o *ConfigurationCommand) renderConfiguration() error {
+	if !o.IncludeTerraform {
+		return nil
+	}
+
 	configuration := o.Configuration
 
 	var variables map[string]interface{}

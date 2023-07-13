@@ -117,11 +117,12 @@ func (o *CloudResourceCommand) Run(ctx context.Context) error {
 	}
 
 	return (&ConfigurationCommand{
-		Factory:         o.Factory,
-		Directory:       o.Directory,
-		IncludeCheckov:  o.IncludeCheckov,
-		IncludeProvider: o.IncludeProvider,
-		Name:            configuration,
-		Namespace:       o.Namespace,
+		Factory:          o.Factory,
+		Directory:        o.Directory,
+		IncludeCheckov:   o.IncludeCheckov,
+		IncludeProvider:  o.IncludeProvider,
+		IncludeTerraform: true,
+		Name:             configuration,
+		Namespace:        o.Namespace,
 	}).Run(ctx)
 }
