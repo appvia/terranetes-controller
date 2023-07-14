@@ -666,17 +666,21 @@ func (o *RevisionCommand) checkValueFromReferences(revision *terraformv1alpha1.R
 		}
 
 		for _, x := range revision.Spec.Configuration.ValueFrom {
-			if x.Context == nil {
+			switch {
+			case o.Contexts == nil:
+				v.Warning("Revision references a context: %q, key: %q, but none available to check against", *x.Context, x.Key)
+
 				continue
 			}
+
 			txt, found := o.Contexts.GetItem(*x.Context)
 			if !found {
-				v.Failed("Revision references a context %s which does not exist", *x.Context)
+				v.Failed("Revision references a context %q which does not exist", *x.Context)
 			} else {
-				v.Passed("Revision references a context %s which exists", txt.Name)
+				v.Passed("Revision references a context %q, key %q which exists", txt.Name, x.Key)
 
 				if _, found := txt.Spec.Variables[x.Key]; !found {
-					v.Failed("Revision references a key %q in Context %q which does not exist", x.Key, *x.Context)
+					v.Failed("Revision references key %q, in Context %q which does not exist", x.Key, *x.Context)
 				}
 			}
 		}
