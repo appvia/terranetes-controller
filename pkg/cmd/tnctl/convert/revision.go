@@ -89,6 +89,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	flags := ccm.Flags()
 	flags.BoolVar(&o.IncludeCheckov, "include-checkov", true, "Include checkov in the output")
 	flags.BoolVar(&o.IncludeProvider, "include-provider", true, "Include provider in the output")
+	flags.BoolVar(&o.IncludeTerraform, "include-terraform", true, "Include terraform in the output")
 	flags.StringVarP(&o.Directory, "path", "p", ".", "The path to write the files to")
 	flags.StringVarP(&o.File, "file", "f", "", "The path to the file containing the revision")
 	flags.StringVarP(&o.Namespace, "namespace", "n", "", "The namespace of the revision")
