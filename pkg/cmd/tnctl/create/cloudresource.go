@@ -41,8 +41,6 @@ type CloudResourceCommand struct {
 	Plan string
 	// Revision is the semvar version of the revision
 	Revision string
-	// Plans is a list of plans available
-	Plans *terraformv1alpha1.PlanList
 	// Revisions is a list of revisions available
 	Revisions *terraformv1alpha1.RevisionList
 }
@@ -151,7 +149,7 @@ func (o *CloudResourceCommand) retrieveRevision(ctx context.Context) error {
 
 	// @step: only ask if we have not been given a revision
 	if o.Revision != "" {
-		if utils.Contains(o.Revision, list) {
+		if !utils.Contains(o.Revision, list) {
 			return fmt.Errorf("the revision %s does not exist", o.Revision)
 		}
 
@@ -178,27 +176,28 @@ func (o *CloudResourceCommand) retrieveRevision(ctx context.Context) error {
 
 // retrievePlan retrieves the plan from the user or guesses it
 func (o *CloudResourceCommand) retrievePlan(ctx context.Context) error {
-	if o.Plans == nil {
+	if o.Revisions == nil {
 		cc, err := o.GetClient()
 		if err != nil {
 			return err
 		}
-		o.Plans = &terraformv1alpha1.PlanList{}
+		o.Revisions = &terraformv1alpha1.RevisionList{}
 
-		if err := cc.List(ctx, o.Plans); err != nil {
+		if err := cc.List(ctx, o.Revisions); err != nil {
 			return err
 		}
 	}
 
 	// @step: if we have no plans, we cannot continue
-	if len(o.Plans.Items) == 0 {
+	if len(o.Revisions.Items) == 0 {
 		return errors.New("no plans found to create a cloud resource")
 	}
 
 	var list []string
-	for _, x := range o.Plans.Items {
-		list = append(list, x.Name)
+	for _, x := range o.Revisions.Items {
+		list = append(list, x.Spec.Plan.Name)
 	}
+	list = utils.Unique(list)
 
 	// @step: only ask if we have not been given a plan
 	if o.Plan == "" {
