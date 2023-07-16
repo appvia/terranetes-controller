@@ -773,7 +773,11 @@ func (o *RevisionCommand) convertRevision(ctx context.Context, revision *terrafo
 		o.Directory = path
 
 	case !filepath.IsAbs(o.Directory):
-		return fmt.Errorf("the directory path %q is not absolute", o.Directory)
+		path, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get the current working directory, error: %w", err)
+		}
+		o.Directory = filepath.Join(path, o.Directory)
 	}
 
 	// we convert the revision we've loaded into terraform code
