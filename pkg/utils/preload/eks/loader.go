@@ -19,6 +19,7 @@ package eks
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -100,6 +101,11 @@ func (e *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		return nil, fmt.Errorf("unknown cluster status: %s", aws.StringValue(resp.Cluster.Status))
 	}
 
+	data.Add("region", preload.Entry{
+		Description: "AWS region the cluster is running in",
+		Value:       aws.StringValue(e.session.Config.Region),
+	})
+
 	// @step: find details on the account
 	if err := e.findAccount(ctx, &data); err != nil {
 		return nil, err
@@ -170,7 +176,7 @@ func (e *eksPreloader) Load(ctx context.Context) (preload.Data, error) {
 		data.Get("subnet_ids").Value = append(data.Get("subnet_ids").Value.([]string), aws.StringValue(subnet.SubnetId))
 	}
 
-	// @step: ensure they are all unqiue and sorted
+	// @step: ensure they are all unique and sorted
 	data.Get("private_subnet_ids").Value = utils.Unique(utils.Sorted(data.Get("private_subnet_ids").Value.([]string)))
 	data.Get("public_subnet_ids").Value = utils.Unique(utils.Sorted(data.Get("public_subnet_ids").Value.([]string)))
 	data.Get("subnet_ids").Value = utils.Unique(utils.Sorted(data.Get("subnet_ids").Value.([]string)))
@@ -236,6 +242,10 @@ func (e *eksPreloader) findCluster(_ context.Context, cluster *eks.Cluster, data
 	data.Add("eks", preload.Entry{
 		Description: "AWS ARN for the Kubernetes cluster",
 		Value:       aws.StringValue(cluster.Arn),
+	})
+	data.Add("eks_id", preload.Entry{
+		Description: "The ID of the EKS cluster",
+		Value:       aws.StringValue(cluster.Id),
 	})
 	data.Add("eks_cluster_security_group_id", preload.Entry{
 		Description: "The security group ID attached to the EKS cluster",
@@ -305,6 +315,13 @@ func (e *eksPreloader) findCluster(_ context.Context, cluster *eks.Cluster, data
 		Description: "The ID of the VPC where the EKS cluster is deployed",
 		Value:       aws.StringValue(cluster.ResourcesVpcConfig.VpcId),
 	})
+
+	if cluster.CertificateAuthority != nil {
+		data.Add("eks_certificate_authority", preload.Entry{
+			Description: "The certificate authority data for the EKS cluster",
+			Value:       base64.StdEncoding.EncodeToString([]byte(aws.StringValue(cluster.CertificateAuthority.Data))),
+		})
+	}
 
 	if cluster.Identity != nil && cluster.Identity.Oidc != nil {
 		data.Add("eks_oidc_issuer", preload.Entry{
