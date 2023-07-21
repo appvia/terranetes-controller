@@ -75,7 +75,7 @@ controller:
   # the terraform version in their spec.
   enableTerraformVersions: true
   # enableContextInjection indicates the controller should add the terranetes
-  # map variable into all configurations. This adds a varaible called 'terraform'
+  # map variable into all configurations. This adds a variable called 'terraform'
   # terranetes:
   #   namespace: ""
   #   name: ""
