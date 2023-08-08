@@ -63,14 +63,14 @@ stream_logs() {
     if curl --no-buffer --silent "${FLAG_ENDPOINT}" | tee ${FLAG_LOGFILE}; then
       if grep "failed to retrieve the logs" "${FLAG_LOGFILE}"; then
         echo "[info] Terranetes Controller was unable to retrieve logs, the Job Pod may not be available yet."
-        i=$((i+1))
+        i=$((i + 1))
       else
         LOGS_FETCHED=true
         return
       fi
     else
       echo "[warning] Terranetes Controller not reachable, unable to fetch logs."
-      i=$((i+1))
+      i=$((i + 1))
     fi
   done
 }
@@ -104,8 +104,10 @@ while getopts 'e:f:d:r:h' flag; do
     d) FLAG_DELAY="${OPTARG}" ;;
     r) FLAG_MAX_RETRIES="${OPTARG}" ;;
     h) print_usage && exit 0 ;;
-    *) print_usage
-    exit 1 ;;
+    *)
+      print_usage
+      exit 1
+      ;;
   esac
 done
 
