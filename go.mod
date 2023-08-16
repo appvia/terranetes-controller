@@ -46,7 +46,7 @@ require (
 	k8s.io/apimachinery v0.28.0
 	k8s.io/cli-runtime v0.28.0
 	k8s.io/client-go v0.28.0
-	k8s.io/code-generator v0.27.4
+	k8s.io/code-generator v0.28.0
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	mvdan.cc/sh/v3 v3.7.0
@@ -148,7 +148,6 @@ require (
 	github.com/golangci/revgrep v0.0.0-20220804021717-745bb2f7c2e6 // indirect
 	github.com/golangci/unconvert v0.0.0-20180507085042-28b1c447d1f4 // indirect
 	github.com/google/btree v1.1.2 // indirect
-	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
