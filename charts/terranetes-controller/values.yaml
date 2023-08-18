@@ -37,7 +37,7 @@ controller:
     # is the default image to use for terraform operations
     terraform: hashicorp/terraform:1.5.5
     # image to use for infracost
-    infracost: infracost/infracost:ci-0.10.27
+    infracost: infracost/infracost:ci-0.10.28
     # policy is image for policy
     policy: bridgecrew/checkov:2.3.349
     # preload is the image to use for preload data jobs
