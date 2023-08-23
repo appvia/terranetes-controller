@@ -3,15 +3,16 @@
 [![GoReportCard example](https://goreportcard.com/badge/github.com/appvia/terranetes-controller)](https://goreportcard.com/report/github.com/appvia/terranetes-controller)
 [![CodeQL](https://github.com/appvia/terranetes-controller/actions/workflows/codeql.yml/badge.svg)](https://github.com/appvia/terranetes-controller/actions/workflows/codeql.yml)
 
+
 # **TERRANETES CONTROLLER**
 
 The Terranetes Controller manages the life cycles of a terraform resource, allowing developers to self-serve dependencies in a controlled manner.
 
 There's a number of open source controllers you could use that will run Terraform in Kubernetes. All of them deliver the developer outcome, however, none address the "consequences" of delivering that outcome in the first place; the risks, costs, security implications, the general lack of checks and balances. What sets the Terranetes controller apart is its opinion we first enable the platform team to deliver the outcome in a safe environment before it can be self-served by developers. Providing platform engineers with all the knobs, dials and levers to control and mitigate those risks is the key differentiator for Terranetes controller.
 
-Documentation can be found at https://terranetes.appvia.io
+Documentation can be found at https://terranetes.io
 
-![Architecture](docs/images/architecture.jpg)
+![Architecture](docs/images/terranetes-controller-arch.png)
 
 **FEATURES**
 ---
@@ -40,4 +41,4 @@ Documentation can be found at https://terranetes.appvia.io
 **GETTING STARTED**
 ---
 
-View the getting started guide at https://terranetes.appvia.io
+View the getting started guide at https://terranetes.io
