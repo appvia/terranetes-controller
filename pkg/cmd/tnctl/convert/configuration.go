@@ -39,6 +39,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/utils/policies"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/appvia/terranetes-controller/pkg/utils/terraform"
 )
 
@@ -94,6 +95,17 @@ var moduleTemplate = `module "main" {
   {{ toHCL .Variables | nindent 2 }}
   {{- end }}
 }
+`
+
+var variableTemplate = `
+{{- range $key, $value := .Variables }}
+variable "{{ $key }}" {
+	{{- if $value.Default }}
+	default = "{{ $value.Default }}"
+	{{- end }}
+	type    = {{ $value.Type }}
+}
+{{ end }}
 `
 
 // NewConfigurationCommand creates a new command
@@ -158,6 +170,79 @@ func (o *ConfigurationCommand) Run(ctx context.Context) error {
 	}
 	// @step: render the checkov policy
 	if err := o.renderPolicy(ctx); err != nil {
+		return err
+	}
+	// @step: render the variables
+	if err := o.renderVariables(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Variable is a terraform variable
+type Variable struct {
+	// Type is the type of the variable
+	Type string
+	// Default is the default value of the variable
+	Default interface{}
+}
+
+// renderVariables renders the variables file
+func (o *ConfigurationCommand) renderVariables(ctx context.Context) error {
+	switch {
+	case o.Configuration == nil:
+		return nil
+	case !o.Configuration.Spec.HasVariables():
+		return nil
+	}
+
+	// @step: retrieve the configuration variables
+	values, err := o.Configuration.Spec.GetVariables()
+	if err != nil {
+		return err
+	}
+
+	variables := make(map[string]Variable)
+
+	// @step: iterate the options and create the variables
+	for name, value := range values {
+		v := Variable{Default: value}
+		switch value.(type) {
+		case string:
+			v.Type = "string"
+		case int, int32, int64, uint, uint32, uint64, float32, float64:
+			v.Type = "number"
+		case bool:
+			v.Type = "bool"
+		case []string:
+			v.Type = "list(string)"
+		case []int, []int32, []int64, []uint, []uint32, []uint64, []float32, []float64:
+			v.Type = "list(number)"
+		case []bool:
+			v.Type = "list(bool)"
+		case map[string]string:
+			v.Type = "map(string)"
+		default:
+			v.Type = "map"
+		}
+		variables[name] = v
+	}
+
+	// @step: render the variables
+	template, err := template.New(variableTemplate, map[string]interface{}{
+		"Variables": variables,
+	})
+	if err != nil {
+		return err
+	}
+	// @step: open the file for writing
+	wr, err := os.OpenFile(filepath.Join(o.Directory, "variables.tf"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	// @step: write the provider to the file
+	if _, err := wr.Write(template); err != nil {
 		return err
 	}
 

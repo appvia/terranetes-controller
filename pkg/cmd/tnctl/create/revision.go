@@ -314,14 +314,18 @@ func (o *RevisionCommand) retrieveInputs(module *tfconfig.Module) error {
 	}
 
 	var selected []string
-	if err := survey.AskOne(&survey.MultiSelect{
-		Message:  "What variables should be exposed to the developers?",
-		Help:     "Choose the variables you want to expose to the developers",
-		Options:  append(required, (utils.Sorted(optional))...),
-		PageSize: 15,
-		Default:  required,
-	}, &selected, survey.WithKeepFilter(false)); err != nil {
-		return err
+	possible := append(required, (utils.Sorted(optional))...)
+
+	if len(possible) > 0 {
+		if err := survey.AskOne(&survey.MultiSelect{
+			Message:  "What variables should be exposed to the developers?",
+			Help:     "Choose the variables you want to expose to the developers",
+			Options:  possible,
+			PageSize: 15,
+			Default:  required,
+		}, &selected, survey.WithKeepFilter(false)); err != nil {
+			return err
+		}
 	}
 
 	isVariableSelected := func(name string) bool {
