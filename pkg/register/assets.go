@@ -66,7 +66,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: cloudresources.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -449,7 +449,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: configurations.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -725,7 +725,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: contexts.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -875,7 +875,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml = []byte(`apiVers
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: plans.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1049,7 +1049,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: policies.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1456,7 +1456,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: providers.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1723,7 +1723,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.4
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: revisions.terraform.appvia.io
 spec:
   group: terraform.appvia.io
