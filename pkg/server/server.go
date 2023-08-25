@@ -30,7 +30,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/appvia/terranetes-controller/pkg/apiserver"
@@ -118,14 +120,17 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	options := manager.Options{
+		Cache: cache.Options{
+			SyncPeriod: &config.ResyncPeriod,
+		},
 		LeaderElection:                false,
 		LeaderElectionID:              "controller.terraform.appvia.io",
 		LeaderElectionNamespace:       ns,
 		LeaderElectionReleaseOnCancel: true,
-		MetricsBindAddress:            fmt.Sprintf(":%d", config.MetricsPort),
-		Port:                          config.WebhookPort,
-		Scheme:                        schema.GetScheme(),
-		SyncPeriod:                    &config.ResyncPeriod,
+		Metrics: metricsserver.Options{
+			BindAddress: fmt.Sprintf(":%d", config.MetricsPort),
+		},
+		Scheme: schema.GetScheme(),
 	}
 
 	if config.EnableWebhooks {

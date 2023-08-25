@@ -53,7 +53,9 @@ var _ = Describe("Listing the state", func() {
 	var err error
 
 	BeforeEach(func() {
-		cc = fake.NewFakeClientWithScheme(schema.GetScheme())
+		cc = fake.NewClientBuilder().
+			WithScheme(schema.GetScheme()).
+			Build()
 		kc = k8sfake.NewSimpleClientset()
 
 		streams, _, stdout, _ = genericclioptions.NewTestIOStreams()
