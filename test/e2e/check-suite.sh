@@ -43,15 +43,15 @@ EOF
 
 # run_diagnosis is called to retrieve details on the failure
 run_diagnosis() {
-  [[ $? -ne 1          ]] && exit $?
-  [[ "${CI}" != "true" ]] && exit $?
+  [[ $? -ne 1          ]] && exit 1
+  [[ "${CI}" != "true" ]] && exit 1
 
   echo "Running Diagnosis on failure"
 
   mkdir -p /tmp/diagnostics
   if kubectl cluster-info dump --namespaces terraform-system,apps --output-directory=/tmp/diagnostics >/dev/null; then
     # @step: upload the files to the bucket
-    BUCKET="${DIAGNOSTICS}/${GITHUB_RUN_ID}"
+    BUCKET="${DIAGNOSTICS}/${GITHUB_RUN_NUMBER}"
     if ! aws s3 cp /tmp/diagnostics "${BUCKET}" --acl private --recursive >/dev/null; then
       echo "Failed to copy all the diagnostics"
       exit 1
