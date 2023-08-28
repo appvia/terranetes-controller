@@ -41,11 +41,11 @@ require (
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/tools v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.28.0
+	k8s.io/api v0.28.1
 	k8s.io/apiextensions-apiserver v0.28.0
-	k8s.io/apimachinery v0.28.0
+	k8s.io/apimachinery v0.28.1
 	k8s.io/cli-runtime v0.28.0
-	k8s.io/client-go v0.28.0
+	k8s.io/client-go v0.28.1
 	k8s.io/code-generator v0.28.0
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
@@ -298,7 +298,6 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	go.tmz.dev/musttag v0.7.2 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
