@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.45.6
 	github.com/bbalet/stopwords v1.0.0
 	github.com/enescakir/emoji v1.0.0
-	github.com/evanphx/json-patch v5.6.0+incompatible
+	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/gertd/go-pluralize v0.2.1
