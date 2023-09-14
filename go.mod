@@ -41,11 +41,11 @@ require (
 	golang.org/x/oauth2 v0.12.0
 	golang.org/x/tools v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.28.1
+	k8s.io/api v0.28.2
 	k8s.io/apiextensions-apiserver v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/cli-runtime v0.28.1
-	k8s.io/client-go v0.28.1
+	k8s.io/apimachinery v0.28.2
+	k8s.io/cli-runtime v0.28.2
+	k8s.io/client-go v0.28.2
 	k8s.io/code-generator v0.28.2
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
