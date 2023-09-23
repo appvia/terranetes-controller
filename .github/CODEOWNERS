@@ -1,0 +1,15 @@
+# -------------------------------------------------
+# CODEOWNERS - For automated review request for
+# high impact files.
+#
+# Important: The order in this file cascades.
+#
+# https://help.github.com/articles/about-codeowners
+#
+# -------------------------------------------------
+
+# -------------------------------------------------
+# All files are owned by
+# -------------------------------------------------
+
+* @gambol99
