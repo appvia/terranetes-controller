@@ -30,18 +30,8 @@ spec:
   #
   # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
   #
-
   providerRef:
     name: aws
-
-  ## Used when the resource being applied from a plan
-  #
-  # plan:
-  ##  Is the name of plan to use $ kubectl get plans
-  #   name: <NAME>
-  ##  Is the revision of the plan to use, not setting this takes the latest
-  ##  semvar version. You van list the revisions via $ kubectl get revisions
-  #   revision: <VERSION>
 
   # Allows you to source in terraform inputs from one of more kubernetes secrets
   valueFrom:
