@@ -2,41 +2,130 @@
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Revision
 metadata:
-  name: fake.v3
+  name: bucket.v1
 spec:
   ## Defines we are a member of a package
   plan:
     ## Is the name of the package we are a part of
-    name: fake
+    name: bucket
     ## Is a collection of categories
-    categories: [mysql, aws, fake]
+    categories: [aws, bucket, s3]
     ## Is a description for what this plan provides
-    description: Provides a dummy terraform module for testing
+    description: Provides a dummy revision for a s3 bucket
     ## Is the version of the package
-    revision: v0.0.3
+    revision: v0.0.1
 
-  dependencies:
-    - provider:
-        cloud: aws
-    - terranetes:
-        version: ">=0.3.26"
-    - context:
-        name: default
-        cloud: aws
-
-  ## Is a list of inputs the user is permitted to override
+  #
+  ## Inputs determine the values in the module the consumer is permitted
+  ## to change. Anything not listed here is NOT cannot be altered on
+  ## consumption.
+  #
   inputs:
-    - key: sentence
-      description: Hello
+    - key: bucket
+      description: The name of the bucket you are provisioning
       required: true
+    - key: something
+      description: Not used by the module, purely for example
       default:
-        value: hello from second additon
-    - key: vpc_id
-      description: Hello
+        value: hello from second addition
 
   configuration:
-    ## Using a public repository
+    #
+    ## The default provider name, note this can be overridden by the CloudResource CRD
+    #
+    providerRef:
+      ## Name of the provider
+      name: aws
+
+    ##
+    ## If you need to use a private git repository, use the git format as below
+    ##
+    # module: git::ssh://git@github.com/ORG/REPOSITORY?ref=<TAG|BRANCH|COMMIT>
+    ##
+    ## For private repositories we need credentials. Assuming the source is git you can use the
+    ## command: $ kubectl -n NAMESPACE create secret generic ssh-key --from-file=SSH_KEY_AUTH=ida.rsa
+    ## to push the private key and then reference secret in the auth as below. For HTTP authentication
+    ## $ kubectl -n NAMESPACE create secret generic auth --from-literal=GIT_USERNAME=git --from-literal=GIT_PASSWORD=pass
+    #
+    # auth:
+    #   name: ssh-key
+    #
+    ## All module references have the ability to extract specific folders from within the source. Similar
+    ## to terraform module syntax use the '//PATH/TO/DIRECTORY. Lets assume you wish to extract modules/bucket from
+    ## a repository github.com/appvia/terraform, the module source would look like
+    #
+    # module: https://github.com/appvia/terraform//modules/bucket?ref=<TAG|COMMIT|BRANCH>
+    #
+    ## The syntax is the same regardless of the protocol, so a private git
+    ## repository for the same example above would look like
+    #
+    # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
+    #
     module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/dummy?ref=master
-    ## Where to write any secrets
+
+    #
+    ## We can source inputs to a resource from Contexts or kubernetes Secrets.
+    #
+    valueFrom:
+      - # Retrieve the value from a specific context
+        context: default
+        # Is the key with the context resource which we should use. The translates
+        # to spec.variables.KEY.value
+        key: vpc
+        # Is the name which the value should be presented to terraform as
+        name: vpc_id
+        # Indicates the value, or context is not found is optional and will not
+        # fail the terraform run
+        optional: true
+      - # Is the name of the local kubernetes secret which contains the value
+        secret: database_secret
+        # Is the key inside the secret i.e. data.<NAME>
+        key: DB_HOST
+        # Is optional but recommended. This specifies the name of the variable
+        # presented to terraform. Note, by default if left blank the key is used
+        # instead. You can also remap names where i.e DB_HOST and be remapped to
+        # database_hostname when consumed
+        name: database_hostname
+        # Indicates if the secret is optional - by default, any unresolved secret
+        # will defer execution and wait for the secret to become available. By
+        # setting to true, the controller will ignore a missing secret and or key
+        optional: true
+
+    #
+    ## Determines the location to write the outputs
+    #
     writeConnectionSecretToRef:
-      name: outputs
+      ## The name of the kubernetes secret to store the outputs
+      name: test
+      keys:
+        - s3_bucket_id
+        - s3_bucket_arn
+        - s3_bucket_region
+
+    #
+    ## A collection of variables source into the module
+    variables:
+      # -- The canned ACL to apply
+      acl: private
+      # -- Manage S3 Bucket Ownership Controls on this bucket.
+      control_object_ownership: true
+      # -- Object ownership type
+      object_ownership: ObjectWriter
+      # -- Map containing versioning configuration
+      versioning:
+        enabled: true
+      # -- Whether Amazon S3 should block public ACLs for this bucket
+      block_public_acls: true
+      # -- Whether Amazon S3 should block public bucket policies for this bucket
+      block_public_policy: true
+      # -- Whether Amazon S3 should ignore public ACLs for this bucket
+      ignore_public_acls: true
+      # -- Whether Amazon S3 should restrict public bucket policies for this
+      # bucket
+      restrict_public_buckets: true
+      # -- Map containing server-side encryption configuration
+      server_side_encryption_configuration:
+        rule:
+          apply_server_side_encryption_by_default:
+            sse_algorithm: "aws:kms"
+          bucket_key_enabled: true
