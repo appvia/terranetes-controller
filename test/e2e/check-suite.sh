@@ -43,8 +43,8 @@ EOF
 
 # run_diagnosis is called to retrieve details on the failure
 run_diagnosis() {
-  [[ $? -ne 1          ]] && exit 1
-  [[ "${CI}" != "true" ]] && exit 1
+  [[ $? -ne 1          ]] && exit $?
+  [[ "${CI}" != "true" ]] && exit $?
 
   echo "Running Diagnosis on failure"
 
