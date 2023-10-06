@@ -61,7 +61,7 @@ spec:
     #
     # module: git::ssh://git@github.com/appvia/terraform//modules/bucket?ref=<TAG|BRANCH|COMMIT>
     #
-    module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/dummy?ref=master
+    module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.10.1
 
     #
     ## We can source inputs to a resource from Contexts or kubernetes Secrets.

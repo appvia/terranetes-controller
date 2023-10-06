@@ -8,7 +8,7 @@ spec:
   ## You can use $ kubectl get plans to view the plans available in the cluster
   plan:
     ## Is the name of the plan to use
-    name:  bucket
+    name: bucket
     ## Plan can have multiple revisions, this field determines the version
     ## which you want this cloud resource to use
     revision: v0.0.1
@@ -24,4 +24,4 @@ spec:
     name: test
 
   variables:
-    bucket: terranetes-controller-ci-bucket
+    bucket: CHANGE_ME
