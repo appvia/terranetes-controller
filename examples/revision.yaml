@@ -24,10 +24,16 @@ spec:
     - key: bucket
       description: The name of the bucket you are provisioning
       required: true
-    - key: something
-      description: Not used by the module, purely for example
-      default:
-        value: hello from second addition
+    #
+    #  Inputs can have defaults if required, note; these can be any complex
+    #  type i.e. maps, list or simple types number, string or bool which are
+    #  supported by terraform.
+    #
+    # - key: something
+    #   description: Not used by the module, purely for example
+    #   default:
+    #     value: hello from second addition
+    #
 
   configuration:
     #
