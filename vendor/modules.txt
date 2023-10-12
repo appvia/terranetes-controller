@@ -1073,7 +1073,7 @@ github.com/subosito/gotenv
 # github.com/t-yuki/gocover-cobertura v0.0.0-20180217150009-aaee18c8195c
 ## explicit
 github.com/t-yuki/gocover-cobertura
-# github.com/tcnksm/ghr v0.16.0
+# github.com/tcnksm/ghr v0.16.1
 ## explicit; go 1.19
 github.com/tcnksm/ghr
 # github.com/tcnksm/go-gitconfig v0.1.2
@@ -1257,7 +1257,7 @@ golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.16.0
+# golang.org/x/net v0.17.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
