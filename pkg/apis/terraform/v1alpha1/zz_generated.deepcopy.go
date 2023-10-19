@@ -934,6 +934,11 @@ func (in *ProviderSpec) DeepCopyInto(out *ProviderSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.BackendTemplate != nil {
+		in, out := &in.BackendTemplate, &out.BackendTemplate
+		*out = new(v1.SecretReference)
+		**out = **in
+	}
 	if in.Preload != nil {
 		in, out := &in.Preload, &out.Preload
 		*out = new(PreloadConfiguration)

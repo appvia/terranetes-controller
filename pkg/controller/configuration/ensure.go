@@ -133,21 +133,43 @@ func (c *Controller) ensureNoActivity(configuration *terraformv1alpha1.Configura
 }
 
 // ensureCustomBackendTemplate is called to ensure that if configured the backend template for the terraform
-// is available and ready
+// is available and ready. The template can come from the default backend template or from an optional field
+// in the provider configuration
 func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		if !c.HasBackendTemplate() {
+		switch {
+		case c.HasBackendTemplate():
+			break
+		case state == nil:
+			return reconcile.Result{}, nil
+		case state.provider == nil:
+			return reconcile.Result{}, nil
+		case state.provider.HasBackendTemplate():
+			break
+		default:
 			return reconcile.Result{}, nil
 		}
-		reference := fmt.Sprintf("%s/%s", c.ControllerNamespace, c.BackendTemplate)
 
-		// @step: else we need to check for the secret and source it in for later
+		// @step: we default the controller token
 		secret := &v1.Secret{}
 		secret.Namespace = c.ControllerNamespace
 		secret.Name = c.BackendTemplate
+		provider := state.provider
 
+		// @step: are we pulling the backend template from the default or the provider configuration
+		if provider != nil && provider.HasBackendTemplate() {
+			secret.Name = provider.Spec.BackendTemplate.Name
+			secret.Namespace = c.ControllerNamespace
+			if provider.Spec.BackendTemplate.Namespace != "" {
+				secret.Namespace = provider.Spec.BackendTemplate.Namespace
+			}
+		}
+
+		reference := fmt.Sprintf("%s/%s", secret.Namespace, secret.Name)
+
+		// @step: else we need to check for the secret and source it in for later
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
 			cond.Failed(err, "Failed to retrieve the backend template secret")
@@ -161,10 +183,10 @@ func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha
 		}
 
 		// @step: ensure we have the backend.tf key in the secret
-		backend, ok := secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey]
+		backend, ok := secret.Data[terraformv1alpha1.TerraformBackendSecretKey]
 		if !ok || len(backend) == 0 {
 			cond.ActionRequired(fmt.Sprintf("Backend template secret %q does not contain the %s key",
-				reference, terraformv1alpha1.TerraformBackendConfigMapKey),
+				reference, terraformv1alpha1.TerraformBackendSecretKey),
 			)
 
 			return reconcile.Result{}, controller.ErrIgnore
@@ -550,7 +572,7 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 
 			return reconcile.Result{}, err
 		}
-		secret.Data = map[string][]byte{terraformv1alpha1.TerraformBackendConfigMapKey: cfg}
+		secret.Data = map[string][]byte{terraformv1alpha1.TerraformBackendSecretKey: cfg}
 
 		// @step: generate the provider for the terraform configuration
 		cfg, err = terraform.NewTerraformProvider(string(state.provider.Spec.Provider), state.provider.GetConfiguration())
@@ -671,6 +693,12 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			}
 		}
 
+		// @step: should we save the terraform state
+		saveState := c.HasBackendTemplate()
+		if state.provider != nil && state.provider.HasBackendTemplate() {
+			saveState = true
+		}
+
 		// @step: lets build the options to render the job
 		options := jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
@@ -686,7 +714,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			Namespace:          c.ControllerNamespace,
 			PolicyConstraint:   state.checkovConstraint,
 			PolicyImage:        c.PolicyImage,
-			SaveTerraformState: c.HasBackendTemplate(),
+			SaveTerraformState: saveState,
 			Template:           state.jobTemplate,
 			TerraformImage:     GetTerraformImage(configuration, c.TerraformImage),
 		}
@@ -1100,6 +1128,12 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			return reconcile.Result{}, nil
 		}
 
+		// @step: check if we need to save the terraform state
+		saveState := c.HasBackendTemplate()
+		if state.provider != nil && state.provider.HasBackendTemplate() {
+			saveState = true
+		}
+
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
@@ -1110,7 +1144,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			InfracostsImage:      c.InfracostsImage,
 			InfracostsSecret:     c.InfracostsSecretName,
 			Namespace:            c.ControllerNamespace,
-			SaveTerraformState:   c.HasBackendTemplate(),
+			SaveTerraformState:   saveState,
 			Template:             state.jobTemplate,
 			TerraformImage:       GetTerraformImage(configuration, c.TerraformImage),
 		})

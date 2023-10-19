@@ -1073,7 +1073,6 @@ var _ = Describe("Configuration Controller", func() {
 				Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:1.1.9"))
 			})
 		})
-
 	})
 
 	// COSTS
@@ -1551,7 +1550,7 @@ var _ = Describe("Configuration Controller", func() {
 			Expect(found).To(BeTrue())
 
 			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
-			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendSecretKey))
 		})
 
 		It("should have create a terraform backend configuration", func() {
@@ -1578,7 +1577,7 @@ terraform {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
-			backend := string(secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey])
+			backend := string(secret.Data[terraformv1alpha1.TerraformBackendSecretKey])
 			Expect(backend).ToNot(BeZero())
 			Expect(backend).To(Equal(expected))
 		})
@@ -1752,7 +1751,7 @@ terraform {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
-			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
+			Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendSecretKey))
 
 			expected := "{\"name\":\"test\",\"terranetes\":{\"name\":\"bucket\",\"namespace\":\"apps\"}}\n"
 
@@ -1761,6 +1760,87 @@ terraform {
 	})
 
 	// CUSTOM BACKEND TEMPLATE
+	When("using a provider specific backend template", func() {
+		var template *v1.Secret
+
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			Setup(configuration)
+
+			provider := &terraformv1alpha1.Provider{}
+			provider.Name = configuration.Spec.ProviderRef.Name
+			Expect(cc.Get(context.Background(), provider.GetNamespacedName(), provider)).ToNot(HaveOccurred())
+
+			template = fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "provider-template")
+			provider.Spec.BackendTemplate = &v1.SecretReference{
+				Namespace: template.Namespace,
+				Name:      template.Name,
+			}
+			Expect(cc.Create(context.Background(), template)).ToNot(HaveOccurred())
+			Expect(cc.Update(context.Background(), provider)).ToNot(HaveOccurred())
+		})
+
+		Context("and the secret is not present", func() {
+			BeforeEach(func() {
+				Expect(cc.Delete(context.Background(), template)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should indicate the error", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal(`Backend template secret "default/provider-template" not found, contact administrator`))
+			})
+		})
+
+		Context("and the template is not present", func() {
+			BeforeEach(func() {
+				template = fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "provider-template")
+				Expect(cc.Delete(context.Background(), template)).ToNot(HaveOccurred())
+
+				template = fixtures.NewBackendTemplateSecret(ctrl.ControllerNamespace, "provider-template")
+				template.Data = map[string][]byte{}
+				Expect(cc.Create(context.Background(), template)).ToNot(HaveOccurred())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should indicate the error", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonActionRequired))
+				Expect(cond.Message).To(Equal(`Backend template secret "default/provider-template" does not contain the backend.tf key`))
+			})
+		})
+
+		Context("and the template is present", func() {
+			BeforeEach(func() {
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should have used the custom backend template from the provider", func() {
+				secret := &v1.Secret{}
+				secret.Namespace = ctrl.ControllerNamespace
+				secret.Name = configuration.GetTerraformConfigSecretName()
+
+				found, err := kubernetes.GetIfExists(context.Background(), cc, secret)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(found).To(BeTrue())
+
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendSecretKey))
+				Expect(string(secret.Data[terraformv1alpha1.TerraformBackendSecretKey])).To(ContainSubstring(`backend "s3"`))
+				Expect(string(secret.Data[terraformv1alpha1.TerraformBackendSecretKey])).To(ContainSubstring(`terranetes-controller-state"`))
+				Expect(string(secret.Data[terraformv1alpha1.TerraformBackendSecretKey])).To(ContainSubstring(`AWS_SECRET_ACCESS_KEY"`))
+			})
+		})
+	})
+
 	When("using a custom backend template", func() {
 		When("the template is not present", func() {
 			BeforeEach(func() {
@@ -1893,7 +1973,7 @@ terraform {
 				Expect(found).To(BeTrue())
 
 				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformVariablesConfigMapKey))
-				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendConfigMapKey))
+				Expect(secret.Data).To(HaveKey(terraformv1alpha1.TerraformBackendSecretKey))
 			})
 
 			It("should have create a terraform backend configuration", func() {
@@ -1916,7 +1996,7 @@ terraform {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
 
-				backend := string(secret.Data[terraformv1alpha1.TerraformBackendConfigMapKey])
+				backend := string(secret.Data[terraformv1alpha1.TerraformBackendSecretKey])
 				Expect(backend).ToNot(BeZero())
 				Expect(backend).To(Equal(expected))
 			})

@@ -25,12 +25,14 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
-@test "We should be able to delete all resource before checking custom state" {
+@test "We should be able to delete all resource before checking custom provider state" {
   runit "kubectl -n ${APP_NAMESPACE} delete jobs --all"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} delete pods --all"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} delete configurations --all"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${APP_NAMESPACE} delete cloudresources --all"
   [[ "$status" -eq 0 ]]
 }
 
@@ -40,7 +42,7 @@ teardown() {
   cat <<EOF > ${BATS_TMPDIR}/resource.yaml 2>/dev/null
 terraform {
   backend "s3" {
-    bucket     = "terranetes-controller-custom-state-e2e"
+    bucket     = "terranetes-controller-state-e2e-ci"
     key        = "${GITHUB_RUN_ID:-test}/{{ .namespace }}/{{ .name }}"
     region     = "eu-west-2"
     access_key = "${AWS_ACCESS_KEY_ID}"
@@ -52,38 +54,30 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should be able to update the controller to use a custom backend" {
-  CHART="charts/terranetes-controller"
-
-  if [[ "${USE_CHART}" == "false" ]]; then
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-controller:
-  backend:
+@test "We should be able to create a provider using custom state" {
+  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+---
+apiVersion: terraform.appvia.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-state
+spec:
+  source: secret
+  provider: aws
+  secretRef:
+    namespace: terraform-system
+    name: aws
+  backendTemplate:
+    namespace: terraform-system
     name: terraform-backend-config
-  images:
-    controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
-    executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-    preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-  costs:
-    secret: infracost-api
 EOF
-  else
-    CHART="appvia/terranetes-controller"
-
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-controller:
-  backend:
-    name: terraform-backend-config
-  costs:
-    secret: infracost-api
-EOF
-  fi
-
-  runit "helm upgrade terranetes-controller ${CHART} -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
+  runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl get provider ${CLOUD}"
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should be able to create a configuration with a custom backend" {
+@test "We should be able to create a configuration with a custom provider backend" {
   cat <<EOF > ${BATS_TMPDIR}/resource.yaml
 ---
 apiVersion: terraform.appvia.io/v1alpha1
@@ -93,7 +87,7 @@ metadata:
 spec:
   module: https://github.com/appvia/terranetes-controller.git//test/e2e/assets/terraform/dummy?ref=master
   providerRef:
-    name: ${CLOUD}
+    name: provider-state
   writeConnectionSecretToRef:
     name: custom-secret
 EOF
@@ -105,7 +99,7 @@ EOF
 @test "We should have a completed watcher for the configuration plan" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
-  retry 50 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
+  retry 30 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
@@ -178,6 +172,21 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
+@test "We should have a terraform state file in the remote state bucket" {
+  BUCKET="terranetes-controller-state-e2e-ci"
+  STATE_KEY="${GITHUB_RUN_ID:-test}/${APP_NAMESPACE}/${RESOURCE_NAME}"
+
+  runit "aws s3api head-object --bucket ${BUCKET} --key ${STATE_KEY}"
+  [[ "$status" -eq 0 ]]
+}
+
+@test "We should be able to delete the terraform state from bucket" {
+  BUCKET="terranetes-controller-state-e2e-ci"
+
+  runit "aws s3 rm s3://${BUCKET} --recursive"
+  [[ "$status" -eq 0 ]]
+}
+
 @test "We should have a terraform state secret in the terraform-system namespace" {
   ID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
   [[ "$status" -eq 0 ]]
@@ -208,29 +217,7 @@ EOF
   [[ "$status" -eq 0 ]]
 }
 
-@test "We should be able to revert the changes to the terranetes controller" {
-  CHART="charts/terranetes-controller"
-
-  if [[ "${USE_CHART}" == "false" ]]; then
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-replicaCount: 1
-controller:
-  images:
-    controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
-    executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-    preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-  costs:
-    secret: infracost-api
-EOF
-  else
-    CHART="appvia/terranetes-controller"
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-controller:
-  costs:
-    secret: infracost-api
-EOF
-  fi
-
-  runit "helm upgrade terranetes-controller ${CHART} -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"
+@test "We should be able to delete the custom provider" {
+  runit "kubectl delete provider provider-state"
   [[ "$status" -eq 0 ]]
 }

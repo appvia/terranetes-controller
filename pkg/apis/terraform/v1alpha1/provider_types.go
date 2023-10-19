@@ -86,42 +86,6 @@ const (
 	VSphereProviderType ProviderType = "vsphere"
 )
 
-// SupportedProviderTypes returns the supported provider types
-var SupportedProviderTypes = []ProviderType{
-	AWSProviderType,
-	AliCloudProviderType,
-	AzureActiveDirectoryProviderType,
-	AzureCloudStackProviderType,
-	AzureProviderType,
-	GCPProviderType,
-	GoogleWorkpspaceProviderType,
-	KubernetesProviderType,
-	VSphereProviderType,
-	VaultProviderType,
-}
-
-// IsSupportedProviderType returns true if the provider type is supported
-func IsSupportedProviderType(providerType ProviderType) bool {
-	for _, x := range SupportedProviderTypes {
-		if x == providerType {
-			return true
-		}
-	}
-
-	return false
-}
-
-// SupportedProviderTypeList returns a list of supported provider types
-func SupportedProviderTypeList() []string {
-	var list []string
-
-	for _, x := range SupportedProviderTypes {
-		list = append(list, string(x))
-	}
-
-	return list
-}
-
 // SourceType is the type of source
 type SourceType string
 
@@ -168,6 +132,12 @@ type ProviderSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"configuration,omitempty"`
+	// BackendTemplate is the reference to a backend template used for the terraform
+	// state storage. This field can override the default backend template, which is supplied as
+	// a command line argument to the controller binary. The contents of the secret MUST be a
+	// single field 'backend.tf' which contains the backend template.
+	// +kubebuilder:validation:Optional
+	BackendTemplate *v1.SecretReference `json:"backendTemplate,omitempty"`
 	// Preload defines the configuration for the preloading of contextual data from the cloud vendor.
 	// +kubebuilder:validation:Optional
 	Preload *PreloadConfiguration `json:"preload,omitempty"`
@@ -240,6 +210,11 @@ type Provider struct {
 
 	Spec   ProviderSpec   `json:"spec,omitempty"`
 	Status ProviderStatus `json:"status,omitempty"`
+}
+
+// HasBackendTemplate returns true if the provider has a backend template
+func (p *Provider) HasBackendTemplate() bool {
+	return p.Spec.BackendTemplate != nil
 }
 
 // IsPreloadingEnabled returns true if the provider is enabled for preloading
