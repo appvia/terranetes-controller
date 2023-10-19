@@ -1257,7 +1257,7 @@ golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.16.0
+# golang.org/x/net v0.17.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -1597,7 +1597,7 @@ honnef.co/go/tools/staticcheck/fakereflect
 honnef.co/go/tools/staticcheck/fakexml
 honnef.co/go/tools/stylecheck
 honnef.co/go/tools/unused
-# k8s.io/api v0.28.2
+# k8s.io/api v0.28.3
 ## explicit; go 1.20
 k8s.io/api/admission/v1
 k8s.io/api/admission/v1beta1
@@ -1664,7 +1664,7 @@ k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
-# k8s.io/apimachinery v0.28.2
+# k8s.io/apimachinery v0.28.3
 ## explicit; go 1.20
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/errors
@@ -1718,13 +1718,13 @@ k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/cli-runtime v0.28.2
+# k8s.io/cli-runtime v0.28.3
 ## explicit; go 1.20
 k8s.io/cli-runtime/pkg/genericclioptions
 k8s.io/cli-runtime/pkg/genericiooptions
 k8s.io/cli-runtime/pkg/printers
 k8s.io/cli-runtime/pkg/resource
-# k8s.io/client-go v0.28.2
+# k8s.io/client-go v0.28.3
 ## explicit; go 1.20
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
 k8s.io/client-go/applyconfigurations/admissionregistration/v1alpha1
