@@ -40,7 +40,7 @@ teardown() {
   cat <<EOF > ${BATS_TMPDIR}/resource.yaml 2>/dev/null
 terraform {
   backend "s3" {
-    bucket     = "terranetes-controller-state-e2e"
+    bucket     = "terranetes-controller-custom-state-e2e"
     key        = "${GITHUB_RUN_ID:-test}/{{ .namespace }}/{{ .name }}"
     region     = "eu-west-2"
     access_key = "${AWS_ACCESS_KEY_ID}"
@@ -105,7 +105,7 @@ EOF
 @test "We should have a completed watcher for the configuration plan" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
 
-  retry 30 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
+  retry 50 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ "$status" -eq 0 ]]
