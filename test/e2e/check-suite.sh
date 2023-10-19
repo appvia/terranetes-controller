@@ -52,7 +52,7 @@ run_diagnosis() {
   if kubectl cluster-info dump --namespaces terraform-system,apps --output-directory=/tmp/diagnostics >/dev/null; then
     # @step: upload the files to the bucket
     BUCKET="${DIAGNOSTICS}/${GITHUB_RUN_NUMBER}"
-    if ! aws s3 cp /tmp/diagnostics "${BUCKET}" --acl private --recursive >/dev/null; then
+    if ! aws s3 cp /tmp/diagnostics "s3://{BUCKET}" --acl private --recursive >/dev/null; then
       echo "Failed to copy all the diagnostics"
       exit 1
     fi
