@@ -41,6 +41,17 @@ spec:
             spec:
               description: ProviderSpec defines the desired state of a provider
               properties:
+                backendTemplate:
+                  description: BackendTemplate is the reference to a backend template used for the terraform state storage. This field can override the default backend template, which is supplied as a command line argument to the controller binary. The contents of the secret MUST be a single field 'backend.tf' which contains the backend template.
+                  properties:
+                    name:
+                      description: name is unique within a namespace to reference a secret resource.
+                      type: string
+                    namespace:
+                      description: namespace defines the space within which the secret name must be unique.
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
                 configuration:
                   description: Configuration is optional configuration to the provider. This is terraform provider specific.
                   type: object
