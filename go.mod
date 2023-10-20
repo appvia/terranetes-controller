@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/aws/aws-sdk-go v1.45.28
+	github.com/aws/aws-sdk-go v1.46.0
 	github.com/bbalet/stopwords v1.0.0
 	github.com/enescakir/emoji v1.0.0
 	github.com/evanphx/json-patch v5.7.0+incompatible
@@ -38,7 +38,7 @@ require (
 	github.com/tcnksm/ghr v0.16.0
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/oauth2 v0.12.0
+	golang.org/x/oauth2 v0.13.0
 	golang.org/x/tools v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.2
