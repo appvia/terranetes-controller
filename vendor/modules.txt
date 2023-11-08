@@ -236,7 +236,7 @@ github.com/davecgh/go-spew/spew
 # github.com/denis-tingaikin/go-header v0.4.3
 ## explicit; go 1.17
 github.com/denis-tingaikin/go-header
-# github.com/emicklei/go-restful/v3 v3.9.0
+# github.com/emicklei/go-restful/v3 v3.11.0
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
@@ -2039,7 +2039,7 @@ mvdan.cc/sh/v3/syntax/typedjson
 # mvdan.cc/unparam v0.0.0-20221223090309-7455f1af531d
 ## explicit; go 1.18
 mvdan.cc/unparam/check
-# sigs.k8s.io/controller-runtime v0.16.1
+# sigs.k8s.io/controller-runtime v0.16.3
 ## explicit; go 1.20
 sigs.k8s.io/controller-runtime
 sigs.k8s.io/controller-runtime/pkg/builder

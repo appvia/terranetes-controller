@@ -50,7 +50,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	mvdan.cc/sh/v3 v3.7.0
-	sigs.k8s.io/controller-runtime v0.16.1
+	sigs.k8s.io/controller-runtime v0.16.3
 	sigs.k8s.io/controller-tools v0.13.0
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -101,7 +101,7 @@ require (
 	github.com/daixiang0/gci v0.11.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denis-tingaikin/go-header v0.4.3 // indirect
-	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/esimonov/ifshort v1.0.4 // indirect
 	github.com/ettle/strcase v0.1.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
