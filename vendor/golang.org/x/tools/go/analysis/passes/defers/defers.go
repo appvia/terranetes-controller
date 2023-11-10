@@ -7,7 +7,6 @@ package defers
 import (
 	_ "embed"
 	"go/ast"
-	"go/types"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -19,11 +18,12 @@ import (
 //go:embed doc.go
 var doc string
 
-// Analyzer is the defer analyzer.
+// Analyzer is the defers analyzer.
 var Analyzer = &analysis.Analyzer{
-	Name:     "defer",
+	Name:     "defers",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
-	Doc:      analysisutil.MustExtractDoc(doc, "defer"),
+	URL:      "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/defers",
+	Doc:      analysisutil.MustExtractDoc(doc, "defers"),
 	Run:      run,
 }
 
@@ -35,8 +35,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	checkDeferCall := func(node ast.Node) bool {
 		switch v := node.(type) {
 		case *ast.CallExpr:
-			fn, ok := typeutil.Callee(pass.TypesInfo, v).(*types.Func)
-			if ok && fn.Name() == "Since" && fn.Pkg().Path() == "time" {
+			if analysisutil.IsFunctionNamed(typeutil.StaticCallee(pass.TypesInfo, v), "time", "Since") {
 				pass.Reportf(v.Pos(), "call to time.Since is not deferred")
 			}
 		case *ast.FuncLit:
