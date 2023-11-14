@@ -20,7 +20,7 @@ spec:
         {{- range $key, $value := .Labels }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
-        aadpodidbinding: terranetes-executor
+        azure.workload.identity/use: "true"
     spec:
       # https://github.com/kubernetes/kubernetes/issues/74848
       restartPolicy: Never
