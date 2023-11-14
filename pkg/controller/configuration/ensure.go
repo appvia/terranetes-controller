@@ -702,10 +702,11 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		// @step: lets build the options to render the job
 		options := jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels: utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
-				terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
-				terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
-			}),
+			AdditionalLabels: utils.MergeStringMaps(
+				utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
+					terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
+					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
+				}), c.JobLabels),
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
 			ExecutorSecrets:    c.ExecutorSecrets,
@@ -1137,7 +1138,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels:     configuration.GetLabels(),
+			AdditionalLabels:     utils.MergeStringMaps(configuration.GetLabels(), c.JobLabels),
 			EnableInfraCosts:     c.EnableInfracosts,
 			ExecutorImage:        c.ExecutorImage,
 			ExecutorSecrets:      c.ExecutorSecrets,

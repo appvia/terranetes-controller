@@ -188,13 +188,13 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,
-		"Labels": utils.MergeStringMaps(map[string]string{
+		"Labels": utils.MergeStringMaps(options.AdditionalLabels, map[string]string{
 			terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 			terraformv1alpha1.ConfigurationNameLabel:       r.configuration.GetName(),
 			terraformv1alpha1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),
 			terraformv1alpha1.ConfigurationStageLabel:      stage,
 			terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
-		}, options.AdditionalLabels),
+		}),
 		"Provider": map[string]interface{}{
 			"Name":           r.provider.Name,
 			"Namespace":      r.provider.Namespace,

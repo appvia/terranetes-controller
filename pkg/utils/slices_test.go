@@ -23,6 +23,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToMap(t *testing.T) {
+	m, err := ToMap([]string{"a=b", "c=d"})
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"a": "b", "c": "d"}, m)
+}
+
+func TestToMapError(t *testing.T) {
+	m, err := ToMap([]string{"a=b", "c"})
+	assert.Error(t, err)
+	assert.Nil(t, m)
+}
+
 func TestMaxChars(t *testing.T) {
 	v := MaxChars("hello", 3)
 	assert.Equal(t, "hel", v)

@@ -80,6 +80,9 @@ spec:
             {{- if .Values.controller.templates.job }}
             - --job-template={{ .Values.controller.templates.job }}
             {{- end }}
+            {{- range $key, $value := .Values.controller.jobLabels }}
+            - --job-label={{ $key }}={{ $value }}
+            {{- end }}
             {{- if .Values.controller.webhooks.enabled }}
             - --tls-ca={{ .Values.controller.webhooks.tlsAuthority }}
             - --tls-dir={{ .Values.controller.webhooks.tlsDir }}

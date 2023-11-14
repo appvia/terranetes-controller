@@ -60,6 +60,8 @@ controller:
   templates:
     # is the name of config map holding a override to the job template
     job: ""
+  # a collection of labels which are added to all jobs
+  jobsLabels: {}
   # is the image pull policy
   imagePullPolicy: IfNotPresent
   # indicate we create the watcher jobs in user namespace, these allow users

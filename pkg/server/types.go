@@ -58,6 +58,8 @@ type Config struct {
 	InfracostsSecretName string
 	// InfracostsImage is the image to use for infracosts
 	InfracostsImage string
+	// JobLabels is a collection of labels which are added to all jobs
+	JobLabels []string
 	// JobTemplate is the name of the configmap containing a template for the jobs
 	JobTemplate string
 	// MetricsPort is the port to listen on

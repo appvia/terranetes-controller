@@ -18,9 +18,28 @@
 package utils
 
 import (
+	"errors"
 	"sort"
 	"strings"
 )
+
+// ToMap converts a list of strings to a map
+func ToMap(slice []string) (map[string]string, error) {
+	m := make(map[string]string)
+
+	for _, item := range slice {
+		if item == "" {
+			return nil, errors.New("empty string found in slice")
+		}
+		items := strings.Split(item, "=")
+		if len(items) != 2 {
+			return nil, errors.New("invalid key=value pair found in slice")
+		}
+		m[items[0]] = items[1]
+	}
+
+	return m, nil
+}
 
 // MaxChars returns the maximum character length of a list of strings
 func MaxChars(slice string, max int) string {

@@ -73,6 +73,7 @@ func main() {
 	flags.StringVar(&config.InfracostsImage, "infracost-image", "infracosts/infracost:latest", "The image to use for the infracosts")
 	flags.StringVar(&config.InfracostsSecretName, "cost-secret", "", "Name of the secret on the controller namespace containing your infracost token")
 	flags.StringVar(&config.JobTemplate, "job-template", "", "Name of configmap in the controller namespace containing a template for the job")
+	flags.StringSliceVar(&config.JobLabels, "job-label", []string{}, "A collection of key=values to add to all jobs")
 	flags.StringVar(&config.Namespace, "namespace", os.Getenv("KUBE_NAMESPACE"), "The namespace the controller is running in and where jobs will run")
 	flags.StringVar(&config.PolicyImage, "policy-image", "bridgecrew/checkov:latest", "The image to use for the policy")
 	flags.StringVar(&config.PreloadImage, "preload-image", fmt.Sprintf("ghcr.io/appvia/terranetes-executor:%s", version.Version), "The image to use for the preload")
