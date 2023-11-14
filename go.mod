@@ -11,7 +11,7 @@ require (
 	github.com/enescakir/emoji v1.0.0
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/fatih/color v1.16.0
-	github.com/felixge/httpsnoop v1.0.3
+	github.com/felixge/httpsnoop v1.0.4
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-bindata/go-bindata/v3 v3.1.3
