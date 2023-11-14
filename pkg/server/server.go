@@ -48,6 +48,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/controller/revision"
 	"github.com/appvia/terranetes-controller/pkg/register"
 	"github.com/appvia/terranetes-controller/pkg/schema"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 	k8sutils "github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
 	"github.com/appvia/terranetes-controller/pkg/version"
 )
@@ -160,6 +161,15 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to add the contexts controller: %w", err)
 	}
 
+	jobLabels := map[string]string{}
+	if len(config.JobLabels) > 0 {
+		labels, err := utils.ToMap(config.JobLabels)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse the job labels: %w", err)
+		}
+		jobLabels = labels
+	}
+
 	// @step: ensure the configuration controller is enabled
 	if err := (&configuration.Controller{
 		BackendTemplate:         config.BackendTemplate,
@@ -173,6 +183,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
 		JobTemplate:             config.JobTemplate,
+		JobLabels:               jobLabels,
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,
 	}).Add(mgr); err != nil {
