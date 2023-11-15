@@ -25,6 +25,19 @@ teardown() {
   [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
+@test "We should be able to create a cloud credential" {
+  [[ ${CLOUD} == "aws" ]] && skip "no need to provision the cloud credential"
+
+  if kubectl -n ${NAMESPACE} get secret aws; then
+    skip "Cloud credential already exists"
+  fi
+
+  runit "kubectl -n ${NAMESPACE} create secret generic aws --from-literal=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --from-literal=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} --from-literal=AWS_REGION=${AWS_REGION} >/dev/null 2>&1"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${NAMESPACE} get secret aws"
+  [[ "$status" -eq 0 ]]
+}
+
 @test "We should be able to delete all resource before checking custom provider state" {
   runit "kubectl -n ${APP_NAMESPACE} delete jobs --all"
   [[ "$status" -eq 0 ]]
