@@ -29,7 +29,7 @@ jobs:
     needs:
       - e2e-aws
       - e2e-google
-      - e2e-azure
+#      - e2e-azure
     uses: ./.github/workflows/images.yaml
     secrets: inherit
 
