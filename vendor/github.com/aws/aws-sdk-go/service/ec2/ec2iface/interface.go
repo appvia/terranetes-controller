@@ -976,6 +976,13 @@ type EC2API interface {
 	DescribeByoipCidrsPages(*ec2.DescribeByoipCidrsInput, func(*ec2.DescribeByoipCidrsOutput, bool) bool) error
 	DescribeByoipCidrsPagesWithContext(aws.Context, *ec2.DescribeByoipCidrsInput, func(*ec2.DescribeByoipCidrsOutput, bool) bool, ...request.Option) error
 
+	DescribeCapacityBlockOfferings(*ec2.DescribeCapacityBlockOfferingsInput) (*ec2.DescribeCapacityBlockOfferingsOutput, error)
+	DescribeCapacityBlockOfferingsWithContext(aws.Context, *ec2.DescribeCapacityBlockOfferingsInput, ...request.Option) (*ec2.DescribeCapacityBlockOfferingsOutput, error)
+	DescribeCapacityBlockOfferingsRequest(*ec2.DescribeCapacityBlockOfferingsInput) (*request.Request, *ec2.DescribeCapacityBlockOfferingsOutput)
+
+	DescribeCapacityBlockOfferingsPages(*ec2.DescribeCapacityBlockOfferingsInput, func(*ec2.DescribeCapacityBlockOfferingsOutput, bool) bool) error
+	DescribeCapacityBlockOfferingsPagesWithContext(aws.Context, *ec2.DescribeCapacityBlockOfferingsInput, func(*ec2.DescribeCapacityBlockOfferingsOutput, bool) bool, ...request.Option) error
+
 	DescribeCapacityReservationFleets(*ec2.DescribeCapacityReservationFleetsInput) (*ec2.DescribeCapacityReservationFleetsOutput, error)
 	DescribeCapacityReservationFleetsWithContext(aws.Context, *ec2.DescribeCapacityReservationFleetsInput, ...request.Option) (*ec2.DescribeCapacityReservationFleetsOutput, error)
 	DescribeCapacityReservationFleetsRequest(*ec2.DescribeCapacityReservationFleetsInput) (*request.Request, *ec2.DescribeCapacityReservationFleetsOutput)
@@ -1227,6 +1234,13 @@ type EC2API interface {
 	DescribeInstanceStatusPages(*ec2.DescribeInstanceStatusInput, func(*ec2.DescribeInstanceStatusOutput, bool) bool) error
 	DescribeInstanceStatusPagesWithContext(aws.Context, *ec2.DescribeInstanceStatusInput, func(*ec2.DescribeInstanceStatusOutput, bool) bool, ...request.Option) error
 
+	DescribeInstanceTopology(*ec2.DescribeInstanceTopologyInput) (*ec2.DescribeInstanceTopologyOutput, error)
+	DescribeInstanceTopologyWithContext(aws.Context, *ec2.DescribeInstanceTopologyInput, ...request.Option) (*ec2.DescribeInstanceTopologyOutput, error)
+	DescribeInstanceTopologyRequest(*ec2.DescribeInstanceTopologyInput) (*request.Request, *ec2.DescribeInstanceTopologyOutput)
+
+	DescribeInstanceTopologyPages(*ec2.DescribeInstanceTopologyInput, func(*ec2.DescribeInstanceTopologyOutput, bool) bool) error
+	DescribeInstanceTopologyPagesWithContext(aws.Context, *ec2.DescribeInstanceTopologyInput, func(*ec2.DescribeInstanceTopologyOutput, bool) bool, ...request.Option) error
+
 	DescribeInstanceTypeOfferings(*ec2.DescribeInstanceTypeOfferingsInput) (*ec2.DescribeInstanceTypeOfferingsOutput, error)
 	DescribeInstanceTypeOfferingsWithContext(aws.Context, *ec2.DescribeInstanceTypeOfferingsInput, ...request.Option) (*ec2.DescribeInstanceTypeOfferingsOutput, error)
 	DescribeInstanceTypeOfferingsRequest(*ec2.DescribeInstanceTypeOfferingsInput) (*request.Request, *ec2.DescribeInstanceTypeOfferingsOutput)
@@ -1356,6 +1370,10 @@ type EC2API interface {
 
 	DescribeLocalGatewaysPages(*ec2.DescribeLocalGatewaysInput, func(*ec2.DescribeLocalGatewaysOutput, bool) bool) error
 	DescribeLocalGatewaysPagesWithContext(aws.Context, *ec2.DescribeLocalGatewaysInput, func(*ec2.DescribeLocalGatewaysOutput, bool) bool, ...request.Option) error
+
+	DescribeLockedSnapshots(*ec2.DescribeLockedSnapshotsInput) (*ec2.DescribeLockedSnapshotsOutput, error)
+	DescribeLockedSnapshotsWithContext(aws.Context, *ec2.DescribeLockedSnapshotsInput, ...request.Option) (*ec2.DescribeLockedSnapshotsOutput, error)
+	DescribeLockedSnapshotsRequest(*ec2.DescribeLockedSnapshotsInput) (*request.Request, *ec2.DescribeLockedSnapshotsOutput)
 
 	DescribeManagedPrefixLists(*ec2.DescribeManagedPrefixListsInput) (*ec2.DescribeManagedPrefixListsOutput, error)
 	DescribeManagedPrefixListsWithContext(aws.Context, *ec2.DescribeManagedPrefixListsInput, ...request.Option) (*ec2.DescribeManagedPrefixListsOutput, error)
@@ -1905,6 +1923,10 @@ type EC2API interface {
 	DisableSerialConsoleAccessWithContext(aws.Context, *ec2.DisableSerialConsoleAccessInput, ...request.Option) (*ec2.DisableSerialConsoleAccessOutput, error)
 	DisableSerialConsoleAccessRequest(*ec2.DisableSerialConsoleAccessInput) (*request.Request, *ec2.DisableSerialConsoleAccessOutput)
 
+	DisableSnapshotBlockPublicAccess(*ec2.DisableSnapshotBlockPublicAccessInput) (*ec2.DisableSnapshotBlockPublicAccessOutput, error)
+	DisableSnapshotBlockPublicAccessWithContext(aws.Context, *ec2.DisableSnapshotBlockPublicAccessInput, ...request.Option) (*ec2.DisableSnapshotBlockPublicAccessOutput, error)
+	DisableSnapshotBlockPublicAccessRequest(*ec2.DisableSnapshotBlockPublicAccessInput) (*request.Request, *ec2.DisableSnapshotBlockPublicAccessOutput)
+
 	DisableTransitGatewayRouteTablePropagation(*ec2.DisableTransitGatewayRouteTablePropagationInput) (*ec2.DisableTransitGatewayRouteTablePropagationOutput, error)
 	DisableTransitGatewayRouteTablePropagationWithContext(aws.Context, *ec2.DisableTransitGatewayRouteTablePropagationInput, ...request.Option) (*ec2.DisableTransitGatewayRouteTablePropagationOutput, error)
 	DisableTransitGatewayRouteTablePropagationRequest(*ec2.DisableTransitGatewayRouteTablePropagationInput) (*request.Request, *ec2.DisableTransitGatewayRouteTablePropagationOutput)
@@ -2020,6 +2042,10 @@ type EC2API interface {
 	EnableSerialConsoleAccess(*ec2.EnableSerialConsoleAccessInput) (*ec2.EnableSerialConsoleAccessOutput, error)
 	EnableSerialConsoleAccessWithContext(aws.Context, *ec2.EnableSerialConsoleAccessInput, ...request.Option) (*ec2.EnableSerialConsoleAccessOutput, error)
 	EnableSerialConsoleAccessRequest(*ec2.EnableSerialConsoleAccessInput) (*request.Request, *ec2.EnableSerialConsoleAccessOutput)
+
+	EnableSnapshotBlockPublicAccess(*ec2.EnableSnapshotBlockPublicAccessInput) (*ec2.EnableSnapshotBlockPublicAccessOutput, error)
+	EnableSnapshotBlockPublicAccessWithContext(aws.Context, *ec2.EnableSnapshotBlockPublicAccessInput, ...request.Option) (*ec2.EnableSnapshotBlockPublicAccessOutput, error)
+	EnableSnapshotBlockPublicAccessRequest(*ec2.EnableSnapshotBlockPublicAccessInput) (*request.Request, *ec2.EnableSnapshotBlockPublicAccessOutput)
 
 	EnableTransitGatewayRouteTablePropagation(*ec2.EnableTransitGatewayRouteTablePropagationInput) (*ec2.EnableTransitGatewayRouteTablePropagationOutput, error)
 	EnableTransitGatewayRouteTablePropagationWithContext(aws.Context, *ec2.EnableTransitGatewayRouteTablePropagationInput, ...request.Option) (*ec2.EnableTransitGatewayRouteTablePropagationOutput, error)
@@ -2212,9 +2238,20 @@ type EC2API interface {
 	GetReservedInstancesExchangeQuoteWithContext(aws.Context, *ec2.GetReservedInstancesExchangeQuoteInput, ...request.Option) (*ec2.GetReservedInstancesExchangeQuoteOutput, error)
 	GetReservedInstancesExchangeQuoteRequest(*ec2.GetReservedInstancesExchangeQuoteInput) (*request.Request, *ec2.GetReservedInstancesExchangeQuoteOutput)
 
+	GetSecurityGroupsForVpc(*ec2.GetSecurityGroupsForVpcInput) (*ec2.GetSecurityGroupsForVpcOutput, error)
+	GetSecurityGroupsForVpcWithContext(aws.Context, *ec2.GetSecurityGroupsForVpcInput, ...request.Option) (*ec2.GetSecurityGroupsForVpcOutput, error)
+	GetSecurityGroupsForVpcRequest(*ec2.GetSecurityGroupsForVpcInput) (*request.Request, *ec2.GetSecurityGroupsForVpcOutput)
+
+	GetSecurityGroupsForVpcPages(*ec2.GetSecurityGroupsForVpcInput, func(*ec2.GetSecurityGroupsForVpcOutput, bool) bool) error
+	GetSecurityGroupsForVpcPagesWithContext(aws.Context, *ec2.GetSecurityGroupsForVpcInput, func(*ec2.GetSecurityGroupsForVpcOutput, bool) bool, ...request.Option) error
+
 	GetSerialConsoleAccessStatus(*ec2.GetSerialConsoleAccessStatusInput) (*ec2.GetSerialConsoleAccessStatusOutput, error)
 	GetSerialConsoleAccessStatusWithContext(aws.Context, *ec2.GetSerialConsoleAccessStatusInput, ...request.Option) (*ec2.GetSerialConsoleAccessStatusOutput, error)
 	GetSerialConsoleAccessStatusRequest(*ec2.GetSerialConsoleAccessStatusInput) (*request.Request, *ec2.GetSerialConsoleAccessStatusOutput)
+
+	GetSnapshotBlockPublicAccessState(*ec2.GetSnapshotBlockPublicAccessStateInput) (*ec2.GetSnapshotBlockPublicAccessStateOutput, error)
+	GetSnapshotBlockPublicAccessStateWithContext(aws.Context, *ec2.GetSnapshotBlockPublicAccessStateInput, ...request.Option) (*ec2.GetSnapshotBlockPublicAccessStateOutput, error)
+	GetSnapshotBlockPublicAccessStateRequest(*ec2.GetSnapshotBlockPublicAccessStateInput) (*request.Request, *ec2.GetSnapshotBlockPublicAccessStateOutput)
 
 	GetSpotPlacementScores(*ec2.GetSpotPlacementScoresInput) (*ec2.GetSpotPlacementScoresOutput, error)
 	GetSpotPlacementScoresWithContext(aws.Context, *ec2.GetSpotPlacementScoresInput, ...request.Option) (*ec2.GetSpotPlacementScoresOutput, error)
@@ -2333,6 +2370,10 @@ type EC2API interface {
 
 	ListSnapshotsInRecycleBinPages(*ec2.ListSnapshotsInRecycleBinInput, func(*ec2.ListSnapshotsInRecycleBinOutput, bool) bool) error
 	ListSnapshotsInRecycleBinPagesWithContext(aws.Context, *ec2.ListSnapshotsInRecycleBinInput, func(*ec2.ListSnapshotsInRecycleBinOutput, bool) bool, ...request.Option) error
+
+	LockSnapshot(*ec2.LockSnapshotInput) (*ec2.LockSnapshotOutput, error)
+	LockSnapshotWithContext(aws.Context, *ec2.LockSnapshotInput, ...request.Option) (*ec2.LockSnapshotOutput, error)
+	LockSnapshotRequest(*ec2.LockSnapshotInput) (*request.Request, *ec2.LockSnapshotOutput)
 
 	ModifyAddressAttribute(*ec2.ModifyAddressAttributeInput) (*ec2.ModifyAddressAttributeOutput, error)
 	ModifyAddressAttributeWithContext(aws.Context, *ec2.ModifyAddressAttributeInput, ...request.Option) (*ec2.ModifyAddressAttributeOutput, error)
@@ -2614,6 +2655,10 @@ type EC2API interface {
 	ProvisionPublicIpv4PoolCidrWithContext(aws.Context, *ec2.ProvisionPublicIpv4PoolCidrInput, ...request.Option) (*ec2.ProvisionPublicIpv4PoolCidrOutput, error)
 	ProvisionPublicIpv4PoolCidrRequest(*ec2.ProvisionPublicIpv4PoolCidrInput) (*request.Request, *ec2.ProvisionPublicIpv4PoolCidrOutput)
 
+	PurchaseCapacityBlock(*ec2.PurchaseCapacityBlockInput) (*ec2.PurchaseCapacityBlockOutput, error)
+	PurchaseCapacityBlockWithContext(aws.Context, *ec2.PurchaseCapacityBlockInput, ...request.Option) (*ec2.PurchaseCapacityBlockOutput, error)
+	PurchaseCapacityBlockRequest(*ec2.PurchaseCapacityBlockInput) (*request.Request, *ec2.PurchaseCapacityBlockOutput)
+
 	PurchaseHostReservation(*ec2.PurchaseHostReservationInput) (*ec2.PurchaseHostReservationOutput, error)
 	PurchaseHostReservationWithContext(aws.Context, *ec2.PurchaseHostReservationInput, ...request.Option) (*ec2.PurchaseHostReservationOutput, error)
 	PurchaseHostReservationRequest(*ec2.PurchaseHostReservationInput) (*request.Request, *ec2.PurchaseHostReservationOutput)
@@ -2847,6 +2892,10 @@ type EC2API interface {
 	UnassignPrivateNatGatewayAddress(*ec2.UnassignPrivateNatGatewayAddressInput) (*ec2.UnassignPrivateNatGatewayAddressOutput, error)
 	UnassignPrivateNatGatewayAddressWithContext(aws.Context, *ec2.UnassignPrivateNatGatewayAddressInput, ...request.Option) (*ec2.UnassignPrivateNatGatewayAddressOutput, error)
 	UnassignPrivateNatGatewayAddressRequest(*ec2.UnassignPrivateNatGatewayAddressInput) (*request.Request, *ec2.UnassignPrivateNatGatewayAddressOutput)
+
+	UnlockSnapshot(*ec2.UnlockSnapshotInput) (*ec2.UnlockSnapshotOutput, error)
+	UnlockSnapshotWithContext(aws.Context, *ec2.UnlockSnapshotInput, ...request.Option) (*ec2.UnlockSnapshotOutput, error)
+	UnlockSnapshotRequest(*ec2.UnlockSnapshotInput) (*request.Request, *ec2.UnlockSnapshotOutput)
 
 	UnmonitorInstances(*ec2.UnmonitorInstancesInput) (*ec2.UnmonitorInstancesOutput, error)
 	UnmonitorInstancesWithContext(aws.Context, *ec2.UnmonitorInstancesInput, ...request.Option) (*ec2.UnmonitorInstancesOutput, error)
