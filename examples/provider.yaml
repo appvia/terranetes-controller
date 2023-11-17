@@ -36,3 +36,9 @@ spec:
   source: injected
   provider: aws
   serviceAccount: terranetes-executor
+  # All terraform jobs which reference this provider will automatically
+  # have the following labels and annotations places on the pods. This can
+  # be useful when using features such as workload identity.
+  job:
+    labels: {}
+    annotations: {}

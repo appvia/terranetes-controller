@@ -87,8 +87,8 @@ type Controller struct {
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
 	InfracostsSecretName string
-	// JobLabels is a collection of labels to add to the job
-	JobLabels map[string]string
+	// ControllerJobLabels is a collection of labels to add to the job
+	ControllerJobLabels map[string]string
 	// JobTemplate is a custom override for the template to use
 	JobTemplate string
 	// PolicyImage is the image to use for all policy / checkov jobs

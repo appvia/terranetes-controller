@@ -79,10 +79,10 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		batch := jobs.New(configuration, state.provider)
 		runner, err := batch.NewTerraformDestroy(jobs.Options{
 			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels: utils.MergeStringMaps(
+			AdditionalJobLabels: utils.MergeStringMaps(
 				utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
 					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
-				}), c.JobLabels),
+				}), c.ControllerJobLabels),
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
 			ExecutorSecrets:  c.ExecutorSecrets,
