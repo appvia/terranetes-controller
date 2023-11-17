@@ -138,6 +138,10 @@ type ProviderSpec struct {
 	// single field 'backend.tf' which contains the backend template.
 	// +kubebuilder:validation:Optional
 	BackendTemplate *v1.SecretReference `json:"backendTemplate,omitempty"`
+	// Job defined a custom collection of labels and annotations to be applied to all jobs
+	// which are created and 'use' this provider.
+	// +kubebuilder:validation:Optional
+	Job *JobMetadata `json:"job,omitempty"`
 	// Preload defines the configuration for the preloading of contextual data from the cloud vendor.
 	// +kubebuilder:validation:Optional
 	Preload *PreloadConfiguration `json:"preload,omitempty"`
@@ -166,6 +170,37 @@ type ProviderSpec struct {
 	// Summary provides a human readable description of the provider
 	// +kubebuilder:validation:Optional
 	Summary string `json:"summary,omitempty"`
+}
+
+// JobLabels returns the labels which are automatically added to all jobs
+func (p *Provider) JobLabels() map[string]string {
+	if p.Spec.Job == nil {
+		return nil
+	}
+
+	return p.Spec.Job.Labels
+}
+
+// JobAnnotations returns the annotations which are automatically added to all jobs
+func (p *Provider) JobAnnotations() map[string]string {
+	if p.Spec.Job == nil {
+		return nil
+	}
+
+	return p.Spec.Job.Annotations
+}
+
+// JobMetadata is a collection of labels and annotations which are automatically
+// added to all jobs whom are created and use this provider. This can be useful to inject
+// cloud vendor specific labels and annotations to the jobs; Azure workload identity, or
+// AWS IAM roles for service accounts.
+type JobMetadata struct {
+	// Labels is a collection of labels which are automatically added to all jobs.
+	// +kubebuilder:validation:Optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations is a collection of annotations which are automatically added to all jobs.
+	// +kubebuilder:validation:Optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // HasConfiguration returns true if the provider has custom configuration

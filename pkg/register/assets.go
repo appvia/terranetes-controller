@@ -1510,6 +1510,20 @@ spec:
                   description: Configuration is optional configuration to the provider. This is terraform provider specific.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
+                job:
+                  description: Job defined a custom collection of labels and annotations to be applied to all jobs which are created and 'use' this provider.
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Annotations is a collection of annotations which are automatically added to all jobs.
+                      type: object
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is a collection of labels which are automatically added to all jobs.
+                      type: object
+                  type: object
                 preload:
                   description: Preload defines the configuration for the preloading of contextual data from the cloud vendor.
                   properties:

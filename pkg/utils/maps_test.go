@@ -35,6 +35,15 @@ func TestMergeMapsBNil(t *testing.T) {
 	assert.Equal(t, a, m)
 }
 
+func TestMergeMapMany(t *testing.T) {
+	a := map[string]string{"a": "b"}
+	b := map[string]string{"c": "d"}
+	c := map[string]string{"a": "z"}
+
+	m := MergeStringMaps(a, b, c)
+	assert.Equal(t, map[string]string{"a": "z", "c": "d"}, m)
+}
+
 func TestMergeMapsNil(t *testing.T) {
 	b := map[string]string{"a": "b"}
 

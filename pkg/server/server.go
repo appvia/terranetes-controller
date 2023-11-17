@@ -183,7 +183,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
 		JobTemplate:             config.JobTemplate,
-		JobLabels:               jobLabels,
+		ControllerJobLabels:     jobLabels,
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,
 	}).Add(mgr); err != nil {
