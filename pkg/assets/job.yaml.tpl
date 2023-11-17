@@ -16,11 +16,14 @@ spec:
   ttlSecondsAfterFinished: 28800
   template:
     metadata:
+      annotations:
+        {{- range $key, $value := .Annotations }}
+        {{ $key }}: "{{ $value }}"
+        {{- end }}
       labels:
         {{- range $key, $value := .Labels }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
-        aadpodidbinding: terranetes-executor
     spec:
       # https://github.com/kubernetes/kubernetes/issues/74848
       restartPolicy: Never

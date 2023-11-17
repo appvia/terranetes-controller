@@ -42,10 +42,12 @@ const TerraformContainerName = "terraform"
 
 // Options is the configuration for the render
 type Options struct {
+	// AdditionalJobAnnotations are additional annotations added to the job
+	AdditionalJobAnnotations map[string]string
 	// AdditionalJobSecret is a collection of secrets which should be mounted into the job.
 	AdditionalJobSecrets []string
-	// AdditionalLabels are additional labels added to the job
-	AdditionalLabels map[string]string
+	// AdditionalJobLabels are additional labels added to the job
+	AdditionalJobLabels map[string]string
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
 	// ExecutorImage is the image to use for the terraform jobs
@@ -188,7 +190,8 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),
 		"Namespace":    options.Namespace,
-		"Labels": utils.MergeStringMaps(options.AdditionalLabels, map[string]string{
+		"Annotations":  options.AdditionalJobAnnotations,
+		"Labels": utils.MergeStringMaps(options.AdditionalJobLabels, map[string]string{
 			terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", r.configuration.GetGeneration()),
 			terraformv1alpha1.ConfigurationNameLabel:       r.configuration.GetName(),
 			terraformv1alpha1.ConfigurationNamespaceLabel:  r.configuration.GetNamespace(),

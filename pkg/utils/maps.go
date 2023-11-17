@@ -30,21 +30,17 @@ func ListKeys(m map[string]any) []string {
 }
 
 // MergeStringMaps merges maps together
-func MergeStringMaps(a, b map[string]string) map[string]string {
+func MergeStringMaps(list ...map[string]string) map[string]string {
 	m := make(map[string]string)
 
-	switch {
-	case a == nil && b == nil:
+	if len(list) == 0 {
 		return m
-	case a == nil && b != nil:
-		return b
-	case b == nil && a != nil:
-		return a
 	}
 
-	for _, x := range []map[string]string{a, b} {
-		for k, v := range x {
-			if k == "" && v == "" {
+	for i := 0; i < len(list); i++ {
+		for k, v := range list[i] {
+			switch {
+			case k == "" && v == "":
 				continue
 			}
 			m[k] = v
