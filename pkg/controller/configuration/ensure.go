@@ -701,12 +701,12 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
-			AdditionalJobAnnotations: state.provider.GetAnnotations(),
+			AdditionalJobAnnotations: state.provider.JobAnnotations(),
 			AdditionalJobSecrets:     state.additionalJobSecrets,
 			AdditionalJobLabels: utils.MergeStringMaps(
 				// thats a lot of labels!
 				c.ControllerJobLabels,
-				state.provider.GetLabels(),
+				state.provider.JobLabels(),
 				configuration.GetLabels(),
 				map[string]string{
 					terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],

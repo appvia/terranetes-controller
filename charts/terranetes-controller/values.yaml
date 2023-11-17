@@ -123,6 +123,9 @@ providers:
 #    source: injected
 #    labels: {}
 #    annotations: {}
+#    job:
+#      annotations: {}
+#      labels: {}
 #    # The cloud vendor this credentials is for
 #    provider: aws|google|azurerm
 #    # When using source secret we should have a secret name
