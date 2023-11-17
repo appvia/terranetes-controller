@@ -701,12 +701,17 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 
 		// @step: lets build the options to render the job
 		options := jobs.Options{
-			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels: utils.MergeStringMaps(
-				utils.MergeStringMaps(configuration.GetLabels(), map[string]string{
+			AdditionalJobAnnotations: state.provider.JobAnnotations(),
+			AdditionalJobSecrets:     state.additionalJobSecrets,
+			AdditionalJobLabels: utils.MergeStringMaps(
+				// thats a lot of labels!
+				c.ControllerJobLabels,
+				state.provider.JobLabels(),
+				configuration.GetLabels(),
+				map[string]string{
 					terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
 					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
-				}), c.JobLabels),
+				}),
 			EnableInfraCosts:   c.EnableInfracosts,
 			ExecutorImage:      c.ExecutorImage,
 			ExecutorSecrets:    c.ExecutorSecrets,
@@ -1137,17 +1142,22 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 
 		// @step: create the terraform job
 		runner, err := jobs.New(configuration, state.provider).NewTerraformApply(jobs.Options{
-			AdditionalJobSecrets: state.additionalJobSecrets,
-			AdditionalLabels:     utils.MergeStringMaps(configuration.GetLabels(), c.JobLabels),
-			EnableInfraCosts:     c.EnableInfracosts,
-			ExecutorImage:        c.ExecutorImage,
-			ExecutorSecrets:      c.ExecutorSecrets,
-			InfracostsImage:      c.InfracostsImage,
-			InfracostsSecret:     c.InfracostsSecretName,
-			Namespace:            c.ControllerNamespace,
-			SaveTerraformState:   saveState,
-			Template:             state.jobTemplate,
-			TerraformImage:       GetTerraformImage(configuration, c.TerraformImage),
+			AdditionalJobAnnotations: state.provider.JobAnnotations(),
+			AdditionalJobSecrets:     state.additionalJobSecrets,
+			AdditionalJobLabels: utils.MergeStringMaps(
+				c.ControllerJobLabels,
+				state.provider.JobLabels(),
+				configuration.GetLabels(),
+			),
+			EnableInfraCosts:   c.EnableInfracosts,
+			ExecutorImage:      c.ExecutorImage,
+			ExecutorSecrets:    c.ExecutorSecrets,
+			InfracostsImage:    c.InfracostsImage,
+			InfracostsSecret:   c.InfracostsSecretName,
+			Namespace:          c.ControllerNamespace,
+			SaveTerraformState: saveState,
+			Template:           state.jobTemplate,
+			TerraformImage:     GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")
