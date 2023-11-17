@@ -36,11 +36,11 @@ spec:
   job:
     annotations:
     {{- range $k, $v := $provider.job.annotations }}
-      {{ $k }}: "${v}"
+      {{ $k }}: "{{ $v }}"
     {{- end }}
     {{- range $k, $v := $provider.job.labels }}
     labels:
-      {{ $k }}: "${v}"
+      {{ $k }}: "{{ $v }}"
     {{- end }}
   {{- end }}
   {{- if eq $provider.source "secret" }}
