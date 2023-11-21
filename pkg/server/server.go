@@ -121,10 +121,8 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	}
 
 	options := manager.Options{
-		Cache: cache.Options{
-			SyncPeriod: &config.ResyncPeriod,
-		},
-		LeaderElection:                false,
+		Cache:                         cache.Options{SyncPeriod: &config.ResyncPeriod},
+		LeaderElection:                true,
 		LeaderElectionID:              "controller.terraform.appvia.io",
 		LeaderElectionNamespace:       ns,
 		LeaderElectionReleaseOnCancel: true,
