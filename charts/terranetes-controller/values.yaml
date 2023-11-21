@@ -3,7 +3,7 @@ nameOverride: ""
 # Override the naming scheme and force to this name
 fullnameOverride: ""
 # The number of replicas for the controller
-replicaCount: 1
+replicaCount: 2
 # Settings for the controller
 controller:
   # Is the port the builds apis
