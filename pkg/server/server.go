@@ -124,7 +124,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		Cache: cache.Options{
 			SyncPeriod: &config.ResyncPeriod,
 		},
-		LeaderElection:                false,
+		LeaderElection:                true,
 		LeaderElectionID:              "controller.terraform.appvia.io",
 		LeaderElectionNamespace:       ns,
 		LeaderElectionReleaseOnCancel: true,
