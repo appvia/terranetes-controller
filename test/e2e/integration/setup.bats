@@ -37,7 +37,7 @@ teardown() {
 
   if [[ ${USE_CHART} == "false" ]]; then
     cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
-replicaCount: 1
+replicaCount: 2
 controller:
   enableNamespaceProtection: true
   images:
@@ -105,8 +105,6 @@ EOF
 }
 
 @test "We should have a clean terraform namespace for testing" {
-  labels="terraform.appvia.io/configuration=bucket,terraform.appvia.io/stage=plan"
-
   runit "kubectl delete policies.terraform.appvia.io --all"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} delete job --all"
