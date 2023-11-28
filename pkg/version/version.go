@@ -20,6 +20,8 @@ package version
 import "fmt"
 
 var (
+	// Name is the name of the application
+	Name = "terranetes-controller"
 	// Version is the current version of the application
 	Version = "0.0.1"
 	// GitCommit is the current commit of the application
