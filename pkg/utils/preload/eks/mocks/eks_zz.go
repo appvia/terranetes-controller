@@ -386,6 +386,56 @@ func (mr *MockEKSAPIMockRecorder) CreateNodegroupWithContext(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNodegroupWithContext", reflect.TypeOf((*MockEKSAPI)(nil).CreateNodegroupWithContext), varargs...)
 }
 
+// CreatePodIdentityAssociation mocks base method.
+func (m *MockEKSAPI) CreatePodIdentityAssociation(arg0 *eks.CreatePodIdentityAssociationInput) (*eks.CreatePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePodIdentityAssociation", arg0)
+	ret0, _ := ret[0].(*eks.CreatePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePodIdentityAssociation indicates an expected call of CreatePodIdentityAssociation.
+func (mr *MockEKSAPIMockRecorder) CreatePodIdentityAssociation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodIdentityAssociation", reflect.TypeOf((*MockEKSAPI)(nil).CreatePodIdentityAssociation), arg0)
+}
+
+// CreatePodIdentityAssociationRequest mocks base method.
+func (m *MockEKSAPI) CreatePodIdentityAssociationRequest(arg0 *eks.CreatePodIdentityAssociationInput) (*request.Request, *eks.CreatePodIdentityAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePodIdentityAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*eks.CreatePodIdentityAssociationOutput)
+	return ret0, ret1
+}
+
+// CreatePodIdentityAssociationRequest indicates an expected call of CreatePodIdentityAssociationRequest.
+func (mr *MockEKSAPIMockRecorder) CreatePodIdentityAssociationRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodIdentityAssociationRequest", reflect.TypeOf((*MockEKSAPI)(nil).CreatePodIdentityAssociationRequest), arg0)
+}
+
+// CreatePodIdentityAssociationWithContext mocks base method.
+func (m *MockEKSAPI) CreatePodIdentityAssociationWithContext(arg0 context.Context, arg1 *eks.CreatePodIdentityAssociationInput, arg2 ...request.Option) (*eks.CreatePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreatePodIdentityAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*eks.CreatePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePodIdentityAssociationWithContext indicates an expected call of CreatePodIdentityAssociationWithContext.
+func (mr *MockEKSAPIMockRecorder) CreatePodIdentityAssociationWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodIdentityAssociationWithContext", reflect.TypeOf((*MockEKSAPI)(nil).CreatePodIdentityAssociationWithContext), varargs...)
+}
+
 // DeleteAddon mocks base method.
 func (m *MockEKSAPI) DeleteAddon(arg0 *eks.DeleteAddonInput) (*eks.DeleteAddonOutput, error) {
 	m.ctrl.T.Helper()
@@ -634,6 +684,56 @@ func (mr *MockEKSAPIMockRecorder) DeleteNodegroupWithContext(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodegroupWithContext", reflect.TypeOf((*MockEKSAPI)(nil).DeleteNodegroupWithContext), varargs...)
+}
+
+// DeletePodIdentityAssociation mocks base method.
+func (m *MockEKSAPI) DeletePodIdentityAssociation(arg0 *eks.DeletePodIdentityAssociationInput) (*eks.DeletePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePodIdentityAssociation", arg0)
+	ret0, _ := ret[0].(*eks.DeletePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePodIdentityAssociation indicates an expected call of DeletePodIdentityAssociation.
+func (mr *MockEKSAPIMockRecorder) DeletePodIdentityAssociation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodIdentityAssociation", reflect.TypeOf((*MockEKSAPI)(nil).DeletePodIdentityAssociation), arg0)
+}
+
+// DeletePodIdentityAssociationRequest mocks base method.
+func (m *MockEKSAPI) DeletePodIdentityAssociationRequest(arg0 *eks.DeletePodIdentityAssociationInput) (*request.Request, *eks.DeletePodIdentityAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePodIdentityAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*eks.DeletePodIdentityAssociationOutput)
+	return ret0, ret1
+}
+
+// DeletePodIdentityAssociationRequest indicates an expected call of DeletePodIdentityAssociationRequest.
+func (mr *MockEKSAPIMockRecorder) DeletePodIdentityAssociationRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodIdentityAssociationRequest", reflect.TypeOf((*MockEKSAPI)(nil).DeletePodIdentityAssociationRequest), arg0)
+}
+
+// DeletePodIdentityAssociationWithContext mocks base method.
+func (m *MockEKSAPI) DeletePodIdentityAssociationWithContext(arg0 context.Context, arg1 *eks.DeletePodIdentityAssociationInput, arg2 ...request.Option) (*eks.DeletePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePodIdentityAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*eks.DeletePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePodIdentityAssociationWithContext indicates an expected call of DeletePodIdentityAssociationWithContext.
+func (mr *MockEKSAPIMockRecorder) DeletePodIdentityAssociationWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePodIdentityAssociationWithContext", reflect.TypeOf((*MockEKSAPI)(nil).DeletePodIdentityAssociationWithContext), varargs...)
 }
 
 // DeregisterCluster mocks base method.
@@ -1119,6 +1219,56 @@ func (mr *MockEKSAPIMockRecorder) DescribeNodegroupWithContext(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeNodegroupWithContext", reflect.TypeOf((*MockEKSAPI)(nil).DescribeNodegroupWithContext), varargs...)
 }
 
+// DescribePodIdentityAssociation mocks base method.
+func (m *MockEKSAPI) DescribePodIdentityAssociation(arg0 *eks.DescribePodIdentityAssociationInput) (*eks.DescribePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescribePodIdentityAssociation", arg0)
+	ret0, _ := ret[0].(*eks.DescribePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DescribePodIdentityAssociation indicates an expected call of DescribePodIdentityAssociation.
+func (mr *MockEKSAPIMockRecorder) DescribePodIdentityAssociation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribePodIdentityAssociation", reflect.TypeOf((*MockEKSAPI)(nil).DescribePodIdentityAssociation), arg0)
+}
+
+// DescribePodIdentityAssociationRequest mocks base method.
+func (m *MockEKSAPI) DescribePodIdentityAssociationRequest(arg0 *eks.DescribePodIdentityAssociationInput) (*request.Request, *eks.DescribePodIdentityAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescribePodIdentityAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*eks.DescribePodIdentityAssociationOutput)
+	return ret0, ret1
+}
+
+// DescribePodIdentityAssociationRequest indicates an expected call of DescribePodIdentityAssociationRequest.
+func (mr *MockEKSAPIMockRecorder) DescribePodIdentityAssociationRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribePodIdentityAssociationRequest", reflect.TypeOf((*MockEKSAPI)(nil).DescribePodIdentityAssociationRequest), arg0)
+}
+
+// DescribePodIdentityAssociationWithContext mocks base method.
+func (m *MockEKSAPI) DescribePodIdentityAssociationWithContext(arg0 context.Context, arg1 *eks.DescribePodIdentityAssociationInput, arg2 ...request.Option) (*eks.DescribePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DescribePodIdentityAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*eks.DescribePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DescribePodIdentityAssociationWithContext indicates an expected call of DescribePodIdentityAssociationWithContext.
+func (mr *MockEKSAPIMockRecorder) DescribePodIdentityAssociationWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribePodIdentityAssociationWithContext", reflect.TypeOf((*MockEKSAPI)(nil).DescribePodIdentityAssociationWithContext), varargs...)
+}
+
 // DescribeUpdate mocks base method.
 func (m *MockEKSAPI) DescribeUpdate(arg0 *eks.DescribeUpdateInput) (*eks.DescribeUpdateOutput, error) {
 	m.ctrl.T.Helper()
@@ -1398,6 +1548,39 @@ func (m *MockEKSAPI) ListEksAnywhereSubscriptions(arg0 *eks.ListEksAnywhereSubsc
 func (mr *MockEKSAPIMockRecorder) ListEksAnywhereSubscriptions(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEksAnywhereSubscriptions", reflect.TypeOf((*MockEKSAPI)(nil).ListEksAnywhereSubscriptions), arg0)
+}
+
+// ListEksAnywhereSubscriptionsPages mocks base method.
+func (m *MockEKSAPI) ListEksAnywhereSubscriptionsPages(arg0 *eks.ListEksAnywhereSubscriptionsInput, arg1 func(*eks.ListEksAnywhereSubscriptionsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEksAnywhereSubscriptionsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListEksAnywhereSubscriptionsPages indicates an expected call of ListEksAnywhereSubscriptionsPages.
+func (mr *MockEKSAPIMockRecorder) ListEksAnywhereSubscriptionsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEksAnywhereSubscriptionsPages", reflect.TypeOf((*MockEKSAPI)(nil).ListEksAnywhereSubscriptionsPages), arg0, arg1)
+}
+
+// ListEksAnywhereSubscriptionsPagesWithContext mocks base method.
+func (m *MockEKSAPI) ListEksAnywhereSubscriptionsPagesWithContext(arg0 context.Context, arg1 *eks.ListEksAnywhereSubscriptionsInput, arg2 func(*eks.ListEksAnywhereSubscriptionsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListEksAnywhereSubscriptionsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListEksAnywhereSubscriptionsPagesWithContext indicates an expected call of ListEksAnywhereSubscriptionsPagesWithContext.
+func (mr *MockEKSAPIMockRecorder) ListEksAnywhereSubscriptionsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEksAnywhereSubscriptionsPagesWithContext", reflect.TypeOf((*MockEKSAPI)(nil).ListEksAnywhereSubscriptionsPagesWithContext), varargs...)
 }
 
 // ListEksAnywhereSubscriptionsRequest mocks base method.
@@ -1682,6 +1865,89 @@ func (mr *MockEKSAPIMockRecorder) ListNodegroupsWithContext(arg0, arg1 interface
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNodegroupsWithContext", reflect.TypeOf((*MockEKSAPI)(nil).ListNodegroupsWithContext), varargs...)
+}
+
+// ListPodIdentityAssociations mocks base method.
+func (m *MockEKSAPI) ListPodIdentityAssociations(arg0 *eks.ListPodIdentityAssociationsInput) (*eks.ListPodIdentityAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPodIdentityAssociations", arg0)
+	ret0, _ := ret[0].(*eks.ListPodIdentityAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPodIdentityAssociations indicates an expected call of ListPodIdentityAssociations.
+func (mr *MockEKSAPIMockRecorder) ListPodIdentityAssociations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPodIdentityAssociations", reflect.TypeOf((*MockEKSAPI)(nil).ListPodIdentityAssociations), arg0)
+}
+
+// ListPodIdentityAssociationsPages mocks base method.
+func (m *MockEKSAPI) ListPodIdentityAssociationsPages(arg0 *eks.ListPodIdentityAssociationsInput, arg1 func(*eks.ListPodIdentityAssociationsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPodIdentityAssociationsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListPodIdentityAssociationsPages indicates an expected call of ListPodIdentityAssociationsPages.
+func (mr *MockEKSAPIMockRecorder) ListPodIdentityAssociationsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPodIdentityAssociationsPages", reflect.TypeOf((*MockEKSAPI)(nil).ListPodIdentityAssociationsPages), arg0, arg1)
+}
+
+// ListPodIdentityAssociationsPagesWithContext mocks base method.
+func (m *MockEKSAPI) ListPodIdentityAssociationsPagesWithContext(arg0 context.Context, arg1 *eks.ListPodIdentityAssociationsInput, arg2 func(*eks.ListPodIdentityAssociationsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPodIdentityAssociationsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListPodIdentityAssociationsPagesWithContext indicates an expected call of ListPodIdentityAssociationsPagesWithContext.
+func (mr *MockEKSAPIMockRecorder) ListPodIdentityAssociationsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPodIdentityAssociationsPagesWithContext", reflect.TypeOf((*MockEKSAPI)(nil).ListPodIdentityAssociationsPagesWithContext), varargs...)
+}
+
+// ListPodIdentityAssociationsRequest mocks base method.
+func (m *MockEKSAPI) ListPodIdentityAssociationsRequest(arg0 *eks.ListPodIdentityAssociationsInput) (*request.Request, *eks.ListPodIdentityAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPodIdentityAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*eks.ListPodIdentityAssociationsOutput)
+	return ret0, ret1
+}
+
+// ListPodIdentityAssociationsRequest indicates an expected call of ListPodIdentityAssociationsRequest.
+func (mr *MockEKSAPIMockRecorder) ListPodIdentityAssociationsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPodIdentityAssociationsRequest", reflect.TypeOf((*MockEKSAPI)(nil).ListPodIdentityAssociationsRequest), arg0)
+}
+
+// ListPodIdentityAssociationsWithContext mocks base method.
+func (m *MockEKSAPI) ListPodIdentityAssociationsWithContext(arg0 context.Context, arg1 *eks.ListPodIdentityAssociationsInput, arg2 ...request.Option) (*eks.ListPodIdentityAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPodIdentityAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*eks.ListPodIdentityAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPodIdentityAssociationsWithContext indicates an expected call of ListPodIdentityAssociationsWithContext.
+func (mr *MockEKSAPIMockRecorder) ListPodIdentityAssociationsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPodIdentityAssociationsWithContext", reflect.TypeOf((*MockEKSAPI)(nil).ListPodIdentityAssociationsWithContext), varargs...)
 }
 
 // ListTagsForResource mocks base method.
@@ -2265,6 +2531,56 @@ func (mr *MockEKSAPIMockRecorder) UpdateNodegroupVersionWithContext(arg0, arg1 i
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNodegroupVersionWithContext", reflect.TypeOf((*MockEKSAPI)(nil).UpdateNodegroupVersionWithContext), varargs...)
+}
+
+// UpdatePodIdentityAssociation mocks base method.
+func (m *MockEKSAPI) UpdatePodIdentityAssociation(arg0 *eks.UpdatePodIdentityAssociationInput) (*eks.UpdatePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePodIdentityAssociation", arg0)
+	ret0, _ := ret[0].(*eks.UpdatePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdatePodIdentityAssociation indicates an expected call of UpdatePodIdentityAssociation.
+func (mr *MockEKSAPIMockRecorder) UpdatePodIdentityAssociation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodIdentityAssociation", reflect.TypeOf((*MockEKSAPI)(nil).UpdatePodIdentityAssociation), arg0)
+}
+
+// UpdatePodIdentityAssociationRequest mocks base method.
+func (m *MockEKSAPI) UpdatePodIdentityAssociationRequest(arg0 *eks.UpdatePodIdentityAssociationInput) (*request.Request, *eks.UpdatePodIdentityAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePodIdentityAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*eks.UpdatePodIdentityAssociationOutput)
+	return ret0, ret1
+}
+
+// UpdatePodIdentityAssociationRequest indicates an expected call of UpdatePodIdentityAssociationRequest.
+func (mr *MockEKSAPIMockRecorder) UpdatePodIdentityAssociationRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodIdentityAssociationRequest", reflect.TypeOf((*MockEKSAPI)(nil).UpdatePodIdentityAssociationRequest), arg0)
+}
+
+// UpdatePodIdentityAssociationWithContext mocks base method.
+func (m *MockEKSAPI) UpdatePodIdentityAssociationWithContext(arg0 context.Context, arg1 *eks.UpdatePodIdentityAssociationInput, arg2 ...request.Option) (*eks.UpdatePodIdentityAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdatePodIdentityAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*eks.UpdatePodIdentityAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdatePodIdentityAssociationWithContext indicates an expected call of UpdatePodIdentityAssociationWithContext.
+func (mr *MockEKSAPIMockRecorder) UpdatePodIdentityAssociationWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodIdentityAssociationWithContext", reflect.TypeOf((*MockEKSAPI)(nil).UpdatePodIdentityAssociationWithContext), varargs...)
 }
 
 // WaitUntilAddonActive mocks base method.
