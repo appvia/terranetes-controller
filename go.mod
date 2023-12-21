@@ -39,7 +39,7 @@ require (
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/oauth2 v0.15.0
-	golang.org/x/tools v0.16.0
+	golang.org/x/tools v0.16.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
