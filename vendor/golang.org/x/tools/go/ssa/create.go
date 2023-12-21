@@ -15,7 +15,6 @@ import (
 	"os"
 	"sync"
 
-	"golang.org/x/tools/internal/typeparams"
 	"golang.org/x/tools/internal/versions"
 )
 
@@ -40,7 +39,7 @@ func NewProgram(fset *token.FileSet, mode BuilderMode) *Program {
 		packages:      make(map[*types.Package]*Package),
 		mode:          mode,
 		canon:         newCanonizer(),
-		ctxt:          typeparams.NewContext(),
+		ctxt:          types.NewContext(),
 		parameterized: tpWalker{seen: make(map[types.Type]bool)},
 	}
 }
@@ -117,10 +116,10 @@ func createFunction(prog *Program, obj *types.Func, name string, syntax ast.Node
 	sig := obj.Type().(*types.Signature)
 
 	// Collect type parameters.
-	var tparams *typeparams.TypeParamList
-	if rtparams := typeparams.RecvTypeParams(sig); rtparams.Len() > 0 {
+	var tparams *types.TypeParamList
+	if rtparams := sig.RecvTypeParams(); rtparams.Len() > 0 {
 		tparams = rtparams // method of generic type
-	} else if sigparams := typeparams.ForSignature(sig); sigparams.Len() > 0 {
+	} else if sigparams := sig.TypeParams(); sigparams.Len() > 0 {
 		tparams = sigparams // generic function
 	}
 
