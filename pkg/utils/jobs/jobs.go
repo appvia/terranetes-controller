@@ -26,7 +26,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
@@ -117,10 +117,10 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            pointer.Int32(0),
-			Completions:             pointer.Int32(1),
-			Parallelism:             pointer.Int32(1),
-			TTLSecondsAfterFinished: pointer.Int32(3600),
+			BackoffLimit:            ptr.To(int32(0)),
+			Completions:             ptr.To(int32(1)),
+			Parallelism:             ptr.To(int32(1)),
+			TTLSecondsAfterFinished: ptr.To(int32(3600)),
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: utils.MergeStringMaps(r.configuration.GetLabels(), map[string]string{
@@ -133,9 +133,9 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 				Spec: v1.PodSpec{
 					RestartPolicy: v1.RestartPolicyNever,
 					SecurityContext: &v1.PodSecurityContext{
-						RunAsGroup:   pointer.Int64(65534),
-						RunAsNonRoot: pointer.Bool(true),
-						RunAsUser:    pointer.Int64(65534),
+						RunAsGroup:   ptr.To(int64(65534)),
+						RunAsNonRoot: ptr.To(true),
+						RunAsUser:    ptr.To(int64(65534)),
 					},
 					Containers: []v1.Container{
 						{
@@ -145,9 +145,9 @@ func (r *Render) NewJobWatch(namespace, stage string, executorImage string) *bat
 							Command:         []string{"/watch_logs.sh"},
 							Args:            []string{"-e", endpoint},
 							SecurityContext: &v1.SecurityContext{
-								AllowPrivilegeEscalation: pointer.Bool(false),
+								AllowPrivilegeEscalation: ptr.To(false),
 								Capabilities:             &v1.Capabilities{Drop: []v1.Capability{"ALL"}},
-								Privileged:               pointer.Bool(false),
+								Privileged:               ptr.To(false),
 							},
 						},
 					},
@@ -202,7 +202,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Name":           r.provider.Name,
 			"Namespace":      r.provider.Namespace,
 			"SecretRef":      r.provider.Spec.SecretRef,
-			"ServiceAccount": pointer.StringDeref(r.provider.Spec.ServiceAccount, ""),
+			"ServiceAccount": ptr.Deref(r.provider.Spec.ServiceAccount, ""),
 			"Source":         string(r.provider.Spec.Source),
 		},
 		"EnableInfraCosts":       options.EnableInfraCosts,

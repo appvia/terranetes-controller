@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
@@ -398,7 +398,7 @@ func (o *RevisionCommand) checkRevisionInputs(revision *terraformv1alpha1.Revisi
 			if input.Key == "" {
 				v.Failed("Input (spec.inputs[%d].key) does not have a key defined", i)
 			}
-			if input.Default == nil && pointer.BoolDeref(input.Required, false) {
+			if input.Default == nil && ptr.Deref(input.Required, false) {
 				v.Warning("Input (spec.inputs[%d].default) does not have a default defined", i)
 			}
 		}

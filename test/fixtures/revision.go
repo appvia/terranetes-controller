@@ -20,7 +20,7 @@ package fixtures
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
@@ -81,7 +81,7 @@ func NewAWSBucketRevision(name string) *terraformv1alpha1.Revision {
 		{
 			Key:         "bucket_name",
 			Description: "The name of the bucket",
-			Required:    pointer.Bool(true),
+			Required:    ptr.To(true),
 			Default: &runtime.RawExtension{
 				Raw: []byte(`{"value": "test"}`),
 			},

@@ -26,7 +26,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -177,7 +177,7 @@ func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudR
 
 	// @step: now we need to ensure any variables defined in the revision are present
 	for _, input := range rv.Spec.Inputs {
-		if pointer.BoolDeref(input.Required, false) && input.Default == nil {
+		if ptr.Deref(input.Required, false) && input.Default == nil {
 			var found bool
 
 			if o.Spec.HasVariables() {

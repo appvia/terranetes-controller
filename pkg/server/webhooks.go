@@ -24,7 +24,7 @@ import (
 	"os"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/appvia/terranetes-controller/pkg/register"
@@ -64,7 +64,7 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 				o.Webhooks[i].ClientConfig.CABundle = ca
 				o.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
 				o.Webhooks[i].ClientConfig.Service.Name = "controller"
-				o.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
+				o.Webhooks[i].ClientConfig.Service.Port = ptr.To(int32(443))
 			}
 
 		case *admissionv1.MutatingWebhookConfiguration:
@@ -72,7 +72,7 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 				o.Webhooks[i].ClientConfig.CABundle = ca
 				o.Webhooks[i].ClientConfig.Service.Namespace = os.Getenv("KUBE_NAMESPACE")
 				o.Webhooks[i].ClientConfig.Service.Name = "controller"
-				o.Webhooks[i].ClientConfig.Service.Port = pointer.Int32(443)
+				o.Webhooks[i].ClientConfig.Service.Port = ptr.To(int32(443))
 			}
 
 		default:
@@ -97,8 +97,8 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 				Service: &admissionv1.ServiceReference{
 					Name:      "controller",
 					Namespace: os.Getenv("KUBE_NAMESPACE"),
-					Path:      pointer.String("/validate/terraform.appvia.io/namespaces"),
-					Port:      pointer.Int32(443),
+					Path:      ptr.To("/validate/terraform.appvia.io/namespaces"),
+					Port:      ptr.To(int32(443)),
 				},
 				CABundle: ca,
 			},

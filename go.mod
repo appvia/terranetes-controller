@@ -43,12 +43,12 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
-	k8s.io/apimachinery v0.28.4
+	k8s.io/apimachinery v0.29.0
 	k8s.io/cli-runtime v0.28.4
 	k8s.io/client-go v0.28.4
 	k8s.io/code-generator v0.29.0
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00
-	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	mvdan.cc/sh/v3 v3.7.0
 	sigs.k8s.io/controller-runtime v0.16.1
 	sigs.k8s.io/controller-tools v0.13.0
