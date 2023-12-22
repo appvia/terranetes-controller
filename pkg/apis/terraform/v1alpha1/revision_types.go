@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
@@ -77,7 +77,7 @@ func NewCloudResourceFromRevision(revision *Revision) (*CloudResource, error) {
 	values := make(map[string]interface{})
 	for _, v := range revision.Spec.Inputs {
 		if v.Default == nil {
-			if pointer.BoolDeref(v.Required, true) {
+			if ptr.Deref(v.Required, true) {
 				values[v.Key] = "CHANGE_ME"
 			}
 			continue

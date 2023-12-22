@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -112,7 +112,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (adm
 
 	for i := 0; i < len(list.Items); i++ {
 		for _, x := range list.Items[i].Spec.ValueFrom {
-			if pointer.StringDeref(x.Context, "") == current.Name {
+			if ptr.Deref(x.Context, "") == current.Name {
 				inuse = append(inuse, list.Items[i].GetNamespacedName().String())
 			}
 		}

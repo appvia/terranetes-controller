@@ -28,7 +28,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"github.com/spf13/cobra"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/cmd"
@@ -366,7 +366,7 @@ func (o *RevisionCommand) retrieveInputs(module *tfconfig.Module) error {
 				})
 			} else {
 				o.ValueFrom = append(o.ValueFrom, terraformv1alpha1.ValueFromSource{
-					Context: pointer.String(input.Context),
+					Context: ptr.To(input.Context),
 					Key:     input.Key,
 					Name:    variable.Name,
 				})

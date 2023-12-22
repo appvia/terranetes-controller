@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	corev1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/core/v1alpha1"
 )
@@ -254,7 +254,7 @@ func (p *Provider) HasBackendTemplate() bool {
 
 // IsPreloadingEnabled returns true if the provider is enabled for preloading
 func (p *Provider) IsPreloadingEnabled() bool {
-	if p.Spec.Preload != nil && pointer.BoolDeref(p.Spec.Preload.Enabled, false) {
+	if p.Spec.Preload != nil && ptr.Deref(p.Spec.Preload.Enabled, false) {
 		return true
 	}
 

@@ -28,7 +28,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
@@ -204,7 +204,7 @@ func (c *Controller) ensurePreload(provider *terraformv1alpha1.Provider) control
 				"Cloud":          provider.Spec.Provider.String(),
 				"Name":           provider.Name,
 				"SecretRef":      provider.Spec.SecretRef,
-				"ServiceAccount": pointer.StringDeref(provider.Spec.ServiceAccount, ""),
+				"ServiceAccount": ptr.Deref(provider.Spec.ServiceAccount, ""),
 				"Source":         provider.Spec.Source,
 			},
 			"Region":         provider.Spec.Preload.Region,
