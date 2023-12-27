@@ -179,7 +179,7 @@ executor-image-kind: executor-image
 
 executor-image-verify: install-trivy
 	@echo "--> Verifying executor server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
-	echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} for vulnerabilities"
+	@echo "--> Checking image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} for vulnerabilities"
 	PATH=${PATH}:bin/ trivy image --exit-code 1 --severity "CRITICAL" ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}
 
 # Image management
