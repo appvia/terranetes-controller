@@ -171,6 +171,8 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	// @step: ensure the configuration controller is enabled
 	if err := (&configuration.Controller{
 		BackendTemplate:         config.BackendTemplate,
+		BackoffLimit:            config.BackoffLimit,
+		ControllerJobLabels:     jobLabels,
 		ControllerNamespace:     config.Namespace,
 		EnableInfracosts:        (config.InfracostsSecretName != ""),
 		EnableTerraformVersions: config.EnableTerraformVersions,
@@ -181,7 +183,6 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		InfracostsImage:         config.InfracostsImage,
 		InfracostsSecretName:    config.InfracostsSecretName,
 		JobTemplate:             config.JobTemplate,
-		ControllerJobLabels:     jobLabels,
 		PolicyImage:             config.PolicyImage,
 		TerraformImage:          config.TerraformImage,
 	}).Add(mgr); err != nil {

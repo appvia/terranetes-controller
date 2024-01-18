@@ -53,6 +53,7 @@ func main() {
 
 	flags := cmd.Flags()
 	flags.Bool("verbose", false, "Enable verbose logging")
+	flags.IntVar(&config.BackoffLimit, "backoff-limit", 1, "The number of times we are willing to allow a terraform job to error before marking as a failure")
 	flags.BoolVar(&config.EnableContextInjection, "enable-context-injection", false, "Indicates the controller should inject Configuration context into the terraform variables")
 	flags.BoolVar(&config.EnableNamespaceProtection, "enable-namespace-protection", false, "Indicates the controller should protect the controller namespace from being deleted")
 	flags.BoolVar(&config.EnableRevisionUpdateProtection, "enable-revision-update-protection", false, "Indicates we should protect the revisions in use from being updated")

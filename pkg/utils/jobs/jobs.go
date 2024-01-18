@@ -48,6 +48,9 @@ type Options struct {
 	AdditionalJobSecrets []string
 	// AdditionalJobLabels are additional labels added to the job
 	AdditionalJobLabels map[string]string
+	// BackoffLimit is the number of times we are willing to allow a job to fail
+	// before we give up
+	BackoffLimit int
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
 	// ExecutorImage is the image to use for the terraform jobs

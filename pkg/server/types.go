@@ -27,6 +27,8 @@ type Config struct {
 	// contains an optional template to use for the backend state - unless this
 	// is set we use the default backend state i.e. kubernetes state
 	BackendTemplate string
+	// BackoffLimit is the number of times we are willing to allow a job to fail
+	BackoffLimit int
 	// DriftControllerInterval is the interval for the controller to check for drift
 	DriftControllerInterval time.Duration
 	// DriftInterval is the minimum interval between drift checks
