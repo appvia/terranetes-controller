@@ -9,7 +9,7 @@ metadata:
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
-  backoffLimit: 2
+  backoffLimit: {{ default 1 .BackoffLimit }}
   completions: 1
   parallelism: 1
   # retain the jobs for 6 hours
