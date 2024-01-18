@@ -122,7 +122,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 					"name":      o.GetName(),
 					"namespace": o.GetNamespace(),
 				})
-				logger.Debug("configuration changed detected")
 
 				switch {
 				case o.GetLabels() == nil:

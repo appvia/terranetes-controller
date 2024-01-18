@@ -189,7 +189,7 @@ type CloudResourceStatus struct {
 	// Resources is the number of managed cloud resources which are currently under management.
 	// This field is taken from the terraform state itself.
 	// +kubebuilder:validation:Optional
-	Resources int `json:"resources,omitempty"`
+	Resources *int `json:"resources,omitempty"`
 	// ResourceStatus indicates the status of the resources and if the resources are insync with the
 	// configuration
 	// +kubebuilder:validation:Optional

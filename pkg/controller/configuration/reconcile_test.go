@@ -3021,7 +3021,8 @@ terraform {
 
 		It("should have a resource count on the status", func() {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
-			Expect(configuration.Status.Resources).To(Equal(1))
+			Expect(configuration.Status.Resources).ToNot(BeNil())
+			Expect(*configuration.Status.Resources).To(Equal(1))
 		})
 
 		It("should have a in resource status", func() {

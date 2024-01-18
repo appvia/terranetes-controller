@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of thRe GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -25,6 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -43,6 +44,16 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+		// @step: ensure we have a status and the resource count has been defined
+		if configuration.Status.GetCommonStatus() != nil && configuration.Status.Resources != nil {
+			resources := ptr.Deref(configuration.Status.Resources, 0)
+			if resources == 0 {
+				c.recorder.Event(configuration, v1.EventTypeNormal, "DeletionSkipped", "Configuration had zero resources, skipping terraform destroy")
+
+				return reconcile.Result{}, nil
+			}
+		}
+
 		// @step: if the configuration has the orphan label we can skip the deletion step
 		if configuration.GetAnnotations()[terraformv1alpha1.OrphanAnnotation] == "true" {
 			return reconcile.Result{}, nil

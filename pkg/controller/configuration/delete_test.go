@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kfake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -129,6 +130,55 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeFalse())
 				Expect(secret).To(BeNil())
+			})
+		})
+
+		Context("and we have no resources", func() {
+			BeforeEach(func() {
+				configuration.Status.Resources = ptr.To(1)
+
+				Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+			})
+
+			Context("but the resources is not defined", func() {
+				BeforeEach(func() {
+					configuration.Status.Resources = nil
+
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should try to destroy the configuration", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.Background(), list)).To(Succeed())
+					Expect(list.Items).ToNot(HaveLen(0))
+				})
+			})
+
+			Context("but the resources is not zero", func() {
+				BeforeEach(func() {
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should try to destroy the configuration", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.Background(), list)).To(Succeed())
+					Expect(list.Items).ToNot(HaveLen(0))
+				})
+			})
+
+			Context("but the configuration has no resources", func() {
+				BeforeEach(func() {
+					configuration.Status.Resources = ptr.To(0)
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not create thhe destroy job", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.Background(), list)).To(Succeed())
+					Expect(list.Items).ToNot(HaveLen(0))
+				})
 			})
 		})
 
