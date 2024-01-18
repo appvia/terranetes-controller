@@ -68,6 +68,16 @@ terraform {
 }
 
 func TestNewTerraformProvider(t *testing.T) {
+	azureConfig := `
+{
+  "use_oidc": true,
+  "storage_use_azuread": true,
+  "subscription_id": "injected",       
+  "tenant_id": "injected",
+  "client_id": "injected",
+  "oidc_token_file_path": "/var/run/secrets/azure/tokens/azure-identity-token"
+}`
+
 	cases := []struct {
 		Provider *terraformv1alpha1.Provider
 		Expected string
@@ -99,6 +109,13 @@ func TestNewTerraformProvider(t *testing.T) {
 				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
 			}},
 			Expected: "provider \"azurerm\" {\n  \n  features = \"hello\"\n  \n}\n",
+		},
+		{
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte(azureConfig)},
+			}},
+			Expected: "provider \"azurerm\" {\n  \n  client_id = \"injected\"\n  \n  features {}\n  \n  oidc_token_file_path = \"/var/run/secrets/azure/tokens/azure-identity-token\"\n  \n  storage_use_azuread = true\n  \n  subscription_id = \"injected\"\n  \n  tenant_id = \"injected\"\n  \n  use_oidc = true\n  \n}\n",
 		},
 	}
 
