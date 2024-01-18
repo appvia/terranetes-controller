@@ -65,6 +65,9 @@ type Controller struct {
 	// BackendTemplate is the name of the secret in the controller namespace which holds a
 	// template used to generate the state backend
 	BackendTemplate string
+	// BackoffLimit is the amount of times we are allowing a job to failed before deeming
+	// it a failure
+	BackoffLimit int
 	// EnableContextInjection enables the injection of the context into the terraform configuration
 	// variables. This means we shall inject an number of default variables into the configuration
 	// such as namespace, name and labels

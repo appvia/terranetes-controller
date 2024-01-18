@@ -86,6 +86,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 				map[string]string{
 					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
 				}),
+			BackoffLimit:     c.BackoffLimit,
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
 			ExecutorSecrets:  c.ExecutorSecrets,

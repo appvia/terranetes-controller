@@ -60,6 +60,7 @@ func makeFakeController(cc client.Client) *Controller {
 		kc:                  kfake.NewSimpleClientset(),
 		cache:               cache.New(5*time.Minute, 10*time.Minute),
 		recorder:            recorder,
+		BackoffLimit:        2,
 		EnableInfracosts:    false,
 		EnableWatchers:      true,
 		ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
