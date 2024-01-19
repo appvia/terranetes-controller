@@ -63,6 +63,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		secret := fixtures.NewValidAWSProviderSecret("terraform-system", "aws")
 		provider = fixtures.NewValidAWSReadyProvider("aws", secret)
 		configuration = fixtures.NewValidBucketConfiguration("default", "test")
+		configuration.Status.Resources = ptr.To(1)
 		controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultConfigurationConditions, configuration)
 
 		configuration.Finalizers = []string{controllerName}
@@ -82,10 +83,12 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		Expect(cc.Create(context.Background(), configuration)).To(Succeed())
 		Expect(cc.Create(context.Background(), state)).To(Succeed())
 
+		Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+		Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 		Expect(cc.Delete(context.Background(), configuration)).To(Succeed())
 		Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 
-		recorder := &controllertests.FakeRecorder{}
+		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
 			cc:                  cc,
 			kc:                  kfake.NewSimpleClientset(),
@@ -99,16 +102,11 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			PolicyImage:         "bridgecrew/checkov:2.0.1140",
 			TerraformImage:      "hashicorp/terraform:1.1.9",
 		}
-		recorder = &controllertests.FakeRecorder{}
 
 		ctrl.cache.SetDefault("default", fixtures.NewNamespace("default"))
 	})
 
 	When("a configuration is deleted", func() {
-		BeforeEach(func() {
-			_ = recorder
-		})
-
 		Context("we have a orphaned annotation", func() {
 			BeforeEach(func() {
 				configuration.Annotations = utils.MergeStringMaps(configuration.Annotations,
@@ -133,14 +131,8 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			})
 		})
 
-		Context("and we have no resources", func() {
-			BeforeEach(func() {
-				configuration.Status.Resources = ptr.To(1)
-
-				Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
-			})
-
-			Context("but the resources is not defined", func() {
+		Context("and we are checking for resources", func() {
+			Context("but the resources is nil", func() {
 				BeforeEach(func() {
 					configuration.Status.Resources = nil
 
@@ -155,7 +147,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 				})
 			})
 
-			Context("but the resources is not zero", func() {
+			Context("but the resource count is not zero", func() {
 				BeforeEach(func() {
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
 				})
@@ -170,14 +162,27 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			Context("but the configuration has no resources", func() {
 				BeforeEach(func() {
 					configuration.Status.Resources = ptr.To(0)
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
 				})
 
-				It("should not create thhe destroy job", func() {
+				It("should not create the destroy job", func() {
 					list := &batchv1.JobList{}
 					Expect(cc.List(context.Background(), list)).To(Succeed())
-					Expect(list.Items).ToNot(HaveLen(0))
+					Expect(list.Items).To(HaveLen(0))
+				})
+
+				It("should have created an event", func() {
+					Expect(recorder.Events).To(HaveLen(1))
+					Expect(recorder.Events[0]).To(Equal("(default/test) Normal DeletionSkipped: Configuration had zero resources, skipping terraform destroy"))
+				})
+
+				It("should have deleted the configuration", func() {
+					list := &terraformv1alpha1.ConfigurationList{}
+					Expect(cc.List(context.Background(), list)).To(Succeed())
+					Expect(list.Items).To(HaveLen(0))
 				})
 			})
 		})
@@ -505,7 +510,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 
 		When("and no terraform configuration is job exists", func() {
 			CommonChecks := func() {
-
 				It("should not error", func() {
 					Expect(rerr).ToNot(HaveOccurred())
 					Expect(result.Requeue).To(BeFalse())
