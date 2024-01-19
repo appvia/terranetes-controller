@@ -19,7 +19,7 @@ package plan
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -44,7 +44,7 @@ func TestReconcile(t *testing.T) {
 }
 
 var _ = Describe("Plan Controller", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

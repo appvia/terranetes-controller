@@ -19,7 +19,7 @@ package revision
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -45,7 +45,7 @@ func TestController(t *testing.T) {
 }
 
 var _ = Describe("Revisions Controller", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

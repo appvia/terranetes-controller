@@ -20,7 +20,7 @@ package drift
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -44,7 +44,7 @@ func TestReconcile(t *testing.T) {
 }
 
 var _ = Describe("Drift Controller", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	ctx := context.TODO()
 	namespace := "default"

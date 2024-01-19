@@ -21,7 +21,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -41,7 +41,7 @@ import (
 )
 
 var _ = Describe("Listing the state", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 	testUID := "4845842d-f29b-4d12-8f6a-b73c7bf82836"
 
 	var cc client.Client
@@ -83,7 +83,6 @@ var _ = Describe("Listing the state", func() {
 	})
 
 	When("configurations exist", func() {
-
 		BeforeEach(func() {
 			cfg := fixtures.NewValidBucketConfiguration("default", "test")
 			cfg.UID = types.UID(testUID)

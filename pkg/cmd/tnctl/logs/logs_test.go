@@ -21,7 +21,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -49,7 +49,7 @@ func TestLogsCommand(t *testing.T) {
 }
 
 var _ = Describe("Logs Command", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var kc *k8sfake.Clientset

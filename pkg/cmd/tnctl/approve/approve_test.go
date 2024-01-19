@@ -20,7 +20,7 @@ package approve
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -44,7 +44,7 @@ func TestApproveCommand(t *testing.T) {
 }
 
 var _ = Describe("Approve Command", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var configuration *terraformv1alpha1.Configuration

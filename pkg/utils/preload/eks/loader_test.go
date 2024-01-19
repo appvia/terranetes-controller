@@ -20,7 +20,7 @@ package eks
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 }
 
 var _ = Describe("EKS Preload", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var err error
 	var mc *gomock.Controller
