@@ -23,7 +23,6 @@ me.yaml
 tmp/
 TODO
 TODO.md
-main.tf
 
 # Terraform Related
 terraform.tfstate

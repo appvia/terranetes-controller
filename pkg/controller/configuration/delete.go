@@ -25,6 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -48,7 +49,17 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			return reconcile.Result{}, nil
 		}
 
+		// else we are deleting the resource
 		configuration.Status.ResourceStatus = terraformv1alpha1.DestroyingResources
+
+		// @step: ensure we have a status and the resource count has been defined
+		if configuration.Status.Resources != nil {
+			if ptr.Deref(configuration.Status.Resources, 0) == 0 {
+				c.recorder.Event(configuration, v1.EventTypeNormal, "DeletionSkipped", "Configuration had zero resources, skipping terraform destroy")
+
+				return reconcile.Result{}, nil
+			}
+		}
 
 		// @step: check we have a terraform state - else we can just continue
 		secret := &v1.Secret{}
@@ -129,7 +140,6 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 
 						return reconcile.Result{}, err
 					}
-
 				}
 			}
 			cond.InProgress("Terraform destroy is running")
