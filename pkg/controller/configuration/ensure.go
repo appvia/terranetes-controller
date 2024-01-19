@@ -32,6 +32,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -1313,7 +1314,7 @@ func (c *Controller) ensureTerraformStatus(configuration *terraformv1alpha1.Conf
 
 			return reconcile.Result{}, err
 		}
-		configuration.Status.Resources = tfstate.CountResources()
+		configuration.Status.Resources = ptr.To(tfstate.CountResources())
 		configuration.Status.TerraformVersion = tfstate.TerraformVersion
 
 		switch configuration.Status.ResourceStatus {
