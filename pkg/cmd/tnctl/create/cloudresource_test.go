@@ -20,7 +20,7 @@ package create
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -44,7 +44,7 @@ func TestCreate(t *testing.T) {
 }
 
 var _ = Describe("Create CloudResource", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var streams genericclioptions.IOStreams

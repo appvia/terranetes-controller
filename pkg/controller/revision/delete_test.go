@@ -19,7 +19,7 @@ package revision
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,7 +35,7 @@ import (
 )
 
 var _ = Describe("Deleting a Revision", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

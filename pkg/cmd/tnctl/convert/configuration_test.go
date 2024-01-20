@@ -20,6 +20,7 @@ package convert
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func TestCommand(t *testing.T) {
 }
 
 var _ = Describe("Convert Configuration", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var streams genericclioptions.IOStreams
