@@ -19,7 +19,7 @@ package preload
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 }
 
 var _ = Describe("Preload Controller", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

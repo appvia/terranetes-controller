@@ -20,7 +20,7 @@ package configuration
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"time"
 
@@ -49,7 +49,7 @@ import (
 )
 
 var _ = Describe("Configuration Controller with Contexts", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

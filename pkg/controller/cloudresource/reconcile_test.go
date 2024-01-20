@@ -19,7 +19,7 @@ package cloudresource
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -47,7 +47,7 @@ func TestController(t *testing.T) {
 }
 
 var _ = Describe("CloudResource Reconcilation", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

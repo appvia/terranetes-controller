@@ -19,7 +19,7 @@ package cloudresource
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -39,7 +39,7 @@ import (
 )
 
 var _ = Describe("CloudResource Deletion", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result

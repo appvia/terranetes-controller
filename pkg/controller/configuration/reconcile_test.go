@@ -20,7 +20,7 @@ package configuration
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kfake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -74,7 +74,7 @@ func makeFakeController(cc client.Client) *Controller {
 }
 
 var _ = Describe("Configuration Controller Default Injection", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result
@@ -157,7 +157,6 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 		})
 
 		Context("and we have default secrets", func() {
-
 			Context("and no job for the terraform plan exists", func() {
 				BeforeEach(func() {
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
@@ -226,7 +225,7 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 })
 
 var _ = Describe("Configuration Controller with Contexts", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result
@@ -241,12 +240,12 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		configuration = fixtures.NewValidBucketConfiguration(namespace, "test")
 		configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
 			{
-				Context: pointer.String("default"),
+				Context: ptr.To("default"),
 				Key:     "foo",
 				Name:    "test",
 			},
 			{
-				Context: pointer.String("default"),
+				Context: ptr.To("default"),
 				Key:     "complex",
 				Name:    "complex",
 			},
@@ -434,7 +433,7 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 })
 
 var _ = Describe("Configuration Controller, no reconciliation", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result
@@ -527,7 +526,7 @@ var _ = Describe("Configuration Controller, no reconciliation", func() {
 })
 
 var _ = Describe("Configuration Controller", func() {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	var cc client.Client
 	var result reconcile.Result
@@ -1239,7 +1238,6 @@ var _ = Describe("Configuration Controller", func() {
 
 	// VALUEFROM FIELDS
 	When("the configuration has valueFrom definitions", func() {
-
 		When("using values from the valueFrom field", func() {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
@@ -1249,7 +1247,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("secret is missing and not optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: pointer.String("missing"), Key: "key"},
+						{Secret: ptr.To("missing"), Key: "key"},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1281,7 +1279,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("secret is missing but optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: pointer.String("missing"), Key: "key", Optional: true},
+						{Secret: ptr.To("missing"), Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1301,7 +1299,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Namespace = configuration.Namespace
 					secret.Name = "exists"
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "missing"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: ptr.To("exists"), Key: "missing"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -1333,7 +1331,7 @@ var _ = Describe("Configuration Controller", func() {
 			When("key is missing but optional", func() {
 				BeforeEach(func() {
 					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{
-						{Secret: pointer.String("missing"), Key: "key", Optional: true},
+						{Secret: ptr.To("missing"), Key: "key", Optional: true},
 					}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
@@ -1361,7 +1359,6 @@ var _ = Describe("Configuration Controller", func() {
 					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 					Expect(len(list.Items)).To(Equal(1))
 				})
-
 			})
 
 			When("secret and key exist", func() {
@@ -1371,7 +1368,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"my": []byte("value")}
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "my"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: ptr.To("exists"), Key: "my"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -1420,7 +1417,7 @@ var _ = Describe("Configuration Controller", func() {
 					secret.Name = "exists"
 					secret.Data = map[string][]byte{"DB_HOST": []byte("value")}
 
-					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: pointer.String("exists"), Key: "DB_HOST", Name: "database_host"}}
+					configuration.Spec.ValueFrom = []terraformv1alpha1.ValueFromSource{{Secret: ptr.To("exists"), Key: "DB_HOST", Name: "database_host"}}
 					Expect(ctrl.cc.Create(context.TODO(), configuration)).ToNot(HaveOccurred())
 					Expect(ctrl.cc.Create(context.TODO(), secret)).ToNot(HaveOccurred())
 
@@ -2022,7 +2019,6 @@ terraform {
 
 	// DRIFT
 	When("configuration has drift options", func() {
-
 		When("drift annotation is tagged but configuration has not opted in for detection", func() {
 			BeforeEach(func() {
 				configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
