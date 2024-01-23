@@ -3,7 +3,7 @@ name: Image Versions
 
 on:
   schedule:
-    - cron: '37 9 * * 2'
+    - cron: "37 9 * * 2"
   workflow_dispatch:
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
             export IMAGE="${{ matrix.image }}:ci-${VERSION##v}"
           fi
           if [[ "${{ matrix.image }}" == "bridgecrew/checkov" ]]; then
-            export IMAGE="${{ matrix.image }}:${VERSION}-pyston
+            export IMAGE="${{ matrix.image }}:${VERSION}-pyston"
           fi
 
           yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
@@ -58,6 +58,6 @@ jobs:
         with:
           branch-suffix: timestamp
           delete-branch: true
-          title: '[IMAGES] - ${{ matrix.name }} Image Update'
+          title: "[IMAGES] - ${{ matrix.name }} Image Update"
           body: |
             Updating the ${{ matrix.name }} image in the helm values to the latest
