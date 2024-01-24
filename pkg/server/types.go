@@ -76,6 +76,8 @@ type Config struct {
 	RegisterCRDs bool
 	// ResyncPeriod is the period to resync the controller manager
 	ResyncPeriod time.Duration
+	// RevisionExpiration is the duration before a revision is expired
+	RevisionExpiration time.Duration
 	// TerraformImage is the image to use for terraform
 	TerraformImage string
 	// TLSDir is the directory where the TLS certificates are stored

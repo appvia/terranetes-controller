@@ -54,6 +54,10 @@ func NewCloudResource(namespace, name string) *terraformv1alpha1.CloudResource {
 // NewCloudResourceWithRevision returns a new CloudResource object
 func NewCloudResourceWithRevision(namespace, name string, revision *terraformv1alpha1.Revision) *terraformv1alpha1.CloudResource {
 	cr := terraformv1alpha1.NewCloudResource(namespace, name)
+	cr.Labels = map[string]string{
+		terraformv1alpha1.CloudResourcePlanNameLabel: revision.Spec.Plan.Name,
+		terraformv1alpha1.CloudResourceRevisionLabel: revision.Spec.Plan.Revision,
+	}
 	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultCloudResourceConditions, cr)
 
 	cr.Spec.Plan.Name = revision.Spec.Plan.Name
@@ -62,9 +66,22 @@ func NewCloudResourceWithRevision(namespace, name string, revision *terraformv1a
 	return cr
 }
 
+// NewAWSBucketRevisionAtVersion returns a new Revision object
+func NewAWSBucketRevisionAtVersion(name, revision string) *terraformv1alpha1.Revision {
+	r := NewAWSBucketRevision(name)
+	r.Labels[terraformv1alpha1.RevisionNameLabel] = revision
+	r.Spec.Plan.Revision = revision
+
+	return r
+}
+
 // NewAWSBucketRevision returns a new Revision object
 func NewAWSBucketRevision(name string) *terraformv1alpha1.Revision {
 	revision := terraformv1alpha1.NewRevision(name)
+	revision.Labels = map[string]string{
+		terraformv1alpha1.RevisionPlanNameLabel: "bucket",
+		terraformv1alpha1.RevisionNameLabel:     "1.0.0",
+	}
 	revision.Spec.Plan.Name = "bucket"
 	revision.Spec.Plan.Revision = "1.0.0"
 	revision.Spec.Plan.Categories = []string{"aws", "s3", "bucket"}

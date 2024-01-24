@@ -40,6 +40,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/controller/configuration"
 	ctrlcontext "github.com/appvia/terranetes-controller/pkg/controller/context"
 	"github.com/appvia/terranetes-controller/pkg/controller/drift"
+	"github.com/appvia/terranetes-controller/pkg/controller/expire"
 	"github.com/appvia/terranetes-controller/pkg/controller/namespace"
 	"github.com/appvia/terranetes-controller/pkg/controller/plan"
 	"github.com/appvia/terranetes-controller/pkg/controller/policy"
@@ -249,6 +250,13 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		EnableWebhooks:      config.EnableWebhooks,
 	}).Add(mgr); err != nil {
 		return nil, fmt.Errorf("failed to create the preload controller, error: %w", err)
+	}
+
+	// @step: ensure the revision expiration controller is started
+	if err := (&expire.Controller{
+		RevisionExpiration: config.RevisionExpiration,
+	}).Add(mgr); err != nil {
+		return nil, fmt.Errorf("failed to create the expiration controller, error: %w", err)
 	}
 
 	return &Server{
