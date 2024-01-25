@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright (C) 2023  Appvia Ltd <info@appvia.io>
 #
@@ -22,13 +22,13 @@ HELM_VALUES_FILE="dev/my_values.yaml"
 CLOUD_CREDENTIALS_FILE="dev/dev.creds"
 
 usage() {
-  cat <<EOF >&2
+  cat << EOF >&2
 Usage: $0 [OPTIONS] [NAME]
   --values PATH   Is the path to the values file for helm deployment
   --creds PATH    Is the path to the cloud credentials file (environment variables i.e. AWS_ACCESS_KEY_ID)
 EOF
 
-  if [[ "${*}" -gt 0 ]]; then
+  if [[ ${*} -gt 0  ]]; then
     echo -e "\n${*}" >&2
     exit 1
   fi
@@ -56,7 +56,7 @@ create_environment() {
     echo -e "Failed to source the cloud credentials file"
     exit 1
   }
-  if ! kubectl -n terraform-system get secret aws >/dev/null 2>&1; then
+  if ! kubectl -n terraform-system get secret aws > /dev/null 2>&1; then
     make aws-credentials || {
       echo -e "Failed to create the aws cloud credentials secret"
       exit 1
@@ -76,7 +76,7 @@ create_environment() {
   fi
 }
 
-while [[ "${#}" -gt 0 ]]; do
+while [[ ${#} -gt 0   ]]; do
   case "${1}" in
     --values)
       HELM_VALUES_FILE="${2}"
@@ -95,9 +95,9 @@ while [[ "${#}" -gt 0 ]]; do
   esac
 done
 
-[[ "${CLOUD_CREDENTIALS_FILE}" == "" ]] && usage "Missing cloud credentials file"
-[[ "${HELM_VALUES_FILE}" == "" ]] && usage "Missing helm values file"
-[[ -e "${CLOUD_CREDENTIALS_FILE}" ]] || usage "Cloud credentials file does not exist"
-[[ -e "${HELM_VALUES_FILE}" ]] || usage "Helm values file does not exist"
+[[ ${CLOUD_CREDENTIALS_FILE} == ""   ]] && usage "Missing cloud credentials file"
+[[ ${HELM_VALUES_FILE} == ""   ]] && usage "Missing helm values file"
+[[ -e ${CLOUD_CREDENTIALS_FILE}   ]] || usage "Cloud credentials file does not exist"
+[[ -e ${HELM_VALUES_FILE}   ]] || usage "Helm values file does not exist"
 
 create_environment

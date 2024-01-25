@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright (C) 2022  Appvia Ltd <info@appvia.io>
 #
@@ -26,14 +26,14 @@ USE_CHART="false"
 VERSION="ci"
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: $0 [options]
 --cloud <NAME>         Cloud provider name to run against (aws, azurerm, google, defaults: aws)
 --use-chart <BOOLEAN>  Indicates we use the chart instead of using the local directory (defaults: ${USE_CHART})
 --version <TAG>        Version of the Terraform Controller to test against (defaults: ${VERSION})
 --help                 Display this help message
 EOF
-  if [[ -n "${*}" ]]; then
+  if [[ -n ${*}   ]]; then
     echo "Error: ${1}"
     exit 1
   fi
@@ -44,15 +44,15 @@ EOF
 # run_diagnosis is called to retrieve details on the failure
 run_diagnosis() {
   [[ $? -ne 1          ]] && exit $?
-  [[ "${CI}" != "true" ]] && exit $?
+  [[ ${CI} != "true"   ]] && exit $?
 
   echo "Running Diagnosis on failure"
 
   mkdir -p /tmp/diagnostics
-  if kubectl cluster-info dump --namespaces terraform-system,apps --output-directory=/tmp/diagnostics >/dev/null; then
+  if kubectl cluster-info dump --namespaces terraform-system,apps --output-directory=/tmp/diagnostics > /dev/null; then
     # @step: upload the files to the bucket
     BUCKET="${DIAGNOSTICS}/${GITHUB_RUN_NUMBER}"
-    if ! aws s3 cp /tmp/diagnostics "s3://${BUCKET}" --acl private --recursive >/dev/null; then
+    if ! aws s3 cp /tmp/diagnostics "s3://${BUCKET}" --acl private --recursive > /dev/null; then
       echo "Failed to copy all the diagnostics"
       exit 1
     fi
@@ -66,13 +66,13 @@ run_bats() {
 
   echo -e "Running units: ${*}\n"
   APP_NAMESPACE=${APP_NAMESPACE} \
-  BUCKET=${BUCKET} \
-  CLOUD=${CLOUD} \
-  RESOURCE_NAME=bucket-${CLOUD:-"test"} \
-  NAMESPACE="terraform-system" \
-  USE_CHART=${USE_CHART} \
-  VERSION=${VERSION} \
-  bats ${BATS_OPTIONS} ${@} || exit 1
+    BUCKET=${BUCKET} \
+    CLOUD=${CLOUD} \
+    RESOURCE_NAME=bucket-${CLOUD:-"test"} \
+    NAMESPACE="terraform-system" \
+    USE_CHART=${USE_CHART} \
+    VERSION=${VERSION} \
+    bats ${BATS_OPTIONS} ${@} || exit 1
 }
 
 # run-checks runs a collection checks
@@ -105,16 +105,16 @@ run_checks() {
 
   # Run in the installation
   run_bats "${UNITS}/setup.bats"
-  if [[ -n "${CLOUD}" ]]; then
+  if [[ -n ${CLOUD}   ]]; then
     echo -e "Running suite on: ${CLOUD^^}\n"
     for x in "${CLOUD_FILES[@]}"; do
-      if [[ -f "${x}" ]]; then
+      if [[ -f ${x}   ]]; then
         run_bats "${x}" || exit 1
       fi
     done
   fi
   for x in "${CONSTRAINTS_FILES[@]}"; do
-    if [[ -f "${x}" ]]; then
+    if [[ -f ${x}   ]]; then
       run_bats "${x}" || exit 1
     fi
   done

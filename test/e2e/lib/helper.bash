@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2021 Appvia Ltd <info@appvia.io>
 #
@@ -41,14 +41,14 @@ retry() {
     run bash -c "$cmd"
     result="${output}"
 
-    if [[ -z "${subcmd}" ]]; then
-      if [[ "${status}" -eq 0 ]]; then
+    if [[ -z ${subcmd}   ]]; then
+      if [[ ${status} -eq 0   ]]; then
         echo "${result}"
         return 0
       fi
     else
       run bash -c "${subcmd}" < <(echo -n "${result}")
-      if [[ "${status}" -eq 0 ]]; then
+      if [[ ${status} -eq 0   ]]; then
         echo "${output}"
         return 0
       fi
