@@ -35,7 +35,7 @@ controller:
   # Configuration for the images used by the jobs
   images:
     # is the default image to use for terraform operations
-    terraform: hashicorp/terraform:1.5.7
+    terraform: hashicorp/terraform:1.7.1
     # image to use for infracost
     infracost: infracost/infracost:ci-0.10.32
     # policy is image for policy
