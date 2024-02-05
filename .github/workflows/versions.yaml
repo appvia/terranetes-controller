@@ -54,7 +54,7 @@ jobs:
 
           yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
       - name: Raise Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           branch-suffix: timestamp
           delete-branch: true
