@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/aws/aws-sdk-go v1.50.10
+	github.com/aws/aws-sdk-go v1.50.12
 	github.com/bbalet/stopwords v1.0.0
 	github.com/enescakir/emoji v1.0.0
 	github.com/evanphx/json-patch v5.9.0+incompatible
