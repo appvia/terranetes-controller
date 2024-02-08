@@ -115,6 +115,9 @@ spec:
             - /bin/terraform
           args:
             - init
+          env:
+            - name: HOME
+              value: /data
           envFrom:
           {{- range .Secrets.AdditionalSecrets }}
             - secretRef:
@@ -202,6 +205,8 @@ spec:
           - --on-error=/run/steps/terraform.failed
           - --on-success=/run/steps/terraform.complete
         env:
+          - name: HOME
+            value: /data
           - name: CONFIGURATION_NAME
             value: {{ .Configuration.Name }}
           - name: CONFIGURATION_NAMESPACE

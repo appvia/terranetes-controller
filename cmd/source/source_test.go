@@ -135,3 +135,68 @@ func TestSantizeSource(t *testing.T) {
 		assert.Equal(t, c.Destination, destination, "case %d, expected destination to match", i)
 	}
 }
+
+func TestNetRCPath(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+
+	assert.Equal(t, tmpDir+"/.netrc", netRCPath())
+	t.Setenv("NETRC", "$HOME/.netrc")
+	assert.Equal(t, tmpDir+"/.netrc", netRCPath())
+	t.Setenv("NETRC", "/etc/netrc")
+	assert.Equal(t, "/etc/netrc", netRCPath())
+}
+
+func TestSetupNetRC(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	cases := []struct {
+		Location      string
+		Environment   map[string]string
+		ExpectedNetRC string
+	}{
+		{
+			Location: "https://github.com/appvia/terranetes-controller/archive/refs/heads/master.zip",
+			Environment: map[string]string{
+				"HTTP_USERNAME": "user",
+				"HTTP_PASSWORD": "pass",
+			},
+			ExpectedNetRC: `machine github.com
+	login user
+	password pass`,
+		},
+		{
+			Location: "https://github.com/appvia/terranetes-controller/archive/refs/heads/master.zip",
+			Environment: map[string]string{
+				"HTTP_USERNAME": "user",
+			},
+			ExpectedNetRC: `machine github.com
+	login user`,
+		},
+		{
+			Location: "http://myhost/file.tar.gz",
+			Environment: map[string]string{
+				"HTTP_USERNAME": "user",
+				"HTTP_PASSWORD": "mypass",
+			},
+			ExpectedNetRC: `machine myhost
+	login user
+	password mypass`,
+		},
+	}
+
+	for i, c := range cases {
+		t.Run("", func(t *testing.T) {
+			for k, v := range c.Environment {
+				t.Setenv(k, v)
+			}
+
+			err := setupNetRC(c.Location)
+			assert.NoError(t, err, "case %d, expected no error", i)
+
+			data, err := os.ReadFile(netRCPath())
+			assert.NoError(t, err, "case %d, expected no error", i)
+			assert.Equal(t, c.ExpectedNetRC, string(data))
+		})
+	}
+}

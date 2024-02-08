@@ -31,6 +31,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bgentry/go-netrc/netrc"
 	"github.com/hashicorp/go-getter"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -145,6 +146,11 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 			return nil
 		}()
 		if err != nil {
+			return err
+		}
+
+	case os.Getenv("HTTP_PASSWORD") != "" || os.Getenv("HTTP_USERNAME") != "":
+		if err := setupNetRC(location); err != nil {
 			return err
 		}
 	}
@@ -280,4 +286,28 @@ func sanitizeSource(location string) (string, string, error) {
 	}
 
 	return source, destination, nil
+}
+
+func netRCPath() string {
+	return os.ExpandEnv(
+		utils.GetEnv("NETRC", path.Join("${HOME}", ".netrc")),
+	)
+}
+
+func setupNetRC(location string) error {
+	uri, err := url.Parse(location)
+	if err != nil {
+		return fmt.Errorf("failed to parse location URL: %w", err)
+	}
+	netrcFile := netrc.Netrc{}
+	netrcFile.NewMachine(uri.Host, os.Getenv("HTTP_USERNAME"), os.Getenv("HTTP_PASSWORD"), "")
+	netrcData, err := netrcFile.MarshalText()
+	if err != nil {
+		return fmt.Errorf("failed to marshal netrc config: %w", err)
+	}
+	err = os.WriteFile(netRCPath(), netrcData, 0760)
+	if err != nil {
+		return fmt.Errorf("failed to write netrc file: %w", err)
+	}
+	return nil
 }
