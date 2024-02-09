@@ -295,7 +295,8 @@ func netRCPath() string {
 }
 
 func setupNetRC(location string) error {
-	uri, err := url.Parse(location)
+	trimmedLocation := strings.TrimPrefix(strings.TrimPrefix(location, "https::"), "http::")
+	uri, err := url.Parse(trimmedLocation)
 	if err != nil {
 		return fmt.Errorf("failed to parse location URL: %w", err)
 	}

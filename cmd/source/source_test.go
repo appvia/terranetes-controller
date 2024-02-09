@@ -183,6 +183,26 @@ func TestSetupNetRC(t *testing.T) {
 	login user
 	password mypass`,
 		},
+		{
+			Location: "http::http://myhost/file.tar.gz",
+			Environment: map[string]string{
+				"HTTP_USERNAME": "user",
+				"HTTP_PASSWORD": "mypass",
+			},
+			ExpectedNetRC: `machine myhost
+	login user
+	password mypass`,
+		},
+		{
+			Location: "https::http://myhost/file.tar.gz",
+			Environment: map[string]string{
+				"HTTP_USERNAME": "user",
+				"HTTP_PASSWORD": "mypass",
+			},
+			ExpectedNetRC: `machine myhost
+	login user
+	password mypass`,
+		},
 	}
 
 	for i, c := range cases {
