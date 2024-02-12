@@ -31,7 +31,7 @@ const (
 	// LangBash corresponds to the GNU Bash language, as described in its
 	// manual at https://www.gnu.org/software/bash/manual/bash.html.
 	//
-	// We currently follow Bash version 5.1.
+	// We currently follow Bash version 5.2.
 	//
 	// Its string representation is "bash".
 	LangBash LangVariant = iota
@@ -389,9 +389,6 @@ type Parser struct {
 
 	// lastBquoteEsc is how many times the last backquote token was escaped
 	lastBquoteEsc int
-	// buriedBquotes is like openBquotes, but saved for when the parser
-	// comes out of single quotes
-	buriedBquotes int
 
 	rxOpenParens int
 	rxFirstPart  bool
@@ -435,7 +432,7 @@ func (p *Parser) reset() {
 	p.openStmts = 0
 	p.heredocs, p.buriedHdocs = p.heredocs[:0], 0
 	p.parsingDoc = false
-	p.openBquotes, p.buriedBquotes = 0, 0
+	p.openBquotes = 0
 	p.accComs, p.curComs = nil, &p.accComs
 	p.litBatch = nil
 	p.wordBatch = nil
@@ -1123,10 +1120,6 @@ func (p *Parser) wordPart() WordPart {
 			case '\'':
 				sq.Right = p.nextPos()
 				sq.Value = p.endLit()
-
-				// restore openBquotes
-				p.openBquotes = p.buriedBquotes
-				p.buriedBquotes = 0
 
 				p.rune()
 				p.next()
@@ -2148,7 +2141,7 @@ func (p *Parser) testClause(s *Stmt) {
 	if _, ok := p.gotRsrv("]]"); ok || p.tok == _EOF {
 		p.posErr(tc.Left, "test clause requires at least one expression")
 	}
-	tc.X = p.testExpr(dblLeftBrack, tc.Left, false)
+	tc.X = p.testExpr(false)
 	if tc.X == nil {
 		p.followErrExp(tc.Left, "[[")
 	}
@@ -2160,13 +2153,13 @@ func (p *Parser) testClause(s *Stmt) {
 	s.Cmd = tc
 }
 
-func (p *Parser) testExpr(ftok token, fpos Pos, pastAndOr bool) TestExpr {
+func (p *Parser) testExpr(pastAndOr bool) TestExpr {
 	p.got(_Newl)
 	var left TestExpr
 	if pastAndOr {
 		left = p.testExprBase()
 	} else {
-		left = p.testExpr(ftok, fpos, true)
+		left = p.testExpr(true)
 	}
 	if left == nil {
 		return left
@@ -2200,7 +2193,7 @@ func (p *Parser) testExpr(ftok token, fpos Pos, pastAndOr bool) TestExpr {
 	switch b.Op {
 	case AndTest, OrTest:
 		p.next()
-		if b.Y = p.testExpr(token(b.Op), b.OpPos, false); b.Y == nil {
+		if b.Y = p.testExpr(false); b.Y == nil {
 			p.followErrExp(b.OpPos, b.Op.String())
 		}
 	case TsReMatch:
@@ -2246,7 +2239,7 @@ func (p *Parser) testExprBase() TestExpr {
 	case exclMark:
 		u := &UnaryTest{OpPos: p.pos, Op: TsNot}
 		p.next()
-		if u.X = p.testExpr(token(u.Op), u.OpPos, false); u.X == nil {
+		if u.X = p.testExpr(false); u.X == nil {
 			p.followErrExp(u.OpPos, u.Op.String())
 		}
 		return u
@@ -2261,7 +2254,7 @@ func (p *Parser) testExprBase() TestExpr {
 	case leftParen:
 		pe := &ParenTest{Lparen: p.pos}
 		p.next()
-		if pe.X = p.testExpr(leftParen, pe.Lparen, false); pe.X == nil {
+		if pe.X = p.testExpr(false); pe.X == nil {
 			p.followErrExp(pe.Lparen, "(")
 		}
 		pe.Rparen = p.matched(pe.Lparen, leftParen, rightParen)
@@ -2422,6 +2415,10 @@ loop:
 				ce.Assigns = append(ce.Assigns, p.getAssign(true))
 				break
 			}
+			// Avoid failing later with the confusing "} can only be used to close a block".
+			if p.lang == LangPOSIX && p.val == "{" && w != nil && w.Lit() == "function" {
+				p.curErr("the %q builtin is a bash feature; tried parsing as posix", "function")
+			}
 			ce.Args = append(ce.Args, p.wordOne(p.lit(p.pos, p.val)))
 			p.next()
 		case _Lit:
@@ -2453,7 +2450,7 @@ loop:
 			// Note that we'll only keep the first error that happens.
 			if len(ce.Args) > 0 {
 				if cmd := ce.Args[0].Lit(); p.lang == LangPOSIX && isBashCompoundCommand(_LitWord, cmd) {
-					p.curErr("the %q builtin exists in bash; tried parsing as posix", cmd)
+					p.curErr("the %q builtin is a bash feature; tried parsing as posix", cmd)
 				}
 			}
 			p.curErr("a command can only contain words and redirects; encountered %s", p.tok)
