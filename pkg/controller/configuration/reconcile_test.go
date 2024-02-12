@@ -1650,9 +1650,9 @@ terraform {
 			Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
 			Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
 
-			Expect(len(container.Env)).To(Equal(5))
-			Expect(container.Env[4].Name).To(Equal("TERRAFORM_STATE_NAME"))
-			Expect(container.Env[4].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+			Expect(len(container.Env)).To(Equal(6))
+			Expect(container.Env[5].Name).To(Equal("TERRAFORM_STATE_NAME"))
+			Expect(container.Env[5].Value).To(Equal(configuration.GetTerraformStateSecretName()))
 
 			Expect(container.VolumeMounts[0].Name).To(Equal("run"))
 			Expect(container.VolumeMounts[1].Name).To(Equal("source"))
@@ -2918,9 +2918,9 @@ terraform {
 				Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
 				Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
 
-				Expect(len(container.Env)).To(Equal(5))
-				Expect(container.Env[4].Name).To(Equal("TERRAFORM_STATE_NAME"))
-				Expect(container.Env[4].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+				Expect(len(container.Env)).To(Equal(6))
+				Expect(container.Env[5].Name).To(Equal("TERRAFORM_STATE_NAME"))
+				Expect(container.Env[5].Value).To(Equal(configuration.GetTerraformStateSecretName()))
 
 				Expect(container.VolumeMounts[0].Name).To(Equal("run"))
 				Expect(container.VolumeMounts[1].Name).To(Equal("source"))

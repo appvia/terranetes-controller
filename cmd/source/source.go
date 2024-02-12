@@ -306,7 +306,7 @@ func setupNetRC(location string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal netrc config: %w", err)
 	}
-	err = os.WriteFile(netRCPath(), netrcData, 0760)
+	err = os.WriteFile(netRCPath(), netrcData, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write netrc file: %w", err)
 	}
