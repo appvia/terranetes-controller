@@ -483,7 +483,7 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 			return reconcile.Result{}, nil
 		}
 
-		// @step: we need to retrieve the namespace from the cache 
+		// @step: we need to retrieve the namespace from the cache
 		namespace, found := c.cache.Get(configuration.Namespace)
 		if !found {
 			log.WithFields(log.Fields{
@@ -499,12 +499,12 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 				continue
 			}
 
-			// @step: iterate the defaults and check if we have any secrets 
+			// @step: iterate the defaults and check if we have any secrets
 			for _, x := range state.policies.Items[i].Spec.Defaults {
 				switch {
 				case len(x.Secrets) == 0:
 					continue
-				
+
 				case len(x.Selector.Modules) == 0 && x.Selector.Namespace == nil:
 					list = append(list, x.Secrets...)
 				}
@@ -516,7 +516,7 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)
 
 						return reconcile.Result{}, err
-					} 
+					}
 					if match {
 						list = append(list, x.Secrets...)
 					}

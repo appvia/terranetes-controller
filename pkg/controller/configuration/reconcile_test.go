@@ -373,7 +373,6 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 			})
 		})
 
-
 		Context("and we have default secrets", func() {
 			Context("and no job for the terraform plan exists", func() {
 				BeforeEach(func() {
