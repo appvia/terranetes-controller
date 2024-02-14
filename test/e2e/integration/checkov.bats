@@ -57,37 +57,37 @@ EOF
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Configuration
 metadata:
-  name: ${RESOURCE_NAME}
+  name: ${RESOURCE_NAME}-co
 spec:
   module: https://github.com/terraform-aws-modules/terraform-aws-s3-bucket.git?ref=v3.1.0
   providerRef:
     name: aws
   variables:
     unused: $(date +"%s")
-    bucket_name: ${RESOURCE_NAME}
+    bucket_name: ${RESOURCE_NAME}-co
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
   [[ "$status" -eq 0 ]]
-  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}"
+  runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a job created in the terraform namespace running the plan" {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${NAMESPACE} get job -l ${labels}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a watcher job created in the configuration namespace" {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels}"
   [[ "$status" -eq 0 ]]
 }
 
 @test "We should have a completed watcher job in the application namespace" {
-  labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=plan"
+  labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
   retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
   [[ "$status" -eq 0 ]]
@@ -96,7 +96,7 @@ EOF
 }
 
 @test "We should have a secret containing the evaluation in the terraform namespace" {
-  UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
+  UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co -o json | jq -r '.metadata.uid')
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${NAMESPACE} get secret policy-${UUID}"
   [[ "$status" -eq 0 ]]
@@ -105,7 +105,7 @@ EOF
 }
 
 @test "We should have a copy the policy report in the configuration namespace" {
-  UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
+  UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co -o json | jq -r '.metadata.uid')
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} get secret policy-${UUID}"
   [[ "$status" -eq 0 ]]
@@ -114,7 +114,7 @@ EOF
 }
 
 @test "We should see the conditions indicate the configuration failed policy" {
-  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
+  POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME}-co -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
   [[ "$status" -eq 0 ]]
 
   runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'EVALUATING AGAINST SECURITY POLICY'"
@@ -131,7 +131,7 @@ EOF
 }
 
 @test "We should be able to cleanup the environment" {
-  runit "kubectl -n ${APP_NAMESPACE} delete configuration ${RESOURCE_NAME}"
+  runit "kubectl -n ${APP_NAMESPACE} delete configuration ${RESOURCE_NAME}-co"
   [[ "$status" -eq 0 ]]
   runit "kubectl -n ${APP_NAMESPACE} delete po --all"
   [[ "$status" -eq 0 ]]
