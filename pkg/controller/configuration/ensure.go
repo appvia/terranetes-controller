@@ -478,39 +478,72 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		// if we have no policies, we can move on
 		case state.policies == nil, len(state.policies.Items) == 0:
 			return reconcile.Result{}, nil
+		}
+
+		// @step: we need to retrieve the namespace from the cache 
+		namespace, found := c.cache.Get(configuration.Namespace)
+		if !found {
+			log.WithFields(log.Fields{
+				"namespace": configuration.Namespace,
+			}).Warn("namespace not found in the cache, this will cause issues on selector policies")
 		}
 
 		var list []string
 
 		// @step: find any policies who's using secrets and match this configuration
 		for i := 0; i < len(state.policies.Items); i++ {
-			switch {
-			case state.policies.Items[i].Spec.Defaults == nil:
+			if state.policies.Items[i].Spec.Defaults == nil {
 				continue
 			}
 
-			for k := 0; k < len(state.policies.Items[i].Spec.Defaults); k++ {
-				x := state.policies.Items[i].Spec.Defaults[k]
-
-				if len(x.Secrets) == 0 {
+			// @step: iterate the defaults and check if we have any secrets 
+			for _, x := range state.policies.Items[i].Spec.Defaults {
+				switch {
+				case len(x.Secrets) == 0:
 					continue
+				
+				case len(x.Selector.Modules) == 0 && x.Selector.Namespace == nil:
+					list = append(list, x.Secrets...)
 				}
+
+				// @step: check if the configuration matches a module selector
 				if len(x.Selector.Modules) > 0 {
-					if match, err := x.Selector.IsModulesMatch(configuration); err != nil {
+					match, err := x.Selector.IsModulesMatch(configuration)
+					if err != nil {
 						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)
 
 						return reconcile.Result{}, err
-					} else if !match {
-						continue
+					} 
+					if match {
+						list = append(list, x.Secrets...)
 					}
 				}
-				list = append(list, x.Secrets...)
+
+				// @step: check if the configuration matches a namespace selector
+				if x.Selector.Namespace != nil {
+					if namespace == nil {
+						cond.Failed(errors.New("namespace missing from cachce"), "Failed to retrieve the namespace from the cache")
+
+						return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+					}
+
+					match, err := x.Selector.IsLabelsMatch(namespace.(*v1.Namespace))
+					if err != nil {
+						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)
+
+						return reconcile.Result{}, err
+					}
+					if match {
+						list = append(list, x.Secrets...)
+					}
+				}
 			}
 		}
 
-		// @step: we need to ensure any additional secrets are available
+		// @step: we iterate the referenced secrets and check they exist in the controller namespace
 		for i := 0; i < len(list); i++ {
 			secret := &v1.Secret{}
 			secret.Namespace = c.ControllerNamespace

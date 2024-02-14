@@ -110,6 +110,7 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 		var policy *terraformv1alpha1.Policy
 
 		BeforeEach(func() {
+			// create a default policy
 			policy = fixtures.NewPolicy("defaults")
 			policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
 				{
@@ -118,10 +119,10 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 			}
 			Expect(cc.Create(context.Background(), policy)).To(Succeed())
 
+			// create a secret
 			secret := &v1.Secret{}
 			secret.Namespace = ctrl.ControllerNamespace
-			secret.Name = "test"
-
+			secret.Name = policy.Spec.Defaults[0].Secrets[0] // from above
 			Expect(cc.Create(context.Background(), secret)).To(Succeed())
 		})
 
@@ -155,6 +156,223 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 				Expect(cond.Message).To(Equal("Default secret (terraform-system/test) does not exist, please contact administrator"))
 			})
 		})
+
+		Context("and the configuration we have a namespace label selector", func() {
+			BeforeEach(func() {
+				// ensure we are in the cache
+				namespace := fixtures.NewNamespace(configuration.Namespace)
+				namespace.Labels = map[string]string{"name": "match"}
+				ctrl.cache.SetDefault(namespace.Name, namespace)
+
+				/// update the policy to using a namespace label selector
+				Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
+				policy = fixtures.NewPolicy(policy.Name)
+				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+					{
+						Selector: terraformv1alpha1.DefaultVariablesSelector{
+							Namespace: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"name": "match"},
+							},
+						},
+						Secrets: []string{"test"},
+					},
+				}
+				Expect(cc.Create(context.Background(), policy)).To(Succeed())
+			})
+
+			Context("and the configuration namespace label matches", func() {
+				BeforeEach(func() {
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).To(BeNil())
+				})
+
+				It("should create a plan job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should not have injected the default secrets", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+
+					job := list.Items[0]
+					Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).ToNot(BeEmpty())
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[0].SecretRef.Name).To(Equal(configuration.GetTerraformConfigSecretName()))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[1].SecretRef.Name).To(Equal("test"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].EnvFrom).ToNot(BeEmpty())
+				})
+			})
+
+			Context("and the configuration namespace does not match", func() {
+				BeforeEach(func() {
+					Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
+
+					policy = fixtures.NewPolicy(policy.Name)
+					policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+						{
+							Selector: terraformv1alpha1.DefaultVariablesSelector{
+								Namespace: &metav1.LabelSelector{
+									MatchLabels: map[string]string{"name": "no_match"},
+								},
+							},
+							Secrets: []string{"test"},
+						},
+					}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).To(BeNil())
+				})
+
+				It("should create a plan job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should not have injected the default secrets", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+
+					job := list.Items[0]
+					Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).ToNot(BeEmpty())
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(1))
+					Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+				})
+			})
+		})
+
+		Context("and the configuration we have a namespace expressions selector", func() {
+			BeforeEach(func() {
+				// ensure we are in the cache
+				namespace := fixtures.NewNamespace(configuration.Namespace)
+				namespace.Labels = map[string]string{"name": "match"}
+				ctrl.cache.SetDefault(namespace.Name, namespace)
+
+				/// update the policy to using a namespace label selector
+				Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
+				policy = fixtures.NewPolicy(policy.Name)
+				policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+					{
+						Selector: terraformv1alpha1.DefaultVariablesSelector{
+							Namespace: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "name",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"match"},
+									},
+								},
+							},
+						},
+						Secrets: []string{"test"},
+					},
+				}
+				Expect(cc.Create(context.Background(), policy)).To(Succeed())
+			})
+
+			Context("and the configuration namespace label matches", func() {
+				BeforeEach(func() {
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).To(BeNil())
+				})
+
+				It("should create a plan job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should not have injected the default secrets", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+
+					job := list.Items[0]
+					Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).ToNot(BeEmpty())
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[0].SecretRef.Name).To(Equal(configuration.GetTerraformConfigSecretName()))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom[1].SecretRef.Name).To(Equal("test"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+					Expect(job.Spec.Template.Spec.InitContainers[1].EnvFrom).ToNot(BeEmpty())
+				})
+			})
+
+			Context("and the configuration namespace does not match", func() {
+				BeforeEach(func() {
+					Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
+
+					policy = fixtures.NewPolicy(policy.Name)
+					policy.Spec.Defaults = []terraformv1alpha1.DefaultVariables{
+						{
+							Selector: terraformv1alpha1.DefaultVariablesSelector{
+								Namespace: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "name",
+											Operator: metav1.LabelSelectorOpIn,
+											Values:   []string{"no_match"},
+										},
+									},
+								},
+							},
+							Secrets: []string{"test"},
+						},
+					}
+					Expect(cc.Create(context.Background(), policy)).To(Succeed())
+
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not error", func() {
+					Expect(rerr).To(BeNil())
+				})
+
+				It("should create a plan job", func() {
+					list := &batchv1.JobList{}
+
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+				})
+
+				It("should not have injected the default secrets", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+					Expect(len(list.Items)).To(Equal(1))
+
+					job := list.Items[0]
+					Expect(job.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+					Expect(job.Spec.Template.Spec.InitContainers[0].Name).To(Equal("setup"))
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).ToNot(BeEmpty())
+					Expect(job.Spec.Template.Spec.InitContainers[0].EnvFrom).To(HaveLen(1))
+					Expect(job.Spec.Template.Spec.InitContainers[1].Name).To(Equal("init"))
+				})
+			})
+		})
+
 
 		Context("and we have default secrets", func() {
 			Context("and no job for the terraform plan exists", func() {
