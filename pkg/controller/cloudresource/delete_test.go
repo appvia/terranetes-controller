@@ -138,7 +138,7 @@ var _ = Describe("CloudResource Deletion", func() {
 					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
 					cond.Status = metav1.ConditionFalse
 					cond.Message = "This should be updated on the cloudresource"
-					Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
 
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
 				})
@@ -166,7 +166,7 @@ var _ = Describe("CloudResource Deletion", func() {
 			Context("configuration has failed to delete", func() {
 				BeforeEach(func() {
 					configuration.Status.ResourceStatus = terraformv1alpha1.DestroyingResourcesFailed
-					Expect(cc.Update(context.Background(), configuration)).To(Succeed())
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
 
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
 				})

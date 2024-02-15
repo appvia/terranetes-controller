@@ -32,7 +32,7 @@ import (
 	//	batchv1 "k8s.io/api/batch/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -79,10 +79,11 @@ var _ = Describe("Preload Controller", func() {
 				provider = fixtures.NewValidAWSReadyProvider("aws", fixtures.NewValidAWSProviderSecret("default", "aws"))
 				provider.Spec.Provider = "unsupported"
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
-					Cluster: "test",
-					Context: "test",
-					Enabled: pointer.BoolPtr(true),
-					Region:  "test",
+					Cluster:  "test",
+					Context:  "test",
+					Enabled:  ptr.To(true),
+					Interval: &metav1.Duration{Duration: 1 * time.Hour},
+					Region:   "test",
 				}
 
 				Expect(cc.Create(context.Background(), provider)).To(Succeed())
@@ -111,7 +112,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
 					Cluster: "test",
 					Context: "test",
-					Enabled: pointer.BoolPtr(true),
+					Enabled: ptr.To(true),
 					Region:  "test",
 				}
 				provider.Status.Conditions = nil
@@ -171,7 +172,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Status.LastPreloadTime = &metav1.Time{Time: time.Now()}
 
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
-					Enabled: pointer.BoolPtr(false),
+					Enabled: ptr.To(false),
 				}
 				Expect(cc.Create(context.Background(), provider)).To(Succeed())
 
@@ -240,7 +241,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
 					Cluster:  "test-cluster",
 					Context:  "test-context",
-					Enabled:  pointer.Bool(true),
+					Enabled:  ptr.To(true),
 					Region:   "eu-west-2",
 					Interval: &metav1.Duration{Duration: 1 * time.Hour},
 				}
@@ -280,7 +281,7 @@ var _ = Describe("Preload Controller", func() {
 			provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
 				Cluster: "test-cluster",
 				Context: "test-context",
-				Enabled: pointer.Bool(true),
+				Enabled: ptr.To(true),
 				Region:  "eu-west-2",
 			}
 
@@ -427,7 +428,7 @@ var _ = Describe("Preload Controller", func() {
 				Expect(cc.Create(context.Background(), txt)).To(Succeed())
 
 				provider.Status.LastPreloadTime = &metav1.Time{Time: time.Now().Add(-10 * time.Minute)}
-				Expect(cc.Update(context.Background(), provider)).To(Succeed())
+				Expect(cc.Status().Update(context.Background(), provider)).To(Succeed())
 
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, provider, 0)
 			})
@@ -437,7 +438,7 @@ var _ = Describe("Preload Controller", func() {
 				Expect(result.Requeue).To(BeFalse())
 			})
 
-			It("should not create a preload job", func() {
+			It("should create a preload job", func() {
 				jobs := &batchv1.JobList{}
 
 				Expect(cc.List(context.Background(), jobs)).To(Succeed())
