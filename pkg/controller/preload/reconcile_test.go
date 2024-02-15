@@ -33,6 +33,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -81,7 +82,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
 					Cluster: "test",
 					Context: "test",
-					Enabled: pointer.BoolPtr(true),
+					Enabled: ptr.To(true),
 					Region:  "test",
 				}
 
@@ -111,7 +112,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
 					Cluster: "test",
 					Context: "test",
-					Enabled: pointer.BoolPtr(true),
+					Enabled: ptr.To(true),
 					Region:  "test",
 				}
 				provider.Status.Conditions = nil
@@ -171,7 +172,7 @@ var _ = Describe("Preload Controller", func() {
 				provider.Status.LastPreloadTime = &metav1.Time{Time: time.Now()}
 
 				provider.Spec.Preload = &terraformv1alpha1.PreloadConfiguration{
-					Enabled: pointer.BoolPtr(false),
+					Enabled: ptr.To(false),
 				}
 				Expect(cc.Create(context.Background(), provider)).To(Succeed())
 
