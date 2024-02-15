@@ -28,7 +28,7 @@ import (
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -74,7 +74,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 		revision.Spec.Inputs = []terraformv1alpha1.RevisionInput{
 			{
 				Key:         "database_name",
-				Required:    pointer.Bool(true),
+				Required:    ptr.To(true),
 				Description: "The name of the database",
 				Default: &runtime.RawExtension{
 					Raw: []byte(`{"value":"mydb"}`),
@@ -82,7 +82,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 			},
 			{
 				Key:         "database_size",
-				Required:    pointer.Bool(true),
+				Required:    ptr.To(true),
 				Description: "The name of the database",
 				Default: &runtime.RawExtension{
 					Raw: []byte(`{"value": 5}`),
@@ -90,7 +90,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 			},
 			{
 				Key:         "database_engine",
-				Required:    pointer.Bool(true),
+				Required:    ptr.To(true),
 				Description: "The name of the database engine",
 			},
 		}
@@ -142,6 +142,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 
 		Context("and the revision does not exist in plan", func() {
 			BeforeEach(func() {
+				Expect(cc.Get(context.Background(), plan.GetNamespacedName(), plan)).To(Succeed())
 				plan.Spec.Revisions[0].Revision = "v1.0.0-not-there"
 				Expect(cc.Update(context.Background(), plan)).To(Succeed())
 
