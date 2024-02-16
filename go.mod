@@ -37,7 +37,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tcnksm/ghr v0.16.2
-	github.com/tidwall/gjson v1.17.0
+	github.com/tidwall/gjson v1.17.1
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/tools v0.18.0
