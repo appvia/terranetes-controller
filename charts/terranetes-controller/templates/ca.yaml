@@ -1,10 +1,10 @@
 {{- if .Values.controller.webhooks.ca }}
-{{- $secret := lookup "v1" "Secret" .Release.Namespace "ca" }}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace .Values.controller.webhooks.caSecret }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca
+  name: {{ .Values.controller.webhooks.caSecret }}
   labels:
     {{- include "terranetes-controller.labels" . | nindent 4 }}
 type: Opaque

@@ -91,8 +91,10 @@ controller:
     enabled: true
     # is the port the webhooks is running
     port: 10250
-    # creates the certificate authority
+    # creates the certificate authority secret
     ca: true
+    # secret name containing certificate authority and server certificate
+    caSecret: "ca"
     # name of the file containing the certificate authority
     tlsAuthority: /certs/ca.pem
     # name of the file containing the tls certificate
