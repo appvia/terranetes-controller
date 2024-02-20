@@ -61,6 +61,7 @@ func main() {
 	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuration namespaces")
 	flags.BoolVar(&config.EnableWebhooks, "enable-webhooks", true, "Indicates we should register the webhooks")
 	flags.BoolVar(&config.RegisterCRDs, "register-crds", true, "Indicates the controller to register its own CRDs")
+	flags.BoolVar(&config.EnableWebhookPrefix, "enable-webhook-prefix", false, "Indicates the controller should prefix webhook configuration names with the controller name")
 	flags.DurationVar(&config.DriftControllerInterval, "drift-controller-interval", 5*time.Minute, "Is the check interval for the controller to search for configurations which should be checked for drift")
 	flags.DurationVar(&config.DriftInterval, "drift-interval", 3*time.Hour, "The minimum duration the controller will wait before triggering a drift check")
 	flags.DurationVar(&config.ResyncPeriod, "resync-period", 5*time.Hour, "The resync period for the controller")

@@ -52,6 +52,8 @@ type Config struct {
 	EnableWatchers bool
 	// EnableTerraformVersions indicates if configurations can override the default terraform version
 	EnableTerraformVersions bool
+	// EnableWebhookPrefix enables adding the "terranetes-controller-" prefix to webhook configuration names
+	EnableWebhookPrefix bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
 	// ExecutorSecrets is a list of additional secrets to be added to the executor
