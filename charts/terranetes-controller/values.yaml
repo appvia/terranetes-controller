@@ -89,6 +89,8 @@ controller:
   webhooks:
     # enables the webhooks
     enabled: true
+    # enables prefixing the webhook configuration names with the controller name
+    prefix: false
     # is the port the webhooks is running
     port: 10250
     # creates the certificate authority secret
