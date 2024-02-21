@@ -31,6 +31,7 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/schema"
 	"github.com/appvia/terranetes-controller/pkg/utils"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
+	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
 // registerWebhooks is responsible for registering the webhooks
@@ -51,12 +52,18 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 		return fmt.Errorf("failed to decode the webhooks manifests, %w", err)
 	}
 
+	var webhookNamePrefix string
+	if s.config.EnableWebhookPrefix {
+		webhookNamePrefix = version.Name + "-"
+	}
+
 	// @step: register the validating webhooks
 	for _, x := range documents {
 		o, err := schema.DecodeYAML([]byte(x))
 		if err != nil {
 			return fmt.Errorf("failed to decode the webhook, %w", err)
 		}
+		o.SetName(webhookNamePrefix + o.GetName())
 
 		switch o := o.(type) {
 		case *admissionv1.ValidatingWebhookConfiguration:
@@ -89,7 +96,7 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 	sideEffects := admissionv1.SideEffectClassNone
 
 	wh := &admissionv1.ValidatingWebhookConfiguration{}
-	wh.Name = "validating-webhook-namespace"
+	wh.Name = webhookNamePrefix + "validating-webhook-namespace"
 	wh.Webhooks = []admissionv1.ValidatingWebhook{
 		{
 			AdmissionReviewVersions: []string{"v1"},
