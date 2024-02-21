@@ -34,11 +34,11 @@ spec:
       serviceAccountName: terranetes-controller
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.controller.webhooks.ca }}
+      {{- if .Values.controller.webhooks.enabled }}
       volumes:
         - name: ca
           secret:
-            secretName: ca
+            secretName: {{ .Values.controller.webhooks.caSecret }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -100,7 +100,7 @@ spec:
               containerPort: {{ .Values.controller.webhooks.port }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.controller.webhooks.ca }}
+          {{- if .Values.controller.webhooks.enabled }}
           volumeMounts:
             - name: ca
               readOnly: true
