@@ -90,8 +90,8 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		result, err := controller.DefaultEnsureHandler.Run(ctx, c.cc, configuration,
 			[]controller.EnsureFunc{
 				c.ensureCapturedState(configuration, state),
-				c.ensureCustomBackendTemplate(configuration, state),
 				c.ensureProviderReady(configuration, state),
+				c.ensureCustomBackendTemplate(configuration, state),
 				c.ensurePolicyDefaultsExist(configuration, state),
 				c.ensureValueFromSecret(configuration, state),
 				c.ensureAuthenticationSecret(configuration, state),
