@@ -105,6 +105,10 @@ controller:
     tlsDir: /certs
     # name of the file containing the tls private key
     tlsKey: tls-key.pem
+  # extraArgs is used for passing additional command line arguments to the
+  # controller.
+  extraArgs:
+    verbose: true
 networkPolicies:
   # Indicates we should create the network policies
   enabled: true

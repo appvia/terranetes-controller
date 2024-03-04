@@ -91,7 +91,9 @@ spec:
             - --tls-key={{ .Values.controller.webhooks.tlsKey }}
             - --webhooks-port={{ .Values.controller.webhooks.port }}
             {{- end }}
-            - --verbose=true
+            {{- range $key, $value := .Values.controller.extraArgs }}
+            - --{{ $key }}={{ $value }}
+            {{- end }}
           ports:
             - name: metrics
               containerPort: {{ .Values.controller.metricsPort }}
