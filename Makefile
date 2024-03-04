@@ -1,7 +1,7 @@
 SHELL = /bin/sh -e
 AUTHOR_EMAIL=info@appvia.io
-REGISTRY=ghcr.io
-REGISTRY_ORG=appvia
+REGISTRY?=ghcr.io
+REGISTRY_ORG?=appvia
 APIS ?= $(shell find pkg/apis -name "v*" -type d | sed -e 's/pkg\/apis\///' | sort | tr '\n' ' ')
 BUILD_TIME=$(shell date '+%s')
 CLI_PLATFORMS=darwin linux windows
@@ -24,6 +24,7 @@ ROOT_DIR=${PWD}
 UNAME := $(shell uname)
 LFLAGS ?= -X github.com/appvia/terranetes-controller/pkg/version.Version=${VERSION} -X github.com/appvia/terranetes-controller/pkg/version.GitCommit=${GIT_SHA}
 VERSION ?= latest
+DOCKER_BUILD_PLATFORM?=linux/amd64
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
 # use the local RELEASE variable being 'true' to switch on release build logic.
@@ -137,7 +138,7 @@ test:
 
 cli-image:
 	@echo "--> Compiling the cli image ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION}"
-	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION} -f images/Dockerfile.cli .
+	@docker build --platform=$(DOCKER_BUILD_PLATFORM) --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION} -f images/Dockerfile.cli .
 
 cli-image-verify: install-trivy
 	@echo "--> Verifying cli server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-cli:${VERSION}"
@@ -146,7 +147,7 @@ cli-image-verify: install-trivy
 
 controller-image:
 	@echo "--> Compiling the terranetes-controller server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION}"
-	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION} -f images/Dockerfile.controller .
+	@docker build --platform=$(DOCKER_BUILD_PLATFORM) --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-controller:${VERSION} -f images/Dockerfile.controller .
 
 controller-kind:
 	@echo "--> Updating the kind image for controller and reloading"
@@ -171,7 +172,7 @@ controller-image-verify: install-trivy
 
 executor-image:
 	@echo "--> Compiling the terranetes-executor server image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
-	@docker build --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} -f images/Dockerfile.executor .
+	@docker build --platform=$(DOCKER_BUILD_PLATFORM) --build-arg VERSION=${VERSION} -t ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION} -f images/Dockerfile.executor .
 
 executor-image-kind: executor-image
 	@echo "--> Building and loading executor image ${REGISTRY}/${REGISTRY_ORG}/terranetes-executor:${VERSION}"
