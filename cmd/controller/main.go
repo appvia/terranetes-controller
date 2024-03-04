@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -26,6 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/appvia/terranetes-controller/pkg/server"
 	"github.com/appvia/terranetes-controller/pkg/version"
@@ -36,6 +38,7 @@ func init() {
 }
 
 var config server.Config
+var zapOpts zap.Options
 
 func main() {
 	cmd := &cobra.Command{
@@ -86,6 +89,11 @@ func main() {
 	flags.StringVar(&config.TLSKey, "tls-key", "tls-key.pem", "The name of the file containing the TLS key")
 	flags.StringVar(&config.TerraformImage, "terraform-image", "hashicorp/terraform:latest", "The image to use for the terraform")
 
+	crFlags := flag.NewFlagSet("controller-runtime", flag.ContinueOnError)
+	zapOpts.BindFlags(crFlags)
+	ctrl.RegisterFlags(crFlags)
+	flags.AddGoFlagSet(crFlags)
+
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[error] %s\n", err)
 
@@ -95,6 +103,7 @@ func main() {
 
 // Run is called to execute the action
 func Run(ctx context.Context) error {
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&zapOpts)))
 	svc, err := server.New(ctrl.GetConfigOrDie(), config)
 	if err != nil {
 		return err
