@@ -23,6 +23,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,10 +78,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	// @here we are responsible for updating the transition times of the conditions where we
 	// see a drift. And updating the status of the resource overall
 	defer func() {
-		status.LastReconcile = &corev1alpha1.LastReconcileStatus{
-			Generation: resource.GetGeneration(),
-			Time:       metav1.NewTime(time.Now()),
-		}
+		status.LastReconcile = updateReconcileStatus(resource, original, status.LastReconcile)
 
 		// @step: we need to update the status of the resource
 		if err := cc.Status().Patch(ctx, resource, client.MergeFrom(original)); err != nil {
@@ -118,10 +116,24 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 	cond := ConditionMgr(resource, corev1alpha1.ConditionReady, nil)
 	cond.Success(ResourceReady)
 
-	status.LastSuccess = &corev1alpha1.LastReconcileStatus{
-		Generation: resource.GetGeneration(),
-		Time:       metav1.NewTime(time.Now()),
-	}
+	status.LastSuccess = updateReconcileStatus(resource, original, status.LastSuccess)
 
 	return reconcile.Result{}, nil
+}
+
+// updateReconcileStatus ensures the last reconciliation timestamp is only
+// updated if there are other changes to the resource. This ensures watchers
+// won't be triggered for timestamp only changes.
+func updateReconcileStatus(resource, original client.Object, last *corev1alpha1.LastReconcileStatus) *corev1alpha1.LastReconcileStatus {
+	isUpToDate := last != nil &&
+		last.Generation == resource.GetGeneration() &&
+		apiequality.Semantic.DeepEqual(original, resource)
+	if isUpToDate {
+		return last
+	}
+
+	return &corev1alpha1.LastReconcileStatus{
+		Generation: resource.GetGeneration(),
+		Time:       metav1.Now(),
+	}
 }
