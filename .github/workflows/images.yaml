@@ -36,9 +36,9 @@ jobs:
         id: get_image_tag
         run: |
           if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-            echo "image_tag=latest" >> $GITHUB_STATE
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
           else
-            echo "image_tag=${GITHUB_REF##*/}" >> $GITHUB_STATE
+            echo "image_tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
           fi
       - name: Docker Metadata
         id: docker_meta
