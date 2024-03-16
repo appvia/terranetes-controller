@@ -23,13 +23,14 @@ import (
 	"fmt"
 	"time"
 
-	cache "github.com/patrickmn/go-cache"
+	pcache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
-
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	cache "k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,7 +58,7 @@ type Controller struct {
 	// does not support subresources, check https://github.com/kubernetes-sigs/controller-runtime/pull/1922
 	kc kubernetes.Interface
 	// cache is a local cache of resources to make lookups faster
-	cache *cache.Cache
+	cache *pcache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
 	// ControllerNamespace is the namespace where the runner is running
@@ -105,6 +106,47 @@ func (c *Controller) HasBackendTemplate() bool {
 	return c.BackendTemplate != ""
 }
 
+// createNamespaceWatch is responsible for creating a watcher job in the user namespace
+func (c *Controller) createNamespaceWatch(ctx context.Context) error {
+	factory := informers.NewSharedInformerFactory(c.kc, time.Minute*5)
+	informer := factory.Core().V1().Namespaces().Informer()
+	stopCh := make(chan struct{})
+
+	registration, err := informer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(_, obj interface{}) {
+			o, ok := obj.(*v1.Namespace)
+			if ok {
+				c.cache.SetDefault(o.GetName(), o)
+			}
+		},
+		AddFunc: func(obj interface{}) {
+			if o, ok := obj.(*v1.Namespace); ok {
+				c.cache.SetDefault(o.GetName(), o)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			if o, ok := obj.(*v1.Namespace); ok {
+				c.cache.Delete(o.GetName())
+			}
+		},
+	})
+	if err != nil {
+		return err
+	}
+	log.Info("starting the namespace informer")
+
+	// @step: we need to start the informer
+	go informer.Run(stopCh)
+
+	if !cache.WaitForCacheSync(ctx.Done(), registration.HasSynced) {
+		return fmt.Errorf("failed to sync the namespace informer")
+	}
+
+	log.Info("namespace informer is synced")
+
+	return nil
+}
+
 // Add is called to setup the manager for the controller
 func (c *Controller) Add(mgr manager.Manager) error {
 	log.WithFields(log.Fields{
@@ -131,7 +173,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 
 	c.cc = mgr.GetClient()
-	c.cache = cache.New(12*time.Hour, 10*time.Minute)
+	c.cache = pcache.New(12*time.Hour, 10*time.Minute)
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	kc, err := kubernetes.NewForConfig(mgr.GetConfig())
@@ -139,6 +181,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		return err
 	}
 	c.kc = kc
+
+	// @step: create the namespace watcher
+	if err := c.createNamespaceWatch(context.Background()); err != nil {
+		log.WithError(err).Error("failed to create the namespace watcher")
+
+		return err
+	}
 
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
@@ -160,20 +209,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 			&predicate.AnnotationChangedPredicate{},
 			&predicate.GenerationChangedPredicate{},
 		)).
-		Watches(
-			// We use this it keep a local cache of all namespaces in the cluster
-			&v1.Namespace{},
-			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []reconcile.Request {
-				switch {
-				case !o.GetDeletionTimestamp().IsZero():
-					c.cache.Delete(o.GetName())
-				default:
-					c.cache.SetDefault(o.GetName(), o)
-				}
-
-				return nil
-			}),
-		).
 		Watches(
 			&batchv1.Job{},
 			// allows us to requeue the resource when the job has updated
@@ -213,8 +248,8 @@ func (c *Controller) Add(mgr manager.Manager) error {
 func (c *Controller) findMatchingPolicy(
 	ctx context.Context,
 	configuration *terraformv1alpha1.Configuration,
-	list *terraformv1alpha1.PolicyList) (*terraformv1alpha1.PolicyConstraint, error) {
-
+	list *terraformv1alpha1.PolicyList,
+) (*terraformv1alpha1.PolicyConstraint, error) {
 	if len(list.Items) == 0 {
 		return nil, nil
 	}
