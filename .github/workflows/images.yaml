@@ -8,7 +8,7 @@ jobs:
   push-image:
     strategy:
       matrix:
-        image: ['controller', 'executor', 'cli']
+        image: ["controller", "executor", "cli"]
     runs-on: ubuntu-latest
     permissions:
       actions: none
@@ -36,9 +36,9 @@ jobs:
         id: get_image_tag
         run: |
           if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-            echo "::set-output name=image_tag::latest"
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=image_tag::${GITHUB_REF##*/}"
+            echo "image_tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
           fi
       - name: Docker Metadata
         id: docker_meta
@@ -51,7 +51,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.get_image_tag.outputs.image_tag }}
       - name: Build & Push
-        uses: docker/build-push-action@v5.1.0
+        uses: docker/build-push-action@v5.2.0
         with:
           build-args: VERSION=${{ steps.get_image_tag.outputs.image_tag }}
           context: .
