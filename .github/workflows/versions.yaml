@@ -49,7 +49,7 @@ jobs:
             export IMAGE="${{ matrix.image }}:ci-${VERSION##v}"
           fi
           if [[ "${{ matrix.image }}" == "bridgecrew/checkov" ]]; then
-            export IMAGE="${{ matrix.image }}:${VERSION}-pyston"
+            export IMAGE="${{ matrix.image }}:${VERSION}"
           fi
 
           yq e '.${{ matrix.value }} = strenv(IMAGE)' -i charts/terranetes-controller/values.yaml
