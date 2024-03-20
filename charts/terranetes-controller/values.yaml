@@ -41,11 +41,11 @@ controller:
     # policy is image for policy
     policy: bridgecrew/checkov:3.2.10
     # preload is the image to use for preload data jobs
-    preload: ghcr.io/appvia/terranetes-executor:v0.4.7
+    preload: ghcr.io/appvia/terranetes-executor:v0.4.8
     # is the controller image
-    controller: ghcr.io/appvia/terranetes-controller:v0.4.7
+    controller: ghcr.io/appvia/terranetes-controller:v0.4.8
     # The terranetes image used when running jobs
-    executor: ghcr.io/appvia/terranetes-executor:v0.4.7
+    executor: ghcr.io/appvia/terranetes-executor:v0.4.8
   # driftInterval is the minimum time to check for drift
   driftInterval: 5h
   # driftThreshold is the percentage of configurations which are permitted
