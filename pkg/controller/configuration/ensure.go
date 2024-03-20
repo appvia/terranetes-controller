@@ -1166,7 +1166,11 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			break
 
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
-			return reconcile.Result{}, nil
+			// The resource can be OutOfSync due to drift, in this case we want
+			// apply to run even if the generation didn't change.
+			if configuration.Status.ResourceStatus == terraformv1alpha1.ResourcesInSync {
+				return reconcile.Result{}, nil
+			}
 		}
 
 		// @step: check if we need to save the terraform state
@@ -1183,6 +1187,10 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 				c.ControllerJobLabels,
 				state.provider.JobLabels(),
 				configuration.GetLabels(),
+				map[string]string{
+					terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
+					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
+				},
 			),
 			BackoffLimit:       c.BackoffLimit,
 			EnableInfraCosts:   c.EnableInfracosts,
@@ -1204,6 +1212,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 		// @step: find the job which is implementing this stage if any
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
+			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
+			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
 			WithNamespace(configuration.GetNamespace()).
 			WithName(configuration.GetName()).
 			WithStage(terraformv1alpha1.StageTerraformApply).
