@@ -94,6 +94,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			AdditionalJobLabels: utils.MergeStringMaps(
 				c.ControllerJobLabels,
 				state.provider.JobLabels(),
+				configuration.GetLabels(),
 				map[string]string{
 					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
 				}),
