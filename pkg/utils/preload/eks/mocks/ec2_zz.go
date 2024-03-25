@@ -16385,6 +16385,89 @@ func (mr *MockEC2APIMockRecorder) DescribeLockedSnapshotsWithContext(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeLockedSnapshotsWithContext", reflect.TypeOf((*MockEC2API)(nil).DescribeLockedSnapshotsWithContext), varargs...)
 }
 
+// DescribeMacHosts mocks base method.
+func (m *MockEC2API) DescribeMacHosts(arg0 *ec2.DescribeMacHostsInput) (*ec2.DescribeMacHostsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescribeMacHosts", arg0)
+	ret0, _ := ret[0].(*ec2.DescribeMacHostsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DescribeMacHosts indicates an expected call of DescribeMacHosts.
+func (mr *MockEC2APIMockRecorder) DescribeMacHosts(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeMacHosts", reflect.TypeOf((*MockEC2API)(nil).DescribeMacHosts), arg0)
+}
+
+// DescribeMacHostsPages mocks base method.
+func (m *MockEC2API) DescribeMacHostsPages(arg0 *ec2.DescribeMacHostsInput, arg1 func(*ec2.DescribeMacHostsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescribeMacHostsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DescribeMacHostsPages indicates an expected call of DescribeMacHostsPages.
+func (mr *MockEC2APIMockRecorder) DescribeMacHostsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeMacHostsPages", reflect.TypeOf((*MockEC2API)(nil).DescribeMacHostsPages), arg0, arg1)
+}
+
+// DescribeMacHostsPagesWithContext mocks base method.
+func (m *MockEC2API) DescribeMacHostsPagesWithContext(arg0 context.Context, arg1 *ec2.DescribeMacHostsInput, arg2 func(*ec2.DescribeMacHostsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DescribeMacHostsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DescribeMacHostsPagesWithContext indicates an expected call of DescribeMacHostsPagesWithContext.
+func (mr *MockEC2APIMockRecorder) DescribeMacHostsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeMacHostsPagesWithContext", reflect.TypeOf((*MockEC2API)(nil).DescribeMacHostsPagesWithContext), varargs...)
+}
+
+// DescribeMacHostsRequest mocks base method.
+func (m *MockEC2API) DescribeMacHostsRequest(arg0 *ec2.DescribeMacHostsInput) (*request.Request, *ec2.DescribeMacHostsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescribeMacHostsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*ec2.DescribeMacHostsOutput)
+	return ret0, ret1
+}
+
+// DescribeMacHostsRequest indicates an expected call of DescribeMacHostsRequest.
+func (mr *MockEC2APIMockRecorder) DescribeMacHostsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeMacHostsRequest", reflect.TypeOf((*MockEC2API)(nil).DescribeMacHostsRequest), arg0)
+}
+
+// DescribeMacHostsWithContext mocks base method.
+func (m *MockEC2API) DescribeMacHostsWithContext(arg0 context.Context, arg1 *ec2.DescribeMacHostsInput, arg2 ...request.Option) (*ec2.DescribeMacHostsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DescribeMacHostsWithContext", varargs...)
+	ret0, _ := ret[0].(*ec2.DescribeMacHostsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DescribeMacHostsWithContext indicates an expected call of DescribeMacHostsWithContext.
+func (mr *MockEC2APIMockRecorder) DescribeMacHostsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeMacHostsWithContext", reflect.TypeOf((*MockEC2API)(nil).DescribeMacHostsWithContext), varargs...)
+}
+
 // DescribeManagedPrefixLists mocks base method.
 func (m *MockEC2API) DescribeManagedPrefixLists(arg0 *ec2.DescribeManagedPrefixListsInput) (*ec2.DescribeManagedPrefixListsOutput, error) {
 	m.ctrl.T.Helper()
