@@ -1851,7 +1851,7 @@ terraform {
 
 			expected := []string{
 				"--comment=Executing Terraform",
-				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false",
+				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color",
 				"--command=/bin/terraform show -json /run/plan.out > /run/plan.json",
 				"--on-error=/run/steps/terraform.failed",
 				"--on-success=/run/steps/terraform.complete",
@@ -3120,7 +3120,7 @@ terraform {
 
 				expected := []string{
 					"--comment=Executing Terraform",
-					"--command=/bin/terraform apply --var-file variables.tfvars.json -auto-approve -lock=false",
+					"--command=/bin/terraform apply --var-file variables.tfvars.json -auto-approve -lock=false -no-color",
 					"--on-error=/run/steps/terraform.failed",
 					"--on-success=/run/steps/terraform.complete",
 				}

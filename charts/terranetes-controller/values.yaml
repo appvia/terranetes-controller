@@ -37,9 +37,9 @@ controller:
     # is the default image to use for terraform operations
     terraform: hashicorp/terraform:1.5.7
     # image to use for infracost
-    infracost: infracost/infracost:ci-0.10.33
+    infracost: infracost/infracost:ci-0.10.34
     # policy is image for policy
-    policy: bridgecrew/checkov:3.2.10
+    policy: bridgecrew/checkov:3.2.39
     # preload is the image to use for preload data jobs
     preload: ghcr.io/appvia/terranetes-executor:v0.4.8
     # is the controller image
