@@ -186,11 +186,11 @@ spec:
         args:
           - --comment=Executing Terraform
           {{- if eq .Stage "plan" }}
-          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false
+          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color 
           - --command=/bin/terraform show -json /run/plan.out > /run/plan.json
           {{- end }}
           {{- if eq .Stage "apply" }}
-          - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false
+          - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false -no-color 
           {{- if .SaveTerraformState }}
           - --command=/bin/terraform state pull > /run/tfstate
           - --command=/bin/gzip /run/tfstate
