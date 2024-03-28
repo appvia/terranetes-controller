@@ -39,7 +39,7 @@ controller:
     # image to use for infracost
     infracost: infracost/infracost:ci-0.10.34
     # policy is image for policy
-    policy: bridgecrew/checkov:3.2.39
+    policy: bridgecrew/checkov:3.2.45
     # preload is the image to use for preload data jobs
     preload: ghcr.io/appvia/terranetes-executor:v0.4.8
     # is the controller image
