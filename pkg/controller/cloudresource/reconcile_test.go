@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -94,6 +95,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 				Description: "The name of the database engine",
 			},
 		}
+		revision.Spec.Configuration.Auth = &v1.SecretReference{Name: "mysecret"}
 		revision.Spec.Configuration.Module = "git::https://github.com/appvia/terranetes-controller.git?ref=master"
 		revision.Spec.Configuration.Variables = &runtime.RawExtension{
 			Raw: []byte("{\"test\": \"default\"}"),
@@ -105,7 +107,6 @@ var _ = Describe("CloudResource Reconcilation", func() {
 		cloudresource.Spec.WriteConnectionSecretToRef = &terraformv1alpha1.WriteConnectionSecret{
 			Name: "mysecret",
 		}
-
 		Expect(cc.Create(context.Background(), revision)).To(Succeed())
 		Expect(cc.Create(context.Background(), plan)).To(Succeed())
 		Expect(cc.Create(context.Background(), cloudresource)).To(Succeed())
@@ -240,7 +241,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 							Name:     revision.Spec.Plan.Name,
 							Revision: revision.Spec.Plan.Revision,
 						}))
-
+						Expect(configuration.Spec.Auth).To(Equal(revision.Spec.Configuration.Auth))
 						Expect(configuration.Spec.Module).To(Equal(revision.Spec.Configuration.Module))
 						Expect(configuration.Spec.EnableAutoApproval).To(Equal(revision.Spec.Configuration.EnableAutoApproval))
 						Expect(configuration.Spec.EnableDriftDetection).To(Equal(revision.Spec.Configuration.EnableDriftDetection))
@@ -377,6 +378,7 @@ var _ = Describe("CloudResource Reconcilation", func() {
 							Revision: revision.Spec.Plan.Revision,
 						}))
 
+						Expect(configuration.Spec.Auth).To(Equal(revision.Spec.Configuration.Auth))
 						Expect(configuration.Spec.Module).To(Equal(revision.Spec.Configuration.Module))
 						Expect(configuration.Spec.EnableAutoApproval).To(Equal(revision.Spec.Configuration.EnableAutoApproval))
 						Expect(configuration.Spec.EnableDriftDetection).To(Equal(revision.Spec.Configuration.EnableDriftDetection))
@@ -385,6 +387,36 @@ var _ = Describe("CloudResource Reconcilation", func() {
 						Expect(configuration.Spec.ValueFrom).To(ContainElements(cloudresource.Spec.ValueFrom))
 						Expect(configuration.Spec.Variables).ToNot(BeNil())
 						Expect(string(configuration.Spec.Variables.Raw)).To(Equal("{\"database_name\":\"mydb\",\"database_size\":5,\"test\":\"default\"}"))
+					})
+				})
+
+				Context("and the cloudresource has overidden the revision auth", func() {
+					BeforeEach(func() {
+						cloudresource.Spec.Auth = &v1.SecretReference{Name: "cloudresource-secret"}
+						Expect(cc.Update(context.Background(), cloudresource)).To(Succeed())
+
+						result, _, rerr = controllertests.Roll(context.TODO(), ctrl, cloudresource, 0)
+					})
+
+					It("should not return an error", func() {
+						Expect(rerr).ToNot(HaveOccurred())
+					})
+
+					It("should have updated a configuration", func() {
+						list := &terraformv1alpha1.ConfigurationList{}
+						Expect(cc.List(context.Background(), list,
+							client.InNamespace(cloudresource.Namespace),
+							client.MatchingLabels(map[string]string{
+								terraformv1alpha1.CloudResourceNameLabel:         cloudresource.Name,
+								terraformv1alpha1.CloudResourcePlanNameLabel:     revision.Spec.Plan.Name,
+								terraformv1alpha1.CloudResourceRevisionLabel:     revision.Spec.Plan.Revision,
+								terraformv1alpha1.CloudResourceRevisionNameLabel: revision.Name,
+							}))).To(Succeed())
+						Expect(list.Items).To(HaveLen(1))
+
+						configuration := list.Items[0]
+						Expect(configuration.Spec.Auth).ToNot(Equal(revision.Spec.Configuration.Auth))
+						Expect(configuration.Spec.Auth).To(Equal(cloudresource.Spec.Auth))
 					})
 				})
 

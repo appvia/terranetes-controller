@@ -170,9 +170,15 @@ func (c *Controller) ensureConfigurationExists(cloudresource *terraformv1alpha1.
 			},
 		}
 
-		configuration.Spec.Module = revision.Spec.Configuration.Module
+		// @step: if the revision contains authentication details
+		configuration.Spec.Auth = revision.Spec.Configuration.Auth
+		if cloudresource.Spec.Auth != nil {
+			configuration.Spec.Auth = cloudresource.Spec.Auth
+		}
+
 		configuration.Spec.EnableAutoApproval = cloudresource.Spec.EnableAutoApproval
 		configuration.Spec.EnableDriftDetection = cloudresource.Spec.EnableDriftDetection
+		configuration.Spec.Module = revision.Spec.Configuration.Module
 		configuration.Spec.Plan = &terraformv1alpha1.PlanReference{
 			Name:     cloudresource.Spec.Plan.Name,
 			Revision: cloudresource.Spec.Plan.Revision,
