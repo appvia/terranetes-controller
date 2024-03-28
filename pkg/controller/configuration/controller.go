@@ -173,7 +173,13 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 
 	c.cc = mgr.GetClient()
+
 	c.cache = pcache.New(12*time.Hour, 10*time.Minute)
+	c.cache.OnEvicted(func(key string, _ interface{}) {
+		// ensure we have some logging for when a namespace is evicted
+		log.WithField("namespace", key).Warn("evicted namespace from cache")
+	})
+
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	kc, err := kubernetes.NewForConfig(mgr.GetConfig())
