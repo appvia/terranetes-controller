@@ -25897,6 +25897,56 @@ func (mr *MockEC2APIMockRecorder) GetImageBlockPublicAccessStateWithContext(arg0
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageBlockPublicAccessStateWithContext", reflect.TypeOf((*MockEC2API)(nil).GetImageBlockPublicAccessStateWithContext), varargs...)
 }
 
+// GetInstanceMetadataDefaults mocks base method.
+func (m *MockEC2API) GetInstanceMetadataDefaults(arg0 *ec2.GetInstanceMetadataDefaultsInput) (*ec2.GetInstanceMetadataDefaultsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInstanceMetadataDefaults", arg0)
+	ret0, _ := ret[0].(*ec2.GetInstanceMetadataDefaultsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstanceMetadataDefaults indicates an expected call of GetInstanceMetadataDefaults.
+func (mr *MockEC2APIMockRecorder) GetInstanceMetadataDefaults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceMetadataDefaults", reflect.TypeOf((*MockEC2API)(nil).GetInstanceMetadataDefaults), arg0)
+}
+
+// GetInstanceMetadataDefaultsRequest mocks base method.
+func (m *MockEC2API) GetInstanceMetadataDefaultsRequest(arg0 *ec2.GetInstanceMetadataDefaultsInput) (*request.Request, *ec2.GetInstanceMetadataDefaultsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInstanceMetadataDefaultsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*ec2.GetInstanceMetadataDefaultsOutput)
+	return ret0, ret1
+}
+
+// GetInstanceMetadataDefaultsRequest indicates an expected call of GetInstanceMetadataDefaultsRequest.
+func (mr *MockEC2APIMockRecorder) GetInstanceMetadataDefaultsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceMetadataDefaultsRequest", reflect.TypeOf((*MockEC2API)(nil).GetInstanceMetadataDefaultsRequest), arg0)
+}
+
+// GetInstanceMetadataDefaultsWithContext mocks base method.
+func (m *MockEC2API) GetInstanceMetadataDefaultsWithContext(arg0 context.Context, arg1 *ec2.GetInstanceMetadataDefaultsInput, arg2 ...request.Option) (*ec2.GetInstanceMetadataDefaultsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetInstanceMetadataDefaultsWithContext", varargs...)
+	ret0, _ := ret[0].(*ec2.GetInstanceMetadataDefaultsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInstanceMetadataDefaultsWithContext indicates an expected call of GetInstanceMetadataDefaultsWithContext.
+func (mr *MockEC2APIMockRecorder) GetInstanceMetadataDefaultsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceMetadataDefaultsWithContext", reflect.TypeOf((*MockEC2API)(nil).GetInstanceMetadataDefaultsWithContext), varargs...)
+}
+
 // GetInstanceTypesFromInstanceRequirements mocks base method.
 func (m *MockEC2API) GetInstanceTypesFromInstanceRequirements(arg0 *ec2.GetInstanceTypesFromInstanceRequirementsInput) (*ec2.GetInstanceTypesFromInstanceRequirementsOutput, error) {
 	m.ctrl.T.Helper()
@@ -29638,6 +29688,56 @@ func (mr *MockEC2APIMockRecorder) ModifyInstanceMaintenanceOptionsWithContext(ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ModifyInstanceMaintenanceOptionsWithContext", reflect.TypeOf((*MockEC2API)(nil).ModifyInstanceMaintenanceOptionsWithContext), varargs...)
+}
+
+// ModifyInstanceMetadataDefaults mocks base method.
+func (m *MockEC2API) ModifyInstanceMetadataDefaults(arg0 *ec2.ModifyInstanceMetadataDefaultsInput) (*ec2.ModifyInstanceMetadataDefaultsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ModifyInstanceMetadataDefaults", arg0)
+	ret0, _ := ret[0].(*ec2.ModifyInstanceMetadataDefaultsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ModifyInstanceMetadataDefaults indicates an expected call of ModifyInstanceMetadataDefaults.
+func (mr *MockEC2APIMockRecorder) ModifyInstanceMetadataDefaults(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ModifyInstanceMetadataDefaults", reflect.TypeOf((*MockEC2API)(nil).ModifyInstanceMetadataDefaults), arg0)
+}
+
+// ModifyInstanceMetadataDefaultsRequest mocks base method.
+func (m *MockEC2API) ModifyInstanceMetadataDefaultsRequest(arg0 *ec2.ModifyInstanceMetadataDefaultsInput) (*request.Request, *ec2.ModifyInstanceMetadataDefaultsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ModifyInstanceMetadataDefaultsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*ec2.ModifyInstanceMetadataDefaultsOutput)
+	return ret0, ret1
+}
+
+// ModifyInstanceMetadataDefaultsRequest indicates an expected call of ModifyInstanceMetadataDefaultsRequest.
+func (mr *MockEC2APIMockRecorder) ModifyInstanceMetadataDefaultsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ModifyInstanceMetadataDefaultsRequest", reflect.TypeOf((*MockEC2API)(nil).ModifyInstanceMetadataDefaultsRequest), arg0)
+}
+
+// ModifyInstanceMetadataDefaultsWithContext mocks base method.
+func (m *MockEC2API) ModifyInstanceMetadataDefaultsWithContext(arg0 context.Context, arg1 *ec2.ModifyInstanceMetadataDefaultsInput, arg2 ...request.Option) (*ec2.ModifyInstanceMetadataDefaultsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ModifyInstanceMetadataDefaultsWithContext", varargs...)
+	ret0, _ := ret[0].(*ec2.ModifyInstanceMetadataDefaultsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ModifyInstanceMetadataDefaultsWithContext indicates an expected call of ModifyInstanceMetadataDefaultsWithContext.
+func (mr *MockEC2APIMockRecorder) ModifyInstanceMetadataDefaultsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ModifyInstanceMetadataDefaultsWithContext", reflect.TypeOf((*MockEC2API)(nil).ModifyInstanceMetadataDefaultsWithContext), varargs...)
 }
 
 // ModifyInstanceMetadataOptions mocks base method.
