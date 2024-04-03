@@ -444,13 +444,12 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alpha1.Config
 
 		// @step: ensure we are permitted to use the provider
 		if provider.Spec.Selector != nil {
-			value, found := c.cache.Get(configuration.Namespace)
-			if !found {
-				cond.Failed(errors.New("namespace not found"), "Failed to retrieve the namespace from the cache")
+			namespace, err := c.getNamespaceFromCache(ctx, configuration.Namespace)
+			if err != nil {
+				cond.Failed(err, "Failed to retrieve the namespace from the cache")
 
 				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
-			namespace := value.(*v1.Namespace)
 
 			// @step: ensure we have match the selector of the provider - i.e our namespace and resource labels must match
 			match, err := kubernetes.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())
@@ -483,12 +482,11 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 			return reconcile.Result{}, nil
 		}
 
-		// @step: we need to retrieve the namespace from the cache
-		namespace, found := c.cache.Get(configuration.Namespace)
-		if !found {
-			log.WithFields(log.Fields{
-				"namespace": configuration.Namespace,
-			}).Warn("namespace not found in the cache, this will cause issues on selector policies")
+		namespace, err := c.getNamespaceFromCache(ctx, configuration.Namespace)
+		if err != nil {
+			cond.Failed(err, "Failed to retrieve the namespace")
+
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 		}
 
 		var list []string
@@ -530,7 +528,7 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 						return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 					}
 
-					match, err := x.Selector.IsLabelsMatch(namespace.(*v1.Namespace))
+					match, err := x.Selector.IsLabelsMatch(namespace)
 					if err != nil {
 						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)
 
