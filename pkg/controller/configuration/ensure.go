@@ -444,9 +444,16 @@ func (c *Controller) ensureProviderReady(configuration *terraformv1alpha1.Config
 
 		// @step: ensure we are permitted to use the provider
 		if provider.Spec.Selector != nil {
-			namespace, err := c.getNamespaceFromCache(ctx, configuration.Namespace)
-			if err != nil {
-				cond.Failed(err, "Failed to retrieve the namespace from the cache")
+			namespace := &v1.Namespace{} 
+			namespace.Name = configuration.Namespace 
+
+			// @step: we need to retreive the namespace 
+			if found, err := kubernetes.GetIfExists(ctx, c.cc, namespace); err != nil {
+				cond.Failed(err, "Failed to retrieve the namespace")
+
+				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			} else if !found {
+				cond.Failed(errors.New("namespace not found"), "Failed to retrieve the namespace")
 
 				return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 			}
@@ -482,11 +489,18 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 			return reconcile.Result{}, nil
 		}
 
-		namespace, err := c.getNamespaceFromCache(ctx, configuration.Namespace)
-		if err != nil {
+		// @step: we need to retreive the namespace incase its required for later 
+		namespace := &v1.Namespace{} 
+		namespace.Name = configuration.Namespace 
+
+		if found, err := kubernetes.GetIfExists(ctx, c.cc, namespace); err != nil { 
 			cond.Failed(err, "Failed to retrieve the namespace")
 
-			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil 
+		} else if !found {
+			cond.Failed(errors.New("namespace not found"), "Failed to retrieve the namespace")
+
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil 
 		}
 
 		var list []string
@@ -522,12 +536,6 @@ func (c *Controller) ensurePolicyDefaultsExist(configuration *terraformv1alpha1.
 
 				// @step: check if the configuration matches a namespace selector
 				if x.Selector.Namespace != nil {
-					if namespace == nil {
-						cond.Failed(errors.New("namespace missing from cachce"), "Failed to retrieve the namespace from the cache")
-
-						return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
-					}
-
 					match, err := x.Selector.IsLabelsMatch(namespace)
 					if err != nil {
 						cond.Failed(err, "Failed to check against the policy: %q", state.policies.Items[i].Name)

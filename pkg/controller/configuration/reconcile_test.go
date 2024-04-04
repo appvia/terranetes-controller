@@ -26,7 +26,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -58,7 +57,6 @@ func makeFakeController(cc client.Client) *Controller {
 	ctrl := &Controller{
 		cc:                  cc,
 		kc:                  kfake.NewSimpleClientset(),
-		cache:               cache.New(5*time.Minute, 10*time.Minute),
 		recorder:            recorder,
 		BackoffLimit:        2,
 		EnableInfracosts:    false,
@@ -103,7 +101,6 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 
 		ctrl = makeFakeController(cc)
 		recorder = ctrl.recorder.(*controllertests.FakeRecorder)
-		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
 	})
 
 	When("creating a configuration", func() {
@@ -162,7 +159,7 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 				// ensure we are in the cache
 				namespace := fixtures.NewNamespace(configuration.Namespace)
 				namespace.Labels = map[string]string{"name": "match"}
-				ctrl.cache.SetDefault(namespace.Name, namespace)
+				Expect(cc.Create(context.Background(), namespace)).To(Succeed())
 
 				/// update the policy to using a namespace label selector
 				Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
@@ -264,7 +261,7 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 				// ensure we are in the cache
 				namespace := fixtures.NewNamespace(configuration.Namespace)
 				namespace.Labels = map[string]string{"name": "match"}
-				ctrl.cache.SetDefault(namespace.Name, namespace)
+				Expect(cc.Create(context.Background(), namespace)).To(Succeed())
 
 				/// update the policy to using a namespace label selector
 				Expect(cc.Delete(context.Background(), policy.DeepCopy())).To(Succeed())
@@ -482,7 +479,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			Build()
 
 		ctrl = makeFakeController(cc)
-		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
 	})
 
 	When("create a configuration with a context", func() {
@@ -675,7 +671,6 @@ var _ = Describe("Configuration Controller, no reconciliation", func() {
 			Build()
 
 		ctrl = makeFakeController(cc)
-		ctrl.cache.SetDefault(namespace, fixtures.NewNamespace(namespace))
 	})
 
 	When("creating or updating a configuration", func() {
@@ -783,7 +778,6 @@ var _ = Describe("Configuration Controller", func() {
 		ctrl = &Controller{
 			cc:                  cc,
 			kc:                  kfake.NewSimpleClientset(),
-			cache:               cache.New(5*time.Minute, 10*time.Minute),
 			recorder:            recorder,
 			EnableInfracosts:    false,
 			EnableWatchers:      true,
@@ -793,7 +787,6 @@ var _ = Describe("Configuration Controller", func() {
 			PolicyImage:         "bridgecrew/checkov:2.0.1140",
 			TerraformImage:      "hashicorp/terraform:1.1.9",
 		}
-		ctrl.cache.SetDefault(cfgNamespace, fixtures.NewNamespace(cfgNamespace))
 	}
 
 	// PROVIDERS

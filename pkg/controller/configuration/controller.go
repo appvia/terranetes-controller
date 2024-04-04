@@ -21,15 +21,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
-	pcache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	cache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -57,8 +53,6 @@ type Controller struct {
 	// kc is a client kubernetes - this is required as the controller runtime client
 	// does not support subresources, check https://github.com/kubernetes-sigs/controller-runtime/pull/1922
 	kc kubernetes.Interface
-	// cache is a local cache of resources to make lookups faster
-	cache *pcache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
 	// ControllerNamespace is the namespace where the runner is running
@@ -106,47 +100,6 @@ func (c *Controller) HasBackendTemplate() bool {
 	return c.BackendTemplate != ""
 }
 
-// createNamespaceWatch is responsible for creating a watcher job in the user namespace
-func (c *Controller) createNamespaceWatch(ctx context.Context) error {
-	factory := informers.NewSharedInformerFactory(c.kc, time.Minute*5)
-	informer := factory.Core().V1().Namespaces().Informer()
-	stopCh := make(chan struct{})
-
-	registration, err := informer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(_, obj interface{}) {
-			o, ok := obj.(*v1.Namespace)
-			if ok {
-				c.cache.SetDefault(o.GetName(), o)
-			}
-		},
-		AddFunc: func(obj interface{}) {
-			if o, ok := obj.(*v1.Namespace); ok {
-				c.cache.SetDefault(o.GetName(), o)
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			if o, ok := obj.(*v1.Namespace); ok {
-				c.cache.Delete(o.GetName())
-			}
-		},
-	})
-	if err != nil {
-		return err
-	}
-	log.Info("starting the namespace informer")
-
-	// @step: we need to start the informer
-	go informer.Run(stopCh)
-
-	if !cache.WaitForCacheSync(ctx.Done(), registration.HasSynced) {
-		return fmt.Errorf("failed to sync the namespace informer")
-	}
-
-	log.Info("namespace informer is synced")
-
-	return nil
-}
-
 // Add is called to setup the manager for the controller
 func (c *Controller) Add(mgr manager.Manager) error {
 	log.WithFields(log.Fields{
@@ -173,12 +126,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 
 	c.cc = mgr.GetClient()
-	c.cache = pcache.New(24*time.Hour, 10*time.Minute)
-	c.cache.OnEvicted(func(key string, _ interface{}) {
-		// ensure we have some logging for when a namespace is evicted
-		log.WithField("namespace", key).Warn("evicted namespace from cache")
-	})
-
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	kc, err := kubernetes.NewForConfig(mgr.GetConfig())
@@ -186,13 +133,6 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		return err
 	}
 	c.kc = kc
-
-	// @step: create the namespace watcher
-	if err := c.createNamespaceWatch(context.Background()); err != nil {
-		log.WithError(err).Error("failed to create the namespace watcher")
-
-		return err
-	}
 
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
@@ -257,12 +197,6 @@ func (c *Controller) findMatchingPolicy(
 ) (*terraformv1alpha1.PolicyConstraint, error) {
 	if len(list.Items) == 0 {
 		return nil, nil
-	}
-
-	// @step: check the cache for the result
-	entry, found := c.cache.Get(configuration.Namespace)
-	if found {
-		return policies.FindMatchingPolicy(ctx, configuration, entry.(client.Object), list)
 	}
 
 	namespace := &v1.Namespace{}

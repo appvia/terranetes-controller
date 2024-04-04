@@ -22,9 +22,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
-
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 	"github.com/appvia/terranetes-controller/pkg/utils/kubernetes"
@@ -41,42 +38,14 @@ func GetTerraformImage(configuration *terraformv1alpha1.Configuration, image str
 	return fmt.Sprintf("%s:%s", e[0], configuration.Spec.TerraformVersion)
 }
 
-// getNamespaceFromCache is responsible for retrieving the namespace from the cache, or deferring
-// to a direct lookup if it's not found
-func (c *Controller) getNamespaceFromCache(ctx context.Context, name string) (*v1.Namespace, error) {
-	item, found := c.cache.Get(name)
-	if found {
-		return item.(*v1.Namespace), nil
-	}
-
-	log.WithFields(log.Fields{
-		"namespace": name,
-	}).Warn("namespace not found in the cache, deferring to a direct lookup")
-
-	namespace := &v1.Namespace{}
-	namespace.Name = name
-
-	if found, err := kubernetes.GetIfExists(ctx, c.cc, namespace); err != nil {
-		return nil, err
-	} else if !found {
-		return nil, fmt.Errorf("namespace %s not found", name)
-	}
-
-	c.cache.SetDefault(name, namespace)
-
-	return namespace, nil
-}
-
 // CreateWatcher is responsible for ensuring the logger is running in the application namespace
 func (c Controller) CreateWatcher(ctx context.Context, configuration *terraformv1alpha1.Configuration, stage string) error {
 	watcher := jobs.New(configuration, nil).NewJobWatch(c.ControllerNamespace, stage, c.ExecutorImage)
 
 	// @step: check if the logger has been created
-	found, err := kubernetes.GetIfExists(ctx, c.cc, watcher.DeepCopy())
-	if err != nil {
+	if found, err := kubernetes.GetIfExists(ctx, c.cc, watcher.DeepCopy()); err != nil {
 		return err
-	}
-	if found {
+	} else if found {
 		return nil
 	}
 

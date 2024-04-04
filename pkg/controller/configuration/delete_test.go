@@ -26,7 +26,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -92,7 +91,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 		ctrl = &Controller{
 			cc:                  cc,
 			kc:                  kfake.NewSimpleClientset(),
-			cache:               cache.New(5*time.Minute, 10*time.Minute),
 			recorder:            recorder,
 			EnableInfracosts:    false,
 			EnableWatchers:      true,
@@ -102,8 +100,6 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			PolicyImage:         "bridgecrew/checkov:2.0.1140",
 			TerraformImage:      "hashicorp/terraform:1.1.9",
 		}
-
-		ctrl.cache.SetDefault("default", fixtures.NewNamespace("default"))
 	})
 
 	When("a configuration is deleted", func() {
