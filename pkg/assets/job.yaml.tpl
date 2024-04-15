@@ -57,6 +57,15 @@ spec:
               - key: variables.tfvars.json
                 path: variables.tfvars.json
               {{- end }}
+        {{- if eq .Stage "apply" }}
+        - name: planout
+          secret:
+            secretName: {{ .Secrets.TerraformPlanOut }}
+            optional: false
+            items:
+              - key: plan.out
+                path: plan.out
+        {{- end }}
         {{- if and (.Policy) (not .Policy.Source) (eq .Stage "plan") }}
         - name: checkov
           secret :
@@ -188,9 +197,14 @@ spec:
           {{- if eq .Stage "plan" }}
           - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color 
           - --command=/bin/terraform show -json /run/plan.out > /run/plan.json
+          - --command=/bin/gzip /run/plan.json
+          - --command=/bin/mv /run/plan.json.gz /run/plan.json
+          - --namespace=$(KUBE_NAMESPACE)
+          - --upload=$(TERRAFORM_PLAN_JSON_NAME)=/run/plan.json
+          - --upload=$(TERRAFORM_PLAN_OUT_NAME)=/run/plan.out
           {{- end }}
           {{- if eq .Stage "apply" }}
-          - --command=/bin/terraform apply {{ .TerraformArguments }} -auto-approve -lock=false -no-color 
+          - --command=/bin/terraform apply -lock=false -no-color /run/plan.out
           {{- if .SaveTerraformState }}
           - --command=/bin/terraform state pull > /run/tfstate
           - --command=/bin/gzip /run/tfstate
@@ -219,6 +233,10 @@ spec:
                 fieldPath: metadata.namespace
           - name: TERRAFORM_STATE_NAME
             value: {{ .Secrets.TerraformState }}
+          - name: TERRAFORM_PLAN_OUT_NAME
+            value: {{ .Secrets.TerraformPlanOut }}
+          - name: TERRAFORM_PLAN_JSON_NAME
+            value: {{ .Secrets.TerraformPlanJSON }}
         envFrom:
         {{- if eq .Provider.Source "secret" }}
           - secretRef:
@@ -245,6 +263,11 @@ spec:
           capabilities:
             drop: [ALL]
         volumeMounts:
+          {{- if eq .Stage "apply" }}
+          - name: planout
+            mountPath: /run/plan.out
+            subPath: plan.out
+          {{- end }}
           - name: run
             mountPath: /run
           - name: source

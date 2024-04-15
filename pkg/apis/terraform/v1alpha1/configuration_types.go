@@ -95,6 +95,9 @@ const (
 const (
 	// TerraformStateSecretKey is the key used by the terraform state secret
 	TerraformStateSecretKey = "tfstate"
+
+	// TerraformPlanJSONSecretKey is the key used by the terraform plan JSON secret
+	TerraformPlanJSONSecretKey = "plan.json"
 )
 
 const (
@@ -127,6 +130,15 @@ const (
 	ConfigurationRevisionLabelName = RevisionLabel
 	// ConfigurationRevisionVersion is the version of the revision
 	ConfigurationRevisionVersion = "terranetes.appvia.io/revision-version"
+)
+
+const (
+	// JobPlanIDLabel is a label used on the apply Job and holds the timestamp
+	// of when the plan was generated.
+	JobPlanIDLabel = "terraform.appvia.io/plan-id"
+	// JobTemplateHashLabel is the label used to hold a hash of the current Job
+	// template, this allows re-running the plan Jobs when the template changes.
+	JobTemplateHashLabel = "terraform.appvia.io/template-hash"
 )
 
 const (
@@ -605,6 +617,18 @@ func (c *Configuration) GetTerraformPolicySecretName() string {
 // GetTerraformCostSecretName returns the name which should be used for the costs report
 func (c *Configuration) GetTerraformCostSecretName() string {
 	return fmt.Sprintf("costs-%s", string(c.GetUID()))
+}
+
+// GetTerraformPlanOutSecretName returns the name of the secret holding the
+// terraform plan binary output
+func (c *Configuration) GetTerraformPlanOutSecretName() string {
+	return fmt.Sprintf("tfplan-out-%s", string(c.GetUID()))
+}
+
+// GetTerraformPlanJSONSecretName returns the name of the secret holding the
+// terraform plan JSON
+func (c *Configuration) GetTerraformPlanJSONSecretName() string {
+	return fmt.Sprintf("tfplan-json-%s", string(c.GetUID()))
 }
 
 // GetCommonStatus returns the common status

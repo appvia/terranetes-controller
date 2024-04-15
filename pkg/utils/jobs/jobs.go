@@ -19,6 +19,8 @@ package jobs
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -239,6 +241,8 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"InfracostsReport":  r.configuration.GetTerraformCostSecretName(),
 			"PolicyReport":      r.configuration.GetTerraformPolicySecretName(),
 			"TerraformState":    r.configuration.GetTerraformStateSecretName(),
+			"TerraformPlanJSON": r.configuration.GetTerraformPlanJSONSecretName(),
+			"TerraformPlanOut":  r.configuration.GetTerraformPlanOutSecretName(),
 		},
 	}
 
@@ -260,4 +264,13 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	}
 
 	return job, nil
+}
+
+func TemplateHash(data []byte) (string, error) {
+	hash := sha1.New()
+	_, err := hash.Write(data)
+	if err != nil {
+		return "", err
+	}
+	return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
 }
