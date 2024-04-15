@@ -49,6 +49,8 @@ type state struct {
 	jobs *batchv1.JobList
 	// jobTemplate is the template to use when rendering the job
 	jobTemplate []byte
+	// jobTemplateHash is an hex encoded SHA hash for the job template
+	jobTemplateHash string
 	// additionalJobSecrets is a collection of additional secrets to job - these secrets
 	// must reside in the same namespace as the controller
 	additionalJobSecrets []string
@@ -56,6 +58,8 @@ type state struct {
 	valueFrom map[string]interface{}
 	// tfstate is the secret containing the terraform state
 	tfstate *v1.Secret
+	// tfplan is the secret containing the terraform plan
+	tfplan *v1.Secret
 }
 
 // Reconcile is called to handle the reconciliation of the resource
@@ -129,6 +133,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			c.ensurePolicyDefaultsExist(configuration, state),
 			c.ensureJobConfigurationSecret(configuration, state),
 			c.ensureTerraformPlan(configuration, state),
+			c.ensureTerraformPlanSecret(configuration, state),
 			c.ensureCostStatus(configuration),
 			c.ensurePolicyStatus(configuration, state),
 			c.ensureDriftDetection(configuration, state),

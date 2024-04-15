@@ -346,8 +346,13 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alpha1.Co
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+		var err error
 		if c.JobTemplate == "" {
 			state.jobTemplate = assets.MustAsset("job.yaml.tpl") // lets default to the embedded template
+			state.jobTemplateHash, err = jobs.TemplateHash(state.jobTemplate)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 
 			return reconcile.Result{}, nil
 		}
@@ -377,6 +382,10 @@ func (c *Controller) ensureCustomJobTemplate(configuration *terraformv1alpha1.Co
 		}
 
 		state.jobTemplate = []byte(template)
+		state.jobTemplateHash, err = jobs.TemplateHash(state.jobTemplate)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
 		return reconcile.Result{}, nil
 	}
@@ -741,8 +750,9 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 				state.provider.JobLabels(),
 				configuration.GetLabels(),
 				map[string]string{
-					terraformv1alpha1.DriftAnnotation: configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
-					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
+					terraformv1alpha1.DriftAnnotation:      configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation],
+					terraformv1alpha1.RetryAnnotation:      configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
+					terraformv1alpha1.JobTemplateHashLabel: state.jobTemplateHash,
 				}),
 			BackoffLimit:       c.BackoffLimit,
 			EnableInfraCosts:   c.EnableInfracosts,
@@ -771,6 +781,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			WithGeneration(generation).
 			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
 			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
+			WithLabel(terraformv1alpha1.JobTemplateHashLabel, state.jobTemplateHash).
 			WithName(configuration.GetName()).
 			WithNamespace(configuration.GetNamespace()).
 			WithStage(terraformv1alpha1.StageTerraformPlan).
@@ -860,6 +871,31 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		}
 
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+}
+
+// ensureTerraformPlanSecret is responsible for ensuring the plan ran successfully
+func (c *Controller) ensureTerraformPlanSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		secret := &v1.Secret{}
+		secret.Name = configuration.GetTerraformPlanJSONSecretName()
+		secret.Namespace = c.ControllerNamespace
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to get terraform plan secret (%s/%s)", c.ControllerNamespace, secret.Name)
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			cond.Failed(nil, "Terraform plan secret (%s/%s) not found", c.ControllerNamespace, secret.Name)
+
+			return reconcile.Result{}, controller.ErrIgnore
+		}
+		state.tfplan = secret
+		return reconcile.Result{}, nil
 	}
 }
 
@@ -1057,87 +1093,27 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alpha1.Configu
 // ensureDriftDetection is responsible for checking for drift in the terraform state
 func (c *Controller) ensureDriftDetection(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
-	generation := fmt.Sprintf("%d", configuration.GetGeneration())
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		switch {
-		// if drift detection is not enable, we ignore
-		case !configuration.Spec.EnableDriftDetection:
-			return reconcile.Result{}, nil
-		// if the annotation is not set, we ignore
-		case configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == "":
-			return reconcile.Result{}, nil
-			// if the annotation is the same as the last drift timestamp, we ignore
-		case configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == configuration.Status.DriftTimestamp:
-			return reconcile.Result{}, nil
-		}
-		// @note: everytime we run a drift we update the timestamp on the status, this is used to ensure we don't
-		// try and rerun the drift. We should remove the annotation from the configuration but that has issues as it
-		// updates the resourceVersion which make updating the status conflict.
-		configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]
-
-		// @step: we need retrieve the logs and check for the drift
-		job, found := filters.Jobs(state.jobs).
-			WithGeneration(generation).
-			WithLabel(terraformv1alpha1.DriftAnnotation, configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]).
-			WithLabel(terraformv1alpha1.RetryAnnotation, configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation]).
-			WithName(configuration.GetName()).
-			WithNamespace(configuration.GetNamespace()).
-			WithStage(terraformv1alpha1.StageTerraformPlan).
-			WithUID(string(configuration.GetUID())).
-			Latest()
-		if !found {
-			log.WithFields(log.Fields{
-				"name":      configuration.GetName(),
-				"namespace": configuration.GetNamespace(),
-			}).Warn("no terraform plan job found to check drift")
-
-			return reconcile.Result{}, nil
+		if configuration.Spec.EnableDriftDetection &&
+			configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] != configuration.Status.DriftTimestamp {
+			// @note: everytime we run a drift we update the timestamp on the status, this is used to ensure we don't
+			// try and rerun the drift. We should remove the annotation from the configuration but that has issues as it
+			// updates the resourceVersion which make updating the status conflict.
+			configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]
 		}
 
-		// @step: retrieve a list of pods related to the job
-		pods := &v1.PodList{}
-		filters := client.MatchingLabels{"job-name": job.GetName()}
-		if err := c.cc.List(ctx, pods, client.InNamespace(c.ControllerNamespace), filters); err != nil {
-			cond.Failed(err, "Failed to list the terraform plan pods")
-
-			return reconcile.Result{}, err
-		}
-		if len(pods.Items) == 0 {
-			return reconcile.Result{}, nil
-		}
-
-		// @step: scan the logs for updates or changes
-		latest := kubernetes.FindLatestPod(pods)
-		stream, err := c.kc.CoreV1().Pods(latest.Namespace).GetLogs(latest.Name, &v1.PodLogOptions{
-			Container: "terraform",
-			Follow:    false,
-		}).Stream(ctx)
+		tfplan, err := terraform.DecodePlan(state.tfplan.Data[terraformv1alpha1.TerraformPlanJSONSecretKey])
 		if err != nil {
-			cond.Failed(err, "Failed to retrieve the terraform plan logs from pod")
+			cond.Failed(err, "Failed to decode the terraform plan")
 
 			return reconcile.Result{}, err
 		}
-		defer stream.Close()
 
 		// @step: check for changes in the plan
-		state.hasDrift, err = terraform.FindChangesInLogs(stream)
-		if err != nil {
-			cond.Failed(err, "Failed to find the changes in the terraform plan logs")
+		state.hasDrift = tfplan.NeedsApply()
 
-			return reconcile.Result{}, err
-		}
-
-		// @step: handle the update to the status
-		if !state.hasDrift {
-			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesInSync
-		} else {
-			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
-
-			cond.ActionRequired("Drift has been detected in the resource")
-		}
-
-		return controller.RequeueImmediate, nil
+		return reconcile.Result{}, nil
 	}
 }
 
@@ -1150,6 +1126,9 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 
 	return func(ctx context.Context) (reconcile.Result, error) {
 		switch {
+		case !state.hasDrift:
+			// There is nothing to apply, we can skip it.
+			return reconcile.Result{}, nil
 		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
 			// update the ready condition to reflect the new state
@@ -1158,13 +1137,13 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 
 			return reconcile.Result{}, controller.ErrIgnore
+		}
 
-			// if the configuration is retryable
-		case configuration.HasRetryableAnnotation() && configuration.IsRetryable():
-			break
+		tfplan, err := terraform.DecodePlan(state.tfplan.Data[terraformv1alpha1.TerraformPlanJSONSecretKey])
+		if err != nil {
+			cond.Failed(err, "Failed to decode the terraform plan")
 
-		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
-			return reconcile.Result{}, nil
+			return reconcile.Result{}, err
 		}
 
 		// @step: check if we need to save the terraform state
@@ -1181,6 +1160,10 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 				c.ControllerJobLabels,
 				state.provider.JobLabels(),
 				configuration.GetLabels(),
+				map[string]string{
+					terraformv1alpha1.JobPlanIDLabel:       tfplan.ID(),
+					terraformv1alpha1.JobTemplateHashLabel: state.jobTemplateHash,
+				},
 			),
 			BackoffLimit:       c.BackoffLimit,
 			EnableInfraCosts:   c.EnableInfracosts,
@@ -1202,6 +1185,8 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 		// @step: find the job which is implementing this stage if any
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
+			WithLabel(terraformv1alpha1.JobPlanIDLabel, tfplan.ID()).
+			WithLabel(terraformv1alpha1.JobTemplateHashLabel, state.jobTemplateHash).
 			WithNamespace(configuration.GetNamespace()).
 			WithName(configuration.GetName()).
 			WithStage(terraformv1alpha1.StageTerraformApply).

@@ -85,14 +85,9 @@ var providerTF = `provider "{{ .provider }}" {
 }
 `
 
-// Decode decodes the terraform state returning the json output
-func Decode(state []byte) ([]byte, error) {
-	in, err := gzip.NewReader(bytes.NewReader(state))
-	if err != nil {
-		return nil, err
-	}
-
-	return io.ReadAll(in)
+// Decode returns a Reader that will decode a gzip byte stream
+func Decode(data []byte) (io.Reader, error) {
+	return gzip.NewReader(bytes.NewReader(data))
 }
 
 // DecodeState decodes the terraform state outputs
@@ -103,11 +98,26 @@ func DecodeState(in []byte) (*State, error) {
 	}
 
 	state := &State{}
-	if err := json.NewDecoder(bytes.NewReader(decoded)).Decode(state); err != nil {
+	if err := json.NewDecoder(decoded).Decode(state); err != nil {
 		return nil, err
 	}
 
 	return state, nil
+}
+
+// DecodePlan decodes the terraform plan outputs
+func DecodePlan(in []byte) (*Plan, error) {
+	decoded, err := Decode(in)
+	if err != nil {
+		return nil, err
+	}
+
+	plan := &Plan{}
+	if err := json.NewDecoder(decoded).Decode(plan); err != nil {
+		return nil, err
+	}
+
+	return plan, nil
 }
 
 // NewCheckovPolicy generates a checkov policy from the configuration
