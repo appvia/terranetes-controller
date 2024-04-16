@@ -18,6 +18,12 @@
 package fixtures
 
 import (
+	"bytes"
+	"compress/gzip"
+	"fmt"
+
+	v1 "k8s.io/api/core/v1"
+
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/controller"
 )
@@ -28,4 +34,63 @@ func NewConfigurationPlan(name string) *terraformv1alpha1.Plan {
 	controller.EnsureConditionsRegistered(terraformv1alpha1.DefaultPlanConditions, plan)
 
 	return plan
+}
+
+var tfplanJSON = `
+{
+	"format_version": "1.2",
+	"terraform_version": "1.5.7",
+	"resource_changes": [
+		{
+			"address": "aws_cloudfront_distribution.this",
+			"mode": "managed",
+			"type": "aws_cloudfront_distribution",
+			"name": "this",
+			"provider_name": "registry.terraform.io/hashicorp/aws",
+			"change": {
+				"actions": [
+					"%[1]s"
+				]
+			}
+		}
+	],
+	"output_changes": {
+		"distribution_arn": {
+			"actions": [
+				"%[1]s"
+			]
+		}
+	},
+	"timestamp": "%[2]s"
+}
+`
+var TFPlanID = "2024-04-15T19-47-35Z"
+
+// NewTerraformPlanWithDiff returns a fake plan that requires apply
+func NewTerraformPlanWithDiff(configuration *terraformv1alpha1.Configuration, namespace string) *v1.Secret {
+	return newTerraformPlanStateAction(configuration, namespace, "update")
+}
+
+// NewTerraformPlanNoop returns a fake plan that requires apply
+func NewTerraformPlanNoop(configuration *terraformv1alpha1.Configuration, namespace string) *v1.Secret {
+	return newTerraformPlanStateAction(configuration, namespace, "no-op")
+}
+
+// NewTerraformPlan returns a fake plan
+func newTerraformPlanStateAction(configuration *terraformv1alpha1.Configuration, namespace string, action string) *v1.Secret {
+	encoded := &bytes.Buffer{}
+
+	w := gzip.NewWriter(encoded)
+	//nolint:errcheck
+	w.Write([]byte(fmt.Sprintf(tfplanJSON, action, TFPlanID)))
+	w.Close()
+
+	secret := &v1.Secret{}
+	secret.Name = configuration.GetTerraformPlanJSONSecretName()
+	secret.Namespace = namespace
+	secret.Data = map[string][]byte{
+		terraformv1alpha1.TerraformPlanJSONSecretKey: encoded.Bytes(),
+	}
+
+	return secret
 }
