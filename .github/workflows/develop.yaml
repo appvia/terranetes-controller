@@ -5,6 +5,11 @@ on:
   push:
     branches: [develop]
 
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
 jobs:
   develop-images:
     uses: ./.github/workflows/images.yaml
