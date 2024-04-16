@@ -1386,8 +1386,10 @@ var _ = Describe("Configuration Controller", func() {
 				// create fake costs secret
 				token := fixtures.NewCostsSecret(ctrl.ControllerNamespace, "infracost")
 				token.Namespace = ctrl.ControllerNamespace
+				// create fake plan secret
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
-				Setup(configuration, plan, state, token)
+				Setup(configuration, plan, state, token, tfplan)
 				ctrl.EnableInfracosts = true
 				ctrl.InfracostsSecretName = "infracost"
 
@@ -1421,8 +1423,10 @@ var _ = Describe("Configuration Controller", func() {
 				// create fake costs secret
 				token := fixtures.NewCostsSecret(ctrl.ControllerNamespace, "infracost")
 				token.Namespace = ctrl.ControllerNamespace
+				// create fake plan secret
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
-				Setup(configuration, plan, state, report, token)
+				Setup(configuration, plan, state, report, token, tfplan)
 				ctrl.EnableInfracosts = true
 				ctrl.InfracostsSecretName = "infracost"
 
@@ -1853,6 +1857,11 @@ terraform {
 				"--comment=Executing Terraform",
 				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color",
 				"--command=/bin/terraform show -json /run/plan.out > /run/plan.json",
+				"--command=/bin/gzip /run/plan.json",
+				"--command=/bin/mv /run/plan.json.gz /run/plan.json",
+				"--namespace=$(KUBE_NAMESPACE)",
+				"--upload=$(TERRAFORM_PLAN_JSON_NAME)=/run/plan.json",
+				"--upload=$(TERRAFORM_PLAN_OUT_NAME)=/run/plan.out",
 				"--on-error=/run/steps/terraform.failed",
 				"--on-success=/run/steps/terraform.complete",
 			}
@@ -1867,9 +1876,13 @@ terraform {
 			Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
 			Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
 
-			Expect(len(container.Env)).To(Equal(6))
+			Expect(len(container.Env)).To(Equal(8))
 			Expect(container.Env[5].Name).To(Equal("TERRAFORM_STATE_NAME"))
 			Expect(container.Env[5].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+			Expect(container.Env[6].Name).To(Equal("TERRAFORM_PLAN_OUT_NAME"))
+			Expect(container.Env[6].Value).To(Equal(configuration.GetTerraformPlanOutSecretName()))
+			Expect(container.Env[7].Name).To(Equal("TERRAFORM_PLAN_JSON_NAME"))
+			Expect(container.Env[7].Value).To(Equal(configuration.GetTerraformPlanJSONSecretName()))
 
 			Expect(container.VolumeMounts[0].Name).To(Equal("run"))
 			Expect(container.VolumeMounts[1].Name).To(Equal("source"))
@@ -2308,8 +2321,9 @@ terraform {
 				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
-				Setup(configuration, plan)
+				Setup(configuration, plan, tfplan)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
 			})
 
@@ -2684,13 +2698,14 @@ terraform {
 				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
 				report := &v1.Secret{}
 				report.Namespace = ctrl.ControllerNamespace
 				report.Name = configuration.GetTerraformPolicySecretName()
 				report.Data = map[string][]byte{"results_json.json": []byte(`{"summary":{"failed": 1}}`)}
 
-				Setup(configuration, policy, plan, report)
+				Setup(configuration, policy, plan, report, tfplan)
 			})
 
 			When("policy report is missing due to interval error", func() {
@@ -3037,8 +3052,9 @@ terraform {
 				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
-				Setup(configuration, plan)
+				Setup(configuration, plan, tfplan)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
 			})
 
@@ -3088,7 +3104,8 @@ terraform {
 				plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 				plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 				plan.Status.Succeeded = 1
-				Setup(configuration, plan)
+				tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
+				Setup(configuration, plan, tfplan)
 				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
 			})
 
@@ -3120,7 +3137,7 @@ terraform {
 
 				expected := []string{
 					"--comment=Executing Terraform",
-					"--command=/bin/terraform apply --var-file variables.tfvars.json -auto-approve -lock=false -no-color",
+					"--command=/bin/terraform apply -lock=false -no-color /run/plan.out",
 					"--on-error=/run/steps/terraform.failed",
 					"--on-success=/run/steps/terraform.complete",
 				}
@@ -3135,12 +3152,18 @@ terraform {
 				Expect(container.EnvFrom[0].SecretRef).ToNot(BeNil())
 				Expect(container.EnvFrom[0].SecretRef.Name).To(Equal("aws"))
 
-				Expect(len(container.Env)).To(Equal(6))
+				Expect(len(container.Env)).To(Equal(8))
 				Expect(container.Env[5].Name).To(Equal("TERRAFORM_STATE_NAME"))
 				Expect(container.Env[5].Value).To(Equal(configuration.GetTerraformStateSecretName()))
+				Expect(container.Env[6].Name).To(Equal("TERRAFORM_PLAN_OUT_NAME"))
+				Expect(container.Env[6].Value).To(Equal(configuration.GetTerraformPlanOutSecretName()))
+				Expect(container.Env[7].Name).To(Equal("TERRAFORM_PLAN_JSON_NAME"))
+				Expect(container.Env[7].Value).To(Equal(configuration.GetTerraformPlanJSONSecretName()))
 
-				Expect(container.VolumeMounts[0].Name).To(Equal("run"))
-				Expect(container.VolumeMounts[1].Name).To(Equal("source"))
+				Expect(container.VolumeMounts).To(HaveLen(3))
+				Expect(container.VolumeMounts[0].Name).To(Equal("planout"))
+				Expect(container.VolumeMounts[1].Name).To(Equal("run"))
+				Expect(container.VolumeMounts[2].Name).To(Equal("source"))
 			})
 
 			It("it should have the configuration labels", func() {
@@ -3184,16 +3207,18 @@ terraform {
 			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			plan.Status.Succeeded = 1
+			tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
 			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformApply)
 			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			apply.Status.Succeeded = 1
+			apply.Labels[terraformv1alpha1.JobPlanIDLabel] = fixtures.TFPlanID
 
 			// create a fake terraform state
 			state := fixtures.NewTerraformState(configuration)
 			state.Namespace = "default"
 
-			Setup(configuration, plan, apply, state)
+			Setup(configuration, plan, apply, state, tfplan)
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
 
@@ -3206,9 +3231,9 @@ terraform {
 			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
 
 			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+			Expect(cond.Message).To(Equal("Terraform apply is complete"))
 			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
 			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
-			Expect(cond.Message).To(Equal("Terraform apply is complete"))
 		})
 
 		It("should a last reconciliation time on the status", func() {
@@ -3260,6 +3285,119 @@ terraform {
 		})
 	})
 
+	When("terraform apply is not needed and state secret exists", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+			tfplan := fixtures.NewTerraformPlanNoop(configuration, ctrl.ControllerNamespace)
+
+			// create a fake terraform state
+			state := fixtures.NewTerraformState(configuration)
+			state.Namespace = "default"
+
+			Setup(configuration, plan, state, tfplan)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 10)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should indicate the terraform apply was skipped run", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+			Expect(cond.Message).To(Equal("Nothing to apply"))
+			Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonReady))
+		})
+
+		It("should a last reconciliation time on the status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.LastReconcile).ToNot(BeNil())
+			Expect(configuration.Status.LastReconcile.Time).ToNot(BeNil())
+			Expect(configuration.Status.LastReconcile.Generation).To(Equal(int64(0)))
+		})
+
+		It("should a last success reconciliation time on the status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.LastSuccess).ToNot(BeNil())
+			Expect(configuration.Status.LastSuccess.Time).ToNot(BeNil())
+			Expect(configuration.Status.LastSuccess.Generation).To(Equal(int64(0)))
+		})
+
+		It("should have a version on status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.TerraformVersion).To(Equal("1.1.9"))
+		})
+
+		It("should have a resource count on the status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Resources).ToNot(BeNil())
+			Expect(*configuration.Status.Resources).To(Equal(1))
+		})
+
+		It("should have a in resource status", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			Expect(configuration.Status.ResourceStatus).To(Equal(terraformv1alpha1.ResourcesInSync))
+		})
+
+		It("should have created a secret containing the module output", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			secret := &v1.Secret{}
+			secret.Name = configuration.Spec.WriteConnectionSecretToRef.Name
+			secret.Namespace = configuration.Namespace
+
+			found, err := kubernetes.GetIfExists(context.TODO(), cc, secret)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(found).To(BeTrue())
+			Expect(secret.Data).ToNot(BeNil())
+			Expect(secret.Data).To(HaveKey("TEST_OUTPUT"))
+			Expect(secret.Data["TEST_OUTPUT"]).To(Equal([]byte("test")))
+		})
+	})
+
+	When("terraform apply is not needed but state secret does not exist", func() {
+		BeforeEach(func() {
+			configuration = fixtures.NewValidBucketConfiguration(cfgNamespace, "bucket")
+			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
+			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
+			plan.Status.Succeeded = 1
+			tfplan := fixtures.NewTerraformPlanNoop(configuration, ctrl.ControllerNamespace)
+
+			Setup(configuration, plan, tfplan)
+			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 5)
+		})
+
+		It("should have the conditions", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+			Expect(configuration.Status.Conditions).To(HaveLen(defaultConditions))
+		})
+
+		It("should indicate the terraform apply is running", func() {
+			Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+			cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformApply)
+			Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+			Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+			Expect(cond.Message).To(Equal("Terraform apply in progress"))
+		})
+
+		It("should have created job for the terraform apply", func() {
+			list := &batchv1.JobList{}
+
+			Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+			Expect(len(list.Items)).To(Equal(2))
+		})
+	})
+
 	// SECRET KEY MAPPINGS
 	When("we have secret key mappings on the configuration", func() {
 		BeforeEach(func() {
@@ -3272,16 +3410,18 @@ terraform {
 			plan := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformPlan)
 			plan.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			plan.Status.Succeeded = 1
+			tfplan := fixtures.NewTerraformPlanWithDiff(configuration, ctrl.ControllerNamespace)
 
 			apply := fixtures.NewTerraformJob(configuration, ctrl.ControllerNamespace, terraformv1alpha1.StageTerraformApply)
 			apply.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: v1.ConditionTrue}}
 			apply.Status.Succeeded = 1
+			apply.Labels[terraformv1alpha1.JobPlanIDLabel] = fixtures.TFPlanID
 
 			// create a fake terraform state
 			state := fixtures.NewTerraformState(configuration)
 			state.Namespace = "default"
 
-			Setup(configuration, plan, apply, state)
+			Setup(configuration, plan, apply, state, tfplan)
 			result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 3)
 		})
 

@@ -1125,9 +1125,17 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 	readyCond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+		_, stateExists, err := kubernetes.GetSecretIfExists(ctx, c.cc, c.ControllerNamespace, configuration.GetTerraformStateSecretName())
+		if err != nil {
+			cond.Failed(err, "Failed to get terraform state secret")
+			return reconcile.Result{}, err
+		}
+
 		switch {
-		case !state.hasDrift:
+		case !state.hasDrift && stateExists:
 			// There is nothing to apply, we can skip it.
+			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesInSync
+			cond.Success("Nothing to apply")
 			return reconcile.Result{}, nil
 		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")

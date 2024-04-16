@@ -25,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
+	"github.com/appvia/terranetes-controller/pkg/assets"
+	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
 )
 
 // NewRunningPreloadJob returns a new running preload job
@@ -104,6 +106,7 @@ func NewFailedPreloadJob(namespace, provider string) *batchv1.Job {
 
 // NewTerraformJob returns a new terraform job
 func NewTerraformJob(configuration *terraformv1alpha1.Configuration, namespace, stage string) *batchv1.Job {
+	templateHash, _ := jobs.TemplateHash(assets.MustAsset("job.yaml.tpl"))
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configuration.Name + "-" + stage + "-1234",
@@ -114,6 +117,7 @@ func NewTerraformJob(configuration *terraformv1alpha1.Configuration, namespace, 
 				terraformv1alpha1.ConfigurationGenerationLabel: fmt.Sprintf("%d", configuration.Generation),
 				terraformv1alpha1.ConfigurationUIDLabel:        string(configuration.UID),
 				terraformv1alpha1.ConfigurationStageLabel:      stage,
+				terraformv1alpha1.JobTemplateHashLabel:         templateHash,
 			},
 		},
 		Spec: batchv1.JobSpec{},
