@@ -19,8 +19,8 @@ package jobs
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -267,10 +267,10 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 }
 
 func TemplateHash(data []byte) (string, error) {
-	hash := sha1.New()
+	hash := sha256.New()
 	_, err := hash.Write(data)
 	if err != nil {
 		return "", err
 	}
-	return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
+	return strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(hash.Sum(nil))), nil
 }
