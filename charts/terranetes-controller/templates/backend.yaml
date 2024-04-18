@@ -6,5 +6,5 @@ metadata:
   name: {{ .Values.controller.backend.name }}
 stringData:
   backend.tf: |
-    {{ .Values.controller.backend.template | nindent 4 | trim}}
+{{ .Values.controller.backend.template | indent 4 }}
 {{- end }}
