@@ -6906,6 +6906,9 @@ var awsPartition = partition{
 					Region: "ap-south-1",
 				}: endpoint{},
 				endpointKey{
+					Region: "ap-south-2",
+				}: endpoint{},
+				endpointKey{
 					Region: "ap-southeast-1",
 				}: endpoint{},
 				endpointKey{
@@ -6931,6 +6934,9 @@ var awsPartition = partition{
 				}: endpoint{},
 				endpointKey{
 					Region: "eu-south-1",
+				}: endpoint{},
+				endpointKey{
+					Region: "eu-south-2",
 				}: endpoint{},
 				endpointKey{
 					Region: "eu-west-1",
@@ -7073,6 +7079,9 @@ var awsPartition = partition{
 				}: endpoint{},
 				endpointKey{
 					Region: "eu-south-1",
+				}: endpoint{},
+				endpointKey{
+					Region: "eu-south-2",
 				}: endpoint{},
 				endpointKey{
 					Region: "eu-west-1",
@@ -17102,6 +17111,15 @@ var awsPartition = partition{
 					Hostname: "kafka-fips.ca-central-1.amazonaws.com",
 				},
 				endpointKey{
+					Region: "ca-west-1",
+				}: endpoint{},
+				endpointKey{
+					Region:  "ca-west-1",
+					Variant: fipsVariant,
+				}: endpoint{
+					Hostname: "kafka-fips.ca-west-1.amazonaws.com",
+				},
+				endpointKey{
 					Region: "eu-central-1",
 				}: endpoint{},
 				endpointKey{
@@ -17131,6 +17149,15 @@ var awsPartition = partition{
 					Hostname: "kafka-fips.ca-central-1.amazonaws.com",
 					CredentialScope: credentialScope{
 						Region: "ca-central-1",
+					},
+					Deprecated: boxedTrue,
+				},
+				endpointKey{
+					Region: "fips-ca-west-1",
+				}: endpoint{
+					Hostname: "kafka-fips.ca-west-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "ca-west-1",
 					},
 					Deprecated: boxedTrue,
 				},
@@ -39032,8 +39059,38 @@ var awsusgovPartition = partition{
 					Region: "us-gov-east-1",
 				}: endpoint{},
 				endpointKey{
+					Region:  "us-gov-east-1",
+					Variant: fipsVariant,
+				}: endpoint{
+					Hostname: "controltower-fips.us-gov-east-1.amazonaws.com",
+				},
+				endpointKey{
+					Region: "us-gov-east-1-fips",
+				}: endpoint{
+					Hostname: "controltower-fips.us-gov-east-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-gov-east-1",
+					},
+					Deprecated: boxedTrue,
+				},
+				endpointKey{
 					Region: "us-gov-west-1",
 				}: endpoint{},
+				endpointKey{
+					Region:  "us-gov-west-1",
+					Variant: fipsVariant,
+				}: endpoint{
+					Hostname: "controltower-fips.us-gov-west-1.amazonaws.com",
+				},
+				endpointKey{
+					Region: "us-gov-west-1-fips",
+				}: endpoint{
+					Hostname: "controltower-fips.us-gov-west-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-gov-west-1",
+					},
+					Deprecated: boxedTrue,
+				},
 			},
 		},
 		"data-ats.iot": service{
@@ -45397,6 +45454,9 @@ var awsisoPartition = partition{
 				endpointKey{
 					Region: "us-iso-east-1",
 				}: endpoint{},
+				endpointKey{
+					Region: "us-iso-west-1",
+				}: endpoint{},
 			},
 		},
 		"sns": service{
@@ -45909,6 +45969,13 @@ var awsisobPartition = partition{
 			},
 		},
 		"events": service{
+			Endpoints: serviceEndpoints{
+				endpointKey{
+					Region: "us-isob-east-1",
+				}: endpoint{},
+			},
+		},
+		"firehose": service{
 			Endpoints: serviceEndpoints{
 				endpointKey{
 					Region: "us-isob-east-1",
