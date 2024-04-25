@@ -86,3 +86,13 @@ teardown() {
   runit "kubectl -n ${NAMESPACE} get secret policy-${UUID} 2>&1" "grep -q NotFound"
   [[ "$status" -eq 0 ]]
 }
+
+@test "We should no longer have secrets related to the terraform plan" {
+  UUID=$(cat ${BATS_TMPDIR}/resource.uuid)
+  [[ "$status" -eq 0 ]]
+
+  runit "kubectl -n ${NAMESPACE} get secret tfplan-out-${UUID} 2>&1" "grep -q NotFound"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n ${NAMESPACE} get secret tfplan-json-${UUID} 2>&1" "grep -q NotFound"
+  [[ "$status" -eq 0 ]]
+}

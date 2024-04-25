@@ -240,9 +240,9 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			"Infracosts":        options.InfracostsSecret,
 			"InfracostsReport":  r.configuration.GetTerraformCostSecretName(),
 			"PolicyReport":      r.configuration.GetTerraformPolicySecretName(),
-			"TerraformState":    r.configuration.GetTerraformStateSecretName(),
 			"TerraformPlanJSON": r.configuration.GetTerraformPlanJSONSecretName(),
 			"TerraformPlanOut":  r.configuration.GetTerraformPlanOutSecretName(),
+			"TerraformState":    r.configuration.GetTerraformStateSecretName(),
 		},
 	}
 

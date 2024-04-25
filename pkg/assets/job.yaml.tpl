@@ -160,6 +160,10 @@ spec:
               mountPath: /run
         {{- end }}
 
+        #
+        # @step: if policy is defined, an external source is defined and the stage is planout
+        # then we need to retrieve the external source
+        #
         {{- if and (.Policy) (not .Policy.Source) (eq .Stage "plan") }}
         {{- $image := .Images.Executor }}
         {{- $imagePullPolicy := .ImagePullPolicy }}
@@ -195,8 +199,10 @@ spec:
         args:
           - --comment=Executing Terraform
           {{- if eq .Stage "plan" }}
-          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color 
-          - --command=/bin/terraform show -json /run/plan.out > /run/plan.json
+          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color -input=false
+          # We need to retain a uncompressed version, for checkov and infracosts
+          - --command=/bin/terraform show -json /run/plan.out > /run/tfplan.json
+          - --command=/bin/cp /run/tfplan.json /run/plan.json
           - --command=/bin/gzip /run/plan.json
           - --command=/bin/mv /run/plan.json.gz /run/plan.json
           - --namespace=$(KUBE_NAMESPACE)
@@ -204,7 +210,7 @@ spec:
           - --upload=$(TERRAFORM_PLAN_OUT_NAME)=/run/plan.out
           {{- end }}
           {{- if eq .Stage "apply" }}
-          - --command=/bin/terraform apply -lock=false -no-color /run/plan.out
+          - --command=/bin/terraform apply {{ .TerraformArguments }} -lock=false -no-color -input=false -auto-approve
           {{- if .SaveTerraformState }}
           - --command=/bin/terraform state pull > /run/tfstate
           - --command=/bin/gzip /run/tfstate
@@ -281,8 +287,8 @@ spec:
           - /run/bin/step
         args:
           - --comment=Evaluating the costs
-          - --command=/usr/bin/infracost breakdown --path /run/plan.json
-          - --command=/usr/bin/infracost breakdown --path /run/plan.json --format json > /run/costs.json
+          - --command=/usr/bin/infracost breakdown --path /run/tfplan.json
+          - --command=/usr/bin/infracost breakdown --path /run/tfplan.json --format json > /run/costs.json
           - --namespace=$(KUBE_NAMESPACE)
           - --upload=$(COST_REPORT_NAME)=/run/costs.json
           - --is-failure=/run/steps/terraform.failed
@@ -319,7 +325,7 @@ spec:
 
       {{- if and (.Policy) (eq .Stage "plan") }}
       {{- $configfile := "/run/checkov/checkov.yaml" }}
-      {{- $options := "--framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true" }}
+      {{- $options := "--framework terraform_plan -f /run/tfplan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true" }}
       {{- if .Policy.Source }}
       {{- $configfile = printf "%s/%s" "/run/checkov" .Policy.Source.Configuration }}
       {{- end }}

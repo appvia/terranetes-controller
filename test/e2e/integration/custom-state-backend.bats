@@ -34,6 +34,13 @@ teardown() {
   [[ "$status" -eq 0 ]]
 }
 
+@test "We should be able to clear the terraform-system namespace" {
+  runit "kubectl -n terraform-system delete jobs --all"
+  [[ "$status" -eq 0 ]]
+  runit "kubectl -n terraform-system delete pods --all"
+  [[ "$status" -eq 0 ]]
+}
+
 @test "We should be able to create a custom backend configuration secret" {
   runit "kubectl -n terraform-system delete secret terraform-backend-config || true"
   [[ "$status" -eq 0 ]]
@@ -188,7 +195,7 @@ EOF
 }
 
 @test "We should have a application secret in the configuration namespace" {
-  runit "kubectl -n ${APP_NAMESPACE} get secret custom-secret"
+  retry 10 "kubectl -n ${APP_NAMESPACE} get secret custom-secret"
   [[ "$status" -eq 0 ]]
 }
 

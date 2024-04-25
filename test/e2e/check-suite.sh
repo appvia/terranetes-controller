@@ -68,8 +68,9 @@ run_bats() {
   APP_NAMESPACE=${APP_NAMESPACE} \
     BUCKET=${BUCKET} \
     CLOUD=${CLOUD} \
-    RESOURCE_NAME=bucket-${CLOUD:-"test"} \
+    INFRACOST_API_KEY=${INFRACOST_API_KEY} \
     NAMESPACE="terraform-system" \
+    RESOURCE_NAME=bucket-${CLOUD:-"test"} \
     USE_CHART=${USE_CHART} \
     VERSION=${VERSION} \
     bats ${BATS_OPTIONS} ${@} || exit 1

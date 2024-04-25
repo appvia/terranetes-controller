@@ -26,7 +26,7 @@ teardown() {
 }
 
 @test "We should skip infracost when not running on aws cloud" {
-  [[ -z ${INFRACOST_API_KEY} ]] && touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -z "${INFRACOST_API_KEY}" ]] && touch ${BATS_PARENT_TMPNAME}.skip
   [[ "${CLOUD}" == "aws" ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 

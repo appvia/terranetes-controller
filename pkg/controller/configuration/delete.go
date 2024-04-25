@@ -177,6 +177,8 @@ func (c *Controller) ensureConfigurationSecretsDeleted(configuration *terraformv
 			configuration.GetTerraformCostSecretName(),
 			configuration.GetTerraformPolicySecretName(),
 			configuration.GetTerraformStateSecretName(),
+			configuration.GetTerraformPlanOutSecretName(),
+			configuration.GetTerraformPlanJSONSecretName(),
 		}
 
 		for _, name := range names {
