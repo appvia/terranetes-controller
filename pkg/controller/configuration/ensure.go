@@ -726,7 +726,9 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 		case cond.GetCondition().IsFailed(configuration.GetGeneration()):
 			return reconcile.Result{}, controller.ErrIgnore
 
+		// @step: has this generation of the configuration already been planned?
 		case cond.GetCondition().IsComplete(configuration.GetGeneration()):
+
 			if !configuration.Spec.EnableDriftDetection || configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] == "" {
 				// @note: this is effectively checking the status of plan condition - if the condition is True
 				// for the given generation we can say the plan has already been run and can move on
@@ -734,7 +736,8 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			}
 		}
 
-		// @step: should we save the terraform state
+		// @step: should we save the terraform state? - when the backend being used it not kubernetes, we need to
+		// save the state, as we process this later
 		saveState := c.HasBackendTemplate()
 		if state.provider != nil && state.provider.HasBackendTemplate() {
 			saveState = true
@@ -874,7 +877,8 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 	}
 }
 
-// ensureTerraformPlanSecret is responsible for ensuring the plan ran successfully
+// ensureTerraformPlanSecret is responsible for retrieving the terraform plan secret, which is produced during the plan
+// stage
 func (c *Controller) ensureTerraformPlanSecret(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
@@ -883,6 +887,7 @@ func (c *Controller) ensureTerraformPlanSecret(configuration *terraformv1alpha1.
 		secret.Name = configuration.GetTerraformPlanJSONSecretName()
 		secret.Namespace = c.ControllerNamespace
 
+		// @step: check the secret exists
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
 			cond.Failed(err, "Failed to get terraform plan secret (%s/%s)", c.ControllerNamespace, secret.Name)
@@ -894,7 +899,10 @@ func (c *Controller) ensureTerraformPlanSecret(configuration *terraformv1alpha1.
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
+
+		// @step: store the terraform plan in the state
 		state.tfplan = secret
+
 		return reconcile.Result{}, nil
 	}
 }
@@ -999,8 +1007,7 @@ func (c *Controller) ensurePolicyStatus(configuration *terraformv1alpha1.Configu
 	key := "results_json.json"
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		switch {
-		case state.checkovConstraint == nil:
+		if state.checkovConstraint == nil {
 			cond.Success("Security policy is not configured")
 
 			return reconcile.Result{}, nil
@@ -1095,12 +1102,14 @@ func (c *Controller) ensureDriftDetection(configuration *terraformv1alpha1.Confi
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		if configuration.Spec.EnableDriftDetection &&
-			configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] != configuration.Status.DriftTimestamp {
-			// @note: everytime we run a drift we update the timestamp on the status, this is used to ensure we don't
-			// try and rerun the drift. We should remove the annotation from the configuration but that has issues as it
-			// updates the resourceVersion which make updating the status conflict.
-			configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]
+
+		if configuration.Spec.EnableDriftDetection {
+			if configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation] != configuration.Status.DriftTimestamp {
+				// @note: everytime we run a drift we update the timestamp on the status, this is used to ensure we don't
+				// try and rerun the drift. We should remove the annotation from the configuration but that has issues as it
+				// updates the resourceVersion which make updating the status conflict.
+				configuration.Status.DriftTimestamp = configuration.GetAnnotations()[terraformv1alpha1.DriftAnnotation]
+			}
 		}
 
 		tfplan, err := terraform.DecodePlan(state.tfplan.Data[terraformv1alpha1.TerraformPlanJSONSecretKey])
@@ -1125,18 +1134,27 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 	readyCond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
-		_, stateExists, err := kubernetes.GetSecretIfExists(ctx, c.cc, c.ControllerNamespace, configuration.GetTerraformStateSecretName())
+		// @step: retrieve the terraform state secret, if it exists
+		_, found, err := kubernetes.GetSecretIfExists(ctx, c.cc, c.ControllerNamespace, configuration.GetTerraformStateSecretName())
 		if err != nil {
 			cond.Failed(err, "Failed to get terraform state secret")
+
 			return reconcile.Result{}, err
 		}
 
 		switch {
-		case !state.hasDrift && stateExists:
-			// There is nothing to apply, we can skip it.
+		case !state.hasDrift && found:
+			log.WithFields(log.Fields{
+				"namespace": configuration.Namespace,
+				"name":      configuration.Name,
+			}).Info("no drift detected, skipping terraform apply")
+
+			// @step: there is nothing to apply, we can skip it.
 			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesInSync
 			cond.Success("Nothing to apply")
+
 			return reconcile.Result{}, nil
+
 		case configuration.NeedsApproval() && !configuration.Spec.EnableAutoApproval:
 			cond.ActionRequired("Waiting for terraform apply annotation to be set to true")
 			// update the ready condition to reflect the new state
@@ -1147,6 +1165,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			return reconcile.Result{}, controller.ErrIgnore
 		}
 
+		// @step: decode the terraform plan
 		tfplan, err := terraform.DecodePlan(state.tfplan.Data[terraformv1alpha1.TerraformPlanJSONSecretKey])
 		if err != nil {
 			cond.Failed(err, "Failed to decode the terraform plan")

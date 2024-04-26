@@ -225,8 +225,6 @@ func uploadSecret(ctx context.Context, cc client.Client, namespace, name, path s
 	if err != nil {
 		return err
 	}
-	original := secret.DeepCopy()
-
 	// @step: define the secret
 	if secret.Data == nil {
 		secret.Data = make(map[string][]byte)
@@ -238,5 +236,5 @@ func uploadSecret(ctx context.Context, cc client.Client, namespace, name, path s
 		return cc.Create(ctx, secret)
 	}
 
-	return cc.Patch(ctx, secret, client.MergeFrom(original))
+	return cc.Update(ctx, secret)
 }

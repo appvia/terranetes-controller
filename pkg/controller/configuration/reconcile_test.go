@@ -757,7 +757,7 @@ var _ = Describe("Configuration Controller", func() {
 
 	verifyPolicyArguments := []string{
 		"--comment=Evaluating Against Security Policy",
-		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
+		"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/tfplan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
 		"--command=/bin/cat /run/results_cli.txt",
 		"--namespace=$(KUBE_NAMESPACE)",
 		"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -1855,8 +1855,9 @@ terraform {
 
 			expected := []string{
 				"--comment=Executing Terraform",
-				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color",
-				"--command=/bin/terraform show -json /run/plan.out > /run/plan.json",
+				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color -input=false",
+				"--command=/bin/terraform show -json /run/plan.out > /run/tfplan.json",
+				"--command=/bin/cp /run/tfplan.json /run/plan.json",
 				"--command=/bin/gzip /run/plan.json",
 				"--command=/bin/mv /run/plan.json.gz /run/plan.json",
 				"--namespace=$(KUBE_NAMESPACE)",
@@ -2459,7 +2460,7 @@ terraform {
 
 			expected := []string{
 				"--comment=Evaluating Against Security Policy",
-				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
+				"--command=/usr/local/bin/checkov --config /run/checkov/config.yaml --framework terraform_plan -f /run/tfplan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
 				"--command=/bin/cat /run/results_cli.txt",
 				"--namespace=$(KUBE_NAMESPACE)",
 				"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -2665,7 +2666,7 @@ terraform {
 				Expect(job.Spec.Template.Spec.Containers[1].Command).To(Equal([]string{"/run/bin/step"}))
 				Expect(job.Spec.Template.Spec.Containers[1].Args).To(Equal([]string{
 					"--comment=Evaluating Against Security Policy",
-					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/plan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
+					"--command=/usr/local/bin/checkov --config /run/checkov/checkov.yaml --framework terraform_plan -f /run/tfplan.json --soft-fail -o json -o cli --output-file-path /run --repo-root-for-plan-enrichment /data --download-external-modules true >/dev/null",
 					"--command=/bin/cat /run/results_cli.txt",
 					"--namespace=$(KUBE_NAMESPACE)",
 					"--upload=$(POLICY_REPORT_NAME)=/run/results_json.json",
@@ -3137,7 +3138,7 @@ terraform {
 
 				expected := []string{
 					"--comment=Executing Terraform",
-					"--command=/bin/terraform apply -lock=false -no-color /run/plan.out",
+					"--command=/bin/terraform apply --var-file variables.tfvars.json -lock=false -no-color -input=false -auto-approve",
 					"--on-error=/run/steps/terraform.failed",
 					"--on-success=/run/steps/terraform.complete",
 				}
