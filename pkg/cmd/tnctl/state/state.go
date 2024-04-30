@@ -43,6 +43,7 @@ func NewCommand(factory cmd.Factory) *cobra.Command {
 	}
 
 	c.AddCommand(
+		NewGetCommand(factory),
 		NewListCommand(factory),
 		NewCleanCommand(factory),
 	)
