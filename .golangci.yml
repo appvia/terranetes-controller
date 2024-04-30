@@ -3,7 +3,7 @@ run:
   go: "1.21"
   tests: false
   timeout: 10m
-  skip-dirs:
+  exclude-dirs:
     - hack
     - tests
 
