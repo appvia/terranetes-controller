@@ -29,6 +29,9 @@ type Config struct {
 	BackendTemplate string
 	// BackoffLimit is the number of times we are willing to allow a job to fail
 	BackoffLimit int
+	// ConfigurationThreshold is the max number of configurations we are willing
+	// to run at the same time
+	ConfigurationThreshold float64
 	// DriftControllerInterval is the interval for the controller to check for drift
 	DriftControllerInterval time.Duration
 	// DriftInterval is the minimum interval between drift checks

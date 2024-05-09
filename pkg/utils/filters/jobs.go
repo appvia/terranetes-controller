@@ -41,6 +41,23 @@ func Jobs(list *batchv1.JobList) *Filter {
 	return &Filter{list: list}
 }
 
+// IsRunning returns the number of running jobs
+func (j *Filter) IsRunning() int {
+	list, found := j.List()
+	if !found {
+		return 0
+	}
+
+	running := 0
+	for i := 0; i < len(list.Items); i++ {
+		if list.Items[i].Status.Active > 0 {
+			running++
+		}
+	}
+
+	return running
+}
+
 // WithName filters on the configuration name
 func (j *Filter) WithName(name string) *Filter {
 	j.name = name

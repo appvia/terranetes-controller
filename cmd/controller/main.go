@@ -69,6 +69,7 @@ func main() {
 	flags.DurationVar(&config.DriftInterval, "drift-interval", 3*time.Hour, "The minimum duration the controller will wait before triggering a drift check")
 	flags.DurationVar(&config.ResyncPeriod, "resync-period", 5*time.Hour, "The resync period for the controller")
 	flags.DurationVar(&config.RevisionExpiration, "revision-expiration", 0, "The duration a revision should be kept is not referenced or latest (zero means disabled)")
+	flags.Float64Var(&config.ConfigurationThreshold, "configurations-threshold", 0, "The maximum percentage of configurations that can be run at any one time")
 	flags.Float64Var(&config.DriftThreshold, "drift-threshold", 0.10, "The maximum percentage of configurations that can be run drift detection at any one time")
 	flags.IntVar(&config.APIServerPort, "apiserver-port", 10080, "The port the apiserver should be listening on")
 	flags.IntVar(&config.MetricsPort, "metrics-port", 9090, "The port the metric endpoint binds to")

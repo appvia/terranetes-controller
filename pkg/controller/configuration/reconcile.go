@@ -34,6 +34,8 @@ import (
 type state struct {
 	// auth is an optional secret which is used for authentication
 	auth *v1.Secret
+	// configurations is a list of configurations in the cluster
+	configurations *terraformv1alpha1.ConfigurationList
 	// checkovConstraint is the policy constraint for this configuration
 	checkovConstraint *terraformv1alpha1.PolicyConstraint
 	// hasDrift is a flag to indicate if the configuration has drift
@@ -123,6 +125,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			finalizer.EnsurePresent(configuration),
 			c.ensureReconcileAnnotation(configuration),
 			c.ensureCapturedState(configuration, state),
+			c.ensureConfigurationThreshold(configuration, state),
 			c.ensureNoActivity(configuration, state),
 			c.ensureCostSecret(configuration),
 			c.ensureValueFromSecret(configuration, state),

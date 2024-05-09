@@ -61,6 +61,8 @@ type Controller struct {
 	cache *pcache.Cache
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
+	// ConfigurationThreshold is the max number of configurations we are willing to run at the same time
+	ConfigurationThreshold float64
 	// ControllerNamespace is the namespace where the runner is running
 	ControllerNamespace string
 	// BackendTemplate is the name of the secret in the controller namespace which holds a
