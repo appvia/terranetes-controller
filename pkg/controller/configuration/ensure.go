@@ -69,10 +69,20 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Config
 	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
 
 	return func(ctx context.Context) (reconcile.Result, error) {
+
 		// @step: retrieve a list of policies in the cluster
 		policies := &terraformv1alpha1.PolicyList{}
 		if err := c.cc.List(ctx, policies); err != nil {
 			cond.Failed(err, "Failed to list the policies in cluster")
+
+			return reconcile.Result{}, err
+		}
+
+		// @step: retrieve a list of all the confugrations in the cluster - shouldn't have much impact
+		// as it's a cached client and we defer to the cache
+		configurations := &terraformv1alpha1.ConfigurationList{}
+		if err := c.cc.List(ctx, configurations); err != nil {
+			cond.Failed(err, "Failed to list the configurations in cluster")
 
 			return reconcile.Result{}, err
 		}
@@ -90,8 +100,48 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Config
 			configuration.Status.ResourceStatus = terraformv1alpha1.ResourcesOutOfSync
 		}
 
+		state.configurations = configurations
 		state.jobs = jobs
 		state.policies = policies
+
+		return reconcile.Result{}, nil
+	}
+}
+
+// ensureConfigurationThreshold is responsible for ensuring we do not exceed the configuration threshold
+// for the number of jobs we can run at the same time
+func (c *Controller) ensureConfigurationThreshold(configuration *terraformv1alpha1.Configuration, state *state) controller.EnsureFunc {
+	cond := controller.ConditionMgr(configuration, corev1alpha1.ConditionReady, c.recorder)
+
+	return func(ctx context.Context) (reconcile.Result, error) {
+		switch {
+		// @step: we can skip if the threshold is not set
+		case c.ConfigurationThreshold == 0:
+			return reconcile.Result{}, nil
+
+			// @step: we can skip if we only have one configuration
+		case len(state.configurations.Items) == 1:
+			return reconcile.Result{}, nil
+		}
+
+		// @step: we need to calculate the number of configurations we are running
+		total := len(state.configurations.Items)
+		running := filters.Jobs(state.jobs).IsRunning()
+		percent := (float64(running) / float64(total)) * 100
+
+		log.WithFields(log.Fields{
+			"running":         running,
+			"running_percent": percent,
+			"threshold":       c.ConfigurationThreshold,
+			"total":           total,
+		}).Debug("checking configuration is within the threshold")
+
+		// @step: if we are over the threshold, we need to wait
+		if percent > (c.ConfigurationThreshold * 100) {
+			cond.Warning("Configuration is over the threshold for running configurations, waiting in queue")
+
+			return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
+		}
 
 		return reconcile.Result{}, nil
 	}

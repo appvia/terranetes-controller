@@ -126,6 +126,153 @@ var _ = Describe("Configuration Controller Default Injection", func() {
 			Expect(cc.Create(context.Background(), secret)).To(Succeed())
 		})
 
+		Context("and the configuration and the number of running jobs has exceeded the threshold", func() {
+			running := 3
+
+			BeforeEach(func() {
+				ctrl.ConfigurationThreshold = 0.2
+
+				for i := 1; i <= running; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					Expect(cc.Create(context.Background(), cfg)).To(Succeed())
+
+					job := fixtures.NewRunningTerraformJob(cfg, terraformv1alpha1.StageTerraformApply)
+					job.Namespace = ctrl.ControllerNamespace
+					Expect(cc.Create(context.Background(), job)).To(Succeed())
+				}
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).To(BeNil())
+			})
+
+			It("should not create a plan job", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(running))
+			})
+
+			It("should not have deferred the configuration", func() {
+				Expect(result.Requeue).To(BeFalse())
+				Expect(result.RequeueAfter).To(Equal(30 * time.Second))
+			})
+
+			It("Should have updated the configuration status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(string(corev1alpha1.ReasonWarning)))
+				Expect(cond.Message).To(Equal("Configuration is over the threshold for running configurations, waiting in queue"))
+			})
+		})
+
+		Context("and the configuration and the number of running jobs does not exceeded the threshold", func() {
+			running := 5
+			total := 10
+
+			BeforeEach(func() {
+				ctrl.ConfigurationThreshold = 0.8
+
+				// create 10 configurations, of which 5 are running
+				for i := 1; i <= total; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					Expect(cc.Create(context.Background(), cfg)).To(Succeed())
+				}
+
+				for i := 1; i <= running; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					job := fixtures.NewRunningTerraformJob(cfg, terraformv1alpha1.StageTerraformApply)
+					job.Namespace = ctrl.ControllerNamespace
+
+					Expect(cc.Create(context.Background(), job)).To(Succeed())
+				}
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).To(BeNil())
+			})
+
+			It("should not create a plan job", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(running + 1))
+			})
+
+			It("should not have deferred the configuration", func() {
+				Expect(result.Requeue).To(BeFalse())
+				Expect(result.RequeueAfter).To(Equal(10 * time.Second))
+			})
+
+			It("Should have updated the configuration status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(string(corev1alpha1.ReasonInProgress)))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+		})
+
+		Context("and the configuration and the number of jobs does not exceeded the threshold", func() {
+			running := 6
+			stopped := 4
+			total := 10
+
+			BeforeEach(func() {
+				ctrl.ConfigurationThreshold = 0.8
+
+				// create 10 configurations, of which 5 are running
+				for i := 1; i <= total; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					Expect(cc.Create(context.Background(), cfg)).To(Succeed())
+				}
+
+				for i := 1; i <= stopped; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					job := fixtures.NewCompletedTerraformJob(cfg, terraformv1alpha1.StageTerraformPlan)
+					job.Namespace = ctrl.ControllerNamespace
+
+					Expect(cc.Create(context.Background(), job)).To(Succeed())
+				}
+
+				for i := 1; i <= running; i++ {
+					cfg := fixtures.NewValidBucketConfiguration(namespace, fmt.Sprintf("test-%d", i))
+					job := fixtures.NewRunningTerraformJob(cfg, terraformv1alpha1.StageTerraformApply)
+					job.Namespace = ctrl.ControllerNamespace
+
+					Expect(cc.Create(context.Background(), job)).To(Succeed())
+				}
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should not error", func() {
+				Expect(rerr).To(BeNil())
+			})
+
+			It("should not create a plan job", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
+				Expect(len(list.Items)).To(Equal(running + stopped + 1))
+			})
+
+			It("should not have deferred the configuration", func() {
+				Expect(result.Requeue).To(BeFalse())
+				Expect(result.RequeueAfter).To(Equal(10 * time.Second))
+			})
+
+			It("Should have updated the configuration status", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+				cond := configuration.Status.GetCondition(terraformv1alpha1.ConditionTerraformPlan)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(string(corev1alpha1.ReasonInProgress)))
+				Expect(cond.Message).To(Equal("Terraform plan is running"))
+			})
+		})
+
 		Context("and the referenced secret does not exist", func() {
 			BeforeEach(func() {
 				secret := &v1.Secret{}
