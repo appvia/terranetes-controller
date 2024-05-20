@@ -59,17 +59,17 @@ spec:
             {{- if .Values.controller.backend.name }}
             - --backend-template={{ .Values.controller.backend.name }}
             {{- end }}
+            - --configurations-threshold={{ .Values.controller.configuration_rate_threshold }}
             - --drift-controller-interval={{ .Values.controller.driftControllerInterval }}
             - --drift-interval={{ .Values.controller.driftInterval }}
             - --drift-threshold={{ .Values.controller.driftThreshold }}
-            - --configurations-threshold={{ .Values.controller.configuration_rate_threshold }}
             - --enable-context-injection={{ .Values.controller.enableContextInjection }}
             - --enable-namespace-protection={{ .Values.controller.enableNamespaceProtection }}
             - --enable-revision-update-protection={{ .Values.controller.enableRevisionUpdateProtection }}
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
-            - --enable-webhooks={{ .Values.controller.webhooks.enabled }}
             - --enable-webhook-prefix={{ .Values.controller.webhooks.prefix }}
+            - --enable-webhooks={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
             {{- range .Values.controller.executorSecrets }}
             - --executor-secret={{ . }}
