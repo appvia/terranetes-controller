@@ -62,6 +62,7 @@ spec:
             - --drift-controller-interval={{ .Values.controller.driftControllerInterval }}
             - --drift-interval={{ .Values.controller.driftInterval }}
             - --drift-threshold={{ .Values.controller.driftThreshold }}
+            - --configurations-threshold={{ .Values.controller.configuration_rate_threshold }}
             - --enable-context-injection={{ .Values.controller.enableContextInjection }}
             - --enable-namespace-protection={{ .Values.controller.enableNamespaceProtection }}
             - --enable-revision-update-protection={{ .Values.controller.enableRevisionUpdateProtection }}
