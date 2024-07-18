@@ -224,6 +224,7 @@ func (o *RevisionCommand) Run(ctx context.Context) error {
 }
 
 // retrieveSummary returns a summary of the checks performed
+// nolint:unparam
 func (o *RevisionCommand) retrieveSummary() error {
 	o.Println("\n%v Passed: %d, Warning: %d",
 		emoji.GreenCircle, o.Verify.PassedCount(), o.Verify.WarningCount())
