@@ -136,7 +136,7 @@ var _ = Describe("Policy Validation", func() {
 		}{
 			{
 				CheckName: "it should fail with invalid namespace selector",
-				Expected:  "spec.constraints.checkov.selector.namespace is invalid, \"BAD\" is not a valid pod selector operator",
+				Expected:  "spec.constraints.checkov.selector.namespace is invalid, \"BAD\" is not a valid label selector operator",
 				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
 					policy.Selector = &terraformv1alpha1.Selector{
 						Namespace: &metav1.LabelSelector{
@@ -149,7 +149,7 @@ var _ = Describe("Policy Validation", func() {
 			},
 			{
 				CheckName: "it should fail with invalid resource selector",
-				Expected:  "spec.constraints.checkov.selector.resource is invalid, \"BAD\" is not a valid pod selector operator",
+				Expected:  "spec.constraints.checkov.selector.resource is invalid, \"BAD\" is not a valid label selector operator",
 				Change: func(policy *terraformv1alpha1.PolicyConstraint) {
 					policy.Selector = &terraformv1alpha1.Selector{
 						Resource: &metav1.LabelSelector{
