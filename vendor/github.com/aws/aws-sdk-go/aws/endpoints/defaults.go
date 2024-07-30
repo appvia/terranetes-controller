@@ -13069,6 +13069,9 @@ var awsPartition = partition{
 					Region: "eu-central-1",
 				}: endpoint{},
 				endpointKey{
+					Region: "eu-central-2",
+				}: endpoint{},
+				endpointKey{
 					Region: "eu-north-1",
 				}: endpoint{},
 				endpointKey{
@@ -22523,6 +22526,9 @@ var awsPartition = partition{
 					Hostname: "network-firewall-fips.ca-central-1.amazonaws.com",
 				},
 				endpointKey{
+					Region: "ca-west-1",
+				}: endpoint{},
+				endpointKey{
 					Region: "eu-central-1",
 				}: endpoint{},
 				endpointKey{
@@ -24477,6 +24483,14 @@ var awsPartition = partition{
 					Hostname: "portal.sso.ca-central-1.amazonaws.com",
 					CredentialScope: credentialScope{
 						Region: "ca-central-1",
+					},
+				},
+				endpointKey{
+					Region: "ca-west-1",
+				}: endpoint{
+					Hostname: "portal.sso.ca-west-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "ca-west-1",
 					},
 				},
 				endpointKey{
@@ -32553,6 +32567,9 @@ var awsPartition = partition{
 					Region: "ca-central-1",
 				}: endpoint{},
 				endpointKey{
+					Region: "ca-west-1",
+				}: endpoint{},
+				endpointKey{
 					Region: "eu-central-1",
 				}: endpoint{},
 				endpointKey{
@@ -33619,6 +33636,20 @@ var awsPartition = partition{
 				endpointKey{
 					Region: "us-west-2",
 				}: endpoint{},
+			},
+		},
+		"tax": service{
+			PartitionEndpoint: "aws-global",
+			IsRegionalized:    boxedFalse,
+			Endpoints: serviceEndpoints{
+				endpointKey{
+					Region: "aws-global",
+				}: endpoint{
+					Hostname: "tax.us-east-1.amazonaws.com",
+					CredentialScope: credentialScope{
+						Region: "us-east-1",
+					},
+				},
 			},
 		},
 		"textract": service{
@@ -39973,16 +40004,12 @@ var awsusgovPartition = partition{
 			Endpoints: serviceEndpoints{
 				endpointKey{
 					Region: "us-gov-east-1",
-				}: endpoint{
-					Hostname:  "autoscaling-plans.us-gov-east-1.amazonaws.com",
-					Protocols: []string{"http", "https"},
-				},
+				}: endpoint{},
 				endpointKey{
 					Region:  "us-gov-east-1",
 					Variant: fipsVariant,
 				}: endpoint{
-					Hostname:  "autoscaling-plans.us-gov-east-1.amazonaws.com",
-					Protocols: []string{"http", "https"},
+					Hostname: "autoscaling-plans.us-gov-east-1.amazonaws.com",
 				},
 				endpointKey{
 					Region: "us-gov-east-1-fips",
@@ -39994,16 +40021,12 @@ var awsusgovPartition = partition{
 				},
 				endpointKey{
 					Region: "us-gov-west-1",
-				}: endpoint{
-					Hostname:  "autoscaling-plans.us-gov-west-1.amazonaws.com",
-					Protocols: []string{"http", "https"},
-				},
+				}: endpoint{},
 				endpointKey{
 					Region:  "us-gov-west-1",
 					Variant: fipsVariant,
 				}: endpoint{
-					Hostname:  "autoscaling-plans.us-gov-west-1.amazonaws.com",
-					Protocols: []string{"http", "https"},
+					Hostname: "autoscaling-plans.us-gov-west-1.amazonaws.com",
 				},
 				endpointKey{
 					Region: "us-gov-west-1-fips",
@@ -40969,20 +40992,40 @@ var awsusgovPartition = partition{
 		"directconnect": service{
 			Endpoints: serviceEndpoints{
 				endpointKey{
-					Region: "us-gov-east-1",
+					Region: "fips-us-gov-east-1",
 				}: endpoint{
-					Hostname: "directconnect.us-gov-east-1.amazonaws.com",
+					Hostname: "directconnect-fips.us-gov-east-1.amazonaws.com",
 					CredentialScope: credentialScope{
 						Region: "us-gov-east-1",
 					},
+					Deprecated: boxedTrue,
 				},
 				endpointKey{
-					Region: "us-gov-west-1",
+					Region: "fips-us-gov-west-1",
 				}: endpoint{
-					Hostname: "directconnect.us-gov-west-1.amazonaws.com",
+					Hostname: "directconnect-fips.us-gov-west-1.amazonaws.com",
 					CredentialScope: credentialScope{
 						Region: "us-gov-west-1",
 					},
+					Deprecated: boxedTrue,
+				},
+				endpointKey{
+					Region: "us-gov-east-1",
+				}: endpoint{},
+				endpointKey{
+					Region:  "us-gov-east-1",
+					Variant: fipsVariant,
+				}: endpoint{
+					Hostname: "directconnect-fips.us-gov-east-1.amazonaws.com",
+				},
+				endpointKey{
+					Region: "us-gov-west-1",
+				}: endpoint{},
+				endpointKey{
+					Region:  "us-gov-west-1",
+					Variant: fipsVariant,
+				}: endpoint{
+					Hostname: "directconnect-fips.us-gov-west-1.amazonaws.com",
 				},
 			},
 		},
@@ -46372,6 +46415,9 @@ var awsisoPartition = partition{
 				endpointKey{
 					Region: "us-iso-east-1",
 				}: endpoint{},
+				endpointKey{
+					Region: "us-iso-west-1",
+				}: endpoint{},
 			},
 		},
 		"appconfig": service{
@@ -47679,6 +47725,13 @@ var awsisobPartition = partition{
 			},
 		},
 		"api.sagemaker": service{
+			Endpoints: serviceEndpoints{
+				endpointKey{
+					Region: "us-isob-east-1",
+				}: endpoint{},
+			},
+		},
+		"apigateway": service{
 			Endpoints: serviceEndpoints{
 				endpointKey{
 					Region: "us-isob-east-1",
