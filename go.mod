@@ -41,7 +41,7 @@ require (
 	github.com/tcnksm/ghr v0.16.2
 	github.com/tidwall/gjson v1.17.3
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.22.0
 	golang.org/x/tools v0.23.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.3
