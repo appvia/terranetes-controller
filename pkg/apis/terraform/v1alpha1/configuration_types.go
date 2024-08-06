@@ -107,6 +107,8 @@ const (
 	TerraformBackendSecretKey = "backend.tf"
 	// TerraformVariablesConfigMapKey is the key name for the terraform variables in the configmap
 	TerraformVariablesConfigMapKey = "variables.tfvars.json"
+	// TerraformTFVarsConfigMapKey is the key name for any TFVars file in the configmap
+	TerraformTFVarsConfigMapKey = "variables.tfvars"
 	// TerraformProviderConfigMapKey is the key name for the terraform variables in the configmap
 	TerraformProviderConfigMapKey = "provider.tf"
 	// TerraformJobTemplateConfigMapKey is the key name for the job template in the configmap
@@ -394,6 +396,10 @@ type ConfigurationSpec struct {
 	// is taken from a secret
 	// +kubebuilder:validation:Optional
 	ValueFrom ValueFromList `json:"valueFrom,omitempty"`
+	// TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+	// Variables are set, values in Variables will override values with the same key in TFVars.
+	// +kubebuilder:validation:Optional
+	TFVars string `json:"tfVars,omitempty"`
 	// TerraformVersion provides the ability to override the default terraform version. Before
 	// changing this field its best to consult with platform administrator. As the
 	// value of this field is used to change the tag of the terraform container image.

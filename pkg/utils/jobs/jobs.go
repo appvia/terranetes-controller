@@ -191,6 +191,9 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 	if r.configuration.Spec.HasVariables() {
 		arguments = fmt.Sprintf("--var-file %s", terraformv1alpha1.TerraformVariablesConfigMapKey)
 	}
+	if r.configuration.Spec.TFVars != "" {
+		arguments = fmt.Sprintf("--var-file %s %s", terraformv1alpha1.TerraformTFVarsConfigMapKey, arguments)
+	}
 
 	params := map[string]interface{}{
 		"GenerateName": fmt.Sprintf("%s-%s-", r.configuration.Name, stage),

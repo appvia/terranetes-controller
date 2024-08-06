@@ -130,6 +130,11 @@ spec:
                         changing this field its best to consult with platform administrator. As the
                         value of this field is used to change the tag of the terraform container image.
                       type: string
+                    tfVars:
+                      description: |-
+                        TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+                        Variables are set, values in Variables will override values with the same key in TFVars.
+                      type: string
                     valueFrom:
                       description: |-
                         ValueFromSource is a collection of value from sources, where the source of the value

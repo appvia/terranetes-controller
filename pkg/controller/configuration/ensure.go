@@ -708,6 +708,12 @@ func (c *Controller) ensureJobConfigurationSecret(configuration *terraformv1alph
 			secret.Data[terraformv1alpha1.TerraformVariablesConfigMapKey] = encoded.Bytes()
 		}
 
+		if configuration.Spec.TFVars != "" {
+			secret.Data[terraformv1alpha1.TerraformTFVarsConfigMapKey] = []byte(configuration.Spec.TFVars)
+		} else {
+			delete(secret.Data, terraformv1alpha1.TerraformTFVarsConfigMapKey)
+		}
+
 		// @step: copy any authentication details into the secret
 		if state.auth != nil {
 			for k, v := range state.auth.Data {
