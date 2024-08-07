@@ -452,7 +452,12 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alpha1
 		}
 
 		secret := &v1.Secret{}
-		secret.Namespace = configuration.Namespace
+		if configuration.Spec.Auth.Namespace == "" {
+			secret.Namespace = configuration.Namespace
+		} else {
+			secret.Namespace = configuration.Spec.Auth.Namespace
+		}
+
 		secret.Name = configuration.Spec.Auth.Name
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
