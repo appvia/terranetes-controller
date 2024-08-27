@@ -120,14 +120,14 @@ EOF
 }
 
 @test "We should be able to provision a secret with infracost api token" {
-  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+  [[ ${INFRACOST_API_KEY} == ""   ]] && skip "INFRACOST_API_KEY is not set"
 
   if kubectl -n ${NAMESPACE} get secret infracost-api; then
     skip "infracost token already exists"
   fi
 
   runit "kubectl -n ${NAMESPACE} create secret generic infracost-api --from-literal=INFRACOST_API_KEY=${INFRACOST_API_KEY}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} get secret infracost-api"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }

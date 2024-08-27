@@ -107,41 +107,41 @@ teardown() {
 }
 
 @test "We should have a secret in the terraform namespace containing the report" {
-  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+  [[ ${INFRACOST_API_KEY} == ""   ]] && skip "INFRACOST_API_KEY is not set"
 
   UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 
   runit "kubectl -n ${NAMESPACE} get secret costs-${UUID}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} get secret costs-${UUID} -o json" "jq -r '.data[\"costs.json\"]'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should see the cost integration is enabled" {
-  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+  [[ ${INFRACOST_API_KEY} == ""   ]] && skip "INFRACOST_API_KEY is not set"
 
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.enabled' | grep -q true"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should see the cost associated to the configuration" {
-  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+  [[ ${INFRACOST_API_KEY} == ""   ]] && skip "INFRACOST_API_KEY is not set"
 
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.monthly' | grep -q '\$0'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.costs.hourly' | grep -q '\$0'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a copy of the infracost report in the configuration namespace" {
-  [[ "${INFRACOST_API_KEY}" == "" ]] && skip "INFRACOST_API_KEY is not set"
+  [[ ${INFRACOST_API_KEY} == ""   ]] && skip "INFRACOST_API_KEY is not set"
 
   UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json | jq -r '.metadata.uid')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 
   runit "kubectl -n ${APP_NAMESPACE} get secret costs-${UUID}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get secret costs-${UUID} -o json" "jq -r '.data[\"costs.json\"]'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
