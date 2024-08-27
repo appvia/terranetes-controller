@@ -89,7 +89,7 @@ EOF
 @test "We should have a completed watcher job in the application namespace" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | egrep -q '(Complete|SuccessCriteriaMet)'"
+  retry 30 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | egrep -q '(Complete|SuccessCriteriaMet)'"
   [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
   [[ $status -eq 0   ]]
