@@ -19,22 +19,22 @@ load ../lib/helper
 
 setup() {
   [[ ! -f ${BATS_PARENT_TMPNAME}.skip ]] || skip "skip remaining tests"
-  [[ "${CLOUD}" == "aws" ]] || skip "skip for non-aws cloud"
+  [[ ${CLOUD} == "aws"   ]] || skip "skip for non-aws cloud"
 }
 
 teardown() {
-  [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -n $BATS_TEST_COMPLETED   ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
 @test "We should clean the environment before running the tests" {
   runit "kubectl -n ${APP_NAMESPACE} delete po --all"
-  [[ "${status}" -eq 0 ]]
+  [[ ${status} -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete jobs --all"
-  [[ "${status}" -eq 0 ]]
+  [[ ${status} -eq 0   ]]
 }
 
 @test "We should be able to create a checkov policy to block resources" {
-  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+  cat << EOF > ${BATS_TMPDIR}/resource.yaml
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Policy
 metadata:
@@ -46,13 +46,13 @@ spec:
       skipChecks: []
 EOF
   runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get policies.terraform.appvia.io denied"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be create a configuration to verify the policy blocks" {
-  cat <<EOF >> ${BATS_TMPDIR}/resource.yaml
+  cat << EOF >> ${BATS_TMPDIR}/resource.yaml
 ---
 apiVersion: terraform.appvia.io/v1alpha1
 kind: Configuration
@@ -67,74 +67,74 @@ spec:
     bucket_name: ${RESOURCE_NAME}-co
 EOF
   runit "kubectl -n ${APP_NAMESPACE} apply -f ${BATS_TMPDIR}/resource.yaml"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a job created in the terraform namespace running the plan" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${NAMESPACE} get job -l ${labels}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a watcher job created in the configuration namespace" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a completed watcher job in the application namespace" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME}-co,terraform.appvia.io/stage=plan"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
-  [[ "$status" -eq 0 ]]
+  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | egrep -q '(Complete|SuccessCriteriaMet)'"
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a secret containing the evaluation in the terraform namespace" {
   UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co -o json | jq -r '.metadata.uid')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} get secret policy-${UUID}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} get secret policy-${UUID} -o json" "jq -r '.data.results_json.json'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a copy the policy report in the configuration namespace" {
   UUID=$(kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME}-co -o json | jq -r '.metadata.uid')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get secret policy-${UUID}"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get secret policy-${UUID} -o json" "jq -r '.data.results_json.json'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should see the conditions indicate the configuration failed policy" {
   POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME}-co -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 
   runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'EVALUATING AGAINST SECURITY POLICY'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q 'FAILED for resource'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a event indicating the configuration failed policy" {
   expected="Configuration has failed security policy, refusing to continue"
 
   runit "kubectl -n ${APP_NAMESPACE} get event" "grep -q 'Configuration has failed security policy, refusing to continue'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be able to cleanup the environment" {
   runit "kubectl -n ${APP_NAMESPACE} delete configuration ${RESOURCE_NAME}-co"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete po --all"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl delete policy denied"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }

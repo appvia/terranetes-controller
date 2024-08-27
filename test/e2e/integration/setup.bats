@@ -22,21 +22,21 @@ setup() {
 }
 
 teardown() {
-  [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -n $BATS_TEST_COMPLETED   ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
 @test "We should be able to setup the helm repository" {
   runit "helm repo add appvia https://terranetes-controller.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "helm repo update"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be able to deploy the helm chart" {
   CHART="charts/terranetes-controller"
 
   if [[ ${USE_CHART} == "false" ]]; then
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
+    cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 2
 controller:
   enableNamespaceProtection: true
@@ -50,7 +50,7 @@ EOF
   else
     CHART="appvia/terranetes-controller"
 
-    cat <<EOF > ${BATS_TMPDIR}/my_values.yaml
+    cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
   enableNamespaceProtection: true
   costs:
@@ -59,36 +59,36 @@ EOF
   fi
 
   runit "helm upgrade --install terranetes-controller ${CHART} -n ${NAMESPACE} --create-namespace --values ${BATS_TMPDIR}/my_values.yaml"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should see the custom resource types" {
   runit "kubectl get crd configurations.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get crd policies.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get crd providers.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get crd contexts.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get crd plans.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl get crd revisions.terraform.appvia.io"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have the controller webhooks enabled" {
   runit "kubectl get validatingwebhookconfigurations validating-webhook-configuration"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have the terranetes-controller helm chart deployed" {
   runit "helm ls -n ${NAMESPACE}" "grep -v deployed"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be able to create a namespace for testing" {
-  cat <<EOF > ${BATS_TMPDIR}/resource.yaml
+  cat << EOF > ${BATS_TMPDIR}/resource.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -97,26 +97,26 @@ metadata:
   name: ${APP_NAMESPACE}
 EOF
   runit "kubectl apply -f ${BATS_TMPDIR}/resource.yaml"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete job --all --wait=false"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete po --all --wait=false"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a clean terraform namespace for testing" {
   runit "kubectl delete policies.terraform.appvia.io --all"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} delete job --all"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} delete po -l terraform.appvia.io/configuration"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete job --all --wait=false"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete po --all --wait=false"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} delete ev --all --wait=false"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be able to provision a secret with infracost api token" {
