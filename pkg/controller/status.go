@@ -98,6 +98,7 @@ func (c *ConditionManager) transition(cond *corev1alpha1.Condition, methodFunc f
 }
 
 // ActionRequired sets the condition to action required
+// golint: govet
 func (c *ConditionManager) ActionRequired(message string, args ...interface{}) {
 	c.transition(c.condition, func() {
 		c.condition.ObservedGeneration = c.resource.GetGeneration()

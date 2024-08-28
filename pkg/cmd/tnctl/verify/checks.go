@@ -241,6 +241,7 @@ func (c *CheckResult) Check(title string, call func(o CheckInterface) error) err
 		result = &CheckGroup{Title: title}
 		c.Groups = append(c.Groups, result)
 
+		//nolint:govet
 		fmt.Fprintf(c.Writer, "%v %s\n",
 			emoji.JapaneseSymbolForBeginner,
 			CheckTitle.Sprintf(title))
