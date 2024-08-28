@@ -114,6 +114,7 @@ func (c *Controller) ensureErrorDetection(configuration *terraformv1alpha1.Confi
 				return reconcile.Result{}, controller.ErrIgnore
 			}
 			if m.MatchString(string(logs)) {
+				//nolint:govet
 				cond.ActionRequired(detectors[i].Message)
 			}
 		}
