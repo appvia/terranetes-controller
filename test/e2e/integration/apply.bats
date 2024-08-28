@@ -22,51 +22,51 @@ setup() {
 }
 
 teardown() {
-  [[ -n "$BATS_TEST_COMPLETED" ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -n $BATS_TEST_COMPLETED   ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
 @test "We should be able to approve the terraform configuration" {
   runit "kubectl -n ${APP_NAMESPACE} annotate configurations.terraform.appvia.io ${RESOURCE_NAME} \"terraform.appvia.io/apply\"=true --overwrite"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a job created in the terraform-system ready to run" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
-  retry 50 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
-  [[ "$status" -eq 0 ]]
+  retry 50 "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | egrep -q '(Complete|SuccessCriteriaMet)'"
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a job created in the application namespace ready to watch apply" {
   labels="terraform.appvia.io/configuration=${RESOURCE_NAME},terraform.appvia.io/stage=apply"
 
-  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | grep -q Complete"
-  [[ "$status" -eq 0 ]]
+  retry 10 "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].type' | egrep -q '(Complete|SuccessCriteriaMet)'"
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get job -l ${labels} -o json" "jq -r '.items[0].status.conditions[0].status' | grep -q True"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have a configuration sucessfully applied" {
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].name' | grep -q 'Terraform Apply'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].reason' | grep -q 'Ready'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].status' | grep -q 'True'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.conditions[3].type' | grep -q 'TerraformApply'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should be able to view the logs from the apply" {
   POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=apply -o json | jq -r '.items[0].metadata.name')
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
   runit "kubectl -n ${APP_NAMESPACE} logs ${POD} 2>&1" "grep -q '\[build\] completed'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
 
 @test "We should have the terraform version on the status" {
   runit "kubectl -n ${APP_NAMESPACE} get configuration ${RESOURCE_NAME} -o json" "jq -r '.status.terraformVersion' | grep -q '[0-9]\+\.[0-9]\+\.[0-9]\+'"
-  [[ "$status" -eq 0 ]]
+  [[ $status -eq 0   ]]
 }
