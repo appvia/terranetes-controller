@@ -23,7 +23,7 @@ require (
 	github.com/golangci/golangci-lint v1.57.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/gorilla/mux v1.8.1
-	github.com/hashicorp/go-getter v1.7.5
+	github.com/hashicorp/go-getter v1.7.6
 	github.com/hashicorp/terraform-config-inspect v0.0.0-20240701073647-9fc3669f7553
 	github.com/jpillora/backoff v1.0.0
 	github.com/manifoldco/promptui v0.9.0
