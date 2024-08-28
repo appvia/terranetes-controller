@@ -37,6 +37,9 @@ var (
 	ErrIgnore = errors.New("resource is being ignored")
 	// DefaultEnsureHandler is the default sequential runner for a list of ensure functions
 	DefaultEnsureHandler = EnsureRunner{}
+)
+
+const (
 	// ResourceReady is the default message we use for the ready condition, if the
 	// controller has not set a message
 	ResourceReady = "Resource ready"
