@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/configurations"
@@ -168,6 +169,18 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		"policy_image":       c.PolicyImage,
 		"terraform_image":    c.TerraformImage,
 	}).Info("adding the configuration controller")
+
+	// @step: ensure the resource limits are valid 
+	for _, c := range []string{
+		c.DefaultExecutorCPULimit,
+		c.DefaultExecutorCPURequest,
+		c.DefaultExecutorMemoryLimit, 
+		c.DefaultExecutorMemoryRequest,
+	} {
+		if _, err := resource.ParseQuantity(c); err != nil {
+			return fmt.Errorf("invalid resource quantity: %q, error: %w", c, err) 
+		}
+	}
 
 	switch {
 	case c.ControllerNamespace == "":
