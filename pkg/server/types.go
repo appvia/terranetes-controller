@@ -59,6 +59,14 @@ type Config struct {
 	EnableWebhookPrefix bool
 	// ExecutorImage is the image to use for the executor
 	ExecutorImage string
+	// ExecutorMemoryRequest is the memory request for the executor container (e.g. 1Gi, 2Gi)   
+	ExecutorMemoryRequest string 
+	// ExecutorMemoryLimit is the memory limit for the executor container (e.g. 1Gi, 2Gi) 
+	ExecutorMemoryLimit string 
+	// ExecutorCPURequest is the CPU request for the executor container (e.g. 1, 2) 
+	ExecutorCPURequest string 
+	// ExecutorCPULimit is the CPU limit for the executor container (e.g. 1, 2) 
+	ExecutorCPULimit string 
 	// ExecutorSecrets is a list of additional secrets to be added to the executor
 	ExecutorSecrets []string
 	// InfracostsSecretName is the name of the secret that contains the cost token and endpoint

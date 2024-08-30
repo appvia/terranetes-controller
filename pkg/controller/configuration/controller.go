@@ -89,6 +89,14 @@ type Controller struct {
 	// executors job everytime - these are configured by the platform team on the
 	// cli options
 	ExecutorSecrets []string
+	// DefaultExecutorMemoryRequest is the default memory request for the executor container 
+	DefaultExecutorMemoryRequest string 
+	// DefaultExecutorMemoryLimit is the default memory limit for the executor container 
+	DefaultExecutorMemoryLimit string 
+	// DefaultExecutorCPURequest is the default CPU request for the executor container 
+	DefaultExecutorCPURequest string 
+	// DefaultExecutorCPULimit is the default CPU limit for the executor container 
+	DefaultExecutorCPULimit string 
 	// InfracostsImage is the image to use for all infracost jobs
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token

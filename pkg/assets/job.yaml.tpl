@@ -260,11 +260,11 @@ spec:
         {{- end }}
         resources:
           limits:
-            cpu: 1
-            memory: 1Gi
+            cpu: {{ .DefaultExecutorCPULimit }}  
+            memory: {{ .DefaultExecutorMemoryLimit }} 
           requests:
-            cpu: 5m
-            memory: 32Mi
+            cpu: {{ .DefaultExecutorCPURequest }} 
+            memory: {{ .DefaultExecutorMemoryRequest }} 
         securityContext:
           capabilities:
             drop: [ALL]
