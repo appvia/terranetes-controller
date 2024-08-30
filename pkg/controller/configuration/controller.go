@@ -27,6 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	cache "k8s.io/client-go/tools/cache"
@@ -41,7 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/handlers/configurations"
@@ -90,14 +90,14 @@ type Controller struct {
 	// executors job everytime - these are configured by the platform team on the
 	// cli options
 	ExecutorSecrets []string
-	// DefaultExecutorMemoryRequest is the default memory request for the executor container 
-	DefaultExecutorMemoryRequest string 
-	// DefaultExecutorMemoryLimit is the default memory limit for the executor container 
-	DefaultExecutorMemoryLimit string 
-	// DefaultExecutorCPURequest is the default CPU request for the executor container 
-	DefaultExecutorCPURequest string 
-	// DefaultExecutorCPULimit is the default CPU limit for the executor container 
-	DefaultExecutorCPULimit string 
+	// DefaultExecutorMemoryRequest is the default memory request for the executor container
+	DefaultExecutorMemoryRequest string
+	// DefaultExecutorMemoryLimit is the default memory limit for the executor container
+	DefaultExecutorMemoryLimit string
+	// DefaultExecutorCPURequest is the default CPU request for the executor container
+	DefaultExecutorCPURequest string
+	// DefaultExecutorCPULimit is the default CPU limit for the executor container
+	DefaultExecutorCPULimit string
 	// InfracostsImage is the image to use for all infracost jobs
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
@@ -170,15 +170,15 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		"terraform_image":    c.TerraformImage,
 	}).Info("adding the configuration controller")
 
-	// @step: ensure the resource limits are valid 
+	// @step: ensure the resource limits are valid
 	for _, c := range []string{
 		c.DefaultExecutorCPULimit,
 		c.DefaultExecutorCPURequest,
-		c.DefaultExecutorMemoryLimit, 
+		c.DefaultExecutorMemoryLimit,
 		c.DefaultExecutorMemoryRequest,
 	} {
 		if _, err := resource.ParseQuantity(c); err != nil {
-			return fmt.Errorf("invalid resource quantity: %q, error: %w", c, err) 
+			return fmt.Errorf("invalid resource quantity: %q, error: %w", c, err)
 		}
 	}
 

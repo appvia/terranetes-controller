@@ -53,13 +53,13 @@ type Options struct {
 	// BackoffLimit is the number of times we are willing to allow a job to fail
 	// before we give up
 	BackoffLimit int
-	// DefaultExecutorMemoryRequest is the default memory request for the executor  
-	DefaultExecutorMemoryRequest string 
-	// DefaultExecutorMemoryLimit is the default memory limit for the executor 
-	DefaultExecutorMemoryLimit string 
-	// DefaultExecutorCPURequest is the default CPU request for the executor 
-	DefaultExecutorCPURequest string 
-	// DefaultExecutorCPULimit is the default CPU limit for the executor 
+	// DefaultExecutorMemoryRequest is the default memory request for the executor
+	DefaultExecutorMemoryRequest string
+	// DefaultExecutorMemoryLimit is the default memory limit for the executor
+	DefaultExecutorMemoryLimit string
+	// DefaultExecutorCPURequest is the default CPU request for the executor
+	DefaultExecutorCPURequest string
+	// DefaultExecutorCPULimit is the default CPU limit for the executor
 	DefaultExecutorCPULimit string
 	// EnableInfraCosts is the flag to enable cost analysis
 	EnableInfraCosts bool
@@ -215,8 +215,8 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 		}),
 		"DefaultExecutorMemoryRequest": options.DefaultExecutorMemoryRequest,
-		"DefaultExecutorMemoryLimit":   options.DefaultExecutorMemoryLimit, 
-		"DefaultExecutorCPURequest":    options.DefaultExecutorCPURequest, 
+		"DefaultExecutorMemoryLimit":   options.DefaultExecutorMemoryLimit,
+		"DefaultExecutorCPURequest":    options.DefaultExecutorCPURequest,
 		"DefaultExecutorCPULimit":      options.DefaultExecutorCPULimit,
 		"Provider": map[string]interface{}{
 			"Name":           r.provider.Name,
