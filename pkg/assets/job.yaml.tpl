@@ -259,9 +259,15 @@ spec:
               optional: false
         {{- end }}
         resources:
+          {{- if or (ne .DefaultExecutorCPULimit "") (ne .DefaultExecutorMemoryLimit "") }}
           limits:
+            {{- if ne .DefaultExecutorCPULimit "" }}
             cpu: {{ .DefaultExecutorCPULimit }}  
+            {{- end }} 
+            {{- if ne .DefaultExecutorMemoryLimit "" }} 
             memory: {{ .DefaultExecutorMemoryLimit }} 
+            {{- end }}
+          {{- end }}
           requests:
             cpu: {{ .DefaultExecutorCPURequest }} 
             memory: {{ .DefaultExecutorMemoryRequest }} 

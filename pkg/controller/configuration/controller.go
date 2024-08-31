@@ -177,6 +177,9 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		c.DefaultExecutorMemoryLimit,
 		c.DefaultExecutorMemoryRequest,
 	} {
+		if c == "" {
+			continue
+		}
 		if _, err := resource.ParseQuantity(c); err != nil {
 			return fmt.Errorf("invalid resource quantity: %q, error: %w", c, err)
 		}
