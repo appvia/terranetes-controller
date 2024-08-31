@@ -56,18 +56,22 @@ func TestController(t *testing.T) {
 func makeFakeController(cc client.Client) *Controller {
 	recorder := &controllertests.FakeRecorder{}
 	ctrl := &Controller{
-		cc:                  cc,
-		kc:                  kfake.NewSimpleClientset(),
-		cache:               cache.New(5*time.Minute, 10*time.Minute),
-		recorder:            recorder,
-		BackoffLimit:        2,
-		EnableInfracosts:    false,
-		EnableWatchers:      true,
-		ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
-		InfracostsImage:     "infracosts/infracost:latest",
-		ControllerNamespace: "terraform-system",
-		PolicyImage:         "bridgecrew/checkov:2.0.1140",
-		TerraformImage:      "hashicorp/terraform:1.1.9",
+		cc:                           cc,
+		kc:                           kfake.NewSimpleClientset(),
+		cache:                        cache.New(5*time.Minute, 10*time.Minute),
+		recorder:                     recorder,
+		BackoffLimit:                 2,
+		ControllerNamespace:          "terraform-system",
+		DefaultExecutorCPULimit:      "1",
+		DefaultExecutorCPURequest:    "5m",
+		DefaultExecutorMemoryLimit:   "1Gi",
+		DefaultExecutorMemoryRequest: "32Mi",
+		EnableInfracosts:             false,
+		EnableWatchers:               true,
+		ExecutorImage:                "ghcr.io/appvia/terranetes-executor",
+		InfracostsImage:              "infracosts/infracost:latest",
+		PolicyImage:                  "bridgecrew/checkov:2.0.1140",
+		TerraformImage:               "hashicorp/terraform:1.1.9",
 	}
 
 	return ctrl
@@ -928,17 +932,21 @@ var _ = Describe("Configuration Controller", func() {
 
 		recorder = &controllertests.FakeRecorder{}
 		ctrl = &Controller{
-			cc:                  cc,
-			kc:                  kfake.NewSimpleClientset(),
-			cache:               cache.New(5*time.Minute, 10*time.Minute),
-			recorder:            recorder,
-			EnableInfracosts:    false,
-			EnableWatchers:      true,
-			ExecutorImage:       "ghcr.io/appvia/terranetes-executor",
-			InfracostsImage:     "infracosts/infracost:latest",
-			ControllerNamespace: "default",
-			PolicyImage:         "bridgecrew/checkov:2.0.1140",
-			TerraformImage:      "hashicorp/terraform:1.1.9",
+			cc:                           cc,
+			kc:                           kfake.NewSimpleClientset(),
+			cache:                        cache.New(5*time.Minute, 10*time.Minute),
+			recorder:                     recorder,
+			DefaultExecutorCPULimit:      "1",
+			DefaultExecutorCPURequest:    "5m",
+			DefaultExecutorMemoryLimit:   "1Gi",
+			DefaultExecutorMemoryRequest: "32Mi",
+			EnableInfracosts:             false,
+			EnableWatchers:               true,
+			ExecutorImage:                "ghcr.io/appvia/terranetes-executor",
+			InfracostsImage:              "infracosts/infracost:latest",
+			ControllerNamespace:          "default",
+			PolicyImage:                  "bridgecrew/checkov:2.0.1140",
+			TerraformImage:               "hashicorp/terraform:1.1.9",
 		}
 		ctrl.cache.SetDefault(cfgNamespace, fixtures.NewNamespace(cfgNamespace))
 	}

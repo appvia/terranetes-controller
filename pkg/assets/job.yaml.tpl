@@ -259,12 +259,18 @@ spec:
               optional: false
         {{- end }}
         resources:
+          {{- if or (ne .DefaultExecutorCPULimit "") (ne .DefaultExecutorMemoryLimit "") }}
           limits:
-            cpu: 1
-            memory: 1Gi
+            {{- if ne .DefaultExecutorCPULimit "" }}
+            cpu: {{ .DefaultExecutorCPULimit }}  
+            {{- end }} 
+            {{- if ne .DefaultExecutorMemoryLimit "" }} 
+            memory: {{ .DefaultExecutorMemoryLimit }} 
+            {{- end }}
+          {{- end }}
           requests:
-            cpu: 5m
-            memory: 32Mi
+            cpu: {{ .DefaultExecutorCPURequest }} 
+            memory: {{ .DefaultExecutorMemoryRequest }} 
         securityContext:
           capabilities:
             drop: [ALL]
