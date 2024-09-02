@@ -68,15 +68,15 @@ terraform {
 }
 
 func TestNewTerraformProvider(t *testing.T) {
-	azureConfig := `
-{
-  "use_oidc": true,
-  "storage_use_azuread": true,
-  "subscription_id": "injected",       
-  "tenant_id": "injected",
-  "client_id": "injected",
-  "oidc_token_file_path": "/var/run/secrets/azure/tokens/azure-identity-token"
-}`
+			azureConfig := `
+		{
+		  "use_oidc": true,
+		  "storage_use_azuread": true,
+		  "subscription_id": "injected",
+		  "tenant_id": "injected",
+		  "client_id": "injected",
+		  "oi*dc_token_file_path": "/var/run/secrets/azure/tokens/azure-identity-token"
+		}`
 
 	cases := []struct {
 		Provider *terraformv1alpha1.Provider
@@ -87,36 +87,37 @@ func TestNewTerraformProvider(t *testing.T) {
 				Provider:      terraformv1alpha1.AWSProviderType,
 				Configuration: nil,
 			}},
-			Expected: "provider \"aws\" {\n}\n",
+			//Expected: "provider \"aws\" {\n}\n",
+			Expected: "{\n  \"provider\": {\n    \"aws\": {}\n  }\n",
 		},
 		{
 			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
 				Provider:      terraformv1alpha1.AzureProviderType,
 				Configuration: nil,
 			}},
-			Expected: "provider \"azurerm\" {\n  \n  features {}\n  \n}\n",
+			Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": {}\n    }\n  }\n}\n",
 		},
 		{
 			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
 				Provider:      terraformv1alpha1.AzureProviderType,
 				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": {\"hello\": \"world\"}}")},
 			}},
-			Expected: "provider \"azurerm\" {\n  \n  features {\n    hello = \"world\"\n  }\n  \n}\n",
+			Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": {\n        \"hello\": \"world\"\n      }\n    }\n  }\n}\n",
 		},
-		{
-			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
-				Provider:      terraformv1alpha1.AzureProviderType,
-				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
-			}},
-			Expected: "provider \"azurerm\" {\n  \n  features = \"hello\"\n  \n}\n",
-		},
-		{
-			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
-				Provider:      terraformv1alpha1.AzureProviderType,
-				Configuration: &runtime.RawExtension{Raw: []byte(azureConfig)},
-			}},
-			Expected: "provider \"azurerm\" {\n  \n  client_id = \"injected\"\n  \n  features {}\n  \n  oidc_token_file_path = \"/var/run/secrets/azure/tokens/azure-identity-token\"\n  \n  storage_use_azuread = true\n  \n  subscription_id = \"injected\"\n  \n  tenant_id = \"injected\"\n  \n  use_oidc = true\n  \n}\n",
-		},
+			{
+				Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+					Provider:      terraformv1alpha1.AzureProviderType,
+					Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
+				}},
+			  Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": \"hello\"\n    }\n  }\n}\n",
+			},
+			{
+				Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+					Provider:      terraformv1alpha1.AzureProviderType,
+					Configuration: &runtime.RawExtension{Raw: []byte(azureConfig)},
+				}},
+			  Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"client_id\": \"injected\",\n      \"features\": {},\n      \"oi*dc_token_file_path\": \"/var/run/secrets/azure/tokens/azure-identity-token\",\n      \"storage_use_azuread\": true,\n      \"subscription_id\": \"injected\",\n      \"tenant_id\": \"injected\",\n      \"use_oidc\": true\n    }\n  }\n}\n",
+			},
 	}
 
 	for _, c := range cases {

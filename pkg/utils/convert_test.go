@@ -36,3 +36,15 @@ func TestBytesCountSI(t *testing.T) {
 		assert.Equal(t, c.Expected, ByteCountSI(c.Bytes))
 	}
 }
+
+func TestPrettyJSON(t *testing.T) {
+	cases := []struct {
+		Data     []byte
+		Expected []byte
+	}{
+		{[]byte(`{"foo":"bar"}`), []byte("{\n  \"foo\": \"bar\"\n}\n")},
+	}
+	for _, c := range cases {
+		assert.Equal(t, string(c.Expected), string(PrettyJSON(c.Data)))
+	}
+}

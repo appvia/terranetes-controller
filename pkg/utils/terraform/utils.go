@@ -27,6 +27,7 @@ import (
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/utils/template"
+	"github.com/appvia/terranetes-controller/pkg/utils"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
@@ -78,10 +79,13 @@ terraform {
 `
 
 // providerTF is a template for a terraform provider
-var providerTF = `provider "{{ .provider }}" {
-{{- if .configuration }}
-  {{ toHCL .configuration | nindent 2 }}
-{{- end }}
+var providerTF = `{
+	"provider": {
+		"{{ .provider }}": {
+		{{- if .configuration }}
+		{{ toJson .configuration }}
+		{{- end }}
+		}
 }
 `
 
@@ -155,10 +159,15 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 		}
 	}
 
-	return Template(providerTF, map[string]interface{}{
+	rendered, err := Template(providerTF, map[string]interface{}{
 		"configuration": config,
 		"provider":      provider,
 	})
+	if err != nil {
+		return nil, err
+	} 
+
+	return utils.PrettyJSON(rendered), nil
 }
 
 // BackendOptions are the options used to generate the backend
