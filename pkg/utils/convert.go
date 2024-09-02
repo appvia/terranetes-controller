@@ -23,7 +23,7 @@ func ByteCountSI(b int64) string {
 	return fmt.Sprintf("%.1f%cB", float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-// PrettyJSON returns a pretty-printed version of the given JSON data. 
+// PrettyJSON returns a pretty-printed version of the given JSON data.
 func PrettyJSON(data []byte) []byte {
 	return pretty.Pretty(data)
 }

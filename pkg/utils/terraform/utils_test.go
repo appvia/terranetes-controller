@@ -68,7 +68,7 @@ terraform {
 }
 
 func TestNewTerraformProvider(t *testing.T) {
-			azureConfig := `
+	azureConfig := `
 		{
 		  "use_oidc": true,
 		  "storage_use_azuread": true,
@@ -104,20 +104,20 @@ func TestNewTerraformProvider(t *testing.T) {
 			}},
 			Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": {\n        \"hello\": \"world\"\n      }\n    }\n  }\n}\n",
 		},
-			{
-				Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
-					Provider:      terraformv1alpha1.AzureProviderType,
-					Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
-				}},
-			  Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": \"hello\"\n    }\n  }\n}\n",
-			},
-			{
-				Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
-					Provider:      terraformv1alpha1.AzureProviderType,
-					Configuration: &runtime.RawExtension{Raw: []byte(azureConfig)},
-				}},
-			  Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"client_id\": \"injected\",\n      \"features\": {},\n      \"oi*dc_token_file_path\": \"/var/run/secrets/azure/tokens/azure-identity-token\",\n      \"storage_use_azuread\": true,\n      \"subscription_id\": \"injected\",\n      \"tenant_id\": \"injected\",\n      \"use_oidc\": true\n    }\n  }\n}\n",
-			},
+		{
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte("{\"features\": \"hello\"}}")},
+			}},
+			Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"features\": \"hello\"\n    }\n  }\n}\n",
+		},
+		{
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AzureProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte(azureConfig)},
+			}},
+			Expected: "{\n  \"provider\": {\n    \"azurerm\": {\n      \"client_id\": \"injected\",\n      \"features\": {},\n      \"oi*dc_token_file_path\": \"/var/run/secrets/azure/tokens/azure-identity-token\",\n      \"storage_use_azuread\": true,\n      \"subscription_id\": \"injected\",\n      \"tenant_id\": \"injected\",\n      \"use_oidc\": true\n    }\n  }\n}\n",
+		},
 	}
 
 	for _, c := range cases {

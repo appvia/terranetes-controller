@@ -26,8 +26,8 @@ import (
 	"io"
 
 	terraformv1alpha1 "github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
-	"github.com/appvia/terranetes-controller/pkg/utils/template"
 	"github.com/appvia/terranetes-controller/pkg/utils"
+	"github.com/appvia/terranetes-controller/pkg/utils/template"
 )
 
 // TerraformStateOutputsKey is the key for the terraform state outputs
@@ -165,7 +165,7 @@ func NewTerraformProvider(provider string, configuration []byte) ([]byte, error)
 	})
 	if err != nil {
 		return nil, err
-	} 
+	}
 
 	return utils.PrettyJSON(rendered), nil
 }
