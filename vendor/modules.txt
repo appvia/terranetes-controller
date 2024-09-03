@@ -949,14 +949,6 @@ github.com/pelletier/go-toml/v2/unstable
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 ## explicit
 github.com/peterbourgon/diskv
-# github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e
-## explicit; go 1.15
-github.com/pkg/diff
-github.com/pkg/diff/ctxt
-github.com/pkg/diff/edit
-github.com/pkg/diff/intern
-github.com/pkg/diff/myers
-github.com/pkg/diff/write
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
@@ -1024,6 +1016,7 @@ github.com/rivo/uniseg
 github.com/rodaine/hclencoder
 # github.com/rogpeppe/go-internal v1.12.0
 ## explicit; go 1.20
+github.com/rogpeppe/go-internal/diff
 github.com/rogpeppe/go-internal/fmtsort
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
@@ -2222,8 +2215,8 @@ k8s.io/utils/pointer
 k8s.io/utils/ptr
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# mvdan.cc/editorconfig v0.2.1-0.20231228180347-1925077f8eb2
-## explicit; go 1.20
+# mvdan.cc/editorconfig v0.3.0
+## explicit; go 1.21
 mvdan.cc/editorconfig
 # mvdan.cc/gofumpt v0.6.0
 ## explicit; go 1.20
@@ -2232,8 +2225,8 @@ mvdan.cc/gofumpt/internal/govendor/go/doc/comment
 mvdan.cc/gofumpt/internal/govendor/go/format
 mvdan.cc/gofumpt/internal/govendor/go/printer
 mvdan.cc/gofumpt/internal/version
-# mvdan.cc/sh/v3 v3.8.0
-## explicit; go 1.21
+# mvdan.cc/sh/v3 v3.9.0
+## explicit; go 1.22
 mvdan.cc/sh/v3/cmd/shfmt
 mvdan.cc/sh/v3/fileutil
 mvdan.cc/sh/v3/syntax

@@ -18,8 +18,7 @@ import (
 	"strings"
 
 	maybeio "github.com/google/renameio/v2/maybe"
-	diffpkg "github.com/pkg/diff"
-	diffwrite "github.com/pkg/diff/write"
+	diffpkg "github.com/rogpeppe/go-internal/diff"
 	"golang.org/x/term"
 	"mvdan.cc/editorconfig"
 
@@ -64,12 +63,9 @@ var (
 	parser            *syntax.Parser
 	printer           *syntax.Printer
 	readBuf, writeBuf bytes.Buffer
+	color             bool
 
 	copyBuf = make([]byte, 32*1024)
-
-	in    io.Reader = os.Stdin
-	out   io.Writer = os.Stdout
-	color bool
 
 	version = "(devel)" // to match the default from runtime/debug
 
@@ -186,10 +182,6 @@ For more information, see 'man shfmt' and https://github.com/mvdan/sh.
 	if minify.val {
 		simplify.val = true
 	}
-	// TODO(mvdan): remove sometime in 2024.
-	if os.Getenv("SHFMT_NO_EDITORCONFIG") == "true" {
-		fmt.Fprintln(os.Stderr, "SHFMT_NO_EDITORCONFIG was always undocumented; use any parser or printer flag to disable editorconfig support")
-	}
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case lang.short, lang.long,
@@ -225,7 +217,7 @@ For more information, see 'man shfmt' and https://github.com/mvdan/sh.
 	if os.Getenv("FORCE_COLOR") != "" {
 		color = true
 	} else if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
-	} else if f, ok := out.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+	} else if term.IsTerminal(int(os.Stdout.Fd())) {
 		color = true
 	}
 	if flag.NArg() == 0 || (flag.NArg() == 1 && flag.Arg(0) == "-") {
@@ -307,7 +299,7 @@ func formatStdin(name string) error {
 			return nil
 		}
 	}
-	src, err := io.ReadAll(in)
+	src, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return err
 	}
@@ -429,7 +421,7 @@ func formatPath(path string, checkShebang bool) error {
 		readBuf.Write(copyBuf[:n])
 	}
 	if find.val {
-		fmt.Fprintln(out, path)
+		fmt.Println(path)
 		return nil
 	}
 	if _, err := io.CopyBuffer(&readBuf, f, copyBuf); err != nil {
@@ -486,16 +478,14 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 		// must be standard input; fine to return
 		// TODO: change the default behavior to be compact,
 		// and allow using --to-json=pretty or --to-json=indent.
-		return typedjson.EncodeOptions{Indent: "\t"}.Encode(out, node)
+		return typedjson.EncodeOptions{Indent: "\t"}.Encode(os.Stdout, node)
 	}
 	writeBuf.Reset()
 	printer.Print(&writeBuf, node)
 	res := writeBuf.Bytes()
 	if !bytes.Equal(src, res) {
 		if list.val {
-			if _, err := fmt.Fprintln(out, path); err != nil {
-				return err
-			}
+			fmt.Println(path)
 		}
 		if write.val {
 			info, err := os.Lstat(path)
@@ -509,20 +499,46 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 			}
 		}
 		if diff.val {
-			opts := []diffwrite.Option{}
-			if color {
-				opts = append(opts, diffwrite.TerminalColor())
+			diffBytes := diffpkg.Diff(path+".orig", src, path, res)
+			if !color {
+				os.Stdout.Write(diffBytes)
+				return errChangedWithDiff
 			}
-			if err := diffpkg.Text(path+".orig", path, src, res, out, opts...); err != nil {
-				return fmt.Errorf("computing diff: %s", err)
+			// The first three lines are the header with the filenames, including --- and +++,
+			// and are marked in bold.
+			current := terminalBold
+			os.Stdout.WriteString(current)
+			for i, line := range bytes.SplitAfter(diffBytes, []byte("\n")) {
+				last := current
+				switch {
+				case i < 3: // the first three lines are bold
+				case bytes.HasPrefix(line, []byte("@@")):
+					current = terminalCyan
+				case bytes.HasPrefix(line, []byte("-")):
+					current = terminalRed
+				case bytes.HasPrefix(line, []byte("+")):
+					current = terminalGreen
+				default:
+					current = terminalReset
+				}
+				if current != last {
+					os.Stdout.WriteString(current)
+				}
+				os.Stdout.Write(line)
 			}
 			return errChangedWithDiff
 		}
 	}
 	if !list.val && !write.val && !diff.val {
-		if _, err := out.Write(res); err != nil {
-			return err
-		}
+		os.Stdout.Write(res)
 	}
 	return nil
 }
+
+const (
+	terminalGreen = "\u001b[32m"
+	terminalRed   = "\u001b[31m"
+	terminalCyan  = "\u001b[36m"
+	terminalReset = "\u001b[0m"
+	terminalBold  = "\u001b[1m"
+)
