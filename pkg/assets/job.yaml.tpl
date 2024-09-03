@@ -51,8 +51,8 @@ spec:
             items:
               - key: backend.tf
                 path: backend.tf
-              - key: provider.tf
-                path: provider.tf
+              - key: provider.tf.json
+                path: provider.tf.json
               {{- if .EnableVariables }}
               - key: variables.tfvars.json
                 path: variables.tfvars.json

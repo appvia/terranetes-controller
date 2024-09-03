@@ -1956,8 +1956,8 @@ terraform {
 			Expect(backend).To(Equal(expected))
 		})
 
-		It("should have a provider.tf", func() {
-			expected := "provider \"aws\" {\n}\n"
+		It("should have a provider.tf.json", func() {
+			expected := "{\n  \"provider\": {\n    \"aws\": {}\n  }\n}\n"
 			secret := &v1.Secret{}
 			secret.Namespace = ctrl.ControllerNamespace
 			secret.Name = configuration.GetTerraformConfigSecretName()
