@@ -52,7 +52,7 @@ require (
 	k8s.io/code-generator v0.30.3
 	k8s.io/kube-openapi v0.0.0-20240709000822-3c01b740850f
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
-	mvdan.cc/sh/v3 v3.8.0
+	mvdan.cc/sh/v3 v3.9.0
 	sigs.k8s.io/controller-runtime v0.18.5
 	sigs.k8s.io/controller-tools v0.15.0
 	sigs.k8s.io/yaml v1.4.0
@@ -245,7 +245,6 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polyfloyd/go-errorlint v1.4.8 // indirect
@@ -344,7 +343,7 @@ require (
 	honnef.co/go/tools v0.4.7 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	mvdan.cc/editorconfig v0.2.1-0.20231228180347-1925077f8eb2 // indirect
+	mvdan.cc/editorconfig v0.3.0 // indirect
 	mvdan.cc/gofumpt v0.6.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240104100049-c549a3470d14 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
