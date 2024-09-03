@@ -196,7 +196,7 @@ type wrappedReader struct {
 	*Parser
 	io.Reader
 
-	lastLine    int
+	lastLine    int64
 	accumulated []*Stmt
 	fn          func([]*Stmt) bool
 }
@@ -338,7 +338,7 @@ func (p *Parser) Arithmetic(r io.Reader) (ArithmExpr, error) {
 type Parser struct {
 	src io.Reader
 	bs  []byte // current chunk of read bytes
-	bsp int    // pos within chunk for the rune after r
+	bsp uint   // pos within chunk for the rune after r; uint helps eliminate bounds checks
 	r   rune   // next rune
 	w   int    // width of r
 
@@ -353,14 +353,9 @@ type Parser struct {
 	val string // current value (valid if tok is _Lit*)
 
 	// position of r, to be converted to Parser.pos later
-	offs, line, col int
+	offs, line, col int64
 
 	pos Pos // position of tok
-
-	// TODO: Guard against offset overflow too. Less likely as it's 32-bit,
-	// whereas line and col are 16-bit.
-	lineOverflow bool
-	colOverflow  bool
 
 	quote   quoteState // current lexer state
 	eqlOffs int        // position of '=' in val (a literal)
@@ -398,8 +393,6 @@ type Parser struct {
 
 	litBatch  []Lit
 	wordBatch []wordAlloc
-	stmtBatch []Stmt
-	callBatch []callAlloc
 
 	readBuf [bufSize]byte
 	litBuf  [bufSize]byte
@@ -431,30 +424,33 @@ func (p *Parser) reset() {
 	p.quote, p.forbidNested = noState, false
 	p.openStmts = 0
 	p.heredocs, p.buriedHdocs = p.heredocs[:0], 0
+	p.hdocStops = nil
 	p.parsingDoc = false
 	p.openBquotes = 0
+	p.accComs = nil
 	p.accComs, p.curComs = nil, &p.accComs
 	p.litBatch = nil
 	p.wordBatch = nil
-	p.stmtBatch = nil
-	p.callBatch = nil
+	p.litBs = nil
 }
 
 func (p *Parser) nextPos() Pos {
-	// TODO: detect offset overflow while lexing as well.
+	// Basic protection against offset overflow;
+	// note that an offset of 0 is valid, so we leave the maximum.
+	offset := min(p.offs+int64(p.bsp)-int64(p.w), offsetMax)
 	var line, col uint
-	if !p.lineOverflow {
+	if p.line <= lineMax {
 		line = uint(p.line)
 	}
-	if !p.colOverflow {
+	if p.col <= colMax {
 		col = uint(p.col)
 	}
-	return NewPos(uint(p.offs+p.bsp-p.w), line, col)
+	return NewPos(uint(offset), line, col)
 }
 
 func (p *Parser) lit(pos Pos, val string) *Lit {
 	if len(p.litBatch) == 0 {
-		p.litBatch = make([]Lit, 64)
+		p.litBatch = make([]Lit, 32)
 	}
 	l := &p.litBatch[0]
 	p.litBatch = p.litBatch[1:]
@@ -492,27 +488,11 @@ func (p *Parser) wordOne(part WordPart) *Word {
 	return w
 }
 
-func (p *Parser) stmt(pos Pos) *Stmt {
-	if len(p.stmtBatch) == 0 {
-		p.stmtBatch = make([]Stmt, 32)
-	}
-	s := &p.stmtBatch[0]
-	p.stmtBatch = p.stmtBatch[1:]
-	s.Position = pos
-	return s
-}
-
-type callAlloc struct {
-	ce CallExpr
-	ws [4]*Word
-}
-
 func (p *Parser) call(w *Word) *CallExpr {
-	if len(p.callBatch) == 0 {
-		p.callBatch = make([]callAlloc, 32)
+	var alloc struct {
+		ce CallExpr
+		ws [4]*Word
 	}
-	alloc := &p.callBatch[0]
-	p.callBatch = p.callBatch[1:]
 	ce := &alloc.ce
 	ce.Args = alloc.ws[:1]
 	ce.Args[0] = w
@@ -579,12 +559,12 @@ func (p *Parser) unquotedWordBytes(w *Word) ([]byte, bool) {
 }
 
 func (p *Parser) unquotedWordPart(buf []byte, wp WordPart, quotes bool) (_ []byte, quoted bool) {
-	switch x := wp.(type) {
+	switch wp := wp.(type) {
 	case *Lit:
-		for i := 0; i < len(x.Value); i++ {
-			if b := x.Value[i]; b == '\\' && !quotes {
-				if i++; i < len(x.Value) {
-					buf = append(buf, x.Value[i])
+		for i := 0; i < len(wp.Value); i++ {
+			if b := wp.Value[i]; b == '\\' && !quotes {
+				if i++; i < len(wp.Value) {
+					buf = append(buf, wp.Value[i])
 				}
 				quoted = true
 			} else {
@@ -592,10 +572,10 @@ func (p *Parser) unquotedWordPart(buf []byte, wp WordPart, quotes bool) (_ []byt
 			}
 		}
 	case *SglQuoted:
-		buf = append(buf, []byte(x.Value)...)
+		buf = append(buf, []byte(wp.Value)...)
 		quoted = true
 	case *DblQuoted:
-		for _, wp2 := range x.Parts {
+		for _, wp2 := range wp.Parts {
 			buf, _ = p.unquotedWordPart(buf, wp2, true)
 		}
 		quoted = true
@@ -633,7 +613,7 @@ func (p *Parser) doHeredocs() {
 			r.Hdoc = p.getWord()
 		}
 		if r.Hdoc != nil {
-			lastLine = int(r.Hdoc.End().Line())
+			lastLine = int64(r.Hdoc.End().Line())
 		}
 		if lastLine < p.line {
 			// TODO: It seems like this triggers more often than it
@@ -750,7 +730,7 @@ func (p *Parser) matched(lpos Pos, left, right token) Pos {
 func (p *Parser) errPass(err error) {
 	if p.err == nil {
 		p.err = err
-		p.bsp = len(p.bs) + 1
+		p.bsp = uint(len(p.bs)) + 1
 		p.r = utf8.RuneSelf
 		p.w = 1
 		p.tok = _EOF
@@ -1376,8 +1356,7 @@ func (p *Parser) paramExp() *ParamExp {
 		p.curErr("not a valid parameter expansion operator: %v", p.tok)
 	}
 	p.quote = old
-	pe.Rbrace = p.pos
-	p.matched(pe.Dollar, dollBrace, rightBrace)
+	pe.Rbrace = p.matched(pe.Dollar, dollBrace, rightBrace)
 	return pe
 }
 
@@ -1392,7 +1371,7 @@ func (p *Parser) paramExpExp() *Expansion {
 			p.curErr("@ expansion operator requires a literal")
 		}
 		switch p.val {
-		case "a", "u", "A", "E", "K", "L", "P", "U":
+		case "a", "k", "u", "A", "E", "K", "L", "P", "U":
 			if !p.lang.isBash() {
 				p.langErr(p.pos, "this expansion operator", LangBash)
 			}
@@ -1402,7 +1381,7 @@ func (p *Parser) paramExpExp() *Expansion {
 			}
 		case "Q":
 		default:
-			p.curErr("invalid @ expansion operator")
+			p.curErr("invalid @ expansion operator %q", p.val)
 		}
 	}
 	return &Expansion{Op: op, Word: p.getWord()}
@@ -1654,7 +1633,7 @@ func (p *Parser) doRedirect(s *Stmt) {
 
 func (p *Parser) getStmt(readEnd, binCmd, fnBody bool) *Stmt {
 	pos, ok := p.gotRsrv("!")
-	s := p.stmt(pos)
+	s := &Stmt{Position: pos}
 	if ok {
 		s.Negated = true
 		if p.stopToken() {
@@ -1686,7 +1665,7 @@ func (p *Parser) getStmt(readEnd, binCmd, fnBody bool) *Stmt {
 			p.followErr(b.OpPos, b.Op.String(), "a statement")
 			return nil
 		}
-		s = p.stmt(s.Position)
+		s = &Stmt{Position: s.Position}
 		s.Cmd = b
 		s.Comments, b.X.Comments = b.X.Comments, nil
 	}
@@ -1855,11 +1834,11 @@ func (p *Parser) gotStmtPipe(s *Stmt, binCmd bool) *Stmt {
 		b := &BinaryCmd{OpPos: p.pos, Op: BinCmdOperator(p.tok), X: s}
 		p.next()
 		p.got(_Newl)
-		if b.Y = p.gotStmtPipe(p.stmt(p.pos), true); b.Y == nil || p.err != nil {
+		if b.Y = p.gotStmtPipe(&Stmt{Position: p.pos}, true); b.Y == nil || p.err != nil {
 			p.followErr(b.OpPos, b.Op.String(), "a statement")
 			break
 		}
-		s = p.stmt(s.Position)
+		s = &Stmt{Position: s.Position}
 		s.Cmd = b
 		s.Comments, b.X.Comments = b.X.Comments, nil
 		// in "! x | y", the bang applies to the entire pipeline
@@ -2319,7 +2298,7 @@ func (p *Parser) timeClause(s *Stmt) {
 	if _, ok := p.gotRsrv("-p"); ok {
 		tc.PosixFormat = true
 	}
-	tc.Stmt = p.gotStmtPipe(p.stmt(p.pos), false)
+	tc.Stmt = p.gotStmtPipe(&Stmt{Position: p.pos}, false)
 	s.Cmd = tc
 }
 
@@ -2327,19 +2306,19 @@ func (p *Parser) coprocClause(s *Stmt) {
 	cc := &CoprocClause{Coproc: p.pos}
 	if p.next(); isBashCompoundCommand(p.tok, p.val) {
 		// has no name
-		cc.Stmt = p.gotStmtPipe(p.stmt(p.pos), false)
+		cc.Stmt = p.gotStmtPipe(&Stmt{Position: p.pos}, false)
 		s.Cmd = cc
 		return
 	}
 	cc.Name = p.getWord()
-	cc.Stmt = p.gotStmtPipe(p.stmt(p.pos), false)
+	cc.Stmt = p.gotStmtPipe(&Stmt{Position: p.pos}, false)
 	if cc.Stmt == nil {
 		if cc.Name == nil {
 			p.posErr(cc.Coproc, "coproc clause requires a command")
 			return
 		}
 		// name was in fact the stmt
-		cc.Stmt = p.stmt(cc.Name.Pos())
+		cc.Stmt = &Stmt{Position: cc.Name.Pos()}
 		cc.Stmt.Cmd = p.call(cc.Name)
 		cc.Name = nil
 	} else if cc.Name != nil {
