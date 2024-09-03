@@ -1,6 +1,10 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/tidwall/pretty"
+)
 
 // ByteCountSI returns the number of bytes in the given number of SI units.
 func ByteCountSI(b int64) string {
@@ -17,4 +21,9 @@ func ByteCountSI(b int64) string {
 	}
 
 	return fmt.Sprintf("%.1f%cB", float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+// PrettyJSON returns a pretty-printed version of the given JSON data.
+func PrettyJSON(data []byte) []byte {
+	return pretty.Pretty(data)
 }
