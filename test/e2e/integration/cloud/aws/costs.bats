@@ -26,7 +26,7 @@ teardown() {
 }
 
 @test "We should have a token for the infracost integration" {
-  [[ -n $INFRACOST_API_KEY ]] || touch ${BATS_PARENT_TMPNAME}.skip
+  [[ -n $INFRACOST_TOKEN   ]] || touch ${BATS_PARENT_TMPNAME}.skip
 }
 
 @test "We should be able to create a configuration which costs money on aws" {
