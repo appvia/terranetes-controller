@@ -81,13 +81,13 @@ terraform {
 // providerTF is a template for a terraform provider
 var providerTF = `{
 	"provider": {
-		"{{ .provider }}": {
-		{{- if .configuration }}
-		{{ toJson .configuration }}
-		{{- end }}
+    "{{ .provider }}": { 
+			{{- if .configuration }}
+			{{ toJson .configuration }}
+      {{- end }}
 		}
-}
-`
+	}
+}`
 
 // Decode returns a Reader that will decode a gzip byte stream
 func Decode(data []byte) (io.Reader, error) {

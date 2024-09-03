@@ -87,7 +87,21 @@ func TestNewTerraformProvider(t *testing.T) {
 				Provider:      terraformv1alpha1.AWSProviderType,
 				Configuration: nil,
 			}},
-			Expected: "{\n  \"provider\": {\n    \"aws\": {}\n  }\n",
+			Expected: "{\n  \"provider\": {\n    \"aws\": {}\n  }\n}\n",
+		},
+		{
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AWSProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte("{}")},
+			}},
+			Expected: "{\n  \"provider\": {\n    \"aws\": {}\n  }\n}\n",
+		},
+		{
+			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
+				Provider:      terraformv1alpha1.AWSProviderType,
+				Configuration: &runtime.RawExtension{Raw: []byte(`{"default_tags": { "tags": { "hello": "world" }}}`)},
+			}},
+			Expected: "{\n  \"provider\": {\n    \"aws\": {\n      \"default_tags\": {\n        \"tags\": {\n          \"hello\": \"world\"\n        }\n      }\n    }\n  }\n}\n",
 		},
 		{
 			Provider: &terraformv1alpha1.Provider{Spec: terraformv1alpha1.ProviderSpec{
