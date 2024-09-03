@@ -71,6 +71,9 @@ controller:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
     preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
+EOF  
+  if [[ "${INFRACOST_API_KEY}" != "" ]]; then
+    cat << EOF >> ${BATS_TMPDIR}/my_values.yaml
   costs:
     secret: infracost-api
 EOF
@@ -226,16 +229,24 @@ controller:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
     preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
+EOF 
+    if [[ "${INFRACOST_API_KEY}" != "" ]]; then
+      cat << EOF >> ${BATS_TMPDIR}/my_values.yaml
   costs:
     secret: infracost-api
 EOF
+    fi
   else
     CHART="appvia/terranetes-controller"
     cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
+EOF 
+    if [[ "${INFRACOST_API_KEY}" != "" ]]; then 
+      cat << EOF >> ${BATS_TMPDIR}/my_values.yaml
   costs:
     secret: infracost-api
 EOF
+    fi
   fi
 
   runit "helm upgrade terranetes-controller ${CHART} -n ${NAMESPACE} --values ${BATS_TMPDIR}/my_values.yaml"

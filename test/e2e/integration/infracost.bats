@@ -54,6 +54,8 @@ teardown() {
 }
 
 @test "We should see infracost breakdown in the watcher logs" {
+  [[ -z ${INFRACOST_API_KEY}   ]] && touch ${BATS_PARENT_TMPNAME}.skip
+
   POD=$(kubectl -n ${APP_NAMESPACE} get pod -l terraform.appvia.io/configuration=${RESOURCE_NAME} -l terraform.appvia.io/stage=plan -o json | jq -r '.items[0].metadata.name')
   [[ $status -eq 0   ]]
 
