@@ -66,7 +66,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: cloudresources.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -557,7 +557,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: configurations.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -684,6 +684,11 @@ spec:
                     TerraformVersion provides the ability to override the default terraform version. Before
                     changing this field its best to consult with platform administrator. As the
                     value of this field is used to change the tag of the terraform container image.
+                  type: string
+                tfVars:
+                  description: |-
+                    TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+                    Variables are set, values in Variables will override values with the same key in TFVars.
                   type: string
                 valueFrom:
                   description: |-
@@ -915,7 +920,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: contexts.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1098,7 +1103,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml = []byte(`apiVers
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: plans.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1302,7 +1307,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: policies.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1433,11 +1438,13 @@ spec:
                                         items:
                                           type: string
                                         type: array
+                                        x-kubernetes-list-type: atomic
                                     required:
                                       - key
                                       - operator
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 matchLabels:
                                   additionalProperties:
                                     type: string
@@ -1475,11 +1482,13 @@ spec:
                                         items:
                                           type: string
                                         type: array
+                                        x-kubernetes-list-type: atomic
                                     required:
                                       - key
                                       - operator
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 matchLabels:
                                   additionalProperties:
                                     type: string
@@ -1572,11 +1581,13 @@ spec:
                                         items:
                                           type: string
                                         type: array
+                                        x-kubernetes-list-type: atomic
                                     required:
                                       - key
                                       - operator
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 matchLabels:
                                   additionalProperties:
                                     type: string
@@ -1614,11 +1625,13 @@ spec:
                                         items:
                                           type: string
                                         type: array
+                                        x-kubernetes-list-type: atomic
                                     required:
                                       - key
                                       - operator
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 matchLabels:
                                   additionalProperties:
                                     type: string
@@ -1685,11 +1698,13 @@ spec:
                                       items:
                                         type: string
                                       type: array
+                                      x-kubernetes-list-type: atomic
                                   required:
                                     - key
                                     - operator
                                   type: object
                                 type: array
+                                x-kubernetes-list-type: atomic
                               matchLabels:
                                 additionalProperties:
                                   type: string
@@ -1844,7 +1859,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: providers.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -2001,11 +2016,13 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: atomic
                             required:
                               - key
                               - operator
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                         matchLabels:
                           additionalProperties:
                             type: string
@@ -2043,11 +2060,13 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: atomic
                             required:
                               - key
                               - operator
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                         matchLabels:
                           additionalProperties:
                             type: string
@@ -2212,7 +2231,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: revisions.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -2339,6 +2358,11 @@ spec:
                         TerraformVersion provides the ability to override the default terraform version. Before
                         changing this field its best to consult with platform administrator. As the
                         value of this field is used to change the tag of the terraform container image.
+                      type: string
+                    tfVars:
+                      description: |-
+                        TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+                        Variables are set, values in Variables will override values with the same key in TFVars.
                       type: string
                     valueFrom:
                       description: |-

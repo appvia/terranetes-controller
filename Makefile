@@ -87,10 +87,8 @@ controller-gen:
 register-gen:
 	@echo "--> Generating schema register.go files"
 	@$(foreach api,$(APIS), \
-		echo "    $(api)" && go run k8s.io/code-generator/cmd/register-gen -h hack/boilerplate.go.txt \
-			--output-file-base zz_generated_register \
-			-i github.com/appvia/terranetes-controller/pkg/apis/$(api) \
-			-p github.com/appvia/terranetes-controller/pkg/apis/$(api); )
+		echo "    $(api)" && go run k8s.io/code-generator/cmd/register-gen --go-header-file hack/boilerplate.go.txt \
+			--output-file zz_generated_register; )
 
 schema-gen:
 	@echo "--> Generating Kubernetes assets"
