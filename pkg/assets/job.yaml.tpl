@@ -57,6 +57,10 @@ spec:
               - key: variables.tfvars.json
                 path: variables.tfvars.json
               {{- end }}
+              {{- if .EnableTFVars }}
+              - key: variables.tfvars
+                path: variables.tfvars
+              {{- end }}
         {{- if eq .Stage "apply" }}
         - name: planout
           secret:

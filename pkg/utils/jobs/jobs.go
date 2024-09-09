@@ -227,6 +227,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		},
 		"EnableInfraCosts":       options.EnableInfraCosts,
 		"EnableVariables":        r.configuration.Spec.HasVariables(),
+		"EnableTFVars":           r.configuration.Spec.TFVars != "",
 		"ExecutorSecrets":        options.ExecutorSecrets,
 		"ImagePullPolicy":        "IfNotPresent",
 		"Policy":                 options.PolicyConstraint,
