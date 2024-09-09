@@ -40,8 +40,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tcnksm/ghr v0.16.2
 	github.com/tidwall/gjson v1.17.3
+	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/oauth2 v0.22.0
+	golang.org/x/oauth2 v0.23.0
 	golang.org/x/tools v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.3
@@ -286,7 +287,6 @@ require (
 	github.com/tdakkota/asciicheck v0.2.0 // indirect
 	github.com/tetafro/godot v1.4.16 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/timakin/bodyclose v0.0.0-20230421092635-574207250966 // indirect
 	github.com/timonwong/loggercheck v0.9.4 // indirect
 	github.com/tomarrell/wrapcheck/v2 v2.8.3 // indirect
