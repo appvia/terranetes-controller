@@ -1,0 +1,233 @@
+{{- if .Values.controller.enableHelmWebhookRegistration }}
+{{- include "webhook.generateCerts" . }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: terranetes-controller
+  labels: 
+    {{- include "terranetes-controller.labels" . | nindent 4 }}
+webhooks:
+  {{- if .Values.controller.enableNamespaceProtection }}
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/namespaces
+    failurePolicy: Fail
+    name: cloudresources.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - DELETE
+        resources:
+          - namespaces
+    sideEffects: None
+  {{- end }}
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/cloudresources
+    failurePolicy: Fail
+    name: cloudresources.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - cloudresources
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/configurations
+    failurePolicy: Fail
+    name: configurations.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - configurations
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/contexts
+    failurePolicy: Fail
+    name: contexts.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - DELETE
+          - UPDATE
+        resources:
+          - contexts
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/policies
+    failurePolicy: Fail
+    name: policies.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - DELETE
+          - UPDATE
+        resources:
+          - policies
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/providers
+    failurePolicy: Fail
+    name: providers.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - providers
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /validate/terraform.appvia.io/revisions
+    failurePolicy: Fail
+    name: revisions.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - DELETE
+          - UPDATE
+        resources:
+          - revisions
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: terranetes-controller
+  labels: 
+    {{- include "terranetes-controller.labels" . | nindent 4 }}
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /mutate/terraform.appvia.io/cloudresources
+    failurePolicy: Fail
+    name: cloudresources.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - cloudresources
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /mutate/terraform.appvia.io/configurations
+    failurePolicy: Fail
+    name: configurations.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - configurations
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ .Values.controller.webhooks.caBundle }}
+      service:
+        name: controller
+        namespace: {{ .Release.Namespace }}
+        path: /mutate/terraform.appvia.io/revisions
+    failurePolicy: Fail
+    name: revisions.terraform.appvia.io
+    rules:
+      - apiGroups:
+          - terraform.appvia.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - revisions
+    sideEffects: None
+{{- end }}

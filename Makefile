@@ -24,7 +24,7 @@ ROOT_DIR=${PWD}
 UNAME := $(shell uname)
 LFLAGS ?= -X github.com/appvia/terranetes-controller/pkg/version.Version=${VERSION} -X github.com/appvia/terranetes-controller/pkg/version.GitCommit=${GIT_SHA}
 VERSION ?= latest
-DOCKER_BUILD_PLATFORM?=linux/amd64
+DOCKER_BUILD_PLATFORM?=linux/amd64,linux/arm64
 
 # IMPORTANT NOTE: On CircleCI RELEASE_TAG will be set to the string '<nil>' if no tag is in use, so
 # use the local RELEASE variable being 'true' to switch on release build logic.
@@ -80,7 +80,8 @@ controller-gen:
 		crd \
 		output:crd:dir=charts/terranetes-controller/crds \
 		webhook \
-		output:webhook:dir=deploy/webhooks
+		output:webhook:dir=deploy/webhooks 
+	@cp deploy/webhooks/manifests.yaml charts/terranetes-controller/templates/webhooks.yaml
 	@./hack/patch-crd-gen.sh
 	@./hack/gofmt.sh pkg/apis/*/*/zz_generated.deepcopy.go
 

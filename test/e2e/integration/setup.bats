@@ -39,6 +39,8 @@ teardown() {
     cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 2
 controller:
+  enableControllerWebhookRegistration: false
+  enableHelmWebhookRegistration: true 
   enableNamespaceProtection: true
   images:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
@@ -52,6 +54,8 @@ EOF
 
     cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
+  enableControllerWebhookRegistration: false
+  enableHelmWebhookRegistration: true 
   enableNamespaceProtection: true
   costs:
     secret: infracost-api

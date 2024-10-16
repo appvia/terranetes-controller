@@ -61,3 +61,26 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Generate a signed certificate using `genSignedCert` or include the logic for generating a cert.
+Replace this with the actual logic if using an external tool or script.
+*/}}
+{{- define "webhook.generateCerts" -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace .Values.controller.webhooks.caSecret }}
+{{- if $secret }}
+  {{- $_ := set .Values.controller.webhooks "caBundle" (index $secret.data "ca.pem") -}}
+  {{- $_ := set .Values.controller.webhooks "cert" (index $secret.data "tls.pem") -}} 
+  {{- $_ := set .Values.controller.webhooks "key" (index $secret.data "tls-key.pem") -}}
+{{- else }}
+  {{- if not .Values.controller.webhooks.caBundle }}
+    {{ $ca := genCA "terranetes-controller" 7300 }}
+    {{ $dn := printf "controller.%s.svc.cluster.local" .Release.Namespace }}
+    {{ $sn := printf "controller.%s.svc" .Release.Namespace }}
+    {{ $server := genSignedCert "" (list "127.0.0.1") (list "localhost" "controller" $sn $dn) 3650 $ca }}
+    {{- $_ := set .Values.controller.webhooks "caBundle" ($ca.Cert | b64enc) -}}
+    {{- $_ := set .Values.controller.webhooks "cert" ($server.Cert | b64enc) -}}
+    {{- $_ := set .Values.controller.webhooks "key" ($server.Key | b64enc) -}}
+  {{- end }}
+{{- end }}
+{{- end }}

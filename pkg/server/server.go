@@ -275,7 +275,9 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 // Start is called to begin the service
 func (s *Server) Start(ctx context.Context) error {
 	if s.config.EnableWebhooks {
-		if err := s.registerWebhooks(ctx); err != nil {
+		log.Info("registering the terranetes controller webhooks")
+
+		if err := s.manageWebhooks(ctx, s.config.EnableWebhooksRegistration); err != nil {
 			return fmt.Errorf("failed to register the webhooks, error: %w", err)
 		}
 	}
