@@ -71,11 +71,16 @@ controller:
   # indicate we create the watcher jobs in user namespace, these allow users
   # to view the terraform output
   enableWatchers: true
+  ## Indicates we should forgo the controller registering it's own webhooks and allowing
+  ## helm to manage the webhooks for us
+  enableHelmWebhookRegistration: false
+  ## indicates if the controller should register the validation and mutation webhooks
+  ## for the Configuration, Revision and CloudResource resources
+  enableControllerWebhookRegistration: true
   # indicates if namespace deletion should be blocked if the namespace contains one
   # or more Configuration resources, forcing the user to delete correctly
   enableNamespaceProtection: false
-  # indicates if the controller should deny updates to Revisions which are currently
-  # in use
+  # indicates if the controller should deny updates to Revisions which are currently in use
   enableRevisionUpdateProtection: true
   # enableTerraformVersions indicates configurations are permitted to override
   # the terraform version in their spec.
@@ -109,6 +114,13 @@ controller:
     tlsDir: /certs
     # name of the file containing the tls private key
     tlsKey: tls-key.pem
+    # the base64 encoded certificate authority for the webhook
+    caBundle: ""
+    # the base64 encoded certificate for the webhook service
+    cert: ""
+    # the base64 encoded private key for the webhook service
+    key: ""
+
   # extraArgs is used for passing additional command line arguments to the
   # controller.
   extraArgs:

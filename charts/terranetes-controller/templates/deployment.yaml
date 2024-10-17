@@ -69,6 +69,7 @@ spec:
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhook-prefix={{ .Values.controller.webhooks.prefix }}
+            - --enable-webhooks-registration={{ .Values.controller.enableControllerWebhookRegistration }}
             - --enable-webhooks={{ .Values.controller.webhooks.enabled }}
             - --executor-image={{ .Values.controller.images.executor }}
             {{- range .Values.controller.executorSecrets }}

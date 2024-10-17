@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +35,13 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/version"
 )
 
-// registerWebhooks is responsible for registering the webhooks
-func (s *Server) registerWebhooks(ctx context.Context) error {
+// manageWebhooks is responsible for registering or unregistering the webhooks
+func (s *Server) manageWebhooks(ctx context.Context, managed bool) error {
 	cc, err := client.New(s.cfg, client.Options{Scheme: schema.GetScheme()})
 	if err != nil {
 		return err
 	}
+	log.WithField("managed", managed).Info("attempting to manage the controller webhooks")
 
 	// @step: read the certificate authority
 	ca, err := os.ReadFile(s.config.TLSAuthority)
@@ -86,8 +88,20 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 			return fmt.Errorf("expected a validating or mutating webhook, got %T", o)
 		}
 
-		if err := kubernetes.CreateOrForceUpdate(ctx, cc, o); err != nil {
-			return fmt.Errorf("failed to create / update the webhook, %w", err)
+		switch managed {
+		case true:
+			if err := kubernetes.CreateOrForceUpdate(ctx, cc, o); err != nil {
+				return fmt.Errorf("failed to create / update the webhook, %w", err)
+			}
+
+		default:
+			log.WithFields(log.Fields{
+				"webhook": o.GetName(),
+			}).Info("deleting any previous webhooks")
+
+			if err := kubernetes.DeleteIfExists(ctx, cc, o); err != nil {
+				return fmt.Errorf("failed to delete any previous webhook, %w", err)
+			}
 		}
 	}
 
@@ -125,6 +139,21 @@ func (s *Server) registerWebhooks(ctx context.Context) error {
 		},
 	}
 
+	// @step: if we are not managing the webhooks we can delete them completely
+	if !managed {
+		log.WithFields(log.Fields{
+			"webhook": wh.GetName(),
+		}).Info("deleting any previous namespace webhooks")
+
+		if err := kubernetes.DeleteIfExists(ctx, cc, wh); err != nil {
+			return fmt.Errorf("failed to delete the namespace webhook, %w", err)
+		}
+
+		return nil
+	}
+
+	// @step: we manage the webhooks, we either need to create, update or delete
+	// the namespace webhook based on the controller configuration
 	switch s.config.EnableNamespaceProtection {
 	case true:
 		if err := kubernetes.CreateOrForceUpdate(ctx, cc, wh); err != nil {

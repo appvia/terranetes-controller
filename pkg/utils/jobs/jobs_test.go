@@ -5,11 +5,12 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/appvia/terranetes-controller/pkg/apis/terraform/v1alpha1"
 	"github.com/appvia/terranetes-controller/pkg/assets"
 	"github.com/appvia/terranetes-controller/pkg/utils/jobs"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewTerraformPlan(t *testing.T) {
