@@ -18,7 +18,7 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: /validate/terraform.appvia.io/namespaces
     failurePolicy: Fail
-    name: cloudresources.terraform.appvia.io
+    name: namespaces.terraform.appvia.io
     rules:
       - apiGroups:
           - ""
