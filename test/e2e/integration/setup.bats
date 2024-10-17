@@ -39,8 +39,6 @@ teardown() {
     cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 replicaCount: 2
 controller:
-  enableControllerWebhookRegistration: false
-  enableHelmWebhookRegistration: true 
   enableNamespaceProtection: true
   images:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
@@ -54,8 +52,6 @@ EOF
 
     cat << EOF > ${BATS_TMPDIR}/my_values.yaml
 controller:
-  enableControllerWebhookRegistration: false
-  enableHelmWebhookRegistration: true 
   enableNamespaceProtection: true
   costs:
     secret: infracost-api
@@ -82,7 +78,12 @@ EOF
 }
 
 @test "We should have the controller webhooks enabled" {
-  runit "kubectl get validatingwebhookconfigurations validating-webhook-configuration"
+  runit "kubectl get validatingwebhookconfigurations terranetes-controller"
+  [[ $status -eq 0   ]]
+}
+
+@test "We should have a mutating webhook for the controller" {
+  runit "kubectl get mutatingwebhookconfigurations terranetes-controller"
   [[ $status -eq 0   ]]
 }
 
