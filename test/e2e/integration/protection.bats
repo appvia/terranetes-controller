@@ -25,7 +25,7 @@ teardown() {
 }
 
 @test "We should have a validation webhook for namespaces" {
-  runit "kubectl get validatingwebhookconfigurations validating-webhook-namespace"
+  runit "kubectl get validatingwebhookconfigurations terranetes-controller"
   [[ "$status" -eq 0 ]]
 }
 
