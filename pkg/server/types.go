@@ -51,6 +51,9 @@ type Config struct {
 	EnableNamespaceProtection bool
 	// EnableWebhooks enables the webhooks registration
 	EnableWebhooks bool
+	// EnableWebhooksRegistration indicates the controller should register the webhooks
+	// for the controller
+	EnableWebhooksRegistration bool
 	// EnableWatchers enables the creation of watcher jobs
 	EnableWatchers bool
 	// EnableTerraformVersions indicates if configurations can override the default terraform version
