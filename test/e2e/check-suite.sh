@@ -94,8 +94,8 @@ run_checks() {
     "${UNITS}/private.bats"
     "${UNITS}/error-handler.bats"
     "${UNITS}/clean-protection.bats"
-    #"${UNITS}/custom-state-backend.bats"
-    #"${UNITS}/provider-state-backend.bats"
+    "${UNITS}/custom-state-backend.bats"
+    "${UNITS}/provider-state-backend.bats"
     "${UNITS}/cloudresource.bats"
     "${UNITS}/contexts.bats"
   )
