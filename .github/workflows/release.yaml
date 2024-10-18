@@ -24,16 +24,16 @@ jobs:
   #    with:
   #      cloud: azurerm
   #
-  e2e-google:
-    uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
-    with:
-      cloud: google
+  #  e2e-google:
+  #    uses: ./.github/workflows/e2e.yaml
+  #    secrets: inherit
+  #    with:
+  #      cloud: google
 
   release-tagged-images:
     needs:
       - e2e-aws
-      - e2e-google
+      # - e2e-google
     #      - e2e-azure
     uses: ./.github/workflows/images.yaml
     secrets: inherit
@@ -41,8 +41,8 @@ jobs:
   release:
     needs:
       - e2e-aws
-      #      - e2e-azure
-      - e2e-google
+      # - e2e-azure
+      # - e2e-google
     name: Github Release
     runs-on: ubuntu-latest
     steps:
