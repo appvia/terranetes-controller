@@ -41,11 +41,11 @@ controller:
     # policy is image for policy
     policy: bridgecrew/checkov:3.2.55
     # preload is the image to use for preload data jobs
-    preload: ghcr.io/appvia/terranetes-executor:v0.4.15
+    preload: ghcr.io/appvia/terranetes-executor:v0.4.16
     # is the controller image
-    controller: ghcr.io/appvia/terranetes-controller:v0.4.15
+    controller: ghcr.io/appvia/terranetes-controller:v0.4.16
     # The terranetes image used when running jobs
-    executor: ghcr.io/appvia/terranetes-executor:v0.4.15
+    executor: ghcr.io/appvia/terranetes-executor:v0.4.16
   # Rate limting on configurations to prevent the controller from being overwhelmed. This
   # is the percentage of configurations which are permitted to run a plan at any one time.
   # Note, zero means no rate limiting is applied.
@@ -73,10 +73,10 @@ controller:
   enableWatchers: true
   ## Indicates we should forgo the controller registering it's own webhooks and allowing
   ## helm to manage the webhooks for us
-  enableHelmWebhookRegistration: true
+  enableHelmWebhookRegistration: false
   ## indicates if the controller should register the validation and mutation webhooks
   ## for the Configuration, Revision and CloudResource resources
-  enableControllerWebhookRegistration: false
+  enableControllerWebhookRegistration: true
   # indicates if namespace deletion should be blocked if the namespace contains one
   # or more Configuration resources, forcing the user to delete correctly
   enableNamespaceProtection: false
