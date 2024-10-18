@@ -71,8 +71,8 @@ controller:
     controller: "ghcr.io/appvia/terranetes-controller:${VERSION}"
     executor: "ghcr.io/appvia/terranetes-executor:${VERSION}"
     preload: "ghcr.io/appvia/terranetes-executor:${VERSION}"
-  costs:
-    secret: infracost-api
+#  costs:
+#    secret: infracost-api
 EOF
   else
     CHART="appvia/terranetes-controller"
@@ -81,8 +81,8 @@ EOF
 controller:
   backend:
     name: terraform-backend-config
-  costs:
-    secret: infracost-api
+#  costs:
+#    secret: infracost-api
 EOF
   fi
 
