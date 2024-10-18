@@ -47,7 +47,7 @@ teardown() {
   cat << EOF > ${BATS_TMPDIR}/resource.yaml 2> /dev/null
 terraform {
   backend "s3" {
-    bucket     = "terranetes-controller-custom-state-e2e"
+    bucket     = "terranetes-controller-state-e2e-bucket"
     key        = "${GITHUB_RUN_ID:-test}/{{ .namespace }}/{{ .name }}"
     region     = "eu-west-2"
     access_key = "${AWS_ACCESS_KEY_ID}"
