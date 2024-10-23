@@ -4,7 +4,6 @@
 package syntax
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -24,7 +23,7 @@ func KeepComments(enabled bool) ParserOption {
 }
 
 // LangVariant describes a shell language variant to use when tokenizing and
-// parsing shell code. The zero value is LangBash.
+// parsing shell code. The zero value is [LangBash].
 type LangVariant int
 
 const (
@@ -63,7 +62,7 @@ const (
 	// commonly used by end-user applications like shfmt,
 	// which can guess a file's language variant given its filename or shebang.
 	//
-	// At this time, the Parser does not support LangAuto.
+	// At this time, [Variant] does not support LangAuto.
 	LangAuto
 )
 
@@ -144,7 +143,7 @@ func StopAt(word string) ParserOption {
 	return func(p *Parser) { p.stopAt = []byte(word) }
 }
 
-// NewParser allocates a new Parser and applies any number of options.
+// NewParser allocates a new [Parser] and applies any number of options.
 func NewParser(options ...ParserOption) *Parser {
 	p := &Parser{}
 	for _, opt := range options {
@@ -804,25 +803,25 @@ type LangError struct {
 }
 
 func (e LangError) Error() string {
-	var buf bytes.Buffer
+	var sb strings.Builder
 	if e.Filename != "" {
-		buf.WriteString(e.Filename + ":")
+		sb.WriteString(e.Filename + ":")
 	}
-	buf.WriteString(e.Pos.String() + ": ")
-	buf.WriteString(e.Feature)
+	sb.WriteString(e.Pos.String() + ": ")
+	sb.WriteString(e.Feature)
 	if strings.HasSuffix(e.Feature, "s") {
-		buf.WriteString(" are a ")
+		sb.WriteString(" are a ")
 	} else {
-		buf.WriteString(" is a ")
+		sb.WriteString(" is a ")
 	}
 	for i, lang := range e.Langs {
 		if i > 0 {
-			buf.WriteString("/")
+			sb.WriteString("/")
 		}
-		buf.WriteString(lang.String())
+		sb.WriteString(lang.String())
 	}
-	buf.WriteString(" feature")
-	return buf.String()
+	sb.WriteString(" feature")
+	return sb.String()
 }
 
 func (p *Parser) posErr(pos Pos, format string, a ...any) {
@@ -1341,7 +1340,7 @@ func (p *Parser) paramExp() *ParamExp {
 			p.curErr("not a valid parameter expansion operator: %v", p.tok)
 		case pe.Excl && p.r == '}':
 			if !p.lang.isBash() {
-				p.posErr(pe.Pos(), `"${!foo`+p.tok.String()+`}" is a bash feature`)
+				p.posErr(pe.Pos(), `"${!foo%s}" is a bash feature`, p.tok)
 			}
 			pe.Names = ParNamesOperator(p.tok)
 			p.next()

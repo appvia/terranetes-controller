@@ -136,12 +136,12 @@ directory, all shell scripts found under that directory will be used.
   -s,  --simplify  simplify the code
   -mn, --minify    minify the code to reduce its size (implies -s)
   --apply-ignore   always apply EditorConfig ignore rules
+  --filename str   provide a name for the standard input file
 
 Parser options:
 
   -ln, --language-dialect str  bash/posix/mksh/bats, default "auto"
   -p,  --posix                 shorthand for -ln=posix
-  --filename str               provide a name for the standard input file
 
 Printer options:
 
@@ -158,7 +158,9 @@ Utilities:
   --to-json    print syntax tree to stdout as a typed JSON
   --from-json  read syntax tree from stdin as a typed JSON
 
-For more information, see 'man shfmt' and https://github.com/mvdan/sh.
+Formatting options can also be read from EditorConfig files; see 'man shfmt'
+for a detailed description of the tool's behavior.
+For more information and to report bugs, see https://github.com/mvdan/sh.
 `)
 	}
 	flag.Parse()
@@ -359,9 +361,9 @@ var ecQuery = editorconfig.Query{
 	RegexpCache: make(map[string]*regexp.Regexp),
 }
 
-func propsOptions(lang syntax.LangVariant, props editorconfig.Section) {
+func propsOptions(lang syntax.LangVariant, props editorconfig.Section) (_ syntax.LangVariant, validLang bool) {
 	// if shell_variant is set to a valid string, it will take precedence
-	lang.Set(props.Get("shell_variant"))
+	langErr := lang.Set(props.Get("shell_variant"))
 	syntax.Variant(lang)(parser)
 
 	size := uint(0)
@@ -380,6 +382,8 @@ func propsOptions(lang syntax.LangVariant, props editorconfig.Section) {
 	syntax.KeepPadding(props.Get("keep_padding") == "true")(printer)
 	// TODO(v4): rename to func_next_line for consistency with flags
 	syntax.FunctionNextLine(props.Get("function_next_line") == "true")(printer)
+
+	return lang, langErr == nil
 }
 
 func formatPath(path string, checkShebang bool) error {
@@ -446,12 +450,13 @@ func editorConfigLangs(l syntax.LangVariant) []string {
 }
 
 func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
+	fileLangFromEditorConfig := false
 	if useEditorConfig {
 		props, err := ecQuery.Find(path, editorConfigLangs(fileLang))
 		if err != nil {
 			return err
 		}
-		propsOptions(fileLang, props)
+		fileLang, fileLangFromEditorConfig = propsOptions(fileLang, props)
 	} else {
 		syntax.Variant(fileLang)(parser)
 	}
@@ -466,6 +471,9 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 		node, err = parser.Parse(bytes.NewReader(src), path)
 		if err != nil {
 			if s, ok := err.(syntax.LangError); ok && lang.val == syntax.LangAuto {
+				if fileLangFromEditorConfig {
+					return fmt.Errorf("%w (parsed as %s via EditorConfig)", s, fileLang)
+				}
 				return fmt.Errorf("%w (parsed as %s via -%s=%s)", s, fileLang, lang.short, lang.val)
 			}
 			return err
