@@ -27,7 +27,7 @@ spec:
     spec:
       # https://github.com/kubernetes/kubernetes/issues/74848
       restartPolicy: Never
-      {{- if eq .Provider.Source "injected" }}
+      {{- if .Provider.ServiceAccount }} 
       serviceAccountName: {{ .Provider.ServiceAccount }}
       {{- else }}
       serviceAccountName: {{ .ServiceAccount }}
