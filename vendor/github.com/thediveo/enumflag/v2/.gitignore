@@ -1,0 +1,3 @@
+coverage.*
+*.log
+__debug_bin
