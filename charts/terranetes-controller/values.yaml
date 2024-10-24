@@ -73,10 +73,10 @@ controller:
   enableWatchers: true
   ## Indicates we should forgo the controller registering it's own webhooks and allowing
   ## helm to manage the webhooks for us
-  enableHelmWebhookRegistration: false
+  enableHelmWebhookRegistration: true
   ## indicates if the controller should register the validation and mutation webhooks
   ## for the Configuration, Revision and CloudResource resources
-  enableControllerWebhookRegistration: true
+  enableControllerWebhookRegistration: false
   # indicates if namespace deletion should be blocked if the namespace contains one
   # or more Configuration resources, forcing the user to delete correctly
   enableNamespaceProtection: false
