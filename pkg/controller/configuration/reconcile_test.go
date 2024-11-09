@@ -61,7 +61,7 @@ func makeFakeController(cc client.Client) *Controller {
 		cache:                        cache.New(5*time.Minute, 10*time.Minute),
 		recorder:                     recorder,
 		BackoffLimit:                 2,
-		BinaryPath:                   "/bin/opentofu",
+		BinaryPath:                   "/usr/local/bin/tofu",
 		ControllerNamespace:          "terraform-system",
 		DefaultExecutorCPULimit:      "1",
 		DefaultExecutorCPURequest:    "5m",
@@ -937,7 +937,7 @@ var _ = Describe("Configuration Controller", func() {
 			kc:                           kfake.NewSimpleClientset(),
 			cache:                        cache.New(5*time.Minute, 10*time.Minute),
 			recorder:                     recorder,
-			BinaryPath:                   "/bin/opentofu",
+			BinaryPath:                   "/usr/local/bin/tofu",
 			DefaultExecutorCPULimit:      "1",
 			DefaultExecutorCPURequest:    "5m",
 			DefaultExecutorMemoryLimit:   "1Gi",
@@ -2012,8 +2012,8 @@ terraform {
 
 			expected := []string{
 				"--comment=Executing Terraform",
-				"--command=/bin/opentofu plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color -input=false",
-				"--command=/bin/opentofu show -json /run/plan.out > /run/tfplan.json",
+				"--command=/usr/local/bin/tofu plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color -input=false",
+				"--command=/usr/local/bin/tofu show -json /run/plan.out > /run/tfplan.json",
 				"--command=/bin/cp /run/tfplan.json /run/plan.json",
 				"--command=/bin/gzip /run/plan.json",
 				"--command=/bin/mv /run/plan.json.gz /run/plan.json",
@@ -3295,7 +3295,7 @@ terraform {
 
 				expected := []string{
 					"--comment=Executing Terraform",
-					"--command=/bin/opentofu apply --var-file variables.tfvars.json -lock=false -no-color -input=false -auto-approve",
+					"--command=/usr/local/bin/tofu apply --var-file variables.tfvars.json -lock=false -no-color -input=false -auto-approve",
 					"--on-error=/run/steps/terraform.failed",
 					"--on-success=/run/steps/terraform.complete",
 				}
