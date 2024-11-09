@@ -816,6 +816,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 					terraformv1alpha1.JobTemplateHashLabel: state.jobTemplateHash,
 				}),
 			BackoffLimit:                 c.BackoffLimit,
+			BinaryPath:                   c.BinaryPath,
 			DefaultExecutorCPULimit:      c.DefaultExecutorCPULimit,
 			DefaultExecutorCPURequest:    c.DefaultExecutorCPURequest,
 			DefaultExecutorMemoryLimit:   c.DefaultExecutorMemoryLimit,
@@ -823,6 +824,7 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			EnableInfraCosts:             c.EnableInfracosts,
 			ExecutorImage:                c.ExecutorImage,
 			ExecutorSecrets:              c.ExecutorSecrets,
+			Image:                        GetTerraformImage(configuration, c.TerraformImage),
 			InfracostsImage:              c.InfracostsImage,
 			InfracostsSecret:             c.InfracostsSecretName,
 			Namespace:                    c.ControllerNamespace,
@@ -830,7 +832,6 @@ func (c *Controller) ensureTerraformPlan(configuration *terraformv1alpha1.Config
 			PolicyImage:                  c.PolicyImage,
 			SaveTerraformState:           saveState,
 			Template:                     state.jobTemplate,
-			TerraformImage:               GetTerraformImage(configuration, c.TerraformImage),
 		}
 
 		// @step: use the options to generate the job
@@ -1255,6 +1256,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 				},
 			),
 			BackoffLimit:                 c.BackoffLimit,
+			BinaryPath:         		c.BinaryPath,
 			DefaultExecutorCPULimit:      c.DefaultExecutorCPULimit,
 			DefaultExecutorCPURequest:    c.DefaultExecutorCPURequest,
 			DefaultExecutorMemoryLimit:   c.DefaultExecutorMemoryLimit,
@@ -1267,7 +1269,7 @@ func (c *Controller) ensureTerraformApply(configuration *terraformv1alpha1.Confi
 			Namespace:                    c.ControllerNamespace,
 			SaveTerraformState:           saveState,
 			Template:                     state.jobTemplate,
-			TerraformImage:               GetTerraformImage(configuration, c.TerraformImage),
+			Image:                       	GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform apply job")

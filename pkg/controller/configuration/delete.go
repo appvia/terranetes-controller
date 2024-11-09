@@ -99,6 +99,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 					terraformv1alpha1.RetryAnnotation: configuration.GetAnnotations()[terraformv1alpha1.RetryAnnotation],
 				}),
 			BackoffLimit:     c.BackoffLimit,
+			BinaryPath:       c.BinaryPath,
 			EnableInfraCosts: c.EnableInfracosts,
 			ExecutorImage:    c.ExecutorImage,
 			ExecutorSecrets:  c.ExecutorSecrets,
@@ -106,7 +107,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.ControllerNamespace,
 			Template:         state.jobTemplate,
-			TerraformImage:   GetTerraformImage(configuration, c.TerraformImage),
+			Image:   GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")

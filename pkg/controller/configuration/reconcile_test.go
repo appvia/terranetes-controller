@@ -61,6 +61,7 @@ func makeFakeController(cc client.Client) *Controller {
 		cache:                        cache.New(5*time.Minute, 10*time.Minute),
 		recorder:                     recorder,
 		BackoffLimit:                 2,
+		BinaryPath:                   "/bin/opentofu",
 		ControllerNamespace:          "terraform-system",
 		DefaultExecutorCPULimit:      "1",
 		DefaultExecutorCPURequest:    "5m",
@@ -71,7 +72,7 @@ func makeFakeController(cc client.Client) *Controller {
 		ExecutorImage:                "ghcr.io/appvia/terranetes-executor",
 		InfracostsImage:              "infracosts/infracost:latest",
 		PolicyImage:                  "bridgecrew/checkov:2.0.1140",
-		TerraformImage:               "hashicorp/terraform:1.1.9",
+		TerraformImage:               "ghcr.io/opentofu/opentofu:latest",
 	}
 
 	return ctrl
@@ -936,6 +937,7 @@ var _ = Describe("Configuration Controller", func() {
 			kc:                           kfake.NewSimpleClientset(),
 			cache:                        cache.New(5*time.Minute, 10*time.Minute),
 			recorder:                     recorder,
+			BinaryPath:                   "/bin/opentofu",
 			DefaultExecutorCPULimit:      "1",
 			DefaultExecutorCPURequest:    "5m",
 			DefaultExecutorMemoryLimit:   "1Gi",
@@ -946,7 +948,7 @@ var _ = Describe("Configuration Controller", func() {
 			InfracostsImage:              "infracosts/infracost:latest",
 			ControllerNamespace:          "default",
 			PolicyImage:                  "bridgecrew/checkov:2.0.1140",
-			TerraformImage:               "hashicorp/terraform:1.1.9",
+			TerraformImage:               "ghcr.io/opentofu/opentofu:latest",
 		}
 		ctrl.cache.SetDefault(cfgNamespace, fixtures.NewNamespace(cfgNamespace))
 	}
@@ -1426,7 +1428,7 @@ var _ = Describe("Configuration Controller", func() {
 
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
-				Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:test"))
+				Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("ghcr.io/opentofu/opentofu:test"))
 			})
 		})
 
@@ -1442,7 +1444,7 @@ var _ = Describe("Configuration Controller", func() {
 
 				Expect(cc.List(context.TODO(), list, client.InNamespace(ctrl.ControllerNamespace))).ToNot(HaveOccurred())
 				Expect(len(list.Items)).To(Equal(1))
-				Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("hashicorp/terraform:1.1.9"))
+				Expect(list.Items[0].Spec.Template.Spec.Containers[0].Image).To(Equal("ghcr.io/opentofu/opentofu:latest"))
 			})
 		})
 	})
@@ -2010,8 +2012,8 @@ terraform {
 
 			expected := []string{
 				"--comment=Executing Terraform",
-				"--command=/bin/terraform plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color -input=false",
-				"--command=/bin/terraform show -json /run/plan.out > /run/tfplan.json",
+				"--command=/bin/opentofu plan --var-file variables.tfvars.json -out=/run/plan.out -lock=false -no-color -input=false",
+				"--command=/bin/opentofu show -json /run/plan.out > /run/tfplan.json",
 				"--command=/bin/cp /run/tfplan.json /run/plan.json",
 				"--command=/bin/gzip /run/plan.json",
 				"--command=/bin/mv /run/plan.json.gz /run/plan.json",
@@ -3293,7 +3295,7 @@ terraform {
 
 				expected := []string{
 					"--comment=Executing Terraform",
-					"--command=/bin/terraform apply --var-file variables.tfvars.json -lock=false -no-color -input=false -auto-approve",
+					"--command=/bin/opentofu apply --var-file variables.tfvars.json -lock=false -no-color -input=false -auto-approve",
 					"--on-error=/run/steps/terraform.failed",
 					"--on-success=/run/steps/terraform.complete",
 				}
