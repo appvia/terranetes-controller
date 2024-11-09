@@ -78,7 +78,7 @@ func main() {
 	flags.StringSliceVar(&config.ExecutorSecrets, "executor-secret", []string{}, "Name of a secret in controller namespace which should be added to the job")
 	flags.StringSliceVar(&config.JobLabels, "job-label", []string{}, "A collection of key=values to add to all jobs")
 	flags.StringVar(&config.BackendTemplate, "backend-template", "", "Name of secret in the controller namespace containing a template for the terraform state")
-	flags.StringVar(&config.BinaryPath, "binary-path", "/bin/opentufo", "The path of the terraform binary to use")
+	flags.StringVar(&config.BinaryPath, "binary-path", "/usr/local/bin/tofu", "The path of the terraform binary to use")
 	flags.StringVar(&config.ExecutorCPULimit, "executor-cpu-limit", "", "The default CPU limit for the executor container (default is no limit)")
 	flags.StringVar(&config.ExecutorCPURequest, "executor-cpu-request", "5m", "The default CPU request for the executor container")
 	flags.StringVar(&config.ExecutorImage, "executor-image", fmt.Sprintf("ghcr.io/appvia/terranetes-executor:%s", version.Version), "The image to use for the executor")
