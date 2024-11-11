@@ -557,9 +557,9 @@ github.com/google/go-github/github
 # github.com/google/go-github/v45 v45.2.0
 ## explicit; go 1.17
 github.com/google/go-github/v45/github
-# github.com/google/go-github/v47 v47.1.0
-## explicit; go 1.17
-github.com/google/go-github/v47/github
+# github.com/google/go-github/v66 v66.0.0
+## explicit; go 1.21
+github.com/google/go-github/v66/github
 # github.com/google/go-querystring v1.1.0
 ## explicit; go 1.10
 github.com/google/go-querystring/query
@@ -1123,8 +1123,8 @@ github.com/subosito/gotenv
 # github.com/t-yuki/gocover-cobertura v0.0.0-20180217150009-aaee18c8195c
 ## explicit
 github.com/t-yuki/gocover-cobertura
-# github.com/tcnksm/ghr v0.16.2
-## explicit; go 1.19
+# github.com/tcnksm/ghr v0.17.0
+## explicit; go 1.23
 github.com/tcnksm/ghr
 # github.com/tcnksm/go-gitconfig v0.1.2
 ## explicit
@@ -1138,6 +1138,9 @@ github.com/tdakkota/asciicheck
 # github.com/tetafro/godot v1.4.16
 ## explicit; go 1.20
 github.com/tetafro/godot
+# github.com/thediveo/enumflag/v2 v2.0.5
+## explicit; go 1.18
+github.com/thediveo/enumflag/v2
 # github.com/tidwall/gjson v1.18.0
 ## explicit; go 1.12
 github.com/tidwall/gjson
@@ -1334,8 +1337,8 @@ golang.org/x/crypto/openpgp/packet
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-## explicit; go 1.20
+# golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
