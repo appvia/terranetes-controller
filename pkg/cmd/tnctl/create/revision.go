@@ -114,7 +114,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	flags.StringVarP(&o.File, "file", "f", "", "The path to save the revision to")
 	flags.StringVar(&o.Provider, "provider", "aws", "The name of the terranetes provider to use")
 
-	c.MarkFlagRequired("file")
+	_ = c.MarkFlagRequired("file")
 
 	return c
 }
