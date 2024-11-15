@@ -632,7 +632,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 			failed := gjson.GetBytes(results, "results.failed_checks")
 			if failed.Exists() && failed.IsArray() {
 				if len(failed.Array()) > 0 {
-					v.Info("Check ID against documentation at https://www.checkov.io")
+					v.Info("Checks: https://www.checkov.io/5.Policy%%20Index/all.html")
 				}
 
 				for _, check := range failed.Array() {
