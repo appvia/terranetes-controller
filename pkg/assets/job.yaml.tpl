@@ -1,4 +1,5 @@
 ---
+{{ $binary := .BinaryPath }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -122,10 +123,10 @@ spec:
               mountPath: /data
 
         - name: init
-          image: {{ .Images.Terraform }}
+          image: {{ .Images.Image }}
           workingDir: /data
           command:
-            - /bin/terraform
+            - {{ $binary }}
           args:
             - init
           env:
@@ -195,7 +196,7 @@ spec:
 
       containers:
       - name: {{ .TerraformContainerName }}
-        image: {{ .Images.Terraform }}
+        image: {{ .Images.Image }}
         imagePullPolicy: {{ .ImagePullPolicy }}
         workingDir: /data
         command:
@@ -203,9 +204,9 @@ spec:
         args:
           - --comment=Executing Terraform
           {{- if eq .Stage "plan" }}
-          - --command=/bin/terraform plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color -input=false
+          - --command={{ $binary }} plan {{ .TerraformArguments }} -out=/run/plan.out -lock=false -no-color -input=false
           # We need to retain a uncompressed version, for checkov and infracosts
-          - --command=/bin/terraform show -json /run/plan.out > /run/tfplan.json
+          - --command={{ $binary }} show -json /run/plan.out > /run/tfplan.json
           - --command=/bin/cp /run/tfplan.json /run/plan.json
           - --command=/bin/gzip /run/plan.json
           - --command=/bin/mv /run/plan.json.gz /run/plan.json
@@ -214,9 +215,9 @@ spec:
           - --upload=$(TERRAFORM_PLAN_OUT_NAME)=/run/plan.out
           {{- end }}
           {{- if eq .Stage "apply" }}
-          - --command=/bin/terraform apply {{ .TerraformArguments }} -lock=false -no-color -input=false -auto-approve
+          - --command={{ $binary }} apply {{ .TerraformArguments }} -lock=false -no-color -input=false -auto-approve
           {{- if .SaveTerraformState }}
-          - --command=/bin/terraform state pull > /run/tfstate
+          - --command={{ $binary }} state pull > /run/tfstate
           - --command=/bin/gzip /run/tfstate
           - --command=/bin/mv /run/tfstate.gz /run/tfstate
           - --namespace=$(KUBE_NAMESPACE)
@@ -224,7 +225,7 @@ spec:
           {{- end }}
           {{- end }}
           {{- if eq .Stage "destroy" }}
-          - --command=/bin/terraform destroy {{ .TerraformArguments }} -auto-approve
+          - --command={{ $binary }} destroy {{ .TerraformArguments }} -auto-approve
           {{- end }}
           - --on-error=/run/steps/terraform.failed
           - --on-success=/run/steps/terraform.complete
