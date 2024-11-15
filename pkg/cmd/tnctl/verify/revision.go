@@ -92,6 +92,8 @@ type RevisionCommand struct {
 	// EnableTerraformPlan indicates we should use a terraform plan to verify the security policy.
 	// Note, this does require credentials to be configured
 	EnableTerraformPlan bool
+	// ShowGuidelines indicates we should show the guidelines in the output 
+	ShowGuidelines bool
 	// Contexts is a list of contexts from the cluster
 	Contexts *terraformv1alpha1.ContextList
 	// Policies is a list of policies from the cluster
@@ -129,6 +131,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 	flags.BoolVar(&o.EnableCluster, "use-cluster", true, "Indicates if we should retrieve configuration from the current kubeconfig")
 	flags.BoolVar(&o.EnableTerraformPlan, "use-terraform-plan", false, "Indicates if we should use a terraform plan to verify the security policy")
 	flags.BoolVar(&o.KeepTempDir, "keep-temp-dir", false, "Indicates if we should keep the temporary directory")
+	flags.BoolVar(&o.ShowGuidelines, "show-guidelines", true, "Indicates if we should show the guidelines in the output")
 	flags.StringVar(&o.CheckovImage, "checkov-image", "", "The docker image of checkov to use when validating the security policy")
 	flags.StringVar(&o.TerraformImage, "terraform-image", "", "The docker image of terraform to use when generating a plan")
 	flags.StringVarP(&o.Directory, "directory", "d", "", "Path to a directory to store temporary files")
@@ -629,7 +632,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 			failed := gjson.GetBytes(results, "results.failed_checks")
 			if failed.Exists() && failed.IsArray() {
 				if len(failed.Array()) > 0 {
-					v.Info("Check ID against documentation: https://docs.bridgecrew.io/docs")
+					v.Info("Check ID against documentation at https://www.checkov.io")
 				}
 
 				for _, check := range failed.Array() {
@@ -639,6 +642,9 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 					}
 					if check.Get("resource").String() != "" {
 						v.Additional("Resource: %v", check.Get("resource"))
+					}
+		      if o.ShowGuidelines && check.Get("guideline").String() != "" {
+						v.Additional("Guideline: %v", check.Get("guideline"))
 					}
 				}
 			}
@@ -667,8 +673,7 @@ func (o *RevisionCommand) checkValueFromReferences(revision *terraformv1alpha1.R
 		}
 
 		for _, x := range revision.Spec.Configuration.ValueFrom {
-			switch {
-			case o.Contexts == nil:
+			if o.Contexts == nil {
 				v.Warning("Revision references a context: %q, key: %q, but none available to check against", *x.Context, x.Key)
 
 				continue
