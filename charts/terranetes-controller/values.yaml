@@ -27,6 +27,8 @@ controller:
     name: ""
     # Template will automatically create a backend secret for you
     template: ""
+  # The binary path of the executable to run in the terraform image
+  binaryPath: /usr/local/bin/tofu
   # Configuration related to costs
   costs:
     # Name of the secret containing the infracost api token
