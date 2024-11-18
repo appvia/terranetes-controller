@@ -39,9 +39,9 @@ controller:
     # is the default image to use for terraform operations
     terraform: ghcr.io/opentofu/opentofu:1.8.5
     # image to use for infracost
-    infracost: infracost/infracost:ci-0.10.35
+    infracost: infracost/infracost:ci-0.10.39
     # policy is image for policy
-    policy: bridgecrew/checkov:3.2.55
+    policy: bridgecrew/checkov:3.2.298
     # preload is the image to use for preload data jobs
     preload: ghcr.io/appvia/terranetes-executor:v0.4.16
     # is the controller image

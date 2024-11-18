@@ -62,7 +62,6 @@ spec:
             {{- if .Values.controller.binaryPath }} 
             - --binary-path={{ .Values.controller.binaryPath }}
             {{- end }}
-            {{- if .Values.controller.enableHelmWebhookRegistration }}
             - --configurations-threshold={{ .Values.controller.configuration_rate_threshold }}
             - --drift-controller-interval={{ .Values.controller.driftControllerInterval }}
             - --drift-interval={{ .Values.controller.driftInterval }}
