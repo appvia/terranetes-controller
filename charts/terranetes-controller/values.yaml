@@ -43,11 +43,11 @@ controller:
     # policy is image for policy
     policy: bridgecrew/checkov:3.2.298
     # preload is the image to use for preload data jobs
-    preload: ghcr.io/appvia/terranetes-executor:v0.4.16
+    preload: ghcr.io/appvia/terranetes-executor:v0.5.0
     # is the controller image
-    controller: ghcr.io/appvia/terranetes-controller:v0.4.16
+    controller: ghcr.io/appvia/terranetes-controller:v0.5.0
     # The terranetes image used when running jobs
-    executor: ghcr.io/appvia/terranetes-executor:v0.4.16
+    executor: ghcr.io/appvia/terranetes-executor:v0.5.0
   # Rate limting on configurations to prevent the controller from being overwhelmed. This
   # is the percentage of configurations which are permitted to run a plan at any one time.
   # Note, zero means no rate limiting is applied.
