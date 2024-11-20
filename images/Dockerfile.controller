@@ -11,7 +11,7 @@ ENV \
 
 RUN cd /go/src/github.com/appvia/terranetes-controller && make controller
 
-FROM alpine:3.19
+FROM alpine:3.20.3
 
 RUN apk add ca-certificates
 
