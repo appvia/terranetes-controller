@@ -37,7 +37,7 @@ require (
 	github.com/rodaine/hclencoder v0.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tcnksm/ghr v0.16.2
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
