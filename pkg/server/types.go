@@ -29,7 +29,7 @@ type Config struct {
 	BackendTemplate string
 	// BackoffLimit is the number of times we are willing to allow a job to fail
 	BackoffLimit int
-	// BinaryPath is the name of the binary to use to run the terraform commands 
+	// BinaryPath is the name of the binary to use to run the terraform commands
 	BinaryPath string
 	// ConfigurationThreshold is the max number of configurations we are willing
 	// to run at the same time
@@ -86,6 +86,8 @@ type Config struct {
 	MetricsPort int
 	// Namespace is namespace the controller is running
 	Namespace string
+	// NamespaceFilters is the namespace/s to filter on
+	NamespaceFilters string
 	// PolicyImage is the image to use for policy
 	PolicyImage string
 	// PreloadImage is the image to use for the preload job
