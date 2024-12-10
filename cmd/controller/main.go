@@ -95,6 +95,7 @@ func main() {
 	flags.StringVar(&config.TLSDir, "tls-dir", "", "The directory the certificates are held")
 	flags.StringVar(&config.TLSKey, "tls-key", "tls-key.pem", "The name of the file containing the TLS key")
 	flags.StringVar(&config.TerraformImage, "terraform-image", "ghcr.io/opentofu/opentofu:latest", "The image to use for the terraform")
+	flags.StringSliceVar(&config.NamespaceFilters, "namespace-filter", []string{}, "A list of namespaces to filter on")
 
 	crFlags := flag.NewFlagSet("controller-runtime", flag.ContinueOnError)
 	zapOpts.BindFlags(crFlags)
