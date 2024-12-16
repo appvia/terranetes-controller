@@ -12,12 +12,11 @@ The Terranetes Controller manages the lifecycle of an OpenTofu or Terraform reso
 
 There's a number of open source controllers you could use that will run OpenTofu or Terraform in Kubernetes. All of them deliver the developer outcome, however, none address the "consequences" of delivering that outcome in the first place; the risks, costs, security implications, the general lack of checks and balances. What sets the Terranetes controller apart is its opinion; we first enable the platform team to deliver the outcome in a safe environment before it can be self-served by developers. Providing platform engineers with all the knobs, dials and levers to control and mitigate those risks is the key differentiator for Terranetes controller.
 
-Documentation can be found at https://terranetes.io
+Documentation can be found at https://terranetes.appvia.io/
 
 ![Architecture](docs/images/terranetes-controller-arch.png)
 
-**FEATURES**
----
+## **FEATURES**
 
 ### DEVELOPERS
 
@@ -45,7 +44,6 @@ Documentation can be found at https://terranetes.io
   - Scan against Checkov security policies
 - [Version and publish Resource Plans](https://terranetes.appvia.io/terranetes-controller/admin/cloudresource/#what-are-revisions)
 
-**GETTING STARTED**
----
+## **GETTING STARTED**
 
 View the getting started guide at https://terranetes.io
