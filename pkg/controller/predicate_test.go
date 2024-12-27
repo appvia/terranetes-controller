@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -36,5 +37,5 @@ func TestNewNamespacePredicateCreate(t *testing.T) {
 	pod := &v1.Pod{}
 	pod.Namespace = "test"
 
-	assert.True(t, filter.Create(&event.TypedCreateEvent{}))
+	assert.True(t, filter.Create(event.TypedCreateEvent[client.Object]{Object: pod}))
 }
