@@ -53,7 +53,7 @@ type Options struct {
 	// BackoffLimit is the number of times we are willing to allow a job to fail
 	// before we give up
 	BackoffLimit int
-	// BinaryPath is the name of the binary to use to run the terraform commands 
+	// BinaryPath is the name of the binary to use to run the terraform commands
 	BinaryPath string
 	// DefaultExecutorMemoryRequest is the default memory request for the executor
 	DefaultExecutorMemoryRequest string
@@ -216,7 +216,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 			terraformv1alpha1.ConfigurationStageLabel:      stage,
 			terraformv1alpha1.ConfigurationUIDLabel:        string(r.configuration.GetUID()),
 		}),
-		"BinaryPath":                  options.BinaryPath,
+		"BinaryPath":                   options.BinaryPath,
 		"DefaultExecutorMemoryRequest": options.DefaultExecutorMemoryRequest,
 		"DefaultExecutorMemoryLimit":   options.DefaultExecutorMemoryLimit,
 		"DefaultExecutorCPURequest":    options.DefaultExecutorCPURequest,
@@ -250,7 +250,7 @@ func (r *Render) createTerraformFromTemplate(options Options, stage string) (*ba
 		"Images": map[string]interface{}{
 			"Executor":   options.ExecutorImage,
 			"Infracosts": options.InfracostsImage,
-			"Image":  	  options.Image,
+			"Image":      options.Image,
 			"Policy":     options.PolicyImage,
 		},
 		"Secrets": map[string]interface{}{

@@ -173,7 +173,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 	if err := (&configuration.Controller{
 		BackendTemplate:              config.BackendTemplate,
 		BackoffLimit:                 config.BackoffLimit,
-		BinaryPath:                   config.BinaryPath, 
+		BinaryPath:                   config.BinaryPath,
 		ControllerJobLabels:          jobLabels,
 		ControllerNamespace:          config.Namespace,
 		DefaultExecutorCPULimit:      config.ExecutorCPULimit,

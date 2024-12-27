@@ -92,7 +92,7 @@ type RevisionCommand struct {
 	// EnableTerraformPlan indicates we should use a terraform plan to verify the security policy.
 	// Note, this does require credentials to be configured
 	EnableTerraformPlan bool
-	// ShowGuidelines indicates we should show the guidelines in the output 
+	// ShowGuidelines indicates we should show the guidelines in the output
 	ShowGuidelines bool
 	// Contexts is a list of contexts from the cluster
 	Contexts *terraformv1alpha1.ContextList
@@ -643,7 +643,7 @@ func (o *RevisionCommand) checkSecurityPolicy(ctx context.Context) error {
 					if check.Get("resource").String() != "" {
 						v.Additional("Resource: %v", check.Get("resource"))
 					}
-		      if o.ShowGuidelines && check.Get("guideline").String() != "" {
+					if o.ShowGuidelines && check.Get("guideline").String() != "" {
 						v.Additional("Guideline: %v", check.Get("guideline"))
 					}
 				}
