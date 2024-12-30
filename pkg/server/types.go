@@ -87,7 +87,7 @@ type Config struct {
 	// Namespace is namespace the controller is running
 	Namespace string
 	// NamespaceFilters is the namespace/s to filter on
-	NamespaceFilters string
+	NamespaceFilters []string
 	// PolicyImage is the image to use for policy
 	PolicyImage string
 	// PreloadImage is the image to use for the preload job
