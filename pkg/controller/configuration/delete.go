@@ -107,7 +107,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			InfracostsSecret: c.InfracostsSecretName,
 			Namespace:        c.ControllerNamespace,
 			Template:         state.jobTemplate,
-			Image:   GetTerraformImage(configuration, c.TerraformImage),
+			Image:            GetTerraformImage(configuration, c.TerraformImage),
 		})
 		if err != nil {
 			cond.Failed(err, "Failed to create the terraform destroy job")

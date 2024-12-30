@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	pcache "github.com/patrickmn/go-cache"
@@ -72,8 +73,8 @@ type Controller struct {
 	// BackoffLimit is the amount of times we are allowing a job to failed before deeming
 	// it a failure
 	BackoffLimit int
-	// BinaryPath is the name of the binary to use to run the terraform commands 
-	BinaryPath string 
+	// BinaryPath is the name of the binary to use to run the terraform commands
+	BinaryPath string
 	// EnableContextInjection enables the injection of the context into the terraform configuration
 	// variables. This means we shall inject an number of default variables into the configuration
 	// such as namespace, name and labels
@@ -104,6 +105,8 @@ type Controller struct {
 	InfracostsImage string
 	// InfracostsSecretName is the name of the secret containing the api and token
 	InfracostsSecretName string
+	// NamespaceFilters is a list of namespaces we are responsible for; all other namespaces are ignored
+	NamespaceFilters []string
 	// ControllerJobLabels is a collection of labels to add to the job
 	ControllerJobLabels map[string]string
 	// JobTemplate is a custom override for the template to use
@@ -167,6 +170,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		"backend":            c.BackendTemplate,
 		"enable_costs":       c.EnableInfracosts,
 		"enable_watchers":    c.EnableWatchers,
+		"filters":            strings.Join(c.NamespaceFilters, ","),
 		"namespace":          c.ControllerNamespace,
 		"policy_image":       c.PolicyImage,
 		"terraform_image":    c.TerraformImage,
