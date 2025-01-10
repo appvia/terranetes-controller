@@ -71,7 +71,8 @@ func main() {
 	flags.StringSliceVarP(&step.UploadFile, "upload", "u", []string{}, "Upload file as a kubernetes secret")
 	flags.StringVar(&step.WaitFile, "wait-on", "", "The path to a file to indicate this step can be run")
 	flags.StringSliceVarP(&step.Commands, "command", "c", []string{}, "Command to execute")
-
+	flags.IntVar(&step.RetryAttempts, "retry-attempts", 0, "Number of times to retry the commands")
+	flags.DurationVar(&step.RetryBackoff, "retry-backoff", 0, "Duration to wait between retry attempts")
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[Error] %s\n", err)
 
@@ -128,49 +129,78 @@ func Run(ctx context.Context, step Step) error {
 	}
 
 	for i, command := range step.Commands {
-		//nolint:gosec
-		cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
-		cmd.Env = os.Environ()
+		attempt := 0
+		var lastErr error
 
-		logger := log.WithField("command", i)
+		for attempt <= step.RetryAttempts {
+			if attempt > 0 {
+				log.WithFields(log.Fields{
+					"attempt": attempt,
+					"command": i,
+					"backoff": step.RetryBackoff,
+				}).Info("retrying command")
 
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			logger.WithError(err).Error("failed to acquire stdout pipe on command")
-
-			return err
-		}
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			logger.WithError(err).Error("failed to acquire stderr pipe on command")
-
-			return err
-		}
-
-		//nolint:errcheck
-		go io.Copy(os.Stdout, stdout)
-		//nolint:errcheck
-		go io.Copy(os.Stdout, stderr)
-
-		if err := cmd.Start(); err != nil {
-			logger.WithError(err).Error("failed to execute the command")
-
-			return err
-		}
-
-		// @step: wait for the command to finish
-		if err := cmd.Wait(); err != nil {
-			logger.WithError(err).Error("failed to execute command successfully")
-
-			if step.ErrorFile != "" {
-				if err := utils.TouchFile(step.ErrorFile); err != nil {
-					logger.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
-
-					return err
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(step.RetryBackoff):
 				}
 			}
 
-			return err
+			//nolint:gosec
+			cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
+			cmd.Env = os.Environ()
+
+			logger := log.WithFields(log.Fields{
+				"command": i,
+				"attempt": attempt,
+			})
+
+			stdout, err := cmd.StdoutPipe()
+			if err != nil {
+				logger.WithError(err).Error("failed to acquire stdout pipe on command")
+				return err
+			}
+			stderr, err := cmd.StderrPipe()
+			if err != nil {
+				logger.WithError(err).Error("failed to acquire stderr pipe on command")
+				return err
+			}
+
+			//nolint:errcheck
+			go io.Copy(os.Stdout, stdout)
+			//nolint:errcheck
+			go io.Copy(os.Stdout, stderr)
+
+			if err := cmd.Start(); err != nil {
+				logger.WithError(err).Error("failed to execute the command")
+				lastErr = err
+				attempt++
+				continue
+			}
+
+			// @step: wait for the command to finish
+			if err := cmd.Wait(); err != nil {
+				logger.WithError(err).Error("command execution failed")
+				lastErr = err
+				attempt++
+				continue
+			}
+
+			// Command succeeded, break the retry loop
+			lastErr = nil
+			break
+		}
+
+		// If we exhausted all retries and still have an error
+		if lastErr != nil {
+			if step.ErrorFile != "" {
+				if err := utils.TouchFile(step.ErrorFile); err != nil {
+					log.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
+					return err
+				}
+			}
+			return fmt.Errorf("command failed after %d attempts: %w", attempt, lastErr)
 		}
 	}
 	log.Info("successfully executed the step")
