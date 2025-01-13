@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -72,12 +73,22 @@ func main() {
 	flags.StringVar(&step.WaitFile, "wait-on", "", "The path to a file to indicate this step can be run")
 	flags.StringSliceVarP(&step.Commands, "command", "c", []string{}, "Command to execute")
 	flags.IntVar(&step.RetryAttempts, "retry-attempts", 0, "Number of times to retry the commands")
-	flags.DurationVar(&step.RetryBackoff, "retry-backoff", 0, "Duration to wait between retry attempts")
+	flags.DurationVar(&step.RetryMinBackoff, "retry-min-backoff", 0, "Minimum duration to wait between retry attempts")
+	flags.DurationVar(&step.RetryMaxJitter, "retry-max-jitter", 2*time.Second, "Maximum random jitter to add to backoff time")
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "[Error] %s\n", err)
 
 		os.Exit(1)
 	}
+}
+
+// calculateBackoff returns a duration that includes the minimum backoff plus a random jitter
+func calculateBackoff(minBackoff, maxJitter time.Duration) time.Duration {
+	if maxJitter <= 0 {
+		return minBackoff
+	}
+	jitter := time.Duration(rand.Int63n(int64(maxJitter)))
+	return minBackoff + jitter
 }
 
 // Run is called to implement the action
@@ -134,16 +145,17 @@ func Run(ctx context.Context, step Step) error {
 
 		for attempt <= step.RetryAttempts {
 			if attempt > 0 {
+				backoff := calculateBackoff(step.RetryMinBackoff, step.RetryMaxJitter)
 				log.WithFields(log.Fields{
 					"attempt": attempt,
 					"command": i,
-					"backoff": step.RetryBackoff,
+					"backoff": backoff,
 				}).Info("retrying command")
 
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case <-time.After(step.RetryBackoff):
+				case <-time.After(backoff):
 				}
 			}
 

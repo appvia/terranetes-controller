@@ -28,8 +28,10 @@ import (
 type Step struct {
 	// Commands is the commands and arguments to run
 	Commands []string
-	// RetryBackoff is the backoff time to retry ANY of the commands
-	RetryBackoff time.Duration
+	// RetryMinBackoff is the minimum backoff time to retry ANY of the commands
+	RetryMinBackoff time.Duration
+	// RetryMaxJitter is the maximum random jitter to add to the backoff time
+	RetryMaxJitter time.Duration
 	// RetryAttempts is the number of times to retry the commands before giving up
 	RetryAttempts int
 	// Comment adds a banner to the stage
@@ -64,8 +66,11 @@ func (s Step) IsValid() error {
 	case s.RetryAttempts < 0:
 		return errors.New("retry attempts must be greater than or equal to 0")
 
-	case s.RetryBackoff < 0:
-		return errors.New("retry backoff must be greater than or equal to 0")
+	case s.RetryAttempts > 0 && s.RetryMinBackoff < 0:
+		return errors.New("minimum retry backoff must be greater than or equal to 0")
+
+	case s.RetryAttempts > 0 && s.RetryMaxJitter < 0:
+		return errors.New("maximum jitter must be greater than or equal to 0")
 
 	case len(s.UploadFile) > 0 && s.Namespace == "":
 		return errors.New("namespace must be specified when uploading files")
