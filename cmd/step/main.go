@@ -87,6 +87,7 @@ func calculateBackoff(minBackoff, maxJitter time.Duration) time.Duration {
 	if maxJitter <= 0 {
 		return minBackoff
 	}
+	//nolint:gosec // math/rand is acceptable here as jitter value is not used for security purposes
 	jitter := time.Duration(rand.Int63n(int64(maxJitter)))
 	return minBackoff + jitter
 }
