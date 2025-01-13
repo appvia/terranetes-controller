@@ -148,9 +148,9 @@ func Run(ctx context.Context, step Step) error {
 			if attempt > 0 {
 				backoff := calculateBackoff(step.RetryMinBackoff, step.RetryMaxJitter)
 				log.WithFields(log.Fields{
-					"attempt": attempt,
-					"command": i,
-					"backoff": backoff,
+					"attempt":       attempt,
+					"command-index": i,
+					"backoff":       backoff,
 				}).Info("retrying command")
 
 				select {
@@ -165,8 +165,8 @@ func Run(ctx context.Context, step Step) error {
 			cmd.Env = os.Environ()
 
 			logger := log.WithFields(log.Fields{
-				"command": i,
-				"attempt": attempt,
+				"command-index": i,
+				"attempt":       attempt,
 			})
 
 			stdout, err := cmd.StdoutPipe()
