@@ -36,25 +36,28 @@ func Download(ctx context.Context, source, destination string) error {
 		return err
 	}
 
-	if strings.HasPrefix(source, "http") {
-		source = strings.TrimPrefix(source, "http://")
-		source = strings.TrimPrefix(source, "https://")
+	// @step: just to keep the same behaviour as the previous version
+	if strings.HasPrefix(source, "https://github.com") {
+		source = strings.Replace(source, "https://github.com", "git::https://github.com", 2)
 	}
 
 	client := &getter.Client{
 		Ctx: ctx,
 		Dst: destination,
-		Detectors: []getter.Detector{
-			new(getter.GitHubDetector),
-			new(getter.GitLabDetector),
-			new(getter.GitDetector),
-			new(getter.BitBucketDetector),
-			new(getter.GCSDetector),
-			new(getter.S3Detector),
-			new(getter.FileDetector),
+		Options: []getter.ClientOption{
+			getter.WithMode(getter.ClientModeAny),
+			getter.WithDecompressors(getter.LimitedDecompressors(0, 0)),
+			getter.WithContext(ctx),
+			getter.WithDetectors([]getter.Detector{
+				new(getter.GitHubDetector),
+				new(getter.GitLabDetector),
+				new(getter.GitDetector),
+				new(getter.BitBucketDetector),
+				new(getter.GCSDetector),
+				new(getter.S3Detector),
+				new(getter.FileDetector),
+			}),
 		},
-		Mode:    getter.ClientModeAny,
-		Options: []getter.ClientOption{},
 		Pwd:     pwd,
 		Src:     source,
 	}
