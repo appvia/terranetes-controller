@@ -73,6 +73,8 @@ type RevisionCommand struct {
 	File string
 	// Provider is the name of the provider to use
 	Provider string
+  // DeleteDownload indicates we should retain the download
+	DeleteDownload bool
 }
 
 var revisionCommandDesc = `
@@ -108,6 +110,7 @@ func NewRevisionCommand(factory cmd.Factory) *cobra.Command {
 
 	flags := c.Flags()
 	flags.BoolVar(&o.EnableDefaultVariables, "enable-default-variables", true, "Indicates if include variables which have defaults from the terraform module")
+	flags.BoolVar(&o.DeleteDownload, "delete-download", true, "Indicates if we should delete the download after the command has completed")
 	flags.StringVar(&o.Description, "description", "", "A human readable description of the revision and what is provides")
 	flags.StringVarP(&o.Name, "name", "n", "", "This name of the revision")
 	flags.StringVarP(&o.Revision, "revision", "r", "", "The semvar version of this revision")
@@ -128,7 +131,14 @@ func (o *RevisionCommand) Run(ctx context.Context) (err error) {
 	}
 	defer func() {
 		if delete {
-			err = os.RemoveAll(path)
+			retain := err
+
+			if o.DeleteDownload {
+				err = os.RemoveAll(path)
+			}
+			if retain != nil {
+				err = retain
+			}
 		}
 	}()
 	o.Println("%s Successfully downloaded module to: %s", cmd.IconGood, path)
@@ -139,7 +149,6 @@ func (o *RevisionCommand) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("failed to load terraform module: %w", diag.Err())
 	}
 
-	// @step: ask the user about using the current kubeconfig to retrieve any contexts
 	if err := o.retrieveConfiguration(ctx); err != nil {
 		return err
 	}
@@ -313,6 +322,11 @@ func (o *RevisionCommand) retrieveInputs(module *tfconfig.Module) error {
 				utils.MaxChars(x.Description, 60),
 			))
 		}
+	}
+
+	// @step: if we have nothing to select from, we can skip
+	if len(required) == 0 && len(optional) == 0 {
+		return nil
 	}
 
 	var selected []string
