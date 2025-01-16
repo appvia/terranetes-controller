@@ -125,7 +125,7 @@ func Run(ctx context.Context, step Step) error {
 
 		err := utils.RetryWithTimeout(ctx, step.Timeout, time.Second, func() (bool, error) {
 			if step.FailureFile != "" {
-				if found, _ := utils.FileExists(step.ErrorFile); found {
+				if found, _ := utils.FileExists(step.FailureFile); found {
 					return false, errors.New("found error signal file, refusing to execute")
 				}
 			}
