@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -454,8 +455,49 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alpha1
 		}
 
 		secret := &v1.Secret{}
-		secret.Namespace = configuration.Namespace
 		secret.Name = configuration.Spec.Auth.Name
+
+		if configuration.Spec.Plan != nil && configuration.Spec.Plan.Name != "" {
+			// @step: retrieve the revision from the plan
+			revision := &terraformv1alpha1.Revision{}
+			revision.Name = configuration.GetLabels()[terraformv1alpha1.CloudResourceRevisionNameLabel]
+
+			found, err := kubernetes.GetIfExists(ctx, c.cc, revision)
+			if err != nil {
+				cond.Failed(err, "Failed to retrieve the revision: %q, which this Configuration %q is part of", revision.Name, configuration.Name)
+				return reconcile.Result{}, err
+			}
+			if !found {
+				cond.ActionRequired("Revision %q, which this Configuration %q is part of, does not exist", revision.Name, configuration.Name)
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+
+			// @step: use the auth from the revision (sourcing secret from different namespace) if it's the same as in the configuration
+			if revision.Spec.Configuration.Auth != nil {
+				if reflect.DeepEqual(revision.Spec.Configuration.Auth, configuration.Spec.Auth) {
+					secret.Namespace = revision.Spec.Configuration.Auth.Namespace
+					log.WithFields(log.Fields{
+						"name":           configuration.Name,
+						"auth_name":      secret.Name,
+						"auth_namespace": secret.Namespace,
+						"revision":       revision.Name,
+					}).Info("auth secrets match, retrieving from the specified auth namespace, as defined in the revision")
+				} else {
+					secret.Namespace = configuration.Namespace
+					log.WithFields(log.Fields{
+						"name":      configuration.Name,
+						"namespace": configuration.Namespace,
+						"revision":  revision.Name,
+					}).Info("configuration and revision auth secrets do not match, retrieving from the configuration's namespace")
+				}
+			}
+		} else {
+			secret.Namespace = configuration.Namespace
+			log.WithFields(log.Fields{
+				"name":      configuration.Name,
+				"namespace": configuration.Namespace,
+			}).Info("no plan referenced, retrieving auth secret from the configuration's namespace")
+		}
 
 		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
 		if err != nil {
