@@ -36,7 +36,7 @@ spec:
   {{- if .Inputs }}
 
   ## Inputs dictate the variables which the consumer is permitted, or
-  ## required to provides. It is best to keep this to a minimum; so a developer
+  ## required to provide. It is best to keep this to a minimum; so a developer
   ## needn't be concerned with the inner workings of the module, just the
   ## contextual requirements, i.e database name, size etc.
   inputs:
