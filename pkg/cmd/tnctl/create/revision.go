@@ -73,7 +73,7 @@ type RevisionCommand struct {
 	File string
 	// Provider is the name of the provider to use
 	Provider string
-  // DeleteDownload indicates we should retain the download
+	// DeleteDownload indicates we should retain the download
 	DeleteDownload bool
 }
 
@@ -245,7 +245,7 @@ func (o *RevisionCommand) retrieveOutputs(module *tfconfig.Module) error {
 	// @step: ask the user which outputs should exposed
 	var selected []string
 	if err := survey.AskOne(&survey.MultiSelect{
-		Message:  "What outputs should be extract into the secret?",
+		Message:  "What outputs should be extracted into the secret?",
 		Options:  suggestions,
 		PageSize: 20,
 	}, &selected, survey.WithKeepFilter(false)); err != nil {
@@ -272,7 +272,7 @@ func (o *RevisionCommand) retrieveRevision() error {
 	if !found {
 		if err := survey.AskOne(&survey.Input{
 			Message: fmt.Sprintf("What is the version of this %s (in semver format)?", color.YellowString("revision")),
-			Help:    "Revisions must have a version, cloud resource reference both the plan and the version",
+			Help:    "Revisions must have a version, cloud resources reference both the plan name and the version",
 			Default: "v0.0.1",
 		}, &o.Revision); err != nil {
 			return err
@@ -299,7 +299,7 @@ func (o *RevisionCommand) retrieveInputs(module *tfconfig.Module) error {
 		return nil
 	}
 
-	// @step: calculate the max variable size - just of spacing
+	// @step: calculate the max variable size - just for spacing
 	for _, x := range module.Variables {
 		if len(x.Name) > length {
 			length = len(x.Name)
@@ -430,7 +430,7 @@ func (o *RevisionCommand) retrievePlan() error {
 
 	// @step: we an produce a list from the current plans
 	if err := survey.AskOne(&survey.Select{
-		Message: fmt.Sprintf("The cluster already contains plans, will the %s will be part of?",
+		Message: fmt.Sprintf("The cluster already contains plans, which will the %s will be part of?",
 			color.YellowString("revision"),
 		),
 		Options: append(list, "None of these..."),
