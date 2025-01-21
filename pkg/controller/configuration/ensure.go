@@ -79,6 +79,25 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Config
 			return reconcile.Result{}, err
 		}
 
+		// @step: if we are based on a Revision, lets try and grab the definition
+		if configuration.IsRevisioned() {
+			revision := &terraformv1alpha1.Revision{}
+			revision.Name = configuration.Spec.Plan.Revision
+
+			found, err := kubernetes.GetIfExists(ctx, c.cc, revision)
+			if err != nil {
+				cond.Failed(err, "Failed to retrieve the plan for the configuration")
+
+				return reconcile.Result{}, err
+			}
+			if !found {
+				cond.ActionRequired("Revision %q does not exist", configuration.Spec.Plan.Revision)
+
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+			state.revision = revision
+		}
+
 		// @step: retrieve a list of all the confugrations in the cluster - shouldn't have much impact
 		// as it's a cached client and we defer to the cache
 		configurations := &terraformv1alpha1.ConfigurationList{}
@@ -457,29 +476,17 @@ func (c *Controller) ensureAuthenticationSecret(configuration *terraformv1alpha1
 		secret := &v1.Secret{}
 		secret.Name = configuration.Spec.Auth.Name
 
-		if configuration.Spec.Plan != nil && configuration.Spec.Plan.Name != "" {
-			// @step: retrieve the revision from the plan
-			revision := &terraformv1alpha1.Revision{}
-			revision.Name = configuration.GetLabels()[terraformv1alpha1.CloudResourceRevisionNameLabel]
-
-			found, err := kubernetes.GetIfExists(ctx, c.cc, revision)
-			if err != nil {
-				cond.Failed(err, "Failed to retrieve the revision: %q, which this Configuration %q is part of", revision.Name, configuration.Name)
-				return reconcile.Result{}, err
-			}
-			if !found {
-				cond.ActionRequired("Revision %q, which this Configuration %q is part of, does not exist", revision.Name, configuration.Name)
-				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
-			}
+		if configuration.IsRevisioned() {
+			revision := state.revision
 
 			// @step: use the auth from the revision (sourcing secret from different namespace) if it's the same as in the configuration
 			if revision.Spec.Configuration.Auth != nil {
 				if reflect.DeepEqual(revision.Spec.Configuration.Auth, configuration.Spec.Auth) {
 					secret.Namespace = revision.Spec.Configuration.Auth.Namespace
 					log.WithFields(log.Fields{
-						"name":           configuration.Name,
 						"auth_name":      secret.Name,
 						"auth_namespace": secret.Namespace,
+						"name":           configuration.Name,
 						"revision":       revision.Name,
 					}).Info("auth secrets match, retrieving from the specified auth namespace, as defined in the revision")
 				} else {

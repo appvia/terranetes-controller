@@ -493,6 +493,20 @@ type ConfigurationStatus struct {
 	TerraformVersion string `json:"terraformVersion,omitempty"`
 }
 
+// IsRevisioned returns true if the configuration is revisioned
+func (c *Configuration) IsRevisioned() bool {
+	switch {
+	case c.Spec.Plan == nil:
+		return false
+	case c.Spec.Plan.Name == "":
+		return false
+	case c.Spec.Plan.Revision == "":
+		return false
+	}
+
+	return false
+}
+
 // GetNamespacedName returns the namespaced resource type
 func (c *Configuration) GetNamespacedName() types.NamespacedName {
 	return types.NamespacedName{

@@ -38,6 +38,8 @@ type state struct {
 	configurations *terraformv1alpha1.ConfigurationList
 	// checkovConstraint is the policy constraint for this configuration
 	checkovConstraint *terraformv1alpha1.PolicyConstraint
+	// revision is the Revision we are based from
+	revision *terraformv1alpha1.Revision
 	// hasDrift is a flag to indicate if the configuration has drift
 	hasDrift bool
 	// backendTemplate is the template to use for the terraform state backend.

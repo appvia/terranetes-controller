@@ -58,8 +58,8 @@ func Download(ctx context.Context, source, destination string) error {
 				new(getter.FileDetector),
 			}),
 		},
-		Pwd:     pwd,
-		Src:     source,
+		Pwd: pwd,
+		Src: source,
 	}
 
 	doneCh := make(chan struct{})
