@@ -100,7 +100,7 @@ func FindMatchingPolicy(
 
 			// @step: if we have a resource selector lets check it
 			if list.Items[i].Spec.Constraints.Checkov.Selector.Resource != nil {
-				selector, err := metav1.LabelSelectorAsSelector(list.Items[i].Spec.Constraints.Checkov.Selector.Namespace)
+				selector, err := metav1.LabelSelectorAsSelector(list.Items[i].Spec.Constraints.Checkov.Selector.Resource)
 				if err != nil {
 					return nil, err
 				}
