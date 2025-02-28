@@ -113,6 +113,10 @@ spec:
                 name: {{ . }}
                 optional: true
           {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           volumeMounts:
             - name: config
               mountPath: /run/config
@@ -139,6 +143,7 @@ spec:
                 optional: false
           {{- end }}
           securityContext:
+            allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           volumeMounts:
@@ -160,6 +165,10 @@ spec:
             - secretRef
                 name: {{ .Policy.Source.SecretRef.Name }}
           {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           volumeMounts:
             - name: run
               mountPath: /run
@@ -188,6 +197,10 @@ spec:
             - secretRef:
                 name: {{ .SecretRef.Name }}
           {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           volumeMounts:
             - name: run
               mountPath: /run
@@ -277,6 +290,7 @@ spec:
             cpu: {{ .DefaultExecutorCPURequest }} 
             memory: {{ .DefaultExecutorMemoryRequest }} 
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
         volumeMounts:
@@ -325,6 +339,7 @@ spec:
               optional: true
         {{- end }}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
         volumeMounts:
@@ -373,6 +388,7 @@ spec:
               optional: true
         {{- end }}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: [ALL]
         volumeMounts:
