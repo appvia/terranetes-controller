@@ -96,6 +96,7 @@ spec:
             - --tls-key={{ .Values.controller.webhooks.tlsKey }}
             - --webhooks-port={{ .Values.controller.webhooks.port }}
             {{- end }}
+            - --register-crds={{ .Values.controller.registerCRDs }}
             {{- range $key, $value := .Values.controller.extraArgs }}
             - --{{ $key }}={{ $value }}
             {{- end }}
