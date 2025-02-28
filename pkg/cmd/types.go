@@ -17,6 +17,8 @@ RR along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package cmd
 
+import "io"
+
 // Config is the configuration for the tnctl command
 type Config struct {
 	// Workflow is the location of the workflow templates. This should point
@@ -31,6 +33,14 @@ type Config struct {
 	// search terraform modules from. Currently we support the public
 	// terraform registry and any Github user or organization.
 	Sources []string `json:"sources,omitempty" yaml:"sources,omitempty"`
+}
+
+// Formatter is the interface that must be implemented by the formatter
+type Formatter interface {
+	// Printf prints a message to the output stream
+	Printf(out io.Writer, format string, a ...interface{})
+	// Println prints a message to the output stream
+	Println(out io.Writer, format string, a ...interface{})
 }
 
 // ConfigInterface is the interface that must be implemented by the config struct
