@@ -1,8 +1,7 @@
 module github.com/appvia/terranetes-controller
 
 go 1.22.0
-
-toolchain go1.22.5
+toolchain go1.23.6
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -42,7 +41,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
-	golang.org/x/oauth2 v0.26.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/tools v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.31.4
