@@ -229,7 +229,7 @@ type RevisionSpec struct {
 
 // GetInputDefaultValue returns the default value for the input
 func (r *RevisionSpec) GetInputDefaultValue(key string) (interface{}, bool, error) {
-	if r.Inputs == nil || len(r.Inputs) == 0 {
+	if r.Inputs == nil {
 		return nil, false, nil
 	}
 
