@@ -46,11 +46,11 @@ require (
 	golang.org/x/tools v0.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.32.3
-	k8s.io/apiextensions-apiserver v0.32.2
+	k8s.io/apiextensions-apiserver v0.32.3
 	k8s.io/apimachinery v0.32.3
 	k8s.io/cli-runtime v0.32.3
 	k8s.io/client-go v0.32.3
-	k8s.io/code-generator v0.32.2
+	k8s.io/code-generator v0.32.3
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	mvdan.cc/sh/v3 v3.10.0
