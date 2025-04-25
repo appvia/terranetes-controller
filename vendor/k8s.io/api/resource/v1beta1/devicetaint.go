@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2025 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,10 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +k8s:deepcopy-gen=package
-// +k8s:protobuf-gen=package
-// +groupName=storage.k8s.io
-// +k8s:openapi-gen=true
-// +k8s:prerelease-lifecycle-gen=true
-
 package v1beta1
+
+import "fmt"
+
+var _ fmt.Stringer = DeviceTaint{}
+
+// String converts to a string in the format '<key>=<value>:<effect>', '<key>=<value>:', '<key>:<effect>', or '<key>'.
+func (t DeviceTaint) String() string {
+	if len(t.Effect) == 0 {
+		if len(t.Value) == 0 {
+			return fmt.Sprintf("%v", t.Key)
+		}
+		return fmt.Sprintf("%v=%v:", t.Key, t.Value)
+	}
+	if len(t.Value) == 0 {
+		return fmt.Sprintf("%v:%v", t.Key, t.Effect)
+	}
+	return fmt.Sprintf("%v=%v:%v", t.Key, t.Value, t.Effect)
+}
