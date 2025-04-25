@@ -66,7 +66,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: cloudresources.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -314,16 +314,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -392,16 +388,12 @@ spec:
                               - Unknown
                             type: string
                           type:
-                            description: |-
-                              Type of condition in CamelCase or in foo.example.com/CamelCase.
-                              ---
-                              Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                              useful (see .node.status.conditions), the ability to deconflict is important.
-                              The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                            description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                             maxLength: 316
                             pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                             type: string
                         required:
+                          - lastTransitionTime
                           - name
                           - reason
                           - status
@@ -557,7 +549,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: configurations.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -812,16 +804,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -920,7 +908,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: contexts.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1030,16 +1018,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -1103,7 +1087,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml = []byte(`apiVers
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: plans.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1221,16 +1205,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -1307,7 +1287,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiV
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: policies.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -1402,6 +1382,9 @@ spec:
                                   URL is the source external checks - this is usually a git repository. The notation
                                   for this is https://github.com/hashicorp/go-getter
                                 type: string
+                            required:
+                              - name
+                              - url
                             type: object
                           type: array
                         selector:
@@ -1532,6 +1515,9 @@ spec:
                                 URL is the source external checks - this is usually a git repository. The notation
                                 for this is https://github.com/hashicorp/go-getter
                               type: string
+                          required:
+                            - configuration
+                            - url
                           type: object
                       type: object
                     modules:
@@ -1786,16 +1772,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -1859,7 +1841,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: providers.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -2152,16 +2134,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
@@ -2231,7 +2209,7 @@ var _chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYaml = []byte(`api
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.3
   name: revisions.terraform.appvia.io
 spec:
   group: terraform.appvia.io
@@ -2604,16 +2582,12 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          Type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
                     required:
+                      - lastTransitionTime
                       - name
                       - reason
                       - status
