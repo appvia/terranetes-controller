@@ -48,6 +48,9 @@ func EnsureConditionsRegistered(conditions []corev1alpha1.ConditionSpec, resourc
 			if condition.Status == "" {
 				condition.Status = metav1.ConditionFalse
 			}
+			if condition.LastTransitionTime.IsZero() {
+				condition.LastTransitionTime = metav1.Now()
+			}
 
 			status.Conditions = append(status.Conditions, condition)
 		}
