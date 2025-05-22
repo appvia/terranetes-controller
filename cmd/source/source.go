@@ -272,15 +272,15 @@ func sanitizeSource(location string) (string, string, error) {
 	case os.Getenv("GIT_PASSWORD") != "" && os.Getenv("GIT_USERNAME") == "":
 		source = fmt.Sprintf("%s://%s@%s%s",
 			uri.Scheme,
-			os.Getenv("GIT_PASSWORD"),
+			strings.TrimSpace(os.Getenv("GIT_PASSWORD")),
 			uri.Hostname(), path,
 		)
 
 	default:
 		source = fmt.Sprintf("%s://%s:%s@%s%s",
 			uri.Scheme,
-			os.Getenv("GIT_USERNAME"),
-			os.Getenv("GIT_PASSWORD"),
+			strings.TrimSpace(os.Getenv("GIT_USERNAME")),
+			strings.TrimSpace(os.Getenv("GIT_PASSWORD")),
 			uri.Hostname(), path,
 		)
 	}
