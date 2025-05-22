@@ -128,6 +128,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		if err != nil {
 			return fmt.Errorf("failed to create git config template: %w", err)
 		}
+
 		filename := os.ExpandEnv(
 			path.Join("${HOME}", utils.GetEnv("GIT_CONFIG", ".gitconfig")),
 		)
