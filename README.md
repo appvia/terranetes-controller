@@ -46,4 +46,4 @@ Documentation can be found at https://terranetes.appvia.io/
 
 ## **GETTING STARTED**
 
-View the getting started guide at https://terranetes.io
+View the getting started guide at https://terranetes.appvia.io/terranetes-controller/quick_start/
