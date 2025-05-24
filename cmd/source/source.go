@@ -128,6 +128,7 @@ func Run(ctx context.Context, source, destination string, timeout time.Duration,
 		if err != nil {
 			return fmt.Errorf("failed to create git config template: %w", err)
 		}
+
 		filename := os.ExpandEnv(
 			path.Join("${HOME}", utils.GetEnv("GIT_CONFIG", ".gitconfig")),
 		)
@@ -272,15 +273,15 @@ func sanitizeSource(location string) (string, string, error) {
 	case os.Getenv("GIT_PASSWORD") != "" && os.Getenv("GIT_USERNAME") == "":
 		source = fmt.Sprintf("%s://%s@%s%s",
 			uri.Scheme,
-			os.Getenv("GIT_PASSWORD"),
+			strings.TrimSpace(os.Getenv("GIT_PASSWORD")),
 			uri.Hostname(), path,
 		)
 
 	default:
 		source = fmt.Sprintf("%s://%s:%s@%s%s",
 			uri.Scheme,
-			os.Getenv("GIT_USERNAME"),
-			os.Getenv("GIT_PASSWORD"),
+			strings.TrimSpace(os.Getenv("GIT_USERNAME")),
+			strings.TrimSpace(os.Getenv("GIT_PASSWORD")),
 			uri.Hostname(), path,
 		)
 	}
