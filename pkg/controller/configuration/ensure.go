@@ -248,8 +248,9 @@ func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha
 			return reconcile.Result{}, err
 		}
 		if !found {
+			mesasage := fmt.Sprintf("Backend template secret %q not found, contact administrator", reference)
 			//nolint:govet
-			cond.ActionRequired(fmt.Sprintf("Backend template secret %q not found, contact administrator", reference))
+			cond.ActionRequired(mesasage)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
@@ -257,10 +258,11 @@ func (c *Controller) ensureCustomBackendTemplate(configuration *terraformv1alpha
 		// @step: ensure we have the backend.tf key in the secret
 		backend, ok := secret.Data[terraformv1alpha1.TerraformBackendSecretKey]
 		if !ok || len(backend) == 0 {
+			message := fmt.Sprintf("Backend template secret %q does not contain the %s key",
+				reference, terraformv1alpha1.TerraformBackendSecretKey)
+
 			//nolint:govet
-			cond.ActionRequired(fmt.Sprintf("Backend template secret %q does not contain the %s key",
-				reference, terraformv1alpha1.TerraformBackendSecretKey),
-			)
+			cond.ActionRequired(message)
 
 			return reconcile.Result{}, controller.ErrIgnore
 		}
