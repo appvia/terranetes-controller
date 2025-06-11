@@ -1,7 +1,9 @@
 ---
 name: E2E
 run-name: Running E2E for ${{ inputs.cloud }} (${{ github.ref_name }})
-
+permissions:
+  contents: read
+  packages: write
 on:
   workflow_call:
     inputs:
