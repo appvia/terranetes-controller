@@ -3,8 +3,8 @@ apiVersion: v2
 name: terranetes-controller
 description: Controller used to provision a terraform workflow within kubernetes
 type: application
-version: v0.8.4
-appVersion: v0.5.5
+version: v0.8.5
+appVersion: v0.5.6
 sources:
   - https://github.com/appvia/terranetes-controller
   - https://github.com/appvia/terranetes
