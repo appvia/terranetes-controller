@@ -244,7 +244,7 @@ func (c *CheckResult) Check(title string, call func(o CheckInterface) error) err
 		//nolint:govet
 		fmt.Fprintf(c.Writer, "%v %s\n",
 			emoji.JapaneseSymbolForBeginner,
-			CheckTitle.Sprintf(title))
+			CheckTitle.Sprintf("%s", title))
 	}
 
 	return call(&checkImpl{
