@@ -117,7 +117,7 @@ func (c *Controller) ensureErrorDetection(configuration *terraformv1alpha1.Confi
 				message := detectors[i].Message
 
 				//nolint:govet
-				cond.ActionRequired(message)
+				cond.ActionRequired("%s", message)
 			}
 		}
 
