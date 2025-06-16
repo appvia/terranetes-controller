@@ -482,7 +482,7 @@ github.com/go-openapi/swag
 # github.com/go-openapi/validate v0.24.0
 ## explicit; go 1.20
 github.com/go-openapi/validate
-# github.com/go-swagger/go-swagger v0.31.0
+# github.com/go-swagger/go-swagger v0.32.3
 ## explicit; go 1.21
 github.com/go-swagger/go-swagger/cmd/swagger
 github.com/go-swagger/go-swagger/cmd/swagger/commands
