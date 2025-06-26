@@ -69,7 +69,7 @@ spec:
   variables:
     # -- The name of the bucket. If omitted, Terraform will assign a random,
     # unique name
-    bucket: terranetes-controller-ci-bucket
+    bucket: terranetes-ctl-ci-bucket-rohith
     # -- The canned ACL to apply
     acl: private
     # -- Manage S3 Bucket Ownership Controls on this bucket.
