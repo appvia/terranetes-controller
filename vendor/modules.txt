@@ -2251,7 +2251,7 @@ k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
 k8s.io/api/storagemigration/v1alpha1
-# k8s.io/apiextensions-apiserver v0.33.1
+# k8s.io/apiextensions-apiserver v0.33.2
 ## explicit; go 1.24.0
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -2669,7 +2669,7 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/watchlist
 k8s.io/client-go/util/workqueue
-# k8s.io/code-generator v0.33.1
+# k8s.io/code-generator v0.33.2
 ## explicit; go 1.24.0
 k8s.io/code-generator
 k8s.io/code-generator/cmd/applyconfiguration-gen
