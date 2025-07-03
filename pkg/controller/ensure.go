@@ -66,7 +66,7 @@ func RequeueUnless(result reconcile.Result, err error, duration time.Duration) (
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if result.Requeue || result.RequeueAfter > 0 {
+	if result.RequeueAfter > 0 {
 		return result, nil
 	}
 
@@ -111,7 +111,7 @@ func (e *EnsureRunner) Run(ctx context.Context, cc client.Client, resource Objec
 
 			return reconcile.Result{}, rerr
 		}
-		if result.Requeue || result.RequeueAfter > 0 {
+		if result.RequeueAfter > 0 {
 			return result, nil
 		}
 	}

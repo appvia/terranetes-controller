@@ -70,6 +70,7 @@ var _ = Describe("EnsureRunner", func() {
 			var originalTime metav1.Time
 			BeforeEach(func() {
 				originalTime = metav1.Time{Time: time.Now().Add(-time.Hour).Truncate(time.Second)}
+
 				configuration.Status = terraformv1alpha1.ConfigurationStatus{
 					CommonStatus: corev1alpha1.CommonStatus{
 						LastReconcile: &corev1alpha1.LastReconcileStatus{
@@ -152,11 +153,11 @@ var _ = Describe("EnsureRunner", func() {
 					result, err := ensure.Run(ctx, cc, configuration, []EnsureFunc{
 						func(ctx context.Context) (reconcile.Result, error) {
 							configuration.Spec.Module = "m1"
-							return reconcile.Result{Requeue: true}, nil
+							return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 						},
 					})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(result).To(Equal(reconcile.Result{Requeue: true}))
+					Expect(result.RequeueAfter).To(Equal(5 * time.Second))
 
 					Expect(configuration.Status.CommonStatus.LastReconcile).NotTo(BeNil())
 					Expect(configuration.Status.CommonStatus.LastReconcile.Time).NotTo(Equal(originalTime))
@@ -170,11 +171,11 @@ var _ = Describe("EnsureRunner", func() {
 				It("does not update status", func() {
 					result, err := ensure.Run(ctx, cc, configuration, []EnsureFunc{
 						func(ctx context.Context) (reconcile.Result, error) {
-							return reconcile.Result{Requeue: true}, nil
+							return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 						},
 					})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(result).To(Equal(reconcile.Result{Requeue: true}))
+					Expect(result.RequeueAfter).To(Equal(5 * time.Second))
 
 					Expect(configuration.Status.CommonStatus.LastReconcile).NotTo(BeNil())
 					Expect(configuration.Status.CommonStatus.LastReconcile.Time).To(Equal(originalTime))

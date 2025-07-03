@@ -38,7 +38,7 @@ func Roll(ctx context.Context, ctrl reconcile.Reconciler, o client.Object, _ int
 		switch {
 		case err != nil:
 			return result, i, err
-		case result.Requeue, result.RequeueAfter > 0:
+		case result.RequeueAfter > 0:
 		default:
 			return result, i, nil
 		}
