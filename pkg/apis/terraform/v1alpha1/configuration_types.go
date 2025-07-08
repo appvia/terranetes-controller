@@ -504,7 +504,7 @@ func (c *Configuration) IsRevisioned() bool {
 		return false
 	}
 
-	return false
+	return true
 }
 
 // GetNamespacedName returns the namespaced resource type
