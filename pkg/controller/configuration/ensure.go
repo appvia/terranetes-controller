@@ -81,17 +81,39 @@ func (c *Controller) ensureCapturedState(configuration *terraformv1alpha1.Config
 
 		// @step: if we are based on a Revision, lets try and grab the definition
 		if configuration.IsRevisioned() {
-			revision := &terraformv1alpha1.Revision{}
-			revision.Name = configuration.Spec.Plan.Revision
+			plan := &terraformv1alpha1.Plan{}
+			plan.Name = configuration.Spec.Plan.Name
 
-			found, err := kubernetes.GetIfExists(ctx, c.cc, revision)
+			found, err := kubernetes.GetIfExists(ctx, c.cc, plan)
+			if err != nil {
+				cond.Failed(err, "Failed to get plan for the configuration")
+
+				return reconcile.Result{}, err
+			}
+			if !found {
+				cond.ActionRequired("Plan %q does not exist", configuration.Spec.Plan.Name)
+
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+
+			reference, found := plan.GetRevision(configuration.Spec.Plan.Revision)
+			if !found {
+				cond.ActionRequired("Plan %q does not have a revision %q", configuration.Spec.Plan.Name, configuration.Spec.Plan.Revision)
+
+				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+			}
+
+			revision := &terraformv1alpha1.Revision{}
+			revision.Name = reference.Name
+
+			found, err = kubernetes.GetIfExists(ctx, c.cc, revision)
 			if err != nil {
 				cond.Failed(err, "Failed to retrieve the plan for the configuration")
 
 				return reconcile.Result{}, err
 			}
 			if !found {
-				cond.ActionRequired("Revision %q does not exist", configuration.Spec.Plan.Revision)
+				cond.ActionRequired("Revision %q does not exist", revision.Name)
 
 				return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 			}
