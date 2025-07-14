@@ -1,5 +1,7 @@
 shfmt(1)
 
+; To render and view: scdoc <shfmt.1.scd | man -l -
+
 # NAME
 
 shfmt - Format shell programs
@@ -28,8 +30,9 @@ predictable. Some aspects of the format can be configured via printer flags.
 *--version*
 	Show version and exit.
 
-*-l*, *--list*
-	List files whose formatting differs from shfmt's.
+*-l[=0]*, *--list[=0]*
+	List files whose formatting differs from shfmt's;
+	paths are separated by a newline or a null character if -l=0
 
 *-w*, *--write*
 	Write result to file instead of stdout.
@@ -40,12 +43,6 @@ predictable. Some aspects of the format can be configured via printer flags.
 	The diff uses color when the output is a terminal.
 	To never use color, set a non-empty *NO_COLOR* or *TERM=dumb*.
 	To always use color, set a non-empty *FORCE_COLOR*.
-
-*-s*, *--simplify*
-	Simplify the code.
-
-*-mn*, *--minify*
-	Minify the code to reduce its size (implies *-s*).
 
 *--apply-ignore*
 	Always apply EditorConfig ignore rules.
@@ -76,6 +73,9 @@ predictable. Some aspects of the format can be configured via printer flags.
 *-p*, *--posix*
 	Shorthand for *-ln=posix*.
 
+*-s*, *--simplify*
+	Simplify the code.
+
 ## Printer flags
 
 *-i*, *--indent* <uint>
@@ -99,10 +99,14 @@ predictable. Some aspects of the format can be configured via printer flags.
 *-fn*, *--func-next-line*
 	Function opening braces are placed on a separate line.
 
+*-mn*, *--minify*
+	Minify the code to reduce its size (implies *-s*).
+
 ## Utility flags
 
-*-f*, *--find*
-	Recursively find all shell files and print the paths.
+*-f[=0]*, *--find[=0]*
+	Recursively find all shell files and print the paths;
+	paths are separated by a newline or a null character if -f=0.
 
 *--to-json*
 	Print syntax tree to stdout as a typed JSON.

@@ -27,33 +27,48 @@ import (
 	"mvdan.cc/sh/v3/syntax/typedjson"
 )
 
+type boolString string
+
+func (s *boolString) Set(val string) error {
+	*s = boolString(val)
+	return nil
+}
+func (s *boolString) Get() any       { return string(*s) }
+func (s *boolString) String() string { return string(*s) }
+func (*boolString) IsBoolFlag() bool { return true }
+
 type multiFlag[T any] struct {
 	short, long string
 	val         T
 }
 
 var (
+	// Generic flags.
 	versionFlag = &multiFlag[bool]{"", "version", false}
-	list        = &multiFlag[bool]{"l", "list", false}
-
+	list        = &multiFlag[boolString]{"l", "list", "false"}
 	write       = &multiFlag[bool]{"w", "write", false}
-	simplify    = &multiFlag[bool]{"s", "simplify", false}
-	minify      = &multiFlag[bool]{"mn", "minify", false}
-	find        = &multiFlag[bool]{"f", "find", false}
 	diff        = &multiFlag[bool]{"d", "diff", false}
 	applyIgnore = &multiFlag[bool]{"", "apply-ignore", false}
+	filename    = &multiFlag[string]{"", "filename", ""}
 
+	// Parser flags.
 	lang     = &multiFlag[syntax.LangVariant]{"ln", "language-dialect", syntax.LangAuto}
 	posix    = &multiFlag[bool]{"p", "posix", false}
-	filename = &multiFlag[string]{"", "filename", ""}
+	simplify = &multiFlag[bool]{"s", "simplify", false}
+	// TODO: when promoting exp.recover to a stable flag, add it as an EditorConfig knob too, and perhaps rename to recover-errors
+	expRecover = &multiFlag[int]{"", "exp.recover", 0}
 
+	// Printer flags.
 	indent      = &multiFlag[uint]{"i", "indent", 0}
 	binNext     = &multiFlag[bool]{"bn", "binary-next-line", false}
 	caseIndent  = &multiFlag[bool]{"ci", "case-indent", false}
 	spaceRedirs = &multiFlag[bool]{"sr", "space-redirects", false}
 	keepPadding = &multiFlag[bool]{"kp", "keep-padding", false}
 	funcNext    = &multiFlag[bool]{"fn", "func-next-line", false}
+	minify      = &multiFlag[bool]{"mn", "minify", false}
 
+	// Utility flags.
+	find     = &multiFlag[boolString]{"f", "find", "false"}
 	toJSON   = &multiFlag[bool]{"tojson", "to-json", false} // TODO(v4): remove "tojson" for consistency
 	fromJSON = &multiFlag[bool]{"", "from-json", false}
 
@@ -70,15 +85,16 @@ var (
 	version = "(devel)" // to match the default from runtime/debug
 
 	allFlags = []any{
-		versionFlag, list, write, simplify, minify, find, diff, applyIgnore,
-		lang, posix, filename,
-		indent, binNext, caseIndent, spaceRedirs, keepPadding, funcNext, toJSON, fromJSON,
+		versionFlag, list, write, find, diff, applyIgnore,
+		lang, posix, filename, simplify, expRecover,
+		indent, binNext, caseIndent, spaceRedirs, keepPadding, funcNext, minify,
+		toJSON, fromJSON,
 	}
 )
 
 func init() {
 	// TODO: the flag package has constructors like newBoolValue;
-	// if we had access to something like that, we could use flag.Value everywhere,
+	// if we had access to something like that, we could use [flag.Value] everywhere,
 	// and avoid this monstrosity of a type switch.
 	for _, f := range allFlags {
 		switch f := f.(type) {
@@ -89,12 +105,26 @@ func init() {
 			if name := f.long; name != "" {
 				flag.BoolVar(&f.val, name, f.val, "")
 			}
+		case *multiFlag[boolString]:
+			if name := f.short; name != "" {
+				flag.Var(&f.val, name, "")
+			}
+			if name := f.long; name != "" {
+				flag.Var(&f.val, name, "")
+			}
 		case *multiFlag[string]:
 			if name := f.short; name != "" {
 				flag.StringVar(&f.val, name, f.val, "")
 			}
 			if name := f.long; name != "" {
 				flag.StringVar(&f.val, name, f.val, "")
+			}
+		case *multiFlag[int]:
+			if name := f.short; name != "" {
+				flag.IntVar(&f.val, name, f.val, "")
+			}
+			if name := f.long; name != "" {
+				flag.IntVar(&f.val, name, f.val, "")
 			}
 		case *multiFlag[uint]:
 			if name := f.short; name != "" {
@@ -117,10 +147,6 @@ func init() {
 }
 
 func main() {
-	os.Exit(main1())
-}
-
-func main1() int {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, `usage: shfmt [flags] [path ...]
 
@@ -130,18 +156,18 @@ directory, all shell scripts found under that directory will be used.
 
   --version  show version and exit
 
-  -l,  --list      list files whose formatting differs from shfmt's
-  -w,  --write     write result to file instead of stdout
-  -d,  --diff      error with a diff when the formatting differs
-  -s,  --simplify  simplify the code
-  -mn, --minify    minify the code to reduce its size (implies -s)
-  --apply-ignore   always apply EditorConfig ignore rules
-  --filename str   provide a name for the standard input file
+  -l[=0], --list[=0]  list files whose formatting differs from shfmt;
+                      paths are separated by a newline or a null character if -l=0
+  -w,     --write     write result to file instead of stdout
+  -d,     --diff      error with a diff when the formatting differs
+  --apply-ignore      always apply EditorConfig ignore rules
+  --filename str      provide a name for the standard input file
 
 Parser options:
 
   -ln, --language-dialect str  bash/posix/mksh/bats, default "auto"
   -p,  --posix                 shorthand for -ln=posix
+  -s,  --simplify              simplify the code
 
 Printer options:
 
@@ -151,12 +177,14 @@ Printer options:
   -sr, --space-redirects   redirect operators will be followed by a space
   -kp, --keep-padding      keep column alignment paddings
   -fn, --func-next-line    function opening braces are placed on a separate line
+  -mn, --minify             minify the code to reduce its size (implies -s)
 
 Utilities:
 
-  -f, --find   recursively find all shell files and print the paths
-  --to-json    print syntax tree to stdout as a typed JSON
-  --from-json  read syntax tree from stdin as a typed JSON
+  -f[=0], --find[=0]  recursively find all shell files and print the paths;
+                      paths are separated by a newline or a null character if -f=0
+  --to-json           print syntax tree to stdout as a typed JSON
+  --from-json         read syntax tree from stdin as a typed JSON
 
 Formatting options can also be read from EditorConfig files; see 'man shfmt'
 for a detailed description of the tool's behavior.
@@ -175,30 +203,42 @@ For more information and to report bugs, see https://github.com/mvdan/sh.
 			version = mod.Version
 		}
 		fmt.Println(version)
-		return 0
+		return
 	}
 	if posix.val && lang.val != syntax.LangAuto {
 		fmt.Fprintf(os.Stderr, "-p and -ln=lang cannot coexist\n")
-		return 1
+		os.Exit(1)
 	}
-	if minify.val {
-		simplify.val = true
+	if list.val != "true" && list.val != "false" && list.val != "0" {
+		fmt.Fprintf(os.Stderr, "only -l and -l=0 allowed\n")
+		os.Exit(1)
 	}
+	if find.val != "true" && find.val != "false" && find.val != "0" {
+		fmt.Fprintf(os.Stderr, "only -f and -f=0 allowed\n")
+		os.Exit(1)
+	}
+	simplify.val = simplify.val || minify.val
 	flag.Visit(func(f *flag.Flag) {
+		// This list should be in sync with the grouping of parser and printer options
+		// as shown by ./shfmt.1.scd.
 		switch f.Name {
 		case lang.short, lang.long,
 			posix.short, posix.long,
+			simplify.short, simplify.long,
 			indent.short, indent.long,
 			binNext.short, binNext.long,
 			caseIndent.short, caseIndent.long,
 			spaceRedirs.short, spaceRedirs.long,
 			keepPadding.short, keepPadding.long,
-			funcNext.short, funcNext.long:
+			funcNext.short, funcNext.long,
+			minify.short, minify.long:
 			useEditorConfig = false
 		}
 	})
 	parser = syntax.NewParser(syntax.KeepComments(true))
 	printer = syntax.NewPrinter(syntax.Minify(minify.val))
+
+	syntax.RecoverErrors(expRecover.val)(parser)
 
 	if !useEditorConfig {
 		if posix.val {
@@ -234,21 +274,21 @@ For more information and to report bugs, see https://github.com/mvdan/sh.
 			if err != errChangedWithDiff {
 				fmt.Fprintln(os.Stderr, err)
 			}
-			return 1
+			os.Exit(1)
 		}
-		return 0
+		return
 	}
 	if filename.val != "" {
 		fmt.Fprintln(os.Stderr, "-filename can only be used with stdin")
-		return 1
+		os.Exit(1)
 	}
 	if toJSON.val {
 		fmt.Fprintln(os.Stderr, "--to-json can only be used with stdin")
-		return 1
+		os.Exit(1)
 	}
 	status := 0
 	for _, path := range flag.Args() {
-		if info, err := os.Stat(path); err == nil && !info.IsDir() && !applyIgnore.val && !find.val {
+		if info, err := os.Stat(path); err == nil && !info.IsDir() && !applyIgnore.val && find.val == "false" {
 			// When given paths to files directly, always format them,
 			// no matter their extension or shebang.
 			//
@@ -282,7 +322,7 @@ For more information and to report bugs, see https://github.com/mvdan/sh.
 			status = 1
 		}
 	}
-	return status
+	os.Exit(status)
 }
 
 var errChangedWithDiff = fmt.Errorf("")
@@ -329,11 +369,11 @@ func walkPath(path string, entry fs.DirEntry) error {
 	// and we first want to tell if we should skip a path entirely.
 	//
 	// TODO: Should the call to Find with the language name check "ignore" too, then?
-	// Otherwise a [[bash]] section with ignore=true is effectively never used.
+	// Otherwise, a [[bash]] section with ignore=true is effectively never used.
 	//
 	// TODO: Should there be a way to explicitly turn off ignore rules when walking?
 	// Perhaps swapping the default to --apply-ignore=auto and allowing --apply-ignore=false?
-	// I don't imagine it's a particularly uesful scenario for now.
+	// I don't imagine it's a particularly useful scenario for now.
 	props, err := ecQuery.Find(path, []string{"shell"})
 	if err != nil {
 		return err
@@ -383,6 +423,12 @@ func propsOptions(lang syntax.LangVariant, props editorconfig.Section) (_ syntax
 	// TODO(v4): rename to func_next_line for consistency with flags
 	syntax.FunctionNextLine(props.Get("function_next_line") == "true")(printer)
 
+	minify := props.Get("minify") == "true"
+	syntax.Minify(minify)(printer)
+	// Note that --simplify is not actually a parser option, so we use a global var.
+	// Just like the CLI flags, minify=true implies simplify=true.
+	simplify.val = minify || props.Get("simplify") == "true"
+
 	return lang, langErr == nil
 }
 
@@ -424,8 +470,13 @@ func formatPath(path string, checkShebang bool) error {
 		}
 		readBuf.Write(copyBuf[:n])
 	}
-	if find.val {
+	switch find.val {
+	case "true":
 		fmt.Println(path)
+		return nil
+	case "0":
+		fmt.Print(path)
+		fmt.Print("\000")
 		return nil
 	}
 	if _, err := io.CopyBuffer(&readBuf, f, copyBuf); err != nil {
@@ -479,6 +530,8 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 			return err
 		}
 	}
+	// Note that --simplify is treated as a parser option as it happens
+	// immediately after parsing, even if it's not a [syntax.ParserOption] today.
 	if simplify.val {
 		syntax.Simplify(node)
 	}
@@ -492,13 +545,20 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 	printer.Print(&writeBuf, node)
 	res := writeBuf.Bytes()
 	if !bytes.Equal(src, res) {
-		if list.val {
+		switch list.val {
+		case "true":
 			fmt.Println(path)
+		case "0":
+			fmt.Print(path)
+			fmt.Print("\000")
 		}
 		if write.val {
 			info, err := os.Lstat(path)
 			if err != nil {
 				return err
+			}
+			if !info.Mode().IsRegular() {
+				return fmt.Errorf("refusing to atomically replace %q with a regular file as it is not one already", path)
 			}
 			perm := info.Mode().Perm()
 			// TODO: support atomic writes on Windows?
@@ -537,7 +597,7 @@ func formatBytes(src []byte, path string, fileLang syntax.LangVariant) error {
 			return errChangedWithDiff
 		}
 	}
-	if !list.val && !write.val && !diff.val {
+	if list.val == "false" && !write.val && !diff.val {
 		os.Stdout.Write(res)
 	}
 	return nil
