@@ -42,7 +42,7 @@ jobs:
           fi
       - name: Docker Metadata
         id: docker_meta
-        uses: docker/metadata-action@v5.7.0
+        uses: docker/metadata-action@v5.8.0
         with:
           images: |
             ghcr.io/appvia/terranetes-${{ matrix.image }}
