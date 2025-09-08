@@ -96,7 +96,7 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: v3.8.1
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.13
       - name: Set up chart-testing
