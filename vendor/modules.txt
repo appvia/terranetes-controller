@@ -55,6 +55,9 @@ cloud.google.com/go/storage/experimental
 cloud.google.com/go/storage/internal
 cloud.google.com/go/storage/internal/apiv2
 cloud.google.com/go/storage/internal/apiv2/storagepb
+# codeberg.org/chavacava/garif v0.2.0
+## explicit; go 1.23
+codeberg.org/chavacava/garif
 # dario.cat/mergo v1.0.2
 ## explicit; go 1.13
 dario.cat/mergo
@@ -87,7 +90,7 @@ github.com/Antonboom/testifylint/internal/testify
 ## explicit; go 1.16
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
-# github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c
+# github.com/BurntSushi/toml v1.6.0
 ## explicit; go 1.18
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
@@ -365,7 +368,6 @@ github.com/cespare/xxhash/v2
 github.com/charithe/durationcheck
 # github.com/chavacava/garif v0.1.0
 ## explicit; go 1.16
-github.com/chavacava/garif
 # github.com/chzyer/readline v1.5.1
 ## explicit; go 1.15
 github.com/chzyer/readline
@@ -1154,14 +1156,18 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.19
 ## explicit; go 1.20
 github.com/mattn/go-runewidth
-# github.com/mgechev/revive v1.7.0
-## explicit; go 1.22.1
+# github.com/mgechev/dots v1.0.0
+## explicit; go 1.23.0
+# github.com/mgechev/revive v1.13.0
+## explicit; go 1.24.0
 github.com/mgechev/revive/config
 github.com/mgechev/revive/formatter
 github.com/mgechev/revive/internal/astutils
 github.com/mgechev/revive/internal/ifelse
+github.com/mgechev/revive/internal/rule
 github.com/mgechev/revive/internal/typeparams
 github.com/mgechev/revive/lint
+github.com/mgechev/revive/logging
 github.com/mgechev/revive/rule
 # github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 ## explicit
@@ -1470,8 +1476,8 @@ github.com/sourcegraph/conc/panics
 # github.com/sourcegraph/go-diff v0.7.0
 ## explicit; go 1.14
 github.com/sourcegraph/go-diff/diff
-# github.com/spf13/afero v1.12.0
-## explicit; go 1.21
+# github.com/spf13/afero v1.15.0
+## explicit; go 1.23.0
 github.com/spf13/afero
 github.com/spf13/afero/internal/common
 github.com/spf13/afero/mem

@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,20 +35,24 @@ import (
 
 // NewTableWriter returns a default table writer
 func NewTableWriter(out io.Writer) *tablewriter.Table {
-	tw := tablewriter.NewWriter(out)
-	tw.SetAutoWrapText(false)
-	tw.SetAutoFormatHeaders(true)
-	tw.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	tw.SetAlignment(tablewriter.ALIGN_LEFT)
-	tw.SetCenterSeparator("")
-	tw.SetColumnSeparator("")
-	tw.SetRowSeparator("")
-	tw.SetHeaderLine(false)
-	tw.SetBorder(false)
-	tw.SetTablePadding("\t")
-	tw.SetNoWhiteSpace(true)
+	table := tablewriter.NewWriter(out)
+	table.Options(
+		tablewriter.WithHeaderAutoWrap(tw.WrapNone),
+		tablewriter.WithRowAutoWrap(tw.WrapNone),
+		tablewriter.WithHeaderAutoFormat(tw.On),
+		tablewriter.WithHeaderAlignment(tw.AlignLeft),
+		tablewriter.WithRowAlignment(tw.AlignLeft),
+		tablewriter.WithPadding(tw.Padding{Left: "\t", Right: "\t"}),
+		tablewriter.WithRendition(tw.Rendition{
+			Borders: tw.BorderNone,
+			Settings: tw.Settings{
+				Lines:      tw.LinesNone,
+				Separators: tw.SeparatorsNone,
+			},
+		}),
+	)
 
-	return tw
+	return table
 }
 
 // AutoCompletionFunc is a function that returns a list of completions

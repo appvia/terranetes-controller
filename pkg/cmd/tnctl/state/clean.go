@@ -133,8 +133,8 @@ func (o *CleanCommand) Run(ctx context.Context) error {
 	}
 
 	tw := cmd.NewTableWriter(o.Stdout())
-	tw.SetHeader([]string{"Name", "Configuration", "Namespace", "Age"})
-	tw.AppendBulk(data)
+	tw.Header([]string{"Name", "Configuration", "Namespace", "Age"})
+	tw.Bulk(data)
 	tw.Render()
 
 	if !o.Force {
