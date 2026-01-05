@@ -174,6 +174,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		BackendTemplate:              config.BackendTemplate,
 		BackoffLimit:                 config.BackoffLimit,
 		BinaryPath:                   config.BinaryPath,
+		ConfigurationThreshold:       config.ConfigurationThreshold,
 		ControllerJobLabels:          jobLabels,
 		ControllerNamespace:          config.Namespace,
 		DefaultExecutorCPULimit:      config.ExecutorCPULimit,
