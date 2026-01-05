@@ -5,7 +5,6 @@ import (
 	"math"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/goccy/go-yaml/ast"
 	"github.com/goccy/go-yaml/token"
 )
@@ -29,6 +28,7 @@ type Printer struct {
 	Bool             PrintFunc
 	String           PrintFunc
 	Number           PrintFunc
+	Comment          PrintFunc
 }
 
 func defaultLineNumberFormat(num int) string {
@@ -80,6 +80,11 @@ func (p *Printer) property(tk *token.Token) *Property {
 	case token.IntegerType, token.FloatType:
 		if p.Number != nil {
 			return p.Number()
+		}
+		return prop
+	case token.CommentType:
+		if p.Comment != nil {
+			return p.Comment()
 		}
 		return prop
 	default:
@@ -144,47 +149,47 @@ func (p *Printer) PrintNode(node ast.Node) []byte {
 	return []byte(fmt.Sprintf("%+v\n", node))
 }
 
-const escape = "\x1b"
-
-func format(attr color.Attribute) string {
-	return fmt.Sprintf("%s[%dm", escape, attr)
-}
-
 func (p *Printer) setDefaultColorSet() {
 	p.Bool = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiMagenta),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiMagenta),
+			Suffix: format(ColorReset),
 		}
 	}
 	p.Number = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiMagenta),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiMagenta),
+			Suffix: format(ColorReset),
 		}
 	}
 	p.MapKey = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiCyan),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiCyan),
+			Suffix: format(ColorReset),
 		}
 	}
 	p.Anchor = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiYellow),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiYellow),
+			Suffix: format(ColorReset),
 		}
 	}
 	p.Alias = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiYellow),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiYellow),
+			Suffix: format(ColorReset),
 		}
 	}
 	p.String = func() *Property {
 		return &Property{
-			Prefix: format(color.FgHiGreen),
-			Suffix: format(color.Reset),
+			Prefix: format(ColorFgHiGreen),
+			Suffix: format(ColorReset),
+		}
+	}
+	p.Comment = func() *Property {
+		return &Property{
+			Prefix: format(ColorFgHiBlack),
+			Suffix: format(ColorReset),
 		}
 	}
 }
@@ -192,9 +197,9 @@ func (p *Printer) setDefaultColorSet() {
 func (p *Printer) PrintErrorMessage(msg string, isColored bool) string {
 	if isColored {
 		return fmt.Sprintf("%s%s%s",
-			format(color.FgHiRed),
+			format(ColorFgHiRed),
 			msg,
-			format(color.Reset),
+			format(ColorReset),
 		)
 	}
 	return msg
@@ -246,10 +251,7 @@ func (p *Printer) isNewLineLastChar(s string) bool {
 }
 
 func (p *Printer) printBeforeTokens(tk *token.Token, minLine, extLine int) token.Tokens {
-	for {
-		if tk.Prev == nil {
-			break
-		}
+	for tk.Prev != nil {
 		if tk.Prev.Position.Line < minLine {
 			break
 		}
@@ -287,21 +289,6 @@ func (p *Printer) printBeforeTokens(tk *token.Token, minLine, extLine int) token
 	return tokens
 }
 
-func (p *Printer) addNewLineCharIfDocumentHeader(tk *token.Token) {
-	if tk.Prev == nil {
-		return
-	}
-	if tk.Type != token.DocumentHeaderType {
-		return
-	}
-	prev := tk.Prev
-	lineDiff := tk.Position.Line - prev.Position.Line
-	if p.isNewLineLastChar(prev.Origin) {
-		lineDiff--
-	}
-	tk.Origin = strings.Repeat("\n", lineDiff) + tk.Origin
-}
-
 func (p *Printer) printAfterTokens(tk *token.Token, maxLine int) token.Tokens {
 	tokens := token.Tokens{}
 	if tk == nil {
@@ -316,7 +303,6 @@ func (p *Printer) printAfterTokens(tk *token.Token, maxLine int) token.Tokens {
 	tk = minTk.Next
 	for tk != nil && tk.Position.Line <= maxLine {
 		clonedTk := tk.Clone()
-		p.addNewLineCharIfDocumentHeader(clonedTk)
 		tokens.Add(clonedTk)
 		tk = clonedTk.Next
 	}
@@ -333,8 +319,7 @@ func (p *Printer) setupErrorTokenFormat(annotateLine int, isColored bool) {
 	p.LineNumber = true
 	p.LineNumberFormat = func(num int) string {
 		if isColored {
-			fn := color.New(color.Bold, color.FgHiWhite).SprintFunc()
-			return fn(prefix(annotateLine, num))
+			return colorize(prefix(annotateLine, num), ColorBold, ColorFgHiWhite)
 		}
 		return prefix(annotateLine, num)
 	}
