@@ -21,8 +21,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 
 	load "github.com/appvia/terranetes-controller/pkg/utils/preload"
 	"github.com/appvia/terranetes-controller/pkg/utils/preload/eks"
@@ -30,17 +29,15 @@ import (
 
 // preload is responsible for retrieving the data from the cloud vendor
 func (c *Command) preload(ctx context.Context) (load.Data, error) {
-	session, err := session.NewSession(&aws.Config{
-		Region: aws.String(c.Region),
-	})
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(c.Region))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create aws session, error: %w", err)
+		return nil, fmt.Errorf("failed to create aws config, error: %w", err)
 	}
 
 	// @step: create the preloader for eks clusters
 	pe, err := eks.New(eks.Config{
 		ClusterName: c.Cluster,
-		Session:     session,
+		Config:      cfg,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create preloader for cloud: %w", err)

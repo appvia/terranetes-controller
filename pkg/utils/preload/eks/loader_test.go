@@ -23,10 +23,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
+	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/aws/smithy-go"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,8 +36,8 @@ import (
 	"github.com/appvia/terranetes-controller/pkg/utils/preload/eks/mocks"
 )
 
-//go:generate go run ../../../../vendor/github.com/golang/mock/mockgen -package mocks -destination=mocks/ec2_zz.go github.com/aws/aws-sdk-go/service/ec2/ec2iface EC2API
-//go:generate go run ../../../../vendor/github.com/golang/mock/mockgen -package mocks -destination=mocks/eks_zz.go github.com/aws/aws-sdk-go/service/eks/eksiface EKSAPI
+//go:generate go run ../../../../vendor/github.com/golang/mock/mockgen -package mocks -destination=mocks/ec2_zz.go github.com/appvia/terranetes-controller/pkg/utils/preload/eks EC2API
+//go:generate go run ../../../../vendor/github.com/golang/mock/mockgen -package mocks -destination=mocks/eks_zz.go github.com/appvia/terranetes-controller/pkg/utils/preload/eks EKSAPI
 
 func TestReconcile(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -54,26 +54,26 @@ var _ = Describe("EKS Preload", func() {
 	var loader *eksPreloader
 	var data preload.Data
 
-	expectedCluster := &eks.Cluster{
+	expectedCluster := &ekstypes.Cluster{
 		Arn:             aws.String("arn:aws:eks:eu-west-1:123456789012:cluster/test"),
 		Name:            aws.String("test"),
 		Endpoint:        aws.String("https://test"),
 		PlatformVersion: aws.String("eks.1"),
 		Version:         aws.String("1.14"),
-		KubernetesNetworkConfig: &eks.KubernetesNetworkConfigResponse{
+		KubernetesNetworkConfig: &ekstypes.KubernetesNetworkConfigResponse{
 			ServiceIpv4Cidr: aws.String("10.0.0.0/12"),
 		},
-		ResourcesVpcConfig: &eks.VpcConfigResponse{
+		ResourcesVpcConfig: &ekstypes.VpcConfigResponse{
 			ClusterSecurityGroupId: aws.String("sg-1234567890"),
-			EndpointPrivateAccess:  aws.Bool(true),
-			EndpointPublicAccess:   aws.Bool(true),
-			PublicAccessCidrs:      aws.StringSlice([]string{"0.0.0.0/0"}),
-			SecurityGroupIds:       aws.StringSlice([]string{"sg-1234567890"}),
-			SubnetIds: aws.StringSlice([]string{
+			EndpointPrivateAccess:  true,
+			EndpointPublicAccess:   true,
+			PublicAccessCidrs:      []string{"0.0.0.0/0"},
+			SecurityGroupIds:       []string{"sg-1234567890"},
+			SubnetIds: []string{
 				"subnet-12345678",
 				"subnet-12345679",
 				"subnet-12345670",
-			}),
+			},
 			VpcId: aws.String("vpc-12345678"),
 		},
 	}
@@ -88,7 +88,7 @@ var _ = Describe("EKS Preload", func() {
 			clusterName: "test",
 			ec2cc:       ec2cc,
 			ekscc:       ekscc,
-			session:     &session.Session{},
+			config:      aws.Config{Region: "eu-west-1"},
 		}
 	})
 
@@ -99,7 +99,7 @@ var _ = Describe("EKS Preload", func() {
 	When("loading the preload data for the cluster", func() {
 		Context("when describeing the cluster errors", func() {
 			BeforeEach(func() {
-				ekscc.EXPECT().DescribeClusterWithContext(gomock.Any(), gomock.Any()).Return(&eks.DescribeClusterOutput{}, errors.New("bad"))
+				ekscc.EXPECT().DescribeCluster(gomock.Any(), gomock.Any()).Return(&eks.DescribeClusterOutput{}, errors.New("bad"))
 
 				data, err = loader.Load(context.Background())
 			})
@@ -116,9 +116,13 @@ var _ = Describe("EKS Preload", func() {
 
 		Context("when the cluster is not found", func() {
 			BeforeEach(func() {
-				ekscc.EXPECT().DescribeClusterWithContext(gomock.Any(), gomock.Any()).Return(
+				apiErr := &smithy.GenericAPIError{
+					Code:    "ResourceNotFoundException",
+					Message: "not found",
+				}
+				ekscc.EXPECT().DescribeCluster(gomock.Any(), gomock.Any()).Return(
 					&eks.DescribeClusterOutput{},
-					awserr.New(eks.ErrCodeResourceNotFoundException, "not found", nil),
+					apiErr,
 				)
 
 				data, err = loader.Load(context.Background())
