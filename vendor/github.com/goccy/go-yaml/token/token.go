@@ -1,8 +1,11 @@
 package token
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Character type for character
@@ -12,41 +15,41 @@ const (
 	// SequenceEntryCharacter character for sequence entry
 	SequenceEntryCharacter Character = '-'
 	// MappingKeyCharacter character for mapping key
-	MappingKeyCharacter = '?'
+	MappingKeyCharacter Character = '?'
 	// MappingValueCharacter character for mapping value
-	MappingValueCharacter = ':'
+	MappingValueCharacter Character = ':'
 	// CollectEntryCharacter character for collect entry
-	CollectEntryCharacter = ','
+	CollectEntryCharacter Character = ','
 	// SequenceStartCharacter character for sequence start
-	SequenceStartCharacter = '['
+	SequenceStartCharacter Character = '['
 	// SequenceEndCharacter character for sequence end
-	SequenceEndCharacter = ']'
+	SequenceEndCharacter Character = ']'
 	// MappingStartCharacter character for mapping start
-	MappingStartCharacter = '{'
+	MappingStartCharacter Character = '{'
 	// MappingEndCharacter character for mapping end
-	MappingEndCharacter = '}'
+	MappingEndCharacter Character = '}'
 	// CommentCharacter character for comment
-	CommentCharacter = '#'
+	CommentCharacter Character = '#'
 	// AnchorCharacter character for anchor
-	AnchorCharacter = '&'
+	AnchorCharacter Character = '&'
 	// AliasCharacter character for alias
-	AliasCharacter = '*'
+	AliasCharacter Character = '*'
 	// TagCharacter character for tag
-	TagCharacter = '!'
+	TagCharacter Character = '!'
 	// LiteralCharacter character for literal
-	LiteralCharacter = '|'
+	LiteralCharacter Character = '|'
 	// FoldedCharacter character for folded
-	FoldedCharacter = '>'
+	FoldedCharacter Character = '>'
 	// SingleQuoteCharacter character for single quote
-	SingleQuoteCharacter = '\''
+	SingleQuoteCharacter Character = '\''
 	// DoubleQuoteCharacter character for double quote
-	DoubleQuoteCharacter = '"'
+	DoubleQuoteCharacter Character = '"'
 	// DirectiveCharacter character for directive
-	DirectiveCharacter = '%'
+	DirectiveCharacter Character = '%'
 	// SpaceCharacter character for space
-	SpaceCharacter = ' '
+	SpaceCharacter Character = ' '
 	// LineBreakCharacter character for line break
-	LineBreakCharacter = '\n'
+	LineBreakCharacter Character = '\n'
 )
 
 // Type type identifier for token
@@ -99,6 +102,10 @@ const (
 	SpaceType
 	// NullType type for Null token
 	NullType
+	// ImplicitNullType type for implicit Null token.
+	// This is used when explicit keywords such as null or ~ are not specified.
+	// It is distinguished during encoding and output as an empty string.
+	ImplicitNullType
 	// InfinityType type for Infinity token
 	InfinityType
 	// NanType type for Nan token
@@ -117,6 +124,8 @@ const (
 	StringType
 	// BoolType type for Bool token
 	BoolType
+	// InvalidType type for invalid token
+	InvalidType
 )
 
 // String type identifier to text
@@ -182,10 +191,14 @@ func (t Type) String() string {
 		return "Float"
 	case NullType:
 		return "Null"
+	case ImplicitNullType:
+		return "ImplicitNull"
 	case InfinityType:
 		return "Infinity"
 	case NanType:
 		return "Nan"
+	case InvalidType:
+		return "Invalid"
 	}
 	return ""
 }
@@ -202,6 +215,8 @@ const (
 	CharacterTypeMiscellaneous
 	// CharacterTypeEscaped type of escaped character
 	CharacterTypeEscaped
+	// CharacterTypeInvalid type for a invalid token.
+	CharacterTypeInvalid
 )
 
 // String character type identifier to text
@@ -210,7 +225,7 @@ func (c CharacterType) String() string {
 	case CharacterTypeIndicator:
 		return "Indicator"
 	case CharacterTypeWhiteSpace:
-		return "WhiteSpcae"
+		return "WhiteSpace"
 	case CharacterTypeMiscellaneous:
 		return "Miscellaneous"
 	case CharacterTypeEscaped:
@@ -283,6 +298,28 @@ var (
 		"False",
 		"FALSE",
 	}
+	// For compatibility with other YAML 1.1 parsers
+	// Note that we use these solely for encoding the bool value with quotes.
+	// go-yaml should not treat these as reserved keywords at parsing time.
+	// as go-yaml is supposed to be compliant only with YAML 1.2.
+	reservedLegacyBoolKeywords = []string{
+		"y",
+		"Y",
+		"yes",
+		"Yes",
+		"YES",
+		"n",
+		"N",
+		"no",
+		"No",
+		"NO",
+		"on",
+		"On",
+		"ON",
+		"off",
+		"Off",
+		"OFF",
+	}
 	reservedInfKeywords = []string{
 		".inf",
 		".Inf",
@@ -297,6 +334,11 @@ var (
 		".NAN",
 	}
 	reservedKeywordMap = map[string]func(string, string, *Position) *Token{}
+	// reservedEncKeywordMap contains is the keyword map used at encoding time.
+	// This is supposed to be a superset of reservedKeywordMap,
+	// and used to quote legacy keywords present in YAML 1.1 or lesser for compatibility reasons,
+	// even though this library is supposed to be YAML 1.2-compliant.
+	reservedEncKeywordMap = map[string]func(string, string, *Position) *Token{}
 )
 
 func reservedKeywordToken(typ Type, value, org string, pos *Position) *Token {
@@ -312,12 +354,22 @@ func reservedKeywordToken(typ Type, value, org string, pos *Position) *Token {
 
 func init() {
 	for _, keyword := range reservedNullKeywords {
-		reservedKeywordMap[keyword] = func(value, org string, pos *Position) *Token {
+		f := func(value, org string, pos *Position) *Token {
 			return reservedKeywordToken(NullType, value, org, pos)
 		}
+
+		reservedKeywordMap[keyword] = f
+		reservedEncKeywordMap[keyword] = f
 	}
 	for _, keyword := range reservedBoolKeywords {
-		reservedKeywordMap[keyword] = func(value, org string, pos *Position) *Token {
+		f := func(value, org string, pos *Position) *Token {
+			return reservedKeywordToken(BoolType, value, org, pos)
+		}
+		reservedKeywordMap[keyword] = f
+		reservedEncKeywordMap[keyword] = f
+	}
+	for _, keyword := range reservedLegacyBoolKeywords {
+		reservedEncKeywordMap[keyword] = func(value, org string, pos *Position) *Token {
 			return reservedKeywordToken(BoolType, value, org, pos)
 		}
 	}
@@ -357,6 +409,10 @@ const (
 	SetTag ReservedTagKeyword = "!!set"
 	// TimestampTag `!!timestamp` tag
 	TimestampTag ReservedTagKeyword = "!!timestamp"
+	// BooleanTag `!!bool` tag
+	BooleanTag ReservedTagKeyword = "!!bool"
+	// MergeTag `!!merge` tag
+	MergeTag ReservedTagKeyword = "!!merge"
 )
 
 var (
@@ -462,149 +518,194 @@ var (
 				Position:      pos,
 			}
 		},
+		BooleanTag: func(value, org string, pos *Position) *Token {
+			return &Token{
+				Type:          TagType,
+				CharacterType: CharacterTypeIndicator,
+				Indicator:     NodePropertyIndicator,
+				Value:         value,
+				Origin:        org,
+				Position:      pos,
+			}
+		},
+		MergeTag: func(value, org string, pos *Position) *Token {
+			return &Token{
+				Type:          TagType,
+				CharacterType: CharacterTypeIndicator,
+				Indicator:     NodePropertyIndicator,
+				Value:         value,
+				Origin:        org,
+				Position:      pos,
+			}
+		},
 	}
 )
 
-type numType int
+type NumberType string
 
 const (
-	numTypeNone numType = iota
-	numTypeBinary
-	numTypeOctet
-	numTypeHex
-	numTypeFloat
+	NumberTypeDecimal NumberType = "decimal"
+	NumberTypeBinary  NumberType = "binary"
+	NumberTypeOctet   NumberType = "octet"
+	NumberTypeHex     NumberType = "hex"
+	NumberTypeFloat   NumberType = "float"
 )
 
-type numStat struct {
-	isNum bool
-	typ   numType
+type NumberValue struct {
+	Type  NumberType
+	Value any
+	Text  string
 }
 
-func getNumberStat(str string) *numStat {
-	stat := &numStat{}
-	if str == "" {
-		return stat
+func ToNumber(value string) *NumberValue {
+	num, err := toNumber(value)
+	if err != nil {
+		return nil
 	}
-	if str == "-" || str == "." || str == "+" || str == "_" {
-		return stat
-	}
-	if str[0] == '_' {
-		return stat
-	}
-	dotFound := false
-	isNegative := false
-	isExponent := false
-	if str[0] == '-' {
-		isNegative = true
-	}
-	for idx, c := range str {
-		switch c {
-		case 'x':
-			if (isNegative && idx == 2) || (!isNegative && idx == 1) {
-				continue
-			}
-		case 'o':
-			if (isNegative && idx == 2) || (!isNegative && idx == 1) {
-				continue
-			}
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			continue
-		case 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F':
-			if (len(str) > 2 && str[0] == '0' && str[1] == 'x') ||
-				(len(str) > 3 && isNegative && str[1] == '0' && str[2] == 'x') {
-				// hex number
-				continue
-			}
-			if c == 'b' && ((isNegative && idx == 2) || (!isNegative && idx == 1)) {
-				// binary number
-				continue
-			}
-			if (c == 'e' || c == 'E') && dotFound {
-				// exponent
-				isExponent = true
-				continue
-			}
-		case '.':
-			if dotFound {
-				// multiple dot
-				return stat
-			}
-			dotFound = true
-			continue
-		case '-':
-			if idx == 0 || isExponent {
-				continue
-			}
-		case '+':
-			if idx == 0 || isExponent {
-				continue
-			}
-		case '_':
-			continue
-		}
-		return stat
-	}
-	stat.isNum = true
-	switch {
-	case dotFound:
-		stat.typ = numTypeFloat
-	case strings.HasPrefix(str, "0b") || strings.HasPrefix(str, "-0b"):
-		stat.typ = numTypeBinary
-	case strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "-0x"):
-		stat.typ = numTypeHex
-	case strings.HasPrefix(str, "0o") || strings.HasPrefix(str, "-0o"):
-		stat.typ = numTypeOctet
-	case (len(str) > 1 && str[0] == '0') || (len(str) > 1 && str[0] == '-' && str[1] == '0'):
-		stat.typ = numTypeOctet
-	}
-	return stat
+	return num
 }
 
-func looksLikeTimeValue(value string) bool {
-	for i, c := range value {
-		switch c {
-		case ':', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			continue
-		case '0':
-			if i == 0 {
-				return false
-			}
-			continue
+func isNumber(value string) bool {
+	num, err := toNumber(value)
+	if err != nil {
+		var numErr *strconv.NumError
+		if errors.As(err, &numErr) && errors.Is(numErr.Err, strconv.ErrRange) {
+			return true
 		}
 		return false
 	}
-	return true
+	return num != nil
 }
 
-// IsNeedQuoted whether need quote for passed string or not
+func toNumber(value string) (*NumberValue, error) {
+	if len(value) == 0 {
+		return nil, nil
+	}
+	if strings.HasPrefix(value, "_") {
+		return nil, nil
+	}
+	dotCount := strings.Count(value, ".")
+	if dotCount > 1 {
+		return nil, nil
+	}
+
+	isNegative := strings.HasPrefix(value, "-")
+	normalized := strings.ReplaceAll(strings.TrimPrefix(strings.TrimPrefix(value, "+"), "-"), "_", "")
+
+	var (
+		typ  NumberType
+		base int
+	)
+	switch {
+	case strings.HasPrefix(normalized, "0x"):
+		normalized = strings.TrimPrefix(normalized, "0x")
+		base = 16
+		typ = NumberTypeHex
+	case strings.HasPrefix(normalized, "0o"):
+		normalized = strings.TrimPrefix(normalized, "0o")
+		base = 8
+		typ = NumberTypeOctet
+	case strings.HasPrefix(normalized, "0b"):
+		normalized = strings.TrimPrefix(normalized, "0b")
+		base = 2
+		typ = NumberTypeBinary
+	case strings.HasPrefix(normalized, "0") && len(normalized) > 1 && dotCount == 0:
+		base = 8
+		typ = NumberTypeOctet
+	case dotCount == 1:
+		typ = NumberTypeFloat
+	default:
+		typ = NumberTypeDecimal
+		base = 10
+	}
+
+	text := normalized
+	if isNegative {
+		text = "-" + text
+	}
+
+	var v any
+	if typ == NumberTypeFloat {
+		f, err := strconv.ParseFloat(text, 64)
+		if err != nil {
+			return nil, err
+		}
+		v = f
+	} else if isNegative {
+		i, err := strconv.ParseInt(text, base, 64)
+		if err != nil {
+			return nil, err
+		}
+		v = i
+	} else {
+		u, err := strconv.ParseUint(text, base, 64)
+		if err != nil {
+			return nil, err
+		}
+		v = u
+	}
+
+	return &NumberValue{
+		Type:  typ,
+		Value: v,
+		Text:  text,
+	}, nil
+}
+
+// This is a subset of the formats permitted by the regular expression
+// defined at http://yaml.org/type/timestamp.html. Note that time.Parse
+// cannot handle: "2001-12-14 21:59:43.10 -5" from the examples.
+var timestampFormats = []string{
+	time.RFC3339Nano,
+	"2006-01-02t15:04:05.999999999Z07:00", // RFC3339Nano with lower-case "t".
+	time.DateTime,
+	time.DateOnly,
+
+	// Not in examples, but to preserve backward compatibility by quoting time values.
+	"15:4",
+}
+
+func isTimestamp(value string) bool {
+	for _, format := range timestampFormats {
+		if _, err := time.Parse(format, value); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// IsNeedQuoted checks whether the value needs quote for passed string or not
 func IsNeedQuoted(value string) bool {
 	if value == "" {
 		return true
 	}
-	if _, exists := reservedKeywordMap[value]; exists {
+	if _, exists := reservedEncKeywordMap[value]; exists {
 		return true
 	}
-	if stat := getNumberStat(value); stat.isNum {
+	if isNumber(value) {
+		return true
+	}
+	if value == "-" {
 		return true
 	}
 	first := value[0]
 	switch first {
-	case '*', '&', '[', '{', '}', ']', ',', '!', '|', '>', '%', '\'', '"':
+	case '*', '&', '[', '{', '}', ']', ',', '!', '|', '>', '%', '\'', '"', '@', ' ', '`':
 		return true
 	}
 	last := value[len(value)-1]
 	switch last {
-	case ':':
+	case ':', ' ':
 		return true
 	}
-	if looksLikeTimeValue(value) {
+	if isTimestamp(value) {
 		return true
 	}
 	for i, c := range value {
 		switch c {
 		case '#', '\\':
 			return true
-		case ':':
+		case ':', '-':
 			if i+1 < len(value) && value[i+1] == ' ' {
 				return true
 			}
@@ -629,13 +730,13 @@ func LiteralBlockHeader(value string) string {
 	}
 }
 
-// New create reserved keyword token or number token and other string token
+// New create reserved keyword token or number token and other string token.
 func New(value string, org string, pos *Position) *Token {
 	fn := reservedKeywordMap[value]
 	if fn != nil {
 		return fn(value, org, pos)
 	}
-	if stat := getNumberStat(value); stat.isNum {
+	if num := ToNumber(value); num != nil {
 		tk := &Token{
 			Type:          IntegerType,
 			CharacterType: CharacterTypeMiscellaneous,
@@ -644,14 +745,14 @@ func New(value string, org string, pos *Position) *Token {
 			Origin:        org,
 			Position:      pos,
 		}
-		switch stat.typ {
-		case numTypeFloat:
+		switch num.Type {
+		case NumberTypeFloat:
 			tk.Type = FloatType
-		case numTypeBinary:
+		case NumberTypeBinary:
 			tk.Type = BinaryIntegerType
-		case numTypeOctet:
+		case NumberTypeOctet:
 			tk.Type = OctetIntegerType
-		case numTypeHex:
+		case NumberTypeHex:
 			tk.Type = HexIntegerType
 		}
 		return tk
@@ -675,14 +776,24 @@ func (p *Position) String() string {
 
 // Token type for token
 type Token struct {
-	Type          Type
+	// Type is a token type.
+	Type Type
+	// CharacterType is a character type.
 	CharacterType CharacterType
-	Indicator     Indicator
-	Value         string
-	Origin        string
-	Position      *Position
-	Next          *Token
-	Prev          *Token
+	// Indicator is a indicator type.
+	Indicator Indicator
+	// Value is a string extracted with only meaningful characters, with spaces and such removed.
+	Value string
+	// Origin is a string that stores the original text as-is.
+	Origin string
+	// Error keeps error message for InvalidToken.
+	Error string
+	// Position is a token position.
+	Position *Position
+	// Next is a next token reference.
+	Next *Token
+	// Prev is a previous token reference.
+	Prev *Token
 }
 
 // PreviousType previous token type
@@ -722,8 +833,25 @@ func (t *Token) Clone() *Token {
 	return &copied
 }
 
+// Dump outputs token information to stdout for debugging.
+func (t *Token) Dump() {
+	fmt.Printf(
+		"[TYPE]:%q [CHARTYPE]:%q [INDICATOR]:%q [VALUE]:%q [ORG]:%q [POS(line:column:level:offset)]: %d:%d:%d:%d\n",
+		t.Type, t.CharacterType, t.Indicator, t.Value, t.Origin, t.Position.Line, t.Position.Column, t.Position.IndentLevel, t.Position.Offset,
+	)
+}
+
 // Tokens type of token collection
 type Tokens []*Token
+
+func (t Tokens) InvalidToken() *Token {
+	for _, tt := range t {
+		if tt.Type == InvalidType {
+			return tt
+		}
+	}
+	return nil
+}
 
 func (t *Tokens) add(tk *Token) {
 	tokens := *t
@@ -748,7 +876,8 @@ func (t *Tokens) Add(tks ...*Token) {
 // Dump dump all token structures for debugging
 func (t Tokens) Dump() {
 	for _, tk := range t {
-		fmt.Printf("- %+v\n", tk)
+		fmt.Print("- ")
+		tk.Dump()
 	}
 }
 
@@ -961,13 +1090,13 @@ func DoubleQuote(value string, org string, pos *Position) *Token {
 }
 
 // Directive create token for Directive
-func Directive(pos *Position) *Token {
+func Directive(org string, pos *Position) *Token {
 	return &Token{
 		Type:          DirectiveType,
 		CharacterType: CharacterTypeIndicator,
 		Indicator:     DirectiveIndicator,
 		Value:         string(DirectiveCharacter),
-		Origin:        string(DirectiveCharacter),
+		Origin:        org,
 		Position:      pos,
 	}
 }
@@ -997,25 +1126,37 @@ func MergeKey(org string, pos *Position) *Token {
 }
 
 // DocumentHeader create token for DocumentHeader
-func DocumentHeader(pos *Position) *Token {
+func DocumentHeader(org string, pos *Position) *Token {
 	return &Token{
 		Type:          DocumentHeaderType,
 		CharacterType: CharacterTypeMiscellaneous,
 		Indicator:     NotIndicator,
 		Value:         "---",
-		Origin:        "---",
+		Origin:        org,
 		Position:      pos,
 	}
 }
 
 // DocumentEnd create token for DocumentEnd
-func DocumentEnd(pos *Position) *Token {
+func DocumentEnd(org string, pos *Position) *Token {
 	return &Token{
 		Type:          DocumentEndType,
 		CharacterType: CharacterTypeMiscellaneous,
 		Indicator:     NotIndicator,
 		Value:         "...",
-		Origin:        "...",
+		Origin:        org,
+		Position:      pos,
+	}
+}
+
+func Invalid(err string, org string, pos *Position) *Token {
+	return &Token{
+		Type:          InvalidType,
+		CharacterType: CharacterTypeInvalid,
+		Indicator:     NotIndicator,
+		Value:         org,
+		Origin:        org,
+		Error:         err,
 		Position:      pos,
 	}
 }
