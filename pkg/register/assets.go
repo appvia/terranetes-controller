@@ -62,7 +62,8 @@ func (fi bindataFileInfo) Sys() interface{} {
 	return nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -72,462 +73,485 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: CloudResource
     listKind: CloudResourceList
     plural: cloudresources
     singular: cloudresource
   scope: Namespaced
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.plan.name
-          name: Plan
-          type: string
-        - jsonPath: .spec.plan.revision
-          name: Revision
-          type: string
-        - jsonPath: .spec.writeConnectionSecretToRef.name
-          name: Secret
-          type: string
-        - jsonPath: .status.configurationName
-          name: Configuration
-          type: string
-        - jsonPath: .status.costs.monthly
-          name: Estimated
-          type: string
-        - jsonPath: .status.updateAvailable
-          name: Update
-          type: string
-        - jsonPath: .status.resourceStatus
-          name: Synchronized
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: CloudResource is the schema for terraform definitions in terraform controller
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: CloudResourceSpec defines the desired state of a terraform
-              properties:
-                auth:
-                  description: |-
-                    Auth is used to configure any options required when the source of the terraform
-                    module is private or requires credentials to retrieve. This could be SSH keys or git
-                    user/pass or AWS credentials for an s3 bucket.
+  - additionalPrinterColumns:
+    - jsonPath: .spec.plan.name
+      name: Plan
+      type: string
+    - jsonPath: .spec.plan.revision
+      name: Revision
+      type: string
+    - jsonPath: .spec.writeConnectionSecretToRef.name
+      name: Secret
+      type: string
+    - jsonPath: .status.configurationName
+      name: Configuration
+      type: string
+    - jsonPath: .status.costs.monthly
+      name: Estimated
+      type: string
+    - jsonPath: .status.updateAvailable
+      name: Update
+      type: string
+    - jsonPath: .status.resourceStatus
+      name: Synchronized
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CloudResource is the schema for terraform definitions in terraform
+          controller
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CloudResourceSpec defines the desired state of a terraform
+            properties:
+              auth:
+                description: |-
+                  Auth is used to configure any options required when the source of the terraform
+                  module is private or requires credentials to retrieve. This could be SSH keys or git
+                  user/pass or AWS credentials for an s3 bucket.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              enableAutoApproval:
+                description: |-
+                  EnableAutoApproval when enabled indicates the configuration does not need to be
+                  manually approved. On a change to the configuration, the controller will automatically
+                  approve the configuration. Note it still needs to adhere to any checks or policies.
+                type: boolean
+              enableDriftDetection:
+                description: |-
+                  EnableDriftDetection when enabled run periodic reconciliation configurations looking
+                  for any drift between the expected and current state. If any drift is detected the
+                  status is changed and a kubernetes event raised.
+                type: boolean
+              plan:
+                description: |-
+                  Plan is the reference to the plan which this cloud resource is associated with. This
+                  field is required, and needs both the name and version the plan revision to use
+                properties:
+                  name:
+                    description: Name is the name of the plan this configuration is
+                      associated with
+                    type: string
+                  revision:
+                    description: Revision is the revision of the plan this configuration
+                      is associated with
+                    type: string
+                required:
+                - name
+                - revision
+                type: object
+              providerRef:
+                description: |-
+                  ProviderRef is the reference to the provider which should be used to execute this
+                  configuration.
+                properties:
+                  name:
+                    description: |-
+                      Name is the name of the provider which contains the credentials to use for this
+                      configuration.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the provider itself.
+                    type: string
+                required:
+                - name
+                type: object
+              terraformVersion:
+                description: |-
+                  TerraformVersion provides the ability to override the default terraform version. Before
+                  changing this field its best to consult with platform administrator. As the
+                  value of this field is used to change the tag of the terraform container image.
+                type: string
+              valueFrom:
+                description: |-
+                  ValueFromSource is a collection of value from sources, where the source of the value
+                  is taken from a secret
+                items:
+                  description: ValueFromSource defines a value which is taken from
+                    a secret
                   properties:
-                    name:
-                      description: name is unique within a namespace to reference a secret resource.
+                    context:
+                      description: |-
+                        Context is the context is the name of the terraform context where the
+                        value should be retrieved from
                       type: string
-                    namespace:
-                      description: namespace defines the space within which the secret name must be unique.
+                    key:
+                      description: Key is the key in the secret which we should used
+                        for the value
                       type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                enableAutoApproval:
-                  description: |-
-                    EnableAutoApproval when enabled indicates the configuration does not need to be
-                    manually approved. On a change to the configuration, the controller will automatically
-                    approve the configuration. Note it still needs to adhere to any checks or policies.
-                  type: boolean
-                enableDriftDetection:
-                  description: |-
-                    EnableDriftDetection when enabled run periodic reconciliation configurations looking
-                    for any drift between the expected and current state. If any drift is detected the
-                    status is changed and a kubernetes event raised.
-                  type: boolean
-                plan:
-                  description: |-
-                    Plan is the reference to the plan which this cloud resource is associated with. This
-                    field is required, and needs both the name and version the plan revision to use
-                  properties:
-                    name:
-                      description: Name is the name of the plan this configuration is associated with
-                      type: string
-                    revision:
-                      description: Revision is the revision of the plan this configuration is associated with
-                      type: string
-                  required:
-                    - name
-                    - revision
-                  type: object
-                providerRef:
-                  description: |-
-                    ProviderRef is the reference to the provider which should be used to execute this
-                    configuration.
-                  properties:
                     name:
                       description: |-
-                        Name is the name of the provider which contains the credentials to use for this
-                        configuration.
+                        Name is the name which we use when injecting the value into the terraform code
+                        i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
+                        for backwards compatiability if no name is provided, we using the key at the name
                       type: string
-                    namespace:
-                      description: Namespace is the namespace of the provider itself.
+                    optional:
+                      description: |-
+                        Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
+                        not contained in the secret, we ignore the error
+                      type: boolean
+                    secret:
+                      description: Secret is the name of the secret in the configuration
+                        namespace
                       type: string
                   required:
-                    - name
+                  - key
                   type: object
-                terraformVersion:
-                  description: |-
-                    TerraformVersion provides the ability to override the default terraform version. Before
-                    changing this field its best to consult with platform administrator. As the
-                    value of this field is used to change the tag of the terraform container image.
-                  type: string
-                valueFrom:
-                  description: |-
-                    ValueFromSource is a collection of value from sources, where the source of the value
-                    is taken from a secret
-                  items:
-                    description: ValueFromSource defines a value which is taken from a secret
-                    properties:
-                      context:
-                        description: |-
-                          Context is the context is the name of the terraform context where the
-                          value should be retrieved from
-                        type: string
-                      key:
-                        description: Key is the key in the secret which we should used for the value
-                        type: string
-                      name:
-                        description: |-
-                          Name is the name which we use when injecting the value into the terraform code
-                          i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
-                          for backwards compatiability if no name is provided, we using the key at the name
-                        type: string
-                      optional:
-                        description: |-
-                          Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
-                          not contained in the secret, we ignore the error
-                        type: boolean
-                      secret:
-                        description: Secret is the name of the secret in the configuration namespace
-                        type: string
-                    required:
-                      - key
-                    type: object
-                  type: array
-                variables:
-                  description: |-
-                    Variables provides the inputs for the terraform module itself. These are passed to the
-                    terraform executor and used to execute the plan, apply and destroy phases.
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                writeConnectionSecretToRef:
-                  description: |-
-                    WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
-                    any module outputs are written to this secret. The outputs are automatically uppercased
-                    and ready to be consumed as environment variables.
-                    WriteConnectionSecretRef is the secret where the terraform outputs will be written.
+                type: array
+              variables:
+                description: |-
+                  Variables provides the inputs for the terraform module itself. These are passed to the
+                  terraform executor and used to execute the plan, apply and destroy phases.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
+                  any module outputs are written to this secret. The outputs are automatically uppercased
+                  and ready to be consumed as environment variables.
+                  WriteConnectionSecretRef is the secret where the terraform outputs will be written.
+                properties:
+                  keys:
+                    description: |-
+                      Keys is a collection of name used to filter the terraform output. By default all keys from the
+                      output of the terraform state are written to the connection secret. Here we can define exactly
+                      which keys we want from that output.
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: |-
+                      Name is the of the secret where you want to the terraform output to be written. The terraform outputs
+                      will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
+                      workload.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - plan
+            type: object
+          status:
+            description: CloudResourceStatus defines the observed state of a terraform
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
                   properties:
-                    keys:
+                    detail:
                       description: |-
-                        Keys is a collection of name used to filter the terraform output. By default all keys from the
-                        output of the terraform state are written to the connection secret. Here we can define exactly
-                        which keys we want from that output.
-                      items:
-                        type: string
-                      type: array
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
                     name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
                       description: |-
-                        Name is the of the secret where you want to the terraform output to be written. The terraform outputs
-                        will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
-                        workload.
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
                   required:
-                    - name
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-              required:
-                - plan
-              type: object
-            status:
-              description: CloudResourceStatus defines the observed state of a terraform
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
-                    properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              configurationName:
+                description: ConfigurationName is the of the configuration this cloudresource
+                  is managing on behalf of
+                type: string
+              configurationStatus:
+                description: Configuration is the state taken from the underlying
+                  configuration
+                properties:
+                  conditions:
+                    description: Conditions represents the observations of the resource's
+                      current state.
+                    items:
+                      description: Condition is the current observed condition of
+                        some aspect of a resource
+                      properties:
+                        detail:
+                          description: |-
+                            Detail is any additional human-readable detail to understand this condition, for example,
+                            the full underlying error which caused an issue
+                          type: string
+                        lastTransitionTime:
+                          description: |-
+                            LastTransitionTime is the last time the condition transitioned from one status to another.
+                            This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                          format: date-time
+                          type: string
+                        message:
+                          description: |-
+                            Message is a human readable message indicating details about the transition.
+                            This may be an empty string.
+                          maxLength: 32768
+                          type: string
+                        name:
+                          description: Name is a human-readable name for this condition.
+                          minLength: 1
+                          type: string
+                        observedGeneration:
+                          description: |-
+                            ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                            For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                            with respect to the current state of the instance.
+                          format: int64
+                          minimum: 0
+                          type: integer
+                        reason:
+                          description: |-
+                            Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                            Producers of specific condition types may define expected values and meanings for this field,
+                            and whether the values are considered a guaranteed API.
+                            The value should be a CamelCase string.
+                            This field may not be empty.
+                          maxLength: 1024
+                          minLength: 1
+                          pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                          type: string
+                        status:
+                          description: Status of the condition, one of True, False,
+                            Unknown.
+                          enum:
                           - "True"
                           - "False"
                           - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
+                          type: string
+                        type:
+                          description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                          maxLength: 316
+                          pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                          type: string
+                      required:
                       - lastTransitionTime
                       - name
                       - reason
                       - status
                       - type
-                    type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
                     - type
-                  x-kubernetes-list-type: map
-                configurationName:
-                  description: ConfigurationName is the of the configuration this cloudresource is managing on behalf of
-                  type: string
-                configurationStatus:
-                  description: Configuration is the state taken from the underlying configuration
-                  properties:
-                    conditions:
-                      description: Conditions represents the observations of the resource's current state.
-                      items:
-                        description: Condition is the current observed condition of some aspect of a resource
-                        properties:
-                          detail:
-                            description: |-
-                              Detail is any additional human-readable detail to understand this condition, for example,
-                              the full underlying error which caused an issue
-                            type: string
-                          lastTransitionTime:
-                            description: |-
-                              LastTransitionTime is the last time the condition transitioned from one status to another.
-                              This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                            format: date-time
-                            type: string
-                          message:
-                            description: |-
-                              Message is a human readable message indicating details about the transition.
-                              This may be an empty string.
-                            maxLength: 32768
-                            type: string
-                          name:
-                            description: Name is a human-readable name for this condition.
-                            minLength: 1
-                            type: string
-                          observedGeneration:
-                            description: |-
-                              ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                              For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                              with respect to the current state of the instance.
-                            format: int64
-                            minimum: 0
-                            type: integer
-                          reason:
-                            description: |-
-                              Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                              Producers of specific condition types may define expected values and meanings for this field,
-                              and whether the values are considered a guaranteed API.
-                              The value should be a CamelCase string.
-                              This field may not be empty.
-                            maxLength: 1024
-                            minLength: 1
-                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                            type: string
-                          status:
-                            description: Status of the condition, one of True, False, Unknown.
-                            enum:
-                              - "True"
-                              - "False"
-                              - Unknown
-                            type: string
-                          type:
-                            description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                            maxLength: 316
-                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                            type: string
-                        required:
-                          - lastTransitionTime
-                          - name
-                          - reason
-                          - status
-                          - type
-                        type: object
-                      type: array
-                      x-kubernetes-list-map-keys:
-                        - type
-                      x-kubernetes-list-type: map
-                    costs:
-                      description: |-
-                        Costs is the predicted costs of this configuration. Note this field is only populated
-                        when the integration has been configured by the administrator.
-                      properties:
-                        enabled:
-                          description: |-
-                            Enabled indicates if the cost integration was enabled when this configuration was last
-                            executed.
-                          type: boolean
-                        hourly:
-                          description: Hourly is the hourly estimated cost of the configuration
-                          type: string
-                        monthly:
-                          description: Monthly is the monthly estimated cost of the configuration
-                          type: string
-                      type: object
-                    driftTimestamp:
-                      description: DriftTimestamp is the timestamp of the last drift detection
-                      type: string
-                    lastReconcile:
-                      description: LastReconcile describes the generation and time of the last reconciliation
-                      properties:
-                        generation:
-                          description: Generation is the generation reconciled on the last reconciliation
-                          format: int64
-                          type: integer
-                        time:
-                          description: Time is the last time the resource was reconciled
-                          format: date-time
-                          type: string
-                      type: object
-                    lastSuccess:
-                      description: |-
-                        LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                        a Success status
-                      properties:
-                        generation:
-                          description: Generation is the generation reconciled on the last reconciliation
-                          format: int64
-                          type: integer
-                        time:
-                          description: Time is the last time the resource was reconciled
-                          format: date-time
-                          type: string
-                      type: object
-                    resourceStatus:
-                      description: |-
-                        ResourceStatus indicates the status of the resources and if the resources are insync with the
-                        configuration
-                      type: string
-                    resources:
-                      description: |-
-                        Resources is the number of managed cloud resources which are currently under management.
-                        This field is taken from the terraform state itself.
-                      type: integer
-                    terraformVersion:
-                      description: |-
-                        TerraformVersion is the version of terraform which was last used to run this
-                        configuration
-                      type: string
-                  type: object
-                costs:
-                  description: |-
-                    Costs is the predicted costs of this configuration. Note this field is only populated
-                    when the integration has been configured by the administrator.
-                  properties:
-                    enabled:
-                      description: |-
-                        Enabled indicates if the cost integration was enabled when this configuration was last
-                        executed.
-                      type: boolean
-                    hourly:
-                      description: Hourly is the hourly estimated cost of the configuration
-                      type: string
-                    monthly:
-                      description: Monthly is the monthly estimated cost of the configuration
-                      type: string
-                  type: object
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                lastSuccess:
-                  description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                resourceStatus:
-                  description: |-
-                    ResourceStatus indicates the status of the resources and if the resources are insync with the
-                    configuration
-                  type: string
-                resources:
-                  description: |-
-                    Resources is the number of managed cloud resources which are currently under management.
-                    This field is taken from the terraform state itself.
-                  type: integer
-                updateAvailable:
-                  description: UpdateAvailable indicates if there is a new version of the plan available
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                    x-kubernetes-list-type: map
+                  costs:
+                    description: |-
+                      Costs is the predicted costs of this configuration. Note this field is only populated
+                      when the integration has been configured by the administrator.
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled indicates if the cost integration was enabled when this configuration was last
+                          executed.
+                        type: boolean
+                      hourly:
+                        description: Hourly is the hourly estimated cost of the configuration
+                        type: string
+                      monthly:
+                        description: Monthly is the monthly estimated cost of the
+                          configuration
+                        type: string
+                    type: object
+                  driftTimestamp:
+                    description: DriftTimestamp is the timestamp of the last drift
+                      detection
+                    type: string
+                  lastReconcile:
+                    description: LastReconcile describes the generation and time of
+                      the last reconciliation
+                    properties:
+                      generation:
+                        description: Generation is the generation reconciled on the
+                          last reconciliation
+                        format: int64
+                        type: integer
+                      time:
+                        description: Time is the last time the resource was reconciled
+                        format: date-time
+                        type: string
+                    type: object
+                  lastSuccess:
+                    description: |-
+                      LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                      a Success status
+                    properties:
+                      generation:
+                        description: Generation is the generation reconciled on the
+                          last reconciliation
+                        format: int64
+                        type: integer
+                      time:
+                        description: Time is the last time the resource was reconciled
+                        format: date-time
+                        type: string
+                    type: object
+                  resourceStatus:
+                    description: |-
+                      ResourceStatus indicates the status of the resources and if the resources are insync with the
+                      configuration
+                    type: string
+                  resources:
+                    description: |-
+                      Resources is the number of managed cloud resources which are currently under management.
+                      This field is taken from the terraform state itself.
+                    type: integer
+                  terraformVersion:
+                    description: |-
+                      TerraformVersion is the version of terraform which was last used to run this
+                      configuration
+                    type: string
+                type: object
+              costs:
+                description: |-
+                  Costs is the predicted costs of this configuration. Note this field is only populated
+                  when the integration has been configured by the administrator.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled indicates if the cost integration was enabled when this configuration was last
+                      executed.
+                    type: boolean
+                  hourly:
+                    description: Hourly is the hourly estimated cost of the configuration
+                    type: string
+                  monthly:
+                    description: Monthly is the monthly estimated cost of the configuration
+                    type: string
+                type: object
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              resourceStatus:
+                description: |-
+                  ResourceStatus indicates the status of the resources and if the resources are insync with the
+                  configuration
+                type: string
+              resources:
+                description: |-
+                  Resources is the number of managed cloud resources which are currently under management.
+                  This field is taken from the terraform state itself.
+                type: integer
+              updateAvailable:
+                description: UpdateAvailable indicates if there is a new version of
+                  the plan available
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYamlBytes() ([]byte, error) {
@@ -545,7 +569,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_cloudresourcesYaml() (*asse
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -560,333 +585,345 @@ spec:
     singular: configuration
   scope: Namespaced
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.module
-          name: Module
-          type: string
-        - jsonPath: .spec.plan.name
-          name: Plan
-          priority: 1
-          type: string
-        - jsonPath: .spec.writeConnectionSecretToRef.name
-          name: Secret
-          type: string
-        - jsonPath: .spec.enableDriftDetection
-          name: Drift Detection
-          type: boolean
-        - jsonPath: .status.costs.monthly
-          name: Estimated
-          type: string
-        - jsonPath: .status.resourceStatus
-          name: Synchronized
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Configuration is the schema for terraform definitions in terraform controller
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ConfigurationSpec defines the desired state of a terraform
-              properties:
-                auth:
-                  description: |-
-                    Auth is used to configure any options required when the source of the terraform
-                    module is private or requires credentials to retrieve. This could be SSH keys or git
-                    user/pass or AWS credentials for an s3 bucket.
+  - additionalPrinterColumns:
+    - jsonPath: .spec.module
+      name: Module
+      type: string
+    - jsonPath: .spec.plan.name
+      name: Plan
+      priority: 1
+      type: string
+    - jsonPath: .spec.writeConnectionSecretToRef.name
+      name: Secret
+      type: string
+    - jsonPath: .spec.enableDriftDetection
+      name: Drift Detection
+      type: boolean
+    - jsonPath: .status.costs.monthly
+      name: Estimated
+      type: string
+    - jsonPath: .status.resourceStatus
+      name: Synchronized
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Configuration is the schema for terraform definitions in terraform
+          controller
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ConfigurationSpec defines the desired state of a terraform
+            properties:
+              auth:
+                description: |-
+                  Auth is used to configure any options required when the source of the terraform
+                  module is private or requires credentials to retrieve. This could be SSH keys or git
+                  user/pass or AWS credentials for an s3 bucket.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              enableAutoApproval:
+                description: |-
+                  EnableAutoApproval when enabled indicates the configuration does not need to be
+                  manually approved. On a change to the configuration, the controller will automatically
+                  approve the configuration. Note it still needs to adhere to any checks or policies.
+                type: boolean
+              enableDriftDetection:
+                description: |-
+                  EnableDriftDetection when enabled run periodic reconciliation configurations looking
+                  for any drift between the expected and current state. If any drift is detected the
+                  status is changed and a kubernetes event raised.
+                type: boolean
+              module:
+                description: |-
+                  Module is the URL to the source of the terraform module. The format of the URL is
+                  a direct implementation of terraform's module reference. Please see the following
+                  repository for more details https://github.com/hashicorp/go-getter
+                type: string
+              plan:
+                description: |-
+                  Plan is an optional reference to a plan this configuration is associated with. If
+                  not set and a policy exists to enforce a plan, the configuration will be rejected.
+                properties:
+                  name:
+                    description: Name is the name of the plan this configuration is
+                      associated with
+                    type: string
+                  revision:
+                    description: Revision is the revision of the plan this configuration
+                      is associated with
+                    type: string
+                required:
+                - name
+                - revision
+                type: object
+              providerRef:
+                description: |-
+                  ProviderRef is the reference to the provider which should be used to execute this
+                  configuration.
+                properties:
+                  name:
+                    description: |-
+                      Name is the name of the provider which contains the credentials to use for this
+                      configuration.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the provider itself.
+                    type: string
+                required:
+                - name
+                type: object
+              terraformVersion:
+                description: |-
+                  TerraformVersion provides the ability to override the default terraform version. Before
+                  changing this field its best to consult with platform administrator. As the
+                  value of this field is used to change the tag of the terraform container image.
+                type: string
+              tfVars:
+                description: |-
+                  TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+                  Variables are set, values in Variables will override values with the same key in TFVars.
+                type: string
+              valueFrom:
+                description: |-
+                  ValueFromSource is a collection of value from sources, where the source of the value
+                  is taken from a secret
+                items:
+                  description: ValueFromSource defines a value which is taken from
+                    a secret
                   properties:
-                    name:
-                      description: name is unique within a namespace to reference a secret resource.
-                      type: string
-                    namespace:
-                      description: namespace defines the space within which the secret name must be unique.
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                enableAutoApproval:
-                  description: |-
-                    EnableAutoApproval when enabled indicates the configuration does not need to be
-                    manually approved. On a change to the configuration, the controller will automatically
-                    approve the configuration. Note it still needs to adhere to any checks or policies.
-                  type: boolean
-                enableDriftDetection:
-                  description: |-
-                    EnableDriftDetection when enabled run periodic reconciliation configurations looking
-                    for any drift between the expected and current state. If any drift is detected the
-                    status is changed and a kubernetes event raised.
-                  type: boolean
-                module:
-                  description: |-
-                    Module is the URL to the source of the terraform module. The format of the URL is
-                    a direct implementation of terraform's module reference. Please see the following
-                    repository for more details https://github.com/hashicorp/go-getter
-                  type: string
-                plan:
-                  description: |-
-                    Plan is an optional reference to a plan this configuration is associated with. If
-                    not set and a policy exists to enforce a plan, the configuration will be rejected.
-                  properties:
-                    name:
-                      description: Name is the name of the plan this configuration is associated with
-                      type: string
-                    revision:
-                      description: Revision is the revision of the plan this configuration is associated with
-                      type: string
-                  required:
-                    - name
-                    - revision
-                  type: object
-                providerRef:
-                  description: |-
-                    ProviderRef is the reference to the provider which should be used to execute this
-                    configuration.
-                  properties:
-                    name:
+                    context:
                       description: |-
-                        Name is the name of the provider which contains the credentials to use for this
-                        configuration.
+                        Context is the context is the name of the terraform context where the
+                        value should be retrieved from
                       type: string
-                    namespace:
-                      description: Namespace is the namespace of the provider itself.
+                    key:
+                      description: Key is the key in the secret which we should used
+                        for the value
                       type: string
-                  required:
-                    - name
-                  type: object
-                terraformVersion:
-                  description: |-
-                    TerraformVersion provides the ability to override the default terraform version. Before
-                    changing this field its best to consult with platform administrator. As the
-                    value of this field is used to change the tag of the terraform container image.
-                  type: string
-                tfVars:
-                  description: |-
-                    TFVars provides an initial set of variables to pass to the Terraform module. If both this and
-                    Variables are set, values in Variables will override values with the same key in TFVars.
-                  type: string
-                valueFrom:
-                  description: |-
-                    ValueFromSource is a collection of value from sources, where the source of the value
-                    is taken from a secret
-                  items:
-                    description: ValueFromSource defines a value which is taken from a secret
-                    properties:
-                      context:
-                        description: |-
-                          Context is the context is the name of the terraform context where the
-                          value should be retrieved from
-                        type: string
-                      key:
-                        description: Key is the key in the secret which we should used for the value
-                        type: string
-                      name:
-                        description: |-
-                          Name is the name which we use when injecting the value into the terraform code
-                          i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
-                          for backwards compatiability if no name is provided, we using the key at the name
-                        type: string
-                      optional:
-                        description: |-
-                          Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
-                          not contained in the secret, we ignore the error
-                        type: boolean
-                      secret:
-                        description: Secret is the name of the secret in the configuration namespace
-                        type: string
-                    required:
-                      - key
-                    type: object
-                  type: array
-                variables:
-                  description: |-
-                    Variables provides the inputs for the terraform module itself. These are passed to the
-                    terraform executor and used to execute the plan, apply and destroy phases.
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                writeConnectionSecretToRef:
-                  description: |-
-                    WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
-                    any module outputs are written to this secret. The outputs are automatically uppercased
-                    and ready to be consumed as environment variables.
-                    WriteConnectionSecretRef is the secret where the terraform outputs will be written.
-                  properties:
-                    keys:
-                      description: |-
-                        Keys is a collection of name used to filter the terraform output. By default all keys from the
-                        output of the terraform state are written to the connection secret. Here we can define exactly
-                        which keys we want from that output.
-                      items:
-                        type: string
-                      type: array
                     name:
                       description: |-
-                        Name is the of the secret where you want to the terraform output to be written. The terraform outputs
-                        will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
-                        workload.
+                        Name is the name which we use when injecting the value into the terraform code
+                        i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
+                        for backwards compatiability if no name is provided, we using the key at the name
                       type: string
-                  required:
-                    - name
-                  type: object
-              required:
-                - module
-              type: object
-            status:
-              description: ConfigurationStatus defines the observed state of a terraform
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
-                    properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                costs:
-                  description: |-
-                    Costs is the predicted costs of this configuration. Note this field is only populated
-                    when the integration has been configured by the administrator.
-                  properties:
-                    enabled:
+                    optional:
                       description: |-
-                        Enabled indicates if the cost integration was enabled when this configuration was last
-                        executed.
+                        Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
+                        not contained in the secret, we ignore the error
                       type: boolean
-                    hourly:
-                      description: Hourly is the hourly estimated cost of the configuration
+                    secret:
+                      description: Secret is the name of the secret in the configuration
+                        namespace
                       type: string
-                    monthly:
-                      description: Monthly is the monthly estimated cost of the configuration
-                      type: string
+                  required:
+                  - key
                   type: object
-                driftTimestamp:
-                  description: DriftTimestamp is the timestamp of the last drift detection
-                  type: string
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
+                type: array
+              variables:
+                description: |-
+                  Variables provides the inputs for the terraform module itself. These are passed to the
+                  terraform executor and used to execute the plan, apply and destroy phases.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              writeConnectionSecretToRef:
+                description: |-
+                  WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
+                  any module outputs are written to this secret. The outputs are automatically uppercased
+                  and ready to be consumed as environment variables.
+                  WriteConnectionSecretRef is the secret where the terraform outputs will be written.
+                properties:
+                  keys:
+                    description: |-
+                      Keys is a collection of name used to filter the terraform output. By default all keys from the
+                      output of the terraform state are written to the connection secret. Here we can define exactly
+                      which keys we want from that output.
+                    items:
+                      type: string
+                    type: array
+                  name:
+                    description: |-
+                      Name is the of the secret where you want to the terraform output to be written. The terraform outputs
+                      will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
+                      workload.
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - module
+            type: object
+          status:
+            description: ConfigurationStatus defines the observed state of a terraform
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
                   properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
-                  type: object
-                lastSuccess:
-                  description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
                       type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-                resourceStatus:
-                  description: |-
-                    ResourceStatus indicates the status of the resources and if the resources are insync with the
-                    configuration
-                  type: string
-                resources:
-                  description: |-
-                    Resources is the number of managed cloud resources which are currently under management.
-                    This field is taken from the terraform state itself.
-                  type: integer
-                terraformVersion:
-                  description: |-
-                    TerraformVersion is the version of terraform which was last used to run this
-                    configuration
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              costs:
+                description: |-
+                  Costs is the predicted costs of this configuration. Note this field is only populated
+                  when the integration has been configured by the administrator.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled indicates if the cost integration was enabled when this configuration was last
+                      executed.
+                    type: boolean
+                  hourly:
+                    description: Hourly is the hourly estimated cost of the configuration
+                    type: string
+                  monthly:
+                    description: Monthly is the monthly estimated cost of the configuration
+                    type: string
+                type: object
+              driftTimestamp:
+                description: DriftTimestamp is the timestamp of the last drift detection
+                type: string
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              resourceStatus:
+                description: |-
+                  ResourceStatus indicates the status of the resources and if the resources are insync with the
+                  configuration
+                type: string
+              resources:
+                description: |-
+                  Resources is the number of managed cloud resources which are currently under management.
+                  This field is taken from the terraform state itself.
+                type: integer
+              terraformVersion:
+                description: |-
+                  TerraformVersion is the version of terraform which was last used to run this
+                  configuration
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYamlBytes() ([]byte, error) {
@@ -904,7 +941,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_configurationsYaml() (*asse
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -914,158 +952,162 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: Context
     listKind: ContextList
     plural: contexts
     singular: context
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Context is the schema for the context type
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ContextSpec defines the desired state for a context
-              properties:
-                variables:
-                  additionalProperties:
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  description: |-
-                    Variables is a list of variables which can be used globally by Context resources.
-                    The structure of the variables is a map of key/value pairs, which MUST have both
-                    a description and a value.
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Context is the schema for the context type
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ContextSpec defines the desired state for a context
+            properties:
+              variables:
+                additionalProperties:
                   type: object
-              required:
-                - variables
-              type: object
-            status:
-              description: ContextStatus defines the observed state of a terraform
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
-                    properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
+                  x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  Variables is a list of variables which can be used globally by Context resources.
+                  The structure of the variables is a map of key/value pairs, which MUST have both
+                  a description and a value.
+                type: object
+            required:
+            - variables
+            type: object
+          status:
+            description: ContextStatus defines the observed state of a terraform
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
                   properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
-                  type: object
-                lastSuccess:
-                  description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
                       type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYamlBytes() ([]byte, error) {
@@ -1083,7 +1125,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_contextsYaml() (*asset, err
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -1093,179 +1136,186 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: Plan
     listKind: PlanList
     plural: plans
     singular: plan
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.latest.revision
-          name: Latest
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Plan is the schema for the plan type
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: PlanSpec defines the desired state for a context
-              properties:
-                revisions:
-                  description: Revisions is a collection of revision associated with this plan
-                  items:
-                    description: PlanRevision is a reference to a revision of a plan existing in the system
-                    properties:
-                      name:
-                        description: Name is the name of the revision containing the configuration
-                        type: string
-                      revision:
-                        description: Revision is the version of the revision
-                        type: string
-                    required:
-                      - name
-                      - revision
-                    type: object
-                  type: array
-              type: object
-            status:
-              description: PlanStatus defines the observed state of a terraform
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
-                    properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                lastSuccess:
-                  description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                latest:
-                  description: Latest is the latest revision from this plan
+  - additionalPrinterColumns:
+    - jsonPath: .status.latest.revision
+      name: Latest
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Plan is the schema for the plan type
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PlanSpec defines the desired state for a context
+            properties:
+              revisions:
+                description: Revisions is a collection of revision associated with
+                  this plan
+                items:
+                  description: PlanRevision is a reference to a revision of a plan
+                    existing in the system
                   properties:
                     name:
-                      description: Name is the name of the revision containing the configuration
+                      description: Name is the name of the revision containing the
+                        configuration
                       type: string
                     revision:
                       description: Revision is the version of the revision
                       type: string
                   required:
-                    - name
-                    - revision
+                  - name
+                  - revision
                   type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+            type: object
+          status:
+            description: PlanStatus defines the observed state of a terraform
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
+                  properties:
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              latest:
+                description: Latest is the latest revision from this plan
+                properties:
+                  name:
+                    description: Name is the name of the revision containing the configuration
+                    type: string
+                  revision:
+                    description: Revision is the version of the revision
+                    type: string
+                required:
+                - name
+                - revision
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_plansYamlBytes() ([]byte, error) {
@@ -1283,7 +1333,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_plansYaml() (*asset, error)
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -1293,208 +1344,75 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: Policy
     listKind: PolicyList
     plural: policies
     singular: policy
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Policy is the schema for provider definitions in terraform controller
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: PolicySpec defines the desired state of a provider
-              properties:
-                constraints:
-                  description: |-
-                    Constraints provides a series or constraints that must be enforced on the selectored
-                    terraform configurations.
-                  properties:
-                    checkov:
-                      description: |-
-                        Checkov provides the ability to enforce a set of security standards on all configurations.
-                        These can be configured to target specific resources based on namespace and resource
-                        labels
-                      properties:
-                        checks:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Policy is the schema for provider definitions in terraform controller
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PolicySpec defines the desired state of a provider
+            properties:
+              constraints:
+                description: |-
+                  Constraints provides a series or constraints that must be enforced on the selectored
+                  terraform configurations.
+                properties:
+                  checkov:
+                    description: |-
+                      Checkov provides the ability to enforce a set of security standards on all configurations.
+                      These can be configured to target specific resources based on namespace and resource
+                      labels
+                    properties:
+                      checks:
+                        description: |-
+                          Checks is a list of checks which should be applied against the configuration. Note, an
+                          empty list here implies checkov should run ALL checks.
+                          Please see https://www.checkov.io/5.Policy%20Index/terraform.html
+                        items:
+                          type: string
+                        type: array
+                      external:
+                        description: |-
+                          External is a collection of external checks which should be included in the scan. Each
+                          of the external sources and retrieved and sourced into /run/policy/NAME where they can
+                          be included as part of the scan
+                        items:
                           description: |-
-                            Checks is a list of checks which should be applied against the configuration. Note, an
-                            empty list here implies checkov should run ALL checks.
-                            Please see https://www.checkov.io/5.Policy%20Index/terraform.html
-                          items:
-                            type: string
-                          type: array
-                        external:
-                          description: |-
-                            External is a collection of external checks which should be included in the scan. Each
-                            of the external sources and retrieved and sourced into /run/policy/NAME where they can
-                            be included as part of the scan
-                          items:
-                            description: |-
-                              ExternalCheck defines the definition for an external check - this comprises of the
-                              source and any optional secret
-                            properties:
-                              name:
-                                description: |-
-                                  Name provides a arbitrary name to the checks - note, this name is used as the directory
-                                  name when we source the code
-                                type: string
-                              secretRef:
-                                description: |-
-                                  SecretRef is reference to secret which contains environment variables used by the source
-                                  command to retrieve the code. This could be cloud credentials, ssh keys, git username
-                                  and password etc
-                                properties:
-                                  name:
-                                    description: name is unique within a namespace to reference a secret resource.
-                                    type: string
-                                  namespace:
-                                    description: namespace defines the space within which the secret name must be unique.
-                                    type: string
-                                type: object
-                                x-kubernetes-map-type: atomic
-                              url:
-                                description: |-
-                                  URL is the source external checks - this is usually a git repository. The notation
-                                  for this is https://github.com/hashicorp/go-getter
-                                type: string
-                            required:
-                              - name
-                              - url
-                            type: object
-                          type: array
-                        selector:
-                          description: |-
-                            Selector is the selector on the namespace or labels on the configuration. By leaving this
-                            fields empty you can implicitly selecting all configurations.
+                            ExternalCheck defines the definition for an external check - this comprises of the
+                            source and any optional secret
                           properties:
-                            namespace:
+                            name:
                               description: |-
-                                Namespace is used to filter a configuration based on the namespace labels of
-                                where it exists
-                              properties:
-                                matchExpressions:
-                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                  items:
-                                    description: |-
-                                      A label selector requirement is a selector that contains values, a key, and an operator that
-                                      relates the key and values.
-                                    properties:
-                                      key:
-                                        description: key is the label key that the selector applies to.
-                                        type: string
-                                      operator:
-                                        description: |-
-                                          operator represents a key's relationship to a set of values.
-                                          Valid operators are In, NotIn, Exists and DoesNotExist.
-                                        type: string
-                                      values:
-                                        description: |-
-                                          values is an array of string values. If the operator is In or NotIn,
-                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                          the values array must be empty. This array is replaced during a strategic
-                                          merge patch.
-                                        items:
-                                          type: string
-                                        type: array
-                                        x-kubernetes-list-type: atomic
-                                    required:
-                                      - key
-                                      - operator
-                                    type: object
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                                matchLabels:
-                                  additionalProperties:
-                                    type: string
-                                  description: |-
-                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                  type: object
-                              type: object
-                              x-kubernetes-map-type: atomic
-                            resource:
-                              description: Resource provides the ability to filter a configuration based on it's labels
-                              properties:
-                                matchExpressions:
-                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                  items:
-                                    description: |-
-                                      A label selector requirement is a selector that contains values, a key, and an operator that
-                                      relates the key and values.
-                                    properties:
-                                      key:
-                                        description: key is the label key that the selector applies to.
-                                        type: string
-                                      operator:
-                                        description: |-
-                                          operator represents a key's relationship to a set of values.
-                                          Valid operators are In, NotIn, Exists and DoesNotExist.
-                                        type: string
-                                      values:
-                                        description: |-
-                                          values is an array of string values. If the operator is In or NotIn,
-                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                          the values array must be empty. This array is replaced during a strategic
-                                          merge patch.
-                                        items:
-                                          type: string
-                                        type: array
-                                        x-kubernetes-list-type: atomic
-                                    required:
-                                      - key
-                                      - operator
-                                    type: object
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                                matchLabels:
-                                  additionalProperties:
-                                    type: string
-                                  description: |-
-                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                  type: object
-                              type: object
-                              x-kubernetes-map-type: atomic
-                          type: object
-                        skipChecks:
-                          description: |-
-                            SkipChecks is a collection of checkov checks which you can defined as skipped. The security
-                            scan will ignore any failures on these checks.
-                          items:
-                            type: string
-                          type: array
-                        source:
-                          description: Source indicates an external source for the checkov configurations
-                          properties:
-                            configuration:
-                              description: Configuration is the configuration to use within the source directory
+                                Name provides a arbitrary name to the checks - note, this name is used as the directory
+                                name when we source the code
                               type: string
                             secretRef:
                               description: |-
@@ -1503,10 +1421,12 @@ spec:
                                 and password etc
                               properties:
                                 name:
-                                  description: name is unique within a namespace to reference a secret resource.
+                                  description: name is unique within a namespace to
+                                    reference a secret resource.
                                   type: string
                                 namespace:
-                                  description: namespace defines the space within which the secret name must be unique.
+                                  description: namespace defines the space within
+                                    which the secret name must be unique.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -1516,159 +1436,31 @@ spec:
                                 for this is https://github.com/hashicorp/go-getter
                               type: string
                           required:
-                            - configuration
-                            - url
+                          - name
+                          - url
                           type: object
-                      type: object
-                    modules:
-                      description: |-
-                        Modules provides the ability to control the source for all terraform modules. Allowing
-                        platform teams to control where the modules can be downloaded from.
-                      properties:
-                        allowed:
-                          description: |-
-                            Allowed is a collection of regexes which are applied to the source of the terraform
-                            configuration. The configuration MUST match one or more of the regexes in order to
-                            be allowed to run.
-                          items:
-                            type: string
-                          type: array
-                        selector:
-                          description: |-
-                            Selector is the selector on the namespace or labels on the configuration. By leaving
-                            this field empty you are implicitly selecting all configurations.
-                          properties:
-                            namespace:
-                              description: |-
-                                Namespace is used to filter a configuration based on the namespace labels of
-                                where it exists
-                              properties:
-                                matchExpressions:
-                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                  items:
-                                    description: |-
-                                      A label selector requirement is a selector that contains values, a key, and an operator that
-                                      relates the key and values.
-                                    properties:
-                                      key:
-                                        description: key is the label key that the selector applies to.
-                                        type: string
-                                      operator:
-                                        description: |-
-                                          operator represents a key's relationship to a set of values.
-                                          Valid operators are In, NotIn, Exists and DoesNotExist.
-                                        type: string
-                                      values:
-                                        description: |-
-                                          values is an array of string values. If the operator is In or NotIn,
-                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                          the values array must be empty. This array is replaced during a strategic
-                                          merge patch.
-                                        items:
-                                          type: string
-                                        type: array
-                                        x-kubernetes-list-type: atomic
-                                    required:
-                                      - key
-                                      - operator
-                                    type: object
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                                matchLabels:
-                                  additionalProperties:
-                                    type: string
-                                  description: |-
-                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                  type: object
-                              type: object
-                              x-kubernetes-map-type: atomic
-                            resource:
-                              description: Resource provides the ability to filter a configuration based on it's labels
-                              properties:
-                                matchExpressions:
-                                  description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                                  items:
-                                    description: |-
-                                      A label selector requirement is a selector that contains values, a key, and an operator that
-                                      relates the key and values.
-                                    properties:
-                                      key:
-                                        description: key is the label key that the selector applies to.
-                                        type: string
-                                      operator:
-                                        description: |-
-                                          operator represents a key's relationship to a set of values.
-                                          Valid operators are In, NotIn, Exists and DoesNotExist.
-                                        type: string
-                                      values:
-                                        description: |-
-                                          values is an array of string values. If the operator is In or NotIn,
-                                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                          the values array must be empty. This array is replaced during a strategic
-                                          merge patch.
-                                        items:
-                                          type: string
-                                        type: array
-                                        x-kubernetes-list-type: atomic
-                                    required:
-                                      - key
-                                      - operator
-                                    type: object
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                                matchLabels:
-                                  additionalProperties:
-                                    type: string
-                                  description: |-
-                                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                                    map is equivalent to an element of matchExpressions, whose key field is "key", the
-                                    operator is "In", and the values array contains only "value". The requirements are ANDed.
-                                  type: object
-                              type: object
-                              x-kubernetes-map-type: atomic
-                          type: object
-                      type: object
-                  type: object
-                defaults:
-                  description: |-
-                    Defaults provides the ability to target specific terraform module based on namespace or
-                    resource labels and automatically inject variables into the configurations.
-                  items:
-                    description: |-
-                      DefaultVariables provides platform administrators the ability to inject
-                      default variables into a configuration
-                    properties:
-                      secrets:
-                        description: Secrets is a collection of secrets which are used to inject variables into the configuration
-                        items:
-                          type: string
                         type: array
                       selector:
-                        description: Selector is used to determine which configurations the variables should be injected into
+                        description: |-
+                          Selector is the selector on the namespace or labels on the configuration. By leaving this
+                          fields empty you can implicitly selecting all configurations.
                         properties:
-                          modules:
-                            description: |-
-                              Modules provides a collection of regexes which are used to match against the
-                              configuration module
-                            items:
-                              type: string
-                            type: array
                           namespace:
                             description: |-
-                              Namespace selectors all configurations under one or more namespaces, determined by the
-                              labeling on the namespace.
+                              Namespace is used to filter a configuration based on the namespace labels of
+                              where it exists
                             properties:
                               matchExpressions:
-                                description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
                                 items:
                                   description: |-
                                     A label selector requirement is a selector that contains values, a key, and an operator that
                                     relates the key and values.
                                   properties:
                                     key:
-                                      description: key is the label key that the selector applies to.
+                                      description: key is the label key that the selector
+                                        applies to.
                                       type: string
                                     operator:
                                       description: |-
@@ -1686,8 +1478,55 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                   required:
-                                    - key
-                                    - operator
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                                x-kubernetes-list-type: atomic
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          resource:
+                            description: Resource provides the ability to filter a
+                              configuration based on it's labels
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: |-
+                                    A label selector requirement is a selector that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: |-
+                                        operator represents a key's relationship to a set of values.
+                                        Valid operators are In, NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: |-
+                                        values is an array of string values. If the operator is In or NotIn,
+                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                        the values array must be empty. This array is replaced during a strategic
+                                        merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                  required:
+                                  - key
+                                  - operator
                                   type: object
                                 type: array
                                 x-kubernetes-list-type: atomic
@@ -1702,124 +1541,361 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                         type: object
-                      variables:
-                        description: Variables is a collection of variables to inject into the configuration
+                      skipChecks:
+                        description: |-
+                          SkipChecks is a collection of checkov checks which you can defined as skipped. The security
+                          scan will ignore any failures on these checks.
+                        items:
+                          type: string
+                        type: array
+                      source:
+                        description: Source indicates an external source for the checkov
+                          configurations
+                        properties:
+                          configuration:
+                            description: Configuration is the configuration to use
+                              within the source directory
+                            type: string
+                          secretRef:
+                            description: |-
+                              SecretRef is reference to secret which contains environment variables used by the source
+                              command to retrieve the code. This could be cloud credentials, ssh keys, git username
+                              and password etc
+                            properties:
+                              name:
+                                description: name is unique within a namespace to
+                                  reference a secret resource.
+                                type: string
+                              namespace:
+                                description: namespace defines the space within which
+                                  the secret name must be unique.
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          url:
+                            description: |-
+                              URL is the source external checks - this is usually a git repository. The notation
+                              for this is https://github.com/hashicorp/go-getter
+                            type: string
+                        required:
+                        - configuration
+                        - url
                         type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                    required:
-                      - selector
                     type: object
-                  type: array
-                summary:
-                  description: |-
-                    Summary is an optional field which can be used to define a summary of what the policy is
-                    configured to enforce.
-                  type: string
-              type: object
-            status:
-              description: PolicyStatus defines the observed state of a provider
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
+                  modules:
+                    description: |-
+                      Modules provides the ability to control the source for all terraform modules. Allowing
+                      platform teams to control where the modules can be downloaded from.
                     properties:
-                      detail:
+                      allowed:
                         description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
+                          Allowed is a collection of regexes which are applied to the source of the terraform
+                          configuration. The configuration MUST match one or more of the regexes in order to
+                          be allowed to run.
+                        items:
+                          type: string
+                        type: array
+                      selector:
                         description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
+                          Selector is the selector on the namespace or labels on the configuration. By leaving
+                          this field empty you are implicitly selecting all configurations.
+                        properties:
+                          namespace:
+                            description: |-
+                              Namespace is used to filter a configuration based on the namespace labels of
+                              where it exists
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: |-
+                                    A label selector requirement is a selector that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: |-
+                                        operator represents a key's relationship to a set of values.
+                                        Valid operators are In, NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: |-
+                                        values is an array of string values. If the operator is In or NotIn,
+                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                        the values array must be empty. This array is replaced during a strategic
+                                        merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                                x-kubernetes-list-type: atomic
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          resource:
+                            description: Resource provides the ability to filter a
+                              configuration based on it's labels
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: |-
+                                    A label selector requirement is a selector that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: |-
+                                        operator represents a key's relationship to a set of values.
+                                        Valid operators are In, NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: |-
+                                        values is an array of string values. If the operator is In or NotIn,
+                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                        the values array must be empty. This array is replaced during a strategic
+                                        merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                                x-kubernetes-list-type: atomic
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
                     type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                lastSuccess:
+                type: object
+              defaults:
+                description: |-
+                  Defaults provides the ability to target specific terraform module based on namespace or
+                  resource labels and automatically inject variables into the configurations.
+                items:
                   description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
+                    DefaultVariables provides platform administrators the ability to inject
+                    default variables into a configuration
                   properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
+                    secrets:
+                      description: Secrets is a collection of secrets which are used
+                        to inject variables into the configuration
+                      items:
+                        type: string
+                      type: array
+                    selector:
+                      description: Selector is used to determine which configurations
+                        the variables should be injected into
+                      properties:
+                        modules:
+                          description: |-
+                            Modules provides a collection of regexes which are used to match against the
+                            configuration module
+                          items:
+                            type: string
+                          type: array
+                        namespace:
+                          description: |-
+                            Namespace selectors all configurations under one or more namespaces, determined by the
+                            labeling on the namespace.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: |-
+                                  A label selector requirement is a selector that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: |-
+                                      operator represents a key's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: |-
+                                      values is an array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty. This array is replaced during a strategic
+                                      merge patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                operator is "In", and the values array contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                    variables:
+                      description: Variables is a collection of variables to inject
+                        into the configuration
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - selector
+                  type: object
+                type: array
+              summary:
+                description: |-
+                  Summary is an optional field which can be used to define a summary of what the policy is
+                  configured to enforce.
+                type: string
+            type: object
+          status:
+            description: PolicyStatus defines the observed state of a provider
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
+                  properties:
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYamlBytes() ([]byte, error) {
@@ -1837,7 +1913,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_policiesYaml() (*asset, err
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -1847,347 +1924,368 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: Provider
     listKind: ProviderList
     plural: providers
     singular: provider
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.source
-          name: Source
-          type: string
-        - jsonPath: .spec.provider
-          name: Provider
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Provider is the schema for provider definitions in terraform controller
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ProviderSpec defines the desired state of a provider
-              properties:
-                backendTemplate:
-                  description: |-
-                    BackendTemplate is the reference to a backend template used for the terraform
-                    state storage. This field can override the default backend template, which is supplied as
-                    a command line argument to the controller binary. The contents of the secret MUST be a
-                    single field 'backend.tf' which contains the backend template.
-                  properties:
-                    name:
-                      description: name is unique within a namespace to reference a secret resource.
+  - additionalPrinterColumns:
+    - jsonPath: .spec.source
+      name: Source
+      type: string
+    - jsonPath: .spec.provider
+      name: Provider
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Provider is the schema for provider definitions in terraform
+          controller
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProviderSpec defines the desired state of a provider
+            properties:
+              backendTemplate:
+                description: |-
+                  BackendTemplate is the reference to a backend template used for the terraform
+                  state storage. This field can override the default backend template, which is supplied as
+                  a command line argument to the controller binary. The contents of the secret MUST be a
+                  single field 'backend.tf' which contains the backend template.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              configuration:
+                description: Configuration is optional configuration to the provider.
+                  This is terraform provider specific.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              job:
+                description: |-
+                  Job defined a custom collection of labels and annotations to be applied to all jobs
+                  which are created and 'use' this provider.
+                properties:
+                  annotations:
+                    additionalProperties:
                       type: string
-                    namespace:
-                      description: namespace defines the space within which the secret name must be unique.
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                configuration:
-                  description: Configuration is optional configuration to the provider. This is terraform provider specific.
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                job:
-                  description: |-
-                    Job defined a custom collection of labels and annotations to be applied to all jobs
-                    which are created and 'use' this provider.
-                  properties:
-                    annotations:
-                      additionalProperties:
-                        type: string
-                      description: Annotations is a collection of annotations which are automatically added to all jobs.
-                      type: object
-                    labels:
-                      additionalProperties:
-                        type: string
-                      description: Labels is a collection of labels which are automatically added to all jobs.
-                      type: object
-                  type: object
-                preload:
-                  description: Preload defines the configuration for the preloading of contextual data from the cloud vendor.
-                  properties:
-                    cluster:
-                      description: Cluster is the name of the kubernetes cluster we use to pivot the data around
-                      type: string
-                    context:
-                      description: |-
-                        Context is the context name of the Context we should create from the preload
-                        implementation
-                      type: string
-                    enabled:
-                      description: Enabled indicates if the preloader is enabled
-                      type: boolean
-                    interval:
-                      description: Interval is the interval to run the preloader
-                      type: string
-                    region:
-                      description: Region is the cloud region the cluster is location in
-                      type: string
-                  type: object
-                provider:
-                  description: |-
-                    ProviderType defines the cloud provider which is being used, currently supported providers are
-                    aws, google or azurerm.
-                  type: string
-                secretRef:
-                  description: |-
-                    SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret.
-                    The secret should include the environment variables required to by the terraform provider.
-                  properties:
-                    name:
-                      description: name is unique within a namespace to reference a secret resource.
-                      type: string
-                    namespace:
-                      description: namespace defines the space within which the secret name must be unique.
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                selector:
-                  description: |-
-                    Selector provider the ability to filter who can use this provider. If empty, all users
-                    in the cluster is permitted to use the provider. Otherrise you can specify a selector
-                    which can use namespace and resource labels
-                  properties:
-                    namespace:
-                      description: |-
-                        Namespace is used to filter a configuration based on the namespace labels of
-                        where it exists
-                      properties:
-                        matchExpressions:
-                          description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                          items:
-                            description: |-
-                              A label selector requirement is a selector that contains values, a key, and an operator that
-                              relates the key and values.
-                            properties:
-                              key:
-                                description: key is the label key that the selector applies to.
-                                type: string
-                              operator:
-                                description: |-
-                                  operator represents a key's relationship to a set of values.
-                                  Valid operators are In, NotIn, Exists and DoesNotExist.
-                                type: string
-                              values:
-                                description: |-
-                                  values is an array of string values. If the operator is In or NotIn,
-                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                  the values array must be empty. This array is replaced during a strategic
-                                  merge patch.
-                                items:
-                                  type: string
-                                type: array
-                                x-kubernetes-list-type: atomic
-                            required:
-                              - key
-                              - operator
-                            type: object
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        matchLabels:
-                          additionalProperties:
-                            type: string
-                          description: |-
-                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                            map is equivalent to an element of matchExpressions, whose key field is "key", the
-                            operator is "In", and the values array contains only "value". The requirements are ANDed.
-                          type: object
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    resource:
-                      description: Resource provides the ability to filter a configuration based on it's labels
-                      properties:
-                        matchExpressions:
-                          description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                          items:
-                            description: |-
-                              A label selector requirement is a selector that contains values, a key, and an operator that
-                              relates the key and values.
-                            properties:
-                              key:
-                                description: key is the label key that the selector applies to.
-                                type: string
-                              operator:
-                                description: |-
-                                  operator represents a key's relationship to a set of values.
-                                  Valid operators are In, NotIn, Exists and DoesNotExist.
-                                type: string
-                              values:
-                                description: |-
-                                  values is an array of string values. If the operator is In or NotIn,
-                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                  the values array must be empty. This array is replaced during a strategic
-                                  merge patch.
-                                items:
-                                  type: string
-                                type: array
-                                x-kubernetes-list-type: atomic
-                            required:
-                              - key
-                              - operator
-                            type: object
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        matchLabels:
-                          additionalProperties:
-                            type: string
-                          description: |-
-                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                            map is equivalent to an element of matchExpressions, whose key field is "key", the
-                            operator is "In", and the values array contains only "value". The requirements are ANDed.
-                          type: object
-                      type: object
-                      x-kubernetes-map-type: atomic
-                  type: object
-                serviceAccount:
-                  description: |-
-                    ServiceAccount is the name of a service account to use when the provider source is 'injected'. The
-                    service account should exist in the terraform controller namespace and be configure per cloud vendor
-                    requirements for pod identity.
-                  type: string
-                source:
-                  description: |-
-                    Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
-                    or using a managed identity. The currently supported values are secret and injected.
-                  type: string
-                summary:
-                  description: Summary provides a human readable description of the provider
-                  type: string
-              required:
-                - provider
-                - source
-              type: object
-            status:
-              description: ProviderStatus defines the observed state of a provider
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
-                    properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
+                    description: Annotations is a collection of annotations which
+                      are automatically added to all jobs.
                     type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                lastPreloadTime:
-                  description: |-
-                    LastPreloadTime is the last time the provider was used to run a preload
-                    job
-                  format: date-time
-                  type: string
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels is a collection of labels which are automatically
+                      added to all jobs.
+                    type: object
+                type: object
+              preload:
+                description: Preload defines the configuration for the preloading
+                  of contextual data from the cloud vendor.
+                properties:
+                  cluster:
+                    description: Cluster is the name of the kubernetes cluster we
+                      use to pivot the data around
+                    type: string
+                  context:
+                    description: |-
+                      Context is the context name of the Context we should create from the preload
+                      implementation
+                    type: string
+                  enabled:
+                    description: Enabled indicates if the preloader is enabled
+                    type: boolean
+                  interval:
+                    description: Interval is the interval to run the preloader
+                    type: string
+                  region:
+                    description: Region is the cloud region the cluster is location
+                      in
+                    type: string
+                type: object
+              provider:
+                description: |-
+                  ProviderType defines the cloud provider which is being used, currently supported providers are
+                  aws, google or azurerm.
+                type: string
+              secretRef:
+                description: |-
+                  SecretRef is a reference to a kubernetes secret. This is required only when using the source: secret.
+                  The secret should include the environment variables required to by the terraform provider.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              selector:
+                description: |-
+                  Selector provider the ability to filter who can use this provider. If empty, all users
+                  in the cluster is permitted to use the provider. Otherrise you can specify a selector
+                  which can use namespace and resource labels
+                properties:
+                  namespace:
+                    description: |-
+                      Namespace is used to filter a configuration based on the namespace labels of
+                      where it exists
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  resource:
+                    description: Resource provides the ability to filter a configuration
+                      based on it's labels
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+              serviceAccount:
+                description: |-
+                  ServiceAccount is the name of a service account to use when the provider source is 'injected'. The
+                  service account should exist in the terraform controller namespace and be configure per cloud vendor
+                  requirements for pod identity.
+                type: string
+              source:
+                description: |-
+                  Source defines the type of credentials the provider is wrapper, this could be wrapping a static secret
+                  or using a managed identity. The currently supported values are secret and injected.
+                type: string
+              summary:
+                description: Summary provides a human readable description of the
+                  provider
+                type: string
+            required:
+            - provider
+            - source
+            type: object
+          status:
+            description: ProviderStatus defines the observed state of a provider
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
                   properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
-                  type: object
-                lastSuccess:
-                  description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
                       type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastPreloadTime:
+                description: |-
+                  LastPreloadTime is the last time the provider was used to run a preload
+                  job
+                format: date-time
+                type: string
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_providersYamlBytes() ([]byte, error) {
@@ -2205,7 +2303,8 @@ func chartsTerranetesControllerCrdsTerraformAppviaIo_providersYaml() (*asset, er
 	return a, nil
 }
 
-var _chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYaml = []byte(`apiVersion: apiextensions.k8s.io/v1
+var _chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYaml = []byte(`---
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -2215,424 +2314,447 @@ spec:
   group: terraform.appvia.io
   names:
     categories:
-      - terraform
+    - terraform
     kind: Revision
     listKind: RevisionList
     plural: revisions
     singular: revision
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.plan.name
-          name: Plan
-          type: string
-        - jsonPath: .spec.plan.description
-          name: Description
-          type: string
-        - jsonPath: .spec.plan.revision
-          name: Version
-          type: string
-        - jsonPath: .status.inUse
-          name: InUse
-          type: integer
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Revision is the schema for a revision
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: RevisionSpec defines the desired state of a configuration plan revision
-              properties:
-                configuration:
-                  description: |-
-                    Configuration is the configuration which this revision is providing to the
-                    consumer.
-                  properties:
-                    auth:
-                      description: |-
-                        Auth is used to configure any options required when the source of the terraform
-                        module is private or requires credentials to retrieve. This could be SSH keys or git
-                        user/pass or AWS credentials for an s3 bucket.
-                      properties:
-                        name:
-                          description: name is unique within a namespace to reference a secret resource.
-                          type: string
-                        namespace:
-                          description: namespace defines the space within which the secret name must be unique.
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    enableAutoApproval:
-                      description: |-
-                        EnableAutoApproval when enabled indicates the configuration does not need to be
-                        manually approved. On a change to the configuration, the controller will automatically
-                        approve the configuration. Note it still needs to adhere to any checks or policies.
-                      type: boolean
-                    enableDriftDetection:
-                      description: |-
-                        EnableDriftDetection when enabled run periodic reconciliation configurations looking
-                        for any drift between the expected and current state. If any drift is detected the
-                        status is changed and a kubernetes event raised.
-                      type: boolean
-                    module:
-                      description: |-
-                        Module is the URL to the source of the terraform module. The format of the URL is
-                        a direct implementation of terraform's module reference. Please see the following
-                        repository for more details https://github.com/hashicorp/go-getter
-                      type: string
-                    plan:
-                      description: |-
-                        Plan is an optional reference to a plan this configuration is associated with. If
-                        not set and a policy exists to enforce a plan, the configuration will be rejected.
-                      properties:
-                        name:
-                          description: Name is the name of the plan this configuration is associated with
-                          type: string
-                        revision:
-                          description: Revision is the revision of the plan this configuration is associated with
-                          type: string
-                      required:
-                        - name
-                        - revision
-                      type: object
-                    providerRef:
-                      description: |-
-                        ProviderRef is the reference to the provider which should be used to execute this
-                        configuration.
-                      properties:
-                        name:
-                          description: |-
-                            Name is the name of the provider which contains the credentials to use for this
-                            configuration.
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of the provider itself.
-                          type: string
-                      required:
-                        - name
-                      type: object
-                    terraformVersion:
-                      description: |-
-                        TerraformVersion provides the ability to override the default terraform version. Before
-                        changing this field its best to consult with platform administrator. As the
-                        value of this field is used to change the tag of the terraform container image.
-                      type: string
-                    tfVars:
-                      description: |-
-                        TFVars provides an initial set of variables to pass to the Terraform module. If both this and
-                        Variables are set, values in Variables will override values with the same key in TFVars.
-                      type: string
-                    valueFrom:
-                      description: |-
-                        ValueFromSource is a collection of value from sources, where the source of the value
-                        is taken from a secret
-                      items:
-                        description: ValueFromSource defines a value which is taken from a secret
-                        properties:
-                          context:
-                            description: |-
-                              Context is the context is the name of the terraform context where the
-                              value should be retrieved from
-                            type: string
-                          key:
-                            description: Key is the key in the secret which we should used for the value
-                            type: string
-                          name:
-                            description: |-
-                              Name is the name which we use when injecting the value into the terraform code
-                              i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
-                              for backwards compatiability if no name is provided, we using the key at the name
-                            type: string
-                          optional:
-                            description: |-
-                              Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
-                              not contained in the secret, we ignore the error
-                            type: boolean
-                          secret:
-                            description: Secret is the name of the secret in the configuration namespace
-                            type: string
-                        required:
-                          - key
-                        type: object
-                      type: array
-                    variables:
-                      description: |-
-                        Variables provides the inputs for the terraform module itself. These are passed to the
-                        terraform executor and used to execute the plan, apply and destroy phases.
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    writeConnectionSecretToRef:
-                      description: |-
-                        WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
-                        any module outputs are written to this secret. The outputs are automatically uppercased
-                        and ready to be consumed as environment variables.
-                        WriteConnectionSecretRef is the secret where the terraform outputs will be written.
-                      properties:
-                        keys:
-                          description: |-
-                            Keys is a collection of name used to filter the terraform output. By default all keys from the
-                            output of the terraform state are written to the connection secret. Here we can define exactly
-                            which keys we want from that output.
-                          items:
-                            type: string
-                          type: array
-                        name:
-                          description: |-
-                            Name is the of the secret where you want to the terraform output to be written. The terraform outputs
-                            will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
-                            workload.
-                          type: string
-                      required:
-                        - name
-                      type: object
-                  required:
-                    - module
-                  type: object
-                dependencies:
-                  description: |-
-                    Dependencies is a collection of dependencies which this revision depends on
-                    such as a Provider, Terranetes version, or Revision
-                  items:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.plan.name
+      name: Plan
+      type: string
+    - jsonPath: .spec.plan.description
+      name: Description
+      type: string
+    - jsonPath: .spec.plan.revision
+      name: Version
+      type: string
+    - jsonPath: .status.inUse
+      name: InUse
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Revision is the schema for a revision
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RevisionSpec defines the desired state of a configuration
+              plan revision
+            properties:
+              configuration:
+                description: |-
+                  Configuration is the configuration which this revision is providing to the
+                  consumer.
+                properties:
+                  auth:
                     description: |-
-                      RevisionDependency defined a dependency for this revision. Currently we support Provider,
-                      Revision or Terranetes version
+                      Auth is used to configure any options required when the source of the terraform
+                      module is private or requires credentials to retrieve. This could be SSH keys or git
+                      user/pass or AWS credentials for an s3 bucket.
                     properties:
-                      context:
-                        description: Revision indicates this revision has a dependency on a context resource
-                        properties:
-                          cloud:
-                            description: |-
-                              Cloud is the name of the cloud vendor we are dependent on, such as aws, azurerm, which
-                              the context resource is associated with
-                            type: string
-                          name:
-                            description: Name is the name of the context resource we are dependent on
-                            type: string
-                        required:
-                          - name
-                        type: object
-                      provider:
-                        description: Provider indicates this revision has a dependency on a provider resource
-                        properties:
-                          cloud:
-                            description: |-
-                              Cloud is the name of the cloud vendor we are dependent on, such as aws, azurerm, The
-                              controller we ensure we have the provider installed before we can apply the configuration
-                            type: string
-                        required:
-                          - cloud
-                        type: object
-                      terranetes:
-                        description: Terranetes indicates this revision has a dependency on a terranetes controller
-                        properties:
-                          version:
-                            description: |-
-                              Version is used to specify the version of the terranetes resource we are dependent on.
-                              This format is based on Semantic Versioning 2.0.0 and can use '>=', '>', '<=', and '<'
-                            type: string
-                        required:
-                          - version
-                        type: object
+                      name:
+                        description: name is unique within a namespace to reference
+                          a secret resource.
+                        type: string
+                      namespace:
+                        description: namespace defines the space within which the
+                          secret name must be unique.
+                        type: string
                     type: object
-                  type: array
-                inputs:
-                  description: |-
-                    Inputs is a collection of inputs which this revision the consumer of this
-                    revision can or must provide. This is usually limited to contextual information
-                    such as a name for the database, the size required, a bucket name, or policy.
-                  items:
+                    x-kubernetes-map-type: atomic
+                  enableAutoApproval:
                     description: |-
-                      RevisionInput is a user defined input for a revision, such as a database name or
-                      a cache size etc.
+                      EnableAutoApproval when enabled indicates the configuration does not need to be
+                      manually approved. On a change to the configuration, the controller will automatically
+                      approve the configuration. Note it still needs to adhere to any checks or policies.
+                    type: boolean
+                  enableDriftDetection:
+                    description: |-
+                      EnableDriftDetection when enabled run periodic reconciliation configurations looking
+                      for any drift between the expected and current state. If any drift is detected the
+                      status is changed and a kubernetes event raised.
+                    type: boolean
+                  module:
+                    description: |-
+                      Module is the URL to the source of the terraform module. The format of the URL is
+                      a direct implementation of terraform's module reference. Please see the following
+                      repository for more details https://github.com/hashicorp/go-getter
+                    type: string
+                  plan:
+                    description: |-
+                      Plan is an optional reference to a plan this configuration is associated with. If
+                      not set and a policy exists to enforce a plan, the configuration will be rejected.
                     properties:
-                      default:
-                        description: |-
-                          Default is the default value for this input, this is a map which must contain
-                          the field 'value' => 'default value'. Default values can be any simple of complex
-                          type, such as string, int, bool, etc.
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                      description:
-                        description: Description is a short description of the input and its purpose, capabilities, etc.
+                      name:
+                        description: Name is the name of the plan this configuration
+                          is associated with
                         type: string
-                      key:
-                        description: |-
-                          Key is the name of the variable when presented to the terraform module. If this field
-                          is not specified, the name will be used as the key instead
-                        type: string
-                      required:
-                        description: Required indicates whether this input is required or not by the revision
-                        type: boolean
-                      type:
-                        description: Type is the format of the input, such as string, int, bool, etc.
+                      revision:
+                        description: Revision is the revision of the plan this configuration
+                          is associated with
                         type: string
                     required:
-                      - description
-                    type: object
-                  type: array
-                plan:
-                  description: |-
-                    Plan contains the information related to the name, version, description of
-                    the revision.
-                  properties:
-                    categories:
-                      description: |-
-                        Categories is a list of categories which this revision is grouped by, such as database,
-                        cache, etc.
-                      items:
-                        type: string
-                      type: array
-                    changeLog:
-                      description: ChangeLog provides a human readable list of changes for this revision
-                      type: string
-                    description:
-                      description: Description is a short description of the revision and its purpose, capabilities, etc.
-                      type: string
-                    name:
-                      description: |-
-                        Name is the name which this revision is grouped by, such as mysql, redis, etc. Multiple
-                        revisions can be grouped by the same name, presented as a list of revisions for a single
-                        plan name
-                      type: string
-                    revision:
-                      description: Revision is the version of the revision, such as 1.0.0, 1.0.1, etc.
-                      type: string
-                  required:
-                    - description
                     - name
                     - revision
-                  type: object
-              required:
-                - configuration
-                - plan
-              type: object
-            status:
-              description: RevisionStatus defines the observed state of a terraform
-              properties:
-                conditions:
-                  description: Conditions represents the observations of the resource's current state.
-                  items:
-                    description: Condition is the current observed condition of some aspect of a resource
+                    type: object
+                  providerRef:
+                    description: |-
+                      ProviderRef is the reference to the provider which should be used to execute this
+                      configuration.
                     properties:
-                      detail:
-                        description: |-
-                          Detail is any additional human-readable detail to understand this condition, for example,
-                          the full underlying error which caused an issue
-                        type: string
-                      lastTransitionTime:
-                        description: |-
-                          LastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          Message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
                       name:
-                        description: Name is a human-readable name for this condition.
-                        minLength: 1
-                        type: string
-                      observedGeneration:
                         description: |-
-                          ObservedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          Reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                          Name is the name of the provider which contains the credentials to use for this
+                          configuration.
                         type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      namespace:
+                        description: Namespace is the namespace of the provider itself.
                         type: string
                     required:
-                      - lastTransitionTime
-                      - name
-                      - reason
-                      - status
-                      - type
+                    - name
                     type: object
-                  type: array
-                  x-kubernetes-list-map-keys:
-                    - type
-                  x-kubernetes-list-type: map
-                inUse:
-                  description: InUse is the number of cloud resources which are currently using this revision
-                  type: integer
-                lastReconcile:
-                  description: LastReconcile describes the generation and time of the last reconciliation
-                  properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
-                      format: date-time
-                      type: string
-                  type: object
-                lastSuccess:
+                  terraformVersion:
+                    description: |-
+                      TerraformVersion provides the ability to override the default terraform version. Before
+                      changing this field its best to consult with platform administrator. As the
+                      value of this field is used to change the tag of the terraform container image.
+                    type: string
+                  tfVars:
+                    description: |-
+                      TFVars provides an initial set of variables to pass to the Terraform module. If both this and
+                      Variables are set, values in Variables will override values with the same key in TFVars.
+                    type: string
+                  valueFrom:
+                    description: |-
+                      ValueFromSource is a collection of value from sources, where the source of the value
+                      is taken from a secret
+                    items:
+                      description: ValueFromSource defines a value which is taken
+                        from a secret
+                      properties:
+                        context:
+                          description: |-
+                            Context is the context is the name of the terraform context where the
+                            value should be retrieved from
+                          type: string
+                        key:
+                          description: Key is the key in the secret which we should
+                            used for the value
+                          type: string
+                        name:
+                          description: |-
+                            Name is the name which we use when injecting the value into the terraform code
+                            i.e. the secret may contain data.DB_HOST but you call this database_hostname. Note,
+                            for backwards compatiability if no name is provided, we using the key at the name
+                          type: string
+                        optional:
+                          description: |-
+                            Optional indicates the secret can be optional, i.e if the secret does not exist, or the key is
+                            not contained in the secret, we ignore the error
+                          type: boolean
+                        secret:
+                          description: Secret is the name of the secret in the configuration
+                            namespace
+                          type: string
+                      required:
+                      - key
+                      type: object
+                    type: array
+                  variables:
+                    description: |-
+                      Variables provides the inputs for the terraform module itself. These are passed to the
+                      terraform executor and used to execute the plan, apply and destroy phases.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  writeConnectionSecretToRef:
+                    description: |-
+                      WriteConnectionSecretToRef is the name for a secret. On execution of the terraform module
+                      any module outputs are written to this secret. The outputs are automatically uppercased
+                      and ready to be consumed as environment variables.
+                      WriteConnectionSecretRef is the secret where the terraform outputs will be written.
+                    properties:
+                      keys:
+                        description: |-
+                          Keys is a collection of name used to filter the terraform output. By default all keys from the
+                          output of the terraform state are written to the connection secret. Here we can define exactly
+                          which keys we want from that output.
+                        items:
+                          type: string
+                        type: array
+                      name:
+                        description: |-
+                          Name is the of the secret where you want to the terraform output to be written. The terraform outputs
+                          will be written to the secret as a key value pair. All are uppercased can read to be consumed by the
+                          workload.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                required:
+                - module
+                type: object
+              dependencies:
+                description: |-
+                  Dependencies is a collection of dependencies which this revision depends on
+                  such as a Provider, Terranetes version, or Revision
+                items:
                   description: |-
-                    LastSuccess descibes the generation and time of the last reconciliation which resulted in
-                    a Success status
+                    RevisionDependency defined a dependency for this revision. Currently we support Provider,
+                    Revision or Terranetes version
                   properties:
-                    generation:
-                      description: Generation is the generation reconciled on the last reconciliation
-                      format: int64
-                      type: integer
-                    time:
-                      description: Time is the last time the resource was reconciled
+                    context:
+                      description: Revision indicates this revision has a dependency
+                        on a context resource
+                      properties:
+                        cloud:
+                          description: |-
+                            Cloud is the name of the cloud vendor we are dependent on, such as aws, azurerm, which
+                            the context resource is associated with
+                          type: string
+                        name:
+                          description: Name is the name of the context resource we
+                            are dependent on
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    provider:
+                      description: Provider indicates this revision has a dependency
+                        on a provider resource
+                      properties:
+                        cloud:
+                          description: |-
+                            Cloud is the name of the cloud vendor we are dependent on, such as aws, azurerm, The
+                            controller we ensure we have the provider installed before we can apply the configuration
+                          type: string
+                      required:
+                      - cloud
+                      type: object
+                    terranetes:
+                      description: Terranetes indicates this revision has a dependency
+                        on a terranetes controller
+                      properties:
+                        version:
+                          description: |-
+                            Version is used to specify the version of the terranetes resource we are dependent on.
+                            This format is based on Semantic Versioning 2.0.0 and can use '>=', '>', '<=', and '<'
+                          type: string
+                      required:
+                      - version
+                      type: object
+                  type: object
+                type: array
+              inputs:
+                description: |-
+                  Inputs is a collection of inputs which this revision the consumer of this
+                  revision can or must provide. This is usually limited to contextual information
+                  such as a name for the database, the size required, a bucket name, or policy.
+                items:
+                  description: |-
+                    RevisionInput is a user defined input for a revision, such as a database name or
+                    a cache size etc.
+                  properties:
+                    default:
+                      description: |-
+                        Default is the default value for this input, this is a map which must contain
+                        the field 'value' => 'default value'. Default values can be any simple of complex
+                        type, such as string, int, bool, etc.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    description:
+                      description: Description is a short description of the input
+                        and its purpose, capabilities, etc.
+                      type: string
+                    key:
+                      description: |-
+                        Key is the name of the variable when presented to the terraform module. If this field
+                        is not specified, the name will be used as the key instead
+                      type: string
+                    required:
+                      description: Required indicates whether this input is required
+                        or not by the revision
+                      type: boolean
+                    type:
+                      description: Type is the format of the input, such as string,
+                        int, bool, etc.
+                      type: string
+                  required:
+                  - description
+                  type: object
+                type: array
+              plan:
+                description: |-
+                  Plan contains the information related to the name, version, description of
+                  the revision.
+                properties:
+                  categories:
+                    description: |-
+                      Categories is a list of categories which this revision is grouped by, such as database,
+                      cache, etc.
+                    items:
+                      type: string
+                    type: array
+                  changeLog:
+                    description: ChangeLog provides a human readable list of changes
+                      for this revision
+                    type: string
+                  description:
+                    description: Description is a short description of the revision
+                      and its purpose, capabilities, etc.
+                    type: string
+                  name:
+                    description: |-
+                      Name is the name which this revision is grouped by, such as mysql, redis, etc. Multiple
+                      revisions can be grouped by the same name, presented as a list of revisions for a single
+                      plan name
+                    type: string
+                  revision:
+                    description: Revision is the version of the revision, such as
+                      1.0.0, 1.0.1, etc.
+                    type: string
+                required:
+                - description
+                - name
+                - revision
+                type: object
+            required:
+            - configuration
+            - plan
+            type: object
+          status:
+            description: RevisionStatus defines the observed state of a terraform
+            properties:
+              conditions:
+                description: Conditions represents the observations of the resource's
+                  current state.
+                items:
+                  description: Condition is the current observed condition of some
+                    aspect of a resource
+                  properties:
+                    detail:
+                      description: |-
+                        Detail is any additional human-readable detail to understand this condition, for example,
+                        the full underlying error which caused an issue
+                      type: string
+                    lastTransitionTime:
+                      description: |-
+                        LastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
+                    message:
+                      description: |-
+                        Message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    name:
+                      description: Name is a human-readable name for this condition.
+                      minLength: 1
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        Reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - name
+                  - reason
+                  - status
+                  - type
                   type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
-  preserveUnknownFields: false
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              inUse:
+                description: InUse is the number of cloud resources which are currently
+                  using this revision
+                type: integer
+              lastReconcile:
+                description: LastReconcile describes the generation and time of the
+                  last reconciliation
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+              lastSuccess:
+                description: |-
+                  LastSuccess descibes the generation and time of the last reconciliation which resulted in
+                  a Success status
+                properties:
+                  generation:
+                    description: Generation is the generation reconciled on the last
+                      reconciliation
+                    format: int64
+                    type: integer
+                  time:
+                    description: Time is the last time the resource was reconciled
+                    format: date-time
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
 `)
 
 func chartsTerranetesControllerCrdsTerraformAppviaIo_revisionsYamlBytes() ([]byte, error) {

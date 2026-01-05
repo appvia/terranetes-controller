@@ -103,11 +103,11 @@ jobs:
       - name: Install Kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: v1.28.0
+          version: v1.34
 
       - name: Install Kind
         run: |
-          curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.20.0/kind-linux-amd64 -o kind
+          curl -sL https://github.com/kubernetes-sigs/kind/releases/download/v0.31.0/kind-linux-amd64 -o kind
           chmod +x kind
           kind create cluster
 
