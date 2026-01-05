@@ -21,23 +21,25 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/smithy-go"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/pointer"
 )
 
 func TestIsAWSError(t *testing.T) {
 	assert.False(t, IsAWSError(errors.New(""), "code"))
-	assert.False(t, IsAWSError(awserr.New("test", "code", nil), "different_code"))
-	assert.False(t, IsAWSError(awserr.New("test", "code", nil), "code"))
+	apiErr1 := &smithy.GenericAPIError{Code: "test", Message: "code"}
+	assert.False(t, IsAWSError(apiErr1, "different_code"))
+	apiErr2 := &smithy.GenericAPIError{Code: "code", Message: "test"}
+	assert.True(t, IsAWSError(apiErr2, "code"))
 }
 
 func TestIsAWSErrorType(t *testing.T) {
 	assert.False(t, IsAWSErrorType(nil))
 	assert.False(t, IsAWSErrorType(errors.New("nope")))
-	assert.True(t, IsAWSErrorType(awserr.New("yes", "yes", nil)))
+	apiErr := &smithy.GenericAPIError{Code: "yes", Message: "yes"}
+	assert.True(t, IsAWSErrorType(apiErr))
 }
 
 func TestSantize(t *testing.T) {
@@ -53,20 +55,22 @@ func TestToMapTags(t *testing.T) {
 			"key":    "foo",
 			"values": []string{"test"},
 		},
-	}, ToMapTags(map[string]*string{
-		"foo": pointer.String("test"),
+	}, ToMapTags(map[string]string{
+		"foo": "test",
 	}))
 }
 
 func TestIsResourceNotFoundException(t *testing.T) {
 	assert.False(t, IsResourceNotFoundException(nil))
 	assert.False(t, IsResourceNotFoundException(errors.New("nope")))
-	assert.False(t, IsResourceNotFoundException(awserr.New("nope", "nope", nil)))
-	assert.True(t, IsResourceNotFoundException(awserr.New(eks.ErrCodeResourceNotFoundException, "", nil)))
+	apiErr1 := &smithy.GenericAPIError{Code: "nope", Message: "nope"}
+	assert.False(t, IsResourceNotFoundException(apiErr1))
+	apiErr2 := &smithy.GenericAPIError{Code: "ResourceNotFoundException", Message: ""}
+	assert.True(t, IsResourceNotFoundException(apiErr2))
 }
 
 func TestHasTag(t *testing.T) {
-	tags := []*ec2.Tag{
+	tags := []types.Tag{
 		{
 			Key:   pointer.String("Environment"),
 			Value: pointer.String("dev"),
@@ -86,7 +90,7 @@ func TestHasTag(t *testing.T) {
 }
 
 func TestGetTagValue(t *testing.T) {
-	tags := []*ec2.Tag{
+	tags := []types.Tag{
 		{
 			Key:   pointer.String("Environment"),
 			Value: pointer.String("dev"),
@@ -110,7 +114,7 @@ func TestGetTagValue(t *testing.T) {
 }
 
 func TestGetTag(t *testing.T) {
-	tags := []*ec2.Tag{
+	tags := []types.Tag{
 		{
 			Key:   pointer.String("Environment"),
 			Value: pointer.String("dev"),
