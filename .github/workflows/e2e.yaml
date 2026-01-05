@@ -113,13 +113,13 @@ jobs:
 
       - name: Retrieve Controller Image
         if: (github.event.inputs || inputs).version == 'ci'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: controller-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp
       - name: Retrieve Executor Image
         if: (github.event.inputs || inputs).version == 'ci'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: executor-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp
