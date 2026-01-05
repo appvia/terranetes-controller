@@ -131,6 +131,7 @@ func (c *Controller) ensureConfigurationExists(cloudresource *terraformv1alpha1.
 			break
 		case 1:
 			current = &terraformv1alpha1.Configuration{}
+			current.Kind = terraformv1alpha1.ConfigurationKind
 			current.Name = list.Items[0].Name
 			current.Namespace = list.Items[0].Namespace
 
