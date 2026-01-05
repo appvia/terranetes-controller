@@ -87,6 +87,8 @@ jobs:
 
   helm:
     runs-on: ubuntu-latest
+    env:
+      CT_CONFIG_DIR: ${{ github.workspace }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
