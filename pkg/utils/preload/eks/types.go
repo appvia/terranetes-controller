@@ -18,13 +18,13 @@
 package eks
 
 import (
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 // Config is the configuration for the EKS preloader
 type Config struct {
 	// ClusterName is the name of the EKS cluster.
 	ClusterName string
-	// Session is the client to use when communicating with the AWS API.
-	Session *session.Session
+	// Config is the AWS config to use when communicating with the AWS API.
+	Config aws.Config
 }
