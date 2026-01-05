@@ -37,6 +37,14 @@ var rootSchema = &hcl.BodySchema{
 			Type:       "module",
 			LabelNames: []string{"name"},
 		},
+		{
+			Type:       "component",
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       "required_providers",
+			LabelNames: nil,
+		},
 	},
 }
 
@@ -89,6 +97,9 @@ var outputSchema = &hcl.BodySchema{
 		{
 			Name: "sensitive",
 		},
+		{
+			Name: "type",
+		},
 	},
 }
 
@@ -110,6 +121,55 @@ var resourceSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
 			Name: "provider",
+		},
+	},
+}
+
+var componentSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: "source",
+		},
+	},
+}
+
+// stackSchema defines the schema for Terraform Stacks files based on Terraform core's rootConfigSchema
+// https://github.com/hashicorp/terraform/blob/8b65426ecfac58a6937c1c26297c8e6a0db57a35/internal/stacks/stackconfig/file.go
+var stackSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: "language",
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       "stack",
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       "component",
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       "variable",
+			LabelNames: []string{"name"},
+		},
+		{
+			Type: "locals",
+		},
+		{
+			Type:       "output",
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       "provider",
+			LabelNames: []string{"type", "name"},
+		},
+		{
+			Type: "required_providers",
+		},
+		{
+			Type: "removed",
 		},
 	},
 }
