@@ -27,11 +27,12 @@ build_yq() {
   go build -o "$YQ" github.com/mikefarah/yq/v3
 }
 
-add_preserveUnknownFields() {
-  for f in ./charts/terranetes-controller/crds/*.yaml; do
-    "$YQ" write --inplace "$f" spec.preserveUnknownFields false
-  done
-}
+# date: 2025-01-05, commented out as a temporary workaround for issue
+#add_preserveUnknownFields() {
+#  for f in ./charts/terranetes-controller/crds/*.yaml; do
+#    "$YQ" write --inplace "$f" spec.preserveUnknownFields false
+#  done
+#}
 
 build_yq
-add_preserveUnknownFields
+#add_preserveUnknownFields
