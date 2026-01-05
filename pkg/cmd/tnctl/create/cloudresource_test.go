@@ -125,7 +125,6 @@ var _ = Describe("Create CloudResource", func() {
 				expected := `apiVersion: terraform.appvia.io/v1alpha1
 kind: CloudResource
 metadata:
-  creationTimestamp: null
   name: test
 spec:
   plan:

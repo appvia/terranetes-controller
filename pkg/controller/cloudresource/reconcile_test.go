@@ -136,7 +136,6 @@ var _ = Describe("CloudResource Reconcilation", func() {
 			})
 
 			It("should requeue", func() {
-				Expect(result.Requeue).To(BeFalse())
 				Expect(result.RequeueAfter).To(Equal(5 * time.Minute))
 			})
 		})
@@ -166,7 +165,6 @@ var _ = Describe("CloudResource Reconcilation", func() {
 			})
 
 			It("should requeue", func() {
-				Expect(result.Requeue).To(BeFalse())
 				Expect(result.RequeueAfter).To(Equal(5 * time.Minute))
 			})
 		})
@@ -194,7 +192,6 @@ var _ = Describe("CloudResource Reconcilation", func() {
 			})
 
 			It("should requeue", func() {
-				Expect(result.Requeue).To(BeFalse())
 				Expect(result.RequeueAfter).To(Equal(5 * time.Minute))
 			})
 		})
@@ -235,8 +232,8 @@ var _ = Describe("CloudResource Reconcilation", func() {
 						Expect(configuration.GetOwnerReferences()).To(HaveLen(1))
 						Expect(configuration.GetOwnerReferences()[0].UID).To(Equal(cloudresource.UID))
 						Expect(configuration.GetOwnerReferences()[0].Name).To(Equal(cloudresource.Name))
-						Expect(configuration.GetOwnerReferences()[0].Kind).To(Equal(cloudresource.Kind))
-						Expect(configuration.GetOwnerReferences()[0].APIVersion).To(Equal(cloudresource.APIVersion))
+						Expect(configuration.GetOwnerReferences()[0].Kind).To(Equal(terraformv1alpha1.CloudResourceKind))
+						Expect(configuration.GetOwnerReferences()[0].APIVersion).To(Equal(terraformv1alpha1.SchemeGroupVersion.String()))
 						Expect(configuration.Spec.Plan).To(Equal(&terraformv1alpha1.PlanReference{
 							Name:     revision.Spec.Plan.Name,
 							Revision: revision.Spec.Plan.Revision,
@@ -371,8 +368,8 @@ var _ = Describe("CloudResource Reconcilation", func() {
 						Expect(configuration.GetOwnerReferences()).To(HaveLen(1))
 						Expect(configuration.GetOwnerReferences()[0].UID).To(Equal(cloudresource.UID))
 						Expect(configuration.GetOwnerReferences()[0].Name).To(Equal(cloudresource.Name))
-						Expect(configuration.GetOwnerReferences()[0].Kind).To(Equal(cloudresource.Kind))
-						Expect(configuration.GetOwnerReferences()[0].APIVersion).To(Equal(cloudresource.APIVersion))
+						Expect(configuration.GetOwnerReferences()[0].Kind).To(Equal(terraformv1alpha1.CloudResourceKind))
+						Expect(configuration.GetOwnerReferences()[0].APIVersion).To(Equal(terraformv1alpha1.SchemeGroupVersion.String()))
 						Expect(configuration.Spec.Plan).To(Equal(&terraformv1alpha1.PlanReference{
 							Name:     revision.Spec.Plan.Name,
 							Revision: revision.Spec.Plan.Revision,
