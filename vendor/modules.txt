@@ -165,8 +165,6 @@ github.com/ashanbrown/forbidigo/forbidigo
 # github.com/ashanbrown/makezero v1.2.0
 ## explicit; go 1.12
 github.com/ashanbrown/makezero/makezero
-# github.com/aws/aws-sdk-go v1.55.8
-## explicit; go 1.19
 # github.com/aws/aws-sdk-go-v2 v1.41.0
 ## explicit; go 1.23
 github.com/aws/aws-sdk-go-v2/aws
@@ -366,8 +364,6 @@ github.com/cespare/xxhash/v2
 # github.com/charithe/durationcheck v0.0.10
 ## explicit; go 1.14
 github.com/charithe/durationcheck
-# github.com/chavacava/garif v0.1.0
-## explicit; go 1.16
 # github.com/chzyer/readline v1.5.1
 ## explicit; go 1.15
 github.com/chzyer/readline
@@ -686,8 +682,6 @@ github.com/goccy/go-yaml/token
 # github.com/gofrs/flock v0.12.1
 ## explicit; go 1.21.0
 github.com/gofrs/flock
-# github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
-## explicit; go 1.20
 # github.com/golang/mock v1.6.0
 ## explicit; go 1.11
 github.com/golang/mock/gomock
@@ -930,8 +924,6 @@ github.com/google/s2a-go/internal/v2/remotesigner
 github.com/google/s2a-go/internal/v2/tlsconfigstore
 github.com/google/s2a-go/retry
 github.com/google/s2a-go/stream
-# github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-## explicit; go 1.13
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
@@ -988,8 +980,6 @@ github.com/hashicorp/go-getter/helper/url
 # github.com/hashicorp/go-immutable-radix/v2 v2.1.0
 ## explicit; go 1.18
 github.com/hashicorp/go-immutable-radix/v2
-# github.com/hashicorp/go-safetemp v1.0.0
-## explicit
 # github.com/hashicorp/go-version v1.8.0
 ## explicit
 github.com/hashicorp/go-version
@@ -1044,10 +1034,6 @@ github.com/jingyugao/rowserrcheck/passes/rowserr
 # github.com/jjti/go-spancheck v0.6.4
 ## explicit; go 1.22.1
 github.com/jjti/go-spancheck
-# github.com/jmespath/go-jmespath v0.4.0
-## explicit; go 1.14
-# github.com/josharian/intern v1.0.0
-## explicit; go 1.5
 # github.com/jpillora/backoff v1.0.0
 ## explicit; go 1.13
 github.com/jpillora/backoff
@@ -1131,8 +1117,6 @@ github.com/macabu/inamedparam
 # github.com/magiconair/properties v1.8.7
 ## explicit; go 1.19
 github.com/magiconair/properties
-# github.com/mailru/easyjson v0.9.1
-## explicit; go 1.20
 # github.com/manifoldco/promptui v0.9.0
 ## explicit; go 1.12
 github.com/manifoldco/promptui
@@ -1156,8 +1140,6 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.19
 ## explicit; go 1.20
 github.com/mattn/go-runewidth
-# github.com/mgechev/dots v1.0.0
-## explicit; go 1.23.0
 # github.com/mgechev/revive v1.13.0
 ## explicit; go 1.24.0
 github.com/mgechev/revive/config
@@ -1186,8 +1168,6 @@ github.com/mitchellh/copystructure
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/go-testing-interface v1.14.1
-## explicit; go 1.14
 # github.com/mitchellh/go-wordwrap v1.0.1
 ## explicit; go 1.14
 github.com/mitchellh/go-wordwrap
@@ -1275,7 +1255,7 @@ github.com/olekukonko/tablewriter/pkg/twwarp
 github.com/olekukonko/tablewriter/pkg/twwidth
 github.com/olekukonko/tablewriter/renderer
 github.com/olekukonko/tablewriter/tw
-# github.com/onsi/ginkgo/v2 v2.27.2
+# github.com/onsi/ginkgo/v2 v2.27.3
 ## explicit; go 1.23.0
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -1401,8 +1381,6 @@ github.com/quasilyte/stdinfo
 # github.com/raeperd/recvcheck v0.2.0
 ## explicit; go 1.22.0
 github.com/raeperd/recvcheck
-# github.com/rivo/uniseg v0.4.7
-## explicit; go 1.18
 # github.com/rodaine/hclencoder v0.0.1
 ## explicit; go 1.14
 github.com/rodaine/hclencoder
@@ -1633,8 +1611,6 @@ github.com/zclconf/go-cty/cty/function/stdlib
 github.com/zclconf/go-cty/cty/gocty
 github.com/zclconf/go-cty/cty/json
 github.com/zclconf/go-cty/cty/set
-# github.com/zeebo/errs v1.4.0
-## explicit; go 1.12
 # gitlab.com/bosi/decorder v0.4.2
 ## explicit; go 1.20
 gitlab.com/bosi/decorder
@@ -1653,8 +1629,6 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opencensus.io v0.24.0
-## explicit; go 1.13
 # go.opentelemetry.io/auto/sdk v1.2.1
 ## explicit; go 1.24.0
 go.opentelemetry.io/auto/sdk
