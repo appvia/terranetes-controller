@@ -101,7 +101,7 @@ func (o *ListCommand) Run(ctx context.Context) error {
 	}
 
 	tw := cmd.NewTableWriter(o.Stdout())
-	tw.SetHeader([]string{
+	tw.Header([]string{
 		"Configuration",
 		"State",
 		"Config",
@@ -109,8 +109,12 @@ func (o *ListCommand) Run(ctx context.Context) error {
 		"Cost",
 		"Age",
 	})
-	tw.AppendBulk(data)
-	tw.Render()
+	if err := tw.Bulk(data); err != nil {
+		return err
+	}
+	if err := tw.Render(); err != nil {
+		return err
+	}
 
 	return nil
 }

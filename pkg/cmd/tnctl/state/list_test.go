@@ -96,7 +96,8 @@ var _ = Describe("Listing the state", func() {
 		})
 
 		It("should list the configurations", func() {
-			Expect(stdout.String()).To(Equal("CONFIGURATION\tSTATE\tCONFIG\tPOLICY\tCOST\tAGE  \ntest         \tNone \tNone  \tNone  \tNone\t292y\t\n"))
+			//Expect(stdout.String()).To(Equal("\tCONFIGURATION\tSTATE\tCONFIG\tPOLICY\tCOST\tAGE  \ntest         \tNone \tNone  \tNone  \tNone\t292y\t\n"))
+			Expect(stdout.String()).To(Equal("\tCONFIGURATION\tSTATE\tCONFIG\tPOLICY\tCOST\tAGE\t \n\ttest\t\t\t\t\t\t\t\t\t         \tNone\t \tNone\t\t  \tNone\t\t  \tNone\t292y\n"))
 		})
 	})
 

@@ -14,7 +14,7 @@ type RedundantTestMainExitRule struct{}
 func (*RedundantTestMainExitRule) Apply(file *lint.File, _ lint.Arguments) []lint.Failure {
 	var failures []lint.Failure
 
-	if !file.IsTest() || !file.Pkg.IsAtLeastGo115() {
+	if !file.IsTest() || !file.Pkg.IsAtLeastGoVersion(lint.Go115) {
 		// skip analysis for non-test files or for Go versions before 1.15
 		return failures
 	}
@@ -66,7 +66,7 @@ func (w *lintRedundantTestMainExit) Visit(node ast.Node) ast.Visitor {
 
 	pkg := id.Name
 	fn := fc.Sel.Name
-	if isCallToExitFunction(pkg, fn) {
+	if isCallToExitFunction(pkg, fn, ce.Args) {
 		w.onFailure(lint.Failure{
 			Confidence: 1,
 			Node:       ce,
