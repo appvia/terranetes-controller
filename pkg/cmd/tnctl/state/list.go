@@ -109,8 +109,12 @@ func (o *ListCommand) Run(ctx context.Context) error {
 		"Cost",
 		"Age",
 	})
-	tw.Bulk(data)
-	tw.Render()
+	if err := tw.Bulk(data); err != nil {
+		return err
+	}
+	if err := tw.Render(); err != nil {
+		return err
+	}
 
 	return nil
 }
