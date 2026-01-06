@@ -133,9 +133,13 @@ func (o *CleanCommand) Run(ctx context.Context) error {
 	}
 
 	tw := cmd.NewTableWriter(o.Stdout())
-	tw.SetHeader([]string{"Name", "Configuration", "Namespace", "Age"})
-	tw.AppendBulk(data)
-	tw.Render()
+	tw.Header([]string{"Name", "Configuration", "Namespace", "Age"})
+	if err := tw.Bulk(data); err != nil {
+		return err
+	}
+	if err := tw.Render(); err != nil {
+		return err
+	}
 
 	if !o.Force {
 		o.Printf("\nYou have %d secrets orphaned which can be removed, do you wish to delete? (y/n) ", len(data))

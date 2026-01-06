@@ -83,6 +83,7 @@ var allRules = append([]lint.Rule{
 	&rule.UselessBreak{},
 	&rule.UncheckedTypeAssertionRule{},
 	&rule.TimeEqualRule{},
+	&rule.TimeDateRule{},
 	&rule.BannedCharsRule{},
 	&rule.OptimizeOperandsOrderRule{},
 	&rule.UseAnyRule{},
@@ -101,6 +102,20 @@ var allRules = append([]lint.Rule{
 	&rule.RedundantBuildTagRule{},
 	&rule.UseErrorsNewRule{},
 	&rule.RedundantTestMainExitRule{},
+	&rule.UnnecessaryFormatRule{},
+	&rule.UseFmtPrintRule{},
+	&rule.EnforceSwitchStyleRule{},
+	&rule.IdenticalSwitchConditionsRule{},
+	&rule.IdenticalIfElseIfConditionsRule{},
+	&rule.IdenticalIfElseIfBranchesRule{},
+	&rule.IdenticalSwitchBranchesRule{},
+	&rule.UselessFallthroughRule{},
+	&rule.PackageDirectoryMismatchRule{},
+	&rule.UseWaitGroupGoRule{},
+	&rule.UnsecureURLSchemeRule{},
+	&rule.InefficientMapLookupRule{},
+	&rule.ForbiddenCallInWgGoRule{},
+	&rule.UnnecessaryIfRule{},
 }, defaultRules...)
 
 // allFormatters is a list of all available formatters to output the linting results.
@@ -125,7 +140,7 @@ func getFormatters() map[string]lint.Formatter {
 	return result
 }
 
-// GetLintingRules yields the linting rules that must be applied by the linter
+// GetLintingRules yields the linting rules that must be applied by the linter.
 func GetLintingRules(config *lint.Config, extraRules []lint.Rule) ([]lint.Rule, error) {
 	rulesMap := map[string]lint.Rule{}
 	for _, r := range allRules {
@@ -195,17 +210,20 @@ func normalizeConfig(config *lint.Config) {
 	if len(config.Rules) == 0 {
 		config.Rules = map[string]lint.RuleConfig{}
 	}
-	if config.EnableAllRules {
-		// Add to the configuration all rules not yet present in it
-		for _, r := range allRules {
+
+	addRules := func(config *lint.Config, rules []lint.Rule) {
+		for _, r := range rules {
 			ruleName := r.Name()
-			_, alreadyInConf := config.Rules[ruleName]
-			if alreadyInConf {
-				continue
+			if _, ok := config.Rules[ruleName]; !ok {
+				config.Rules[ruleName] = lint.RuleConfig{}
 			}
-			// Add the rule with an empty conf for
-			config.Rules[ruleName] = lint.RuleConfig{}
 		}
+	}
+
+	if config.EnableAllRules {
+		addRules(config, allRules)
+	} else if config.EnableDefaultRules {
+		addRules(config, defaultRules)
 	}
 
 	severity := config.Severity
@@ -227,7 +245,7 @@ func normalizeConfig(config *lint.Config) {
 
 const defaultConfidence = 0.8
 
-// GetConfig yields the configuration
+// GetConfig yields the configuration.
 func GetConfig(configPath string) (*lint.Config, error) {
 	config := &lint.Config{}
 	switch {
@@ -246,7 +264,7 @@ func GetConfig(configPath string) (*lint.Config, error) {
 	return config, nil
 }
 
-// GetFormatter yields the formatter for lint failures
+// GetFormatter yields the formatter for lint failures.
 func GetFormatter(formatterName string) (lint.Formatter, error) {
 	formatters := getFormatters()
 	if formatterName == "" {

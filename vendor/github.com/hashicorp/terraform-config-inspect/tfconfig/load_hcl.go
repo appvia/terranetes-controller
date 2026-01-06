@@ -52,6 +52,228 @@ func loadModule(fs FS, dir string) (*Module, Diagnostics) {
 	return mod, diagnosticsHCL(diags)
 }
 
+func LoadStack(dir string) (*Stack, Diagnostics) {
+	stack := NewStack(dir)
+	parser := hclparse.NewParser()
+	fs := NewOsFs()
+
+	primaryPaths, diags := dirFiles(fs, dir)
+	for _, filename := range primaryPaths {
+		var file *hcl.File
+		var fileDiags hcl.Diagnostics
+
+		b, err := fs.ReadFile(filename)
+		if err != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Failed to read file",
+				Detail:   fmt.Sprintf("The configuration file %q could not be read.", filename),
+			})
+			continue
+		}
+		file, fileDiags = parser.ParseHCL(b, filename)
+
+		diags = append(diags, fileDiags...)
+		if file == nil {
+			continue
+		}
+
+		contentDiags := loadStackFromFile(file, stack)
+		diags = append(diags, contentDiags...)
+	}
+
+	return stack, diagnosticsHCL(diags)
+}
+
+func loadStackFromFile(file *hcl.File, stack *Stack) hcl.Diagnostics {
+	var diags hcl.Diagnostics
+	content, _, contentDiags := file.Body.PartialContent(stackSchema)
+	diags = append(diags, contentDiags...)
+
+	for _, block := range content.Blocks {
+		switch block.Type {
+
+		case "variable":
+			content, _, contentDiags := block.Body.PartialContent(variableSchema)
+			diags = append(diags, contentDiags...)
+
+			name := block.Labels[0]
+			v := &Variable{
+				Name: name,
+				Pos:  sourcePosHCL(block.DefRange),
+			}
+
+			stack.Variables[name] = v
+
+			if attr, defined := content.Attributes["type"]; defined {
+				var typeExpr string
+				var typeExprAsStr string
+				// Older versions of HCL expected the type
+				// to be a string containing a keyword, so we'll need to
+				// handle that as a special case first for backward compatibility.
+				valDiags := gohcl.DecodeExpression(attr.Expr, nil, &typeExprAsStr)
+				if !valDiags.HasErrors() {
+					typeExpr = typeExprAsStr
+				} else {
+					// Since HCL may evolve its type expression syntax in
+					// future versions, we don't want to be overly-strict in how
+					// we handle it here, and so we'll instead just take the raw
+					// source provided by the user, using the source location
+					// information in the expression object
+					rng := attr.Expr.Range()
+					typeExpr = string(rng.SliceBytes(file.Bytes))
+				}
+				v.Type = typeExpr
+			}
+
+			if attr, defined := content.Attributes["description"]; defined {
+				var description string
+				valDiags := gohcl.DecodeExpression(attr.Expr, nil, &description)
+				diags = append(diags, valDiags...)
+				v.Description = description
+			}
+
+			if attr, defined := content.Attributes["default"]; defined {
+				val, valDiags := attr.Expr.Value(nil)
+				diags = append(diags, valDiags...)
+				if val.IsWhollyKnown() { // should only be false if there are errors in the input
+					valJSON, err := ctyjson.Marshal(val, val.Type())
+					if err != nil {
+						// Should never happen, since all possible known
+						// values have a JSON mapping.
+						panic(fmt.Errorf("failed to serialize default value as JSON: %s", err))
+					}
+					var def interface{}
+					err = json.Unmarshal(valJSON, &def)
+					if err != nil {
+						// Again should never happen, because valJSON is
+						// guaranteed valid by ctyjson.Marshal.
+						panic(fmt.Errorf("failed to re-parse default value from JSON: %s", err))
+					}
+					v.Default = def
+				}
+			} else {
+				v.Required = true
+			}
+
+		case "output":
+
+			content, _, contentDiags := block.Body.PartialContent(outputSchema)
+			diags = append(diags, contentDiags...)
+
+			name := block.Labels[0]
+			o := &Output{
+				Name: name,
+				Pos:  sourcePosHCL(block.DefRange),
+			}
+
+			stack.Outputs[name] = o
+
+			if attr, defined := content.Attributes["description"]; defined {
+				var description string
+				valDiags := gohcl.DecodeExpression(attr.Expr, nil, &description)
+				diags = append(diags, valDiags...)
+				o.Description = description
+			}
+
+			if attr, defined := content.Attributes["type"]; defined {
+				var typeExpr string
+				var typeExprAsStr string
+				// Older versions of HCL expected the type
+				// to be a string containing a keyword, so we'll need to
+				// handle that as a special case first for backward compatibility.
+				valDiags := gohcl.DecodeExpression(attr.Expr, nil, &typeExprAsStr)
+				if !valDiags.HasErrors() {
+					typeExpr = typeExprAsStr
+				} else {
+					// Since HCL may evolve its type expression syntax in
+					// future versions, we don't want to be overly-strict in how
+					// we handle it here, and so we'll instead just take the raw
+					// source provided by the user, using the source location
+					// information in the expression object
+					rng := attr.Expr.Range()
+					typeExpr = string(rng.SliceBytes(file.Bytes))
+				}
+				o.Type = typeExpr
+			}
+
+		case "component":
+
+			content, _, contentDiags := block.Body.PartialContent(componentSchema)
+			diags = append(diags, contentDiags...)
+
+			name := block.Labels[0]
+			c := &Component{
+				Name: name,
+				Pos:  sourcePosHCL(block.DefRange),
+			}
+
+			stack.Components[name] = c
+
+			if attr, defined := content.Attributes["source"]; defined {
+				var source string
+				valDiags := gohcl.DecodeExpression(attr.Expr, nil, &source)
+				diags = append(diags, valDiags...)
+				c.Source = source
+			}
+
+		case "required_providers":
+			reqs, reqsDiags := decodeRequiredProvidersBlock(block)
+			diags = append(diags, reqsDiags...)
+			for name, req := range reqs {
+				if _, exists := stack.RequiredProviders[name]; !exists {
+					// For stacks, we only care about the source, not version constraints
+					stack.RequiredProviders[name] = &ProviderRequirement{
+						Source: req.Source,
+					}
+				} else {
+					if req.Source != "" {
+						source := stack.RequiredProviders[name].Source
+						if source != "" && source != req.Source {
+							diags = append(diags, &hcl.Diagnostic{
+								Severity: hcl.DiagError,
+								Summary:  "Multiple provider source attributes",
+								Detail:   fmt.Sprintf("Found multiple source attributes for provider %s: %q, %q", name, source, req.Source),
+								Subject:  &block.DefRange,
+							})
+						} else {
+							stack.RequiredProviders[name].Source = req.Source
+						}
+					}
+				}
+			}
+
+		case "provider":
+			if len(block.Labels) < 2 {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid provider block",
+					Detail:   "Provider blocks in stacks must have both a provider name and configuration name",
+					Subject:  &block.DefRange,
+				})
+				continue
+			}
+
+			_, _, contentDiags := block.Body.PartialContent(providerConfigSchema)
+			diags = append(diags, contentDiags...)
+
+			providerName := block.Labels[0]
+			_ = block.Labels[1] // configName - not used for metadata extraction
+
+			// For stack providers, we primarily care about tracking that they exist
+			// The actual provider configuration is handled differently in stacks
+			if _, exists := stack.RequiredProviders[providerName]; !exists {
+				stack.RequiredProviders[providerName] = &ProviderRequirement{}
+			}
+
+		default:
+			// Other block types will be ignored for stacks
+		}
+	}
+
+	return diags
+}
+
 // LoadModuleFromFile reads given file, interprets it and stores in given Module
 // This is useful for any caller which does tokenization/parsing on its own
 // e.g. because it will reuse these parsed files later for more detailed
