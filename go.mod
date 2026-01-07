@@ -36,7 +36,7 @@ require (
 	github.com/mitchellh/gox v1.0.1
 	github.com/olekukonko/tablewriter v1.1.2
 	github.com/onsi/ginkgo/v2 v2.27.3
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/gomega v1.38.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rodaine/hclencoder v0.0.1
@@ -60,7 +60,7 @@ require (
 	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 	mvdan.cc/sh/v3 v3.12.0
 	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/controller-tools v0.18.0
+	sigs.k8s.io/controller-tools v0.20.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
