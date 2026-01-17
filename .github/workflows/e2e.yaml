@@ -103,7 +103,7 @@ jobs:
       - name: Install Kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: v1.34
+          version: v1.32
 
       - name: Install Kind
         run: |
