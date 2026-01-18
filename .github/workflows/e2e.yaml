@@ -102,8 +102,6 @@ jobs:
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
-        with:
-          version: 1.32
 
       - name: Install Kind
         run: |
