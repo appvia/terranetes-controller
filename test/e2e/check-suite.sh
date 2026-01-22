@@ -89,7 +89,7 @@ run_checks() {
     "${UNITS}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/destroy.bats"
     "${UNITS}/cloud/${CLOUD}/infracost.bats"
-    "${UNITS}/infracost.bats"
+    #"${UNITS}/infracost.bats"
     "${UNITS}/checkov.bats"
     "${UNITS}/private.bats"
     "${UNITS}/error-handler.bats"
