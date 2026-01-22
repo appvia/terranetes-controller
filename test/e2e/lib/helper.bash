@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+if [[ -z "${BATS_PARENT_TMPNAME}" ]]; then
+  export BATS_PARENT_TMPNAME="${BATS_FILE_TMPDIR}/parent"
+fi
+
 # Retry a command $1 times until it succeeds. If a second command is given, it will be run on the output of the first command.
 retry() {
   if [ $# -gt 3 ]; then
