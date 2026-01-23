@@ -97080,6 +97080,40 @@ func awsEc2query_deserializeDocumentGpuDeviceInfo(v **types.GpuDeviceInfo, decod
 				sv.Count = ptr.Int32(int32(i64))
 			}
 
+		case strings.EqualFold("gpuPartitionSize", t.Name.Local):
+			val, err := decoder.Value()
+			if err != nil {
+				return err
+			}
+			if val == nil {
+				break
+			}
+			{
+				xtv := string(val)
+				f64, err := strconv.ParseFloat(xtv, 64)
+				if err != nil {
+					return err
+				}
+				sv.GpuPartitionSize = ptr.Float64(f64)
+			}
+
+		case strings.EqualFold("logicalGpuCount", t.Name.Local):
+			val, err := decoder.Value()
+			if err != nil {
+				return err
+			}
+			if val == nil {
+				break
+			}
+			{
+				xtv := string(val)
+				i64, err := strconv.ParseInt(xtv, 10, 64)
+				if err != nil {
+					return err
+				}
+				sv.LogicalGpuCount = ptr.Int32(int32(i64))
+			}
+
 		case strings.EqualFold("manufacturer", t.Name.Local):
 			val, err := decoder.Value()
 			if err != nil {
@@ -97110,6 +97144,12 @@ func awsEc2query_deserializeDocumentGpuDeviceInfo(v **types.GpuDeviceInfo, decod
 			{
 				xtv := string(val)
 				sv.Name = ptr.String(xtv)
+			}
+
+		case strings.EqualFold("workloadSet", t.Name.Local):
+			nodeDecoder := smithyxml.WrapNodeDecoder(decoder.Decoder, t)
+			if err := awsEc2query_deserializeDocumentWorkloadsList(&sv.Workloads, nodeDecoder); err != nil {
+				return err
 			}
 
 		default:
@@ -172967,6 +173007,86 @@ func awsEc2query_deserializeDocumentVpnTunnelLogOptions(v **types.VpnTunnelLogOp
 	return nil
 }
 
+func awsEc2query_deserializeDocumentWorkloadsList(v *[]string, decoder smithyxml.NodeDecoder) error {
+	if v == nil {
+		return fmt.Errorf("unexpected nil of type %T", v)
+	}
+	var sv []string
+	if *v == nil {
+		sv = make([]string, 0)
+	} else {
+		sv = *v
+	}
+
+	originalDecoder := decoder
+	for {
+		t, done, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		if done {
+			break
+		}
+		memberDecoder := smithyxml.WrapNodeDecoder(decoder.Decoder, t)
+		decoder = memberDecoder
+		switch {
+		case strings.EqualFold("item", t.Name.Local):
+			var col string
+			val, err := decoder.Value()
+			if err != nil {
+				return err
+			}
+			if val == nil {
+				break
+			}
+			{
+				xtv := string(val)
+				col = xtv
+			}
+			sv = append(sv, col)
+
+		default:
+			err = decoder.Decoder.Skip()
+			if err != nil {
+				return err
+			}
+
+		}
+		decoder = originalDecoder
+	}
+	*v = sv
+	return nil
+}
+
+func awsEc2query_deserializeDocumentWorkloadsListUnwrapped(v *[]string, decoder smithyxml.NodeDecoder) error {
+	var sv []string
+	if *v == nil {
+		sv = make([]string, 0)
+	} else {
+		sv = *v
+	}
+
+	switch {
+	default:
+		var mv string
+		t := decoder.StartEl
+		_ = t
+		val, err := decoder.Value()
+		if err != nil {
+			return err
+		}
+		if val == nil {
+			break
+		}
+		{
+			xtv := string(val)
+			mv = xtv
+		}
+		sv = append(sv, mv)
+	}
+	*v = sv
+	return nil
+}
 func awsEc2query_deserializeOpDocumentAcceptAddressTransferOutput(v **AcceptAddressTransferOutput, decoder smithyxml.NodeDecoder) error {
 	if v == nil {
 		return fmt.Errorf("unexpected nil of type %T", v)
