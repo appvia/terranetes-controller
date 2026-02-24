@@ -55,7 +55,7 @@ require (
 	k8s.io/apimachinery v0.35.1
 	k8s.io/cli-runtime v0.35.1
 	k8s.io/client-go v0.35.1
-	k8s.io/code-generator v0.35.0
+	k8s.io/code-generator v0.35.1
 	k8s.io/kube-openapi v0.0.0-20251125145642-4e65d59e963e
 	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 	mvdan.cc/sh/v3 v3.12.0
