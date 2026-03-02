@@ -58,7 +58,7 @@ jobs:
           tags: ghcr.io/appvia/terranetes-controller:ci
           outputs: type=docker,dest=/tmp/controller-image.tar
       - name: Save
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: controller-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp/controller-image.tar
@@ -80,7 +80,7 @@ jobs:
           tags: ghcr.io/appvia/terranetes-executor:ci
           outputs: type=docker,dest=/tmp/executor-image.tar
       - name: Save
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: executor-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp/executor-image.tar
