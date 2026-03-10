@@ -165,8 +165,8 @@ github.com/ashanbrown/forbidigo/forbidigo
 # github.com/ashanbrown/makezero v1.2.0
 ## explicit; go 1.12
 github.com/ashanbrown/makezero/makezero
-# github.com/aws/aws-sdk-go-v2 v1.41.1
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2 v1.41.3
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/aws
 github.com/aws/aws-sdk-go-v2/aws/arn
 github.com/aws/aws-sdk-go-v2/aws/defaults
@@ -214,11 +214,11 @@ github.com/aws/aws-sdk-go-v2/credentials/stscreds
 ## explicit; go 1.23
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds/internal/config
-# github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.17
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.19
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/internal/configsources
-# github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.17
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.19
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
 # github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4
 ## explicit; go 1.23
@@ -228,8 +228,8 @@ github.com/aws/aws-sdk-go-v2/internal/ini
 github.com/aws/aws-sdk-go-v2/internal/v4a
 github.com/aws/aws-sdk-go-v2/internal/v4a/internal/crypto
 github.com/aws/aws-sdk-go-v2/internal/v4a/internal/v4
-# github.com/aws/aws-sdk-go-v2/service/ec2 v1.285.0
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/service/ec2 v1.294.0
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/ec2
 github.com/aws/aws-sdk-go-v2/service/ec2/internal/endpoints
 github.com/aws/aws-sdk-go-v2/service/ec2/types
@@ -238,14 +238,14 @@ github.com/aws/aws-sdk-go-v2/service/ec2/types
 github.com/aws/aws-sdk-go-v2/service/eks
 github.com/aws/aws-sdk-go-v2/service/eks/internal/endpoints
 github.com/aws/aws-sdk-go-v2/service/eks/types
-# github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.6
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding
 # github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.7
 ## explicit; go 1.23
 github.com/aws/aws-sdk-go-v2/service/internal/checksum
-# github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.17
-## explicit; go 1.23
+# github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.19
+## explicit; go 1.24
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
 # github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.16
 ## explicit; go 1.23
@@ -279,8 +279,8 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc/types
 github.com/aws/aws-sdk-go-v2/service/sts
 github.com/aws/aws-sdk-go-v2/service/sts/internal/endpoints
 github.com/aws/aws-sdk-go-v2/service/sts/types
-# github.com/aws/smithy-go v1.24.1
-## explicit; go 1.23
+# github.com/aws/smithy-go v1.24.2
+## explicit; go 1.24
 github.com/aws/smithy-go
 github.com/aws/smithy-go/auth
 github.com/aws/smithy-go/auth/bearer
