@@ -1800,6 +1800,28 @@ func (DatafeedSubscriptionState) Values() []DatafeedSubscriptionState {
 	}
 }
 
+type DefaultHttpTokensEnforcedState string
+
+// Enum values for DefaultHttpTokensEnforcedState
+const (
+	DefaultHttpTokensEnforcedStateDisabled     DefaultHttpTokensEnforcedState = "disabled"
+	DefaultHttpTokensEnforcedStateEnabled      DefaultHttpTokensEnforcedState = "enabled"
+	DefaultHttpTokensEnforcedStateNoPreference DefaultHttpTokensEnforcedState = "no-preference"
+)
+
+// Values returns all known values for DefaultHttpTokensEnforcedState. Note that
+// this can be expanded in the future, and so it is only as up to date as the
+// client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (DefaultHttpTokensEnforcedState) Values() []DefaultHttpTokensEnforcedState {
+	return []DefaultHttpTokensEnforcedState{
+		"disabled",
+		"enabled",
+		"no-preference",
+	}
+}
+
 type DefaultInstanceMetadataEndpointState string
 
 // Enum values for DefaultInstanceMetadataEndpointState
@@ -3181,6 +3203,25 @@ func (HostTenancy) Values() []HostTenancy {
 		"default",
 		"dedicated",
 		"host",
+	}
+}
+
+type HttpTokensEnforcedState string
+
+// Enum values for HttpTokensEnforcedState
+const (
+	HttpTokensEnforcedStateDisabled HttpTokensEnforcedState = "disabled"
+	HttpTokensEnforcedStateEnabled  HttpTokensEnforcedState = "enabled"
+)
+
+// Values returns all known values for HttpTokensEnforcedState. Note that this can
+// be expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (HttpTokensEnforcedState) Values() []HttpTokensEnforcedState {
+	return []HttpTokensEnforcedState{
+		"disabled",
+		"enabled",
 	}
 }
 
@@ -5069,6 +5110,46 @@ const (
 	InstanceTypeG7e12xlarge        InstanceType = "g7e.12xlarge"
 	InstanceTypeG7e24xlarge        InstanceType = "g7e.24xlarge"
 	InstanceTypeG7e48xlarge        InstanceType = "g7e.48xlarge"
+	InstanceTypeR8idLarge          InstanceType = "r8id.large"
+	InstanceTypeR8idXlarge         InstanceType = "r8id.xlarge"
+	InstanceTypeR8id2xlarge        InstanceType = "r8id.2xlarge"
+	InstanceTypeR8id4xlarge        InstanceType = "r8id.4xlarge"
+	InstanceTypeR8id8xlarge        InstanceType = "r8id.8xlarge"
+	InstanceTypeR8id12xlarge       InstanceType = "r8id.12xlarge"
+	InstanceTypeR8id16xlarge       InstanceType = "r8id.16xlarge"
+	InstanceTypeR8id24xlarge       InstanceType = "r8id.24xlarge"
+	InstanceTypeR8id32xlarge       InstanceType = "r8id.32xlarge"
+	InstanceTypeR8id48xlarge       InstanceType = "r8id.48xlarge"
+	InstanceTypeR8id96xlarge       InstanceType = "r8id.96xlarge"
+	InstanceTypeR8idMetal48xl      InstanceType = "r8id.metal-48xl"
+	InstanceTypeR8idMetal96xl      InstanceType = "r8id.metal-96xl"
+	InstanceTypeC8idLarge          InstanceType = "c8id.large"
+	InstanceTypeC8idXlarge         InstanceType = "c8id.xlarge"
+	InstanceTypeC8id2xlarge        InstanceType = "c8id.2xlarge"
+	InstanceTypeC8id4xlarge        InstanceType = "c8id.4xlarge"
+	InstanceTypeC8id8xlarge        InstanceType = "c8id.8xlarge"
+	InstanceTypeC8id12xlarge       InstanceType = "c8id.12xlarge"
+	InstanceTypeC8id16xlarge       InstanceType = "c8id.16xlarge"
+	InstanceTypeC8id24xlarge       InstanceType = "c8id.24xlarge"
+	InstanceTypeC8id32xlarge       InstanceType = "c8id.32xlarge"
+	InstanceTypeC8id48xlarge       InstanceType = "c8id.48xlarge"
+	InstanceTypeC8id96xlarge       InstanceType = "c8id.96xlarge"
+	InstanceTypeC8idMetal48xl      InstanceType = "c8id.metal-48xl"
+	InstanceTypeC8idMetal96xl      InstanceType = "c8id.metal-96xl"
+	InstanceTypeM8idLarge          InstanceType = "m8id.large"
+	InstanceTypeM8idXlarge         InstanceType = "m8id.xlarge"
+	InstanceTypeM8id2xlarge        InstanceType = "m8id.2xlarge"
+	InstanceTypeM8id4xlarge        InstanceType = "m8id.4xlarge"
+	InstanceTypeM8id8xlarge        InstanceType = "m8id.8xlarge"
+	InstanceTypeM8id12xlarge       InstanceType = "m8id.12xlarge"
+	InstanceTypeM8id16xlarge       InstanceType = "m8id.16xlarge"
+	InstanceTypeM8id24xlarge       InstanceType = "m8id.24xlarge"
+	InstanceTypeM8id32xlarge       InstanceType = "m8id.32xlarge"
+	InstanceTypeM8id48xlarge       InstanceType = "m8id.48xlarge"
+	InstanceTypeM8id96xlarge       InstanceType = "m8id.96xlarge"
+	InstanceTypeM8idMetal48xl      InstanceType = "m8id.metal-48xl"
+	InstanceTypeM8idMetal96xl      InstanceType = "m8id.metal-96xl"
+	InstanceTypeHpc8a96xlarge      InstanceType = "hpc8a.96xlarge"
 )
 
 // Values returns all known values for InstanceType. Note that this can be
@@ -6249,6 +6330,46 @@ func (InstanceType) Values() []InstanceType {
 		"g7e.12xlarge",
 		"g7e.24xlarge",
 		"g7e.48xlarge",
+		"r8id.large",
+		"r8id.xlarge",
+		"r8id.2xlarge",
+		"r8id.4xlarge",
+		"r8id.8xlarge",
+		"r8id.12xlarge",
+		"r8id.16xlarge",
+		"r8id.24xlarge",
+		"r8id.32xlarge",
+		"r8id.48xlarge",
+		"r8id.96xlarge",
+		"r8id.metal-48xl",
+		"r8id.metal-96xl",
+		"c8id.large",
+		"c8id.xlarge",
+		"c8id.2xlarge",
+		"c8id.4xlarge",
+		"c8id.8xlarge",
+		"c8id.12xlarge",
+		"c8id.16xlarge",
+		"c8id.24xlarge",
+		"c8id.32xlarge",
+		"c8id.48xlarge",
+		"c8id.96xlarge",
+		"c8id.metal-48xl",
+		"c8id.metal-96xl",
+		"m8id.large",
+		"m8id.xlarge",
+		"m8id.2xlarge",
+		"m8id.4xlarge",
+		"m8id.8xlarge",
+		"m8id.12xlarge",
+		"m8id.16xlarge",
+		"m8id.24xlarge",
+		"m8id.32xlarge",
+		"m8id.48xlarge",
+		"m8id.96xlarge",
+		"m8id.metal-48xl",
+		"m8id.metal-96xl",
+		"hpc8a.96xlarge",
 	}
 }
 
@@ -8363,6 +8484,26 @@ func (NatGatewayState) Values() []NatGatewayState {
 	}
 }
 
+type NestedVirtualizationSpecification string
+
+// Enum values for NestedVirtualizationSpecification
+const (
+	NestedVirtualizationSpecificationEnabled  NestedVirtualizationSpecification = "enabled"
+	NestedVirtualizationSpecificationDisabled NestedVirtualizationSpecification = "disabled"
+)
+
+// Values returns all known values for NestedVirtualizationSpecification. Note
+// that this can be expanded in the future, and so it is only as up to date as the
+// client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (NestedVirtualizationSpecification) Values() []NestedVirtualizationSpecification {
+	return []NestedVirtualizationSpecification{
+		"enabled",
+		"disabled",
+	}
+}
+
 type NetworkInterfaceAttribute string
 
 // Enum values for NetworkInterfaceAttribute
@@ -9400,6 +9541,9 @@ const (
 	ResourceTypeIpamPrefixListResolver                                 ResourceType = "ipam-prefix-list-resolver"
 	ResourceTypeIpamPolicy                                             ResourceType = "ipam-policy"
 	ResourceTypeIpamPrefixListResolverTarget                           ResourceType = "ipam-prefix-list-resolver-target"
+	ResourceTypeSecondaryInterface                                     ResourceType = "secondary-interface"
+	ResourceTypeSecondaryNetwork                                       ResourceType = "secondary-network"
+	ResourceTypeSecondarySubnet                                        ResourceType = "secondary-subnet"
 	ResourceTypeCapacityManagerDataExport                              ResourceType = "capacity-manager-data-export"
 	ResourceTypeVpnConcentrator                                        ResourceType = "vpn-concentrator"
 )
@@ -9512,6 +9656,9 @@ func (ResourceType) Values() []ResourceType {
 		"ipam-prefix-list-resolver",
 		"ipam-policy",
 		"ipam-prefix-list-resolver-target",
+		"secondary-interface",
+		"secondary-network",
+		"secondary-subnet",
 		"capacity-manager-data-export",
 		"vpn-concentrator",
 	}
@@ -9950,6 +10097,169 @@ func (Scope) Values() []Scope {
 	return []Scope{
 		"Availability Zone",
 		"Region",
+	}
+}
+
+type SecondaryInterfaceStatus string
+
+// Enum values for SecondaryInterfaceStatus
+const (
+	SecondaryInterfaceStatusAvailable SecondaryInterfaceStatus = "available"
+	SecondaryInterfaceStatusInUse     SecondaryInterfaceStatus = "in-use"
+)
+
+// Values returns all known values for SecondaryInterfaceStatus. Note that this
+// can be expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondaryInterfaceStatus) Values() []SecondaryInterfaceStatus {
+	return []SecondaryInterfaceStatus{
+		"available",
+		"in-use",
+	}
+}
+
+type SecondaryInterfaceType string
+
+// Enum values for SecondaryInterfaceType
+const (
+	SecondaryInterfaceTypeSecondary SecondaryInterfaceType = "secondary"
+)
+
+// Values returns all known values for SecondaryInterfaceType. Note that this can
+// be expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondaryInterfaceType) Values() []SecondaryInterfaceType {
+	return []SecondaryInterfaceType{
+		"secondary",
+	}
+}
+
+type SecondaryNetworkCidrBlockAssociationState string
+
+// Enum values for SecondaryNetworkCidrBlockAssociationState
+const (
+	SecondaryNetworkCidrBlockAssociationStateAssociating          SecondaryNetworkCidrBlockAssociationState = "associating"
+	SecondaryNetworkCidrBlockAssociationStateAssociated           SecondaryNetworkCidrBlockAssociationState = "associated"
+	SecondaryNetworkCidrBlockAssociationStateAssociationFailed    SecondaryNetworkCidrBlockAssociationState = "association-failed"
+	SecondaryNetworkCidrBlockAssociationStateDisassociating       SecondaryNetworkCidrBlockAssociationState = "disassociating"
+	SecondaryNetworkCidrBlockAssociationStateDisassociated        SecondaryNetworkCidrBlockAssociationState = "disassociated"
+	SecondaryNetworkCidrBlockAssociationStateDisassociationFailed SecondaryNetworkCidrBlockAssociationState = "disassociation-failed"
+)
+
+// Values returns all known values for SecondaryNetworkCidrBlockAssociationState.
+// Note that this can be expanded in the future, and so it is only as up to date as
+// the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondaryNetworkCidrBlockAssociationState) Values() []SecondaryNetworkCidrBlockAssociationState {
+	return []SecondaryNetworkCidrBlockAssociationState{
+		"associating",
+		"associated",
+		"association-failed",
+		"disassociating",
+		"disassociated",
+		"disassociation-failed",
+	}
+}
+
+type SecondaryNetworkState string
+
+// Enum values for SecondaryNetworkState
+const (
+	SecondaryNetworkStateCreateInProgress SecondaryNetworkState = "create-in-progress"
+	SecondaryNetworkStateCreateComplete   SecondaryNetworkState = "create-complete"
+	SecondaryNetworkStateCreateFailed     SecondaryNetworkState = "create-failed"
+	SecondaryNetworkStateDeleteInProgress SecondaryNetworkState = "delete-in-progress"
+	SecondaryNetworkStateDeleteComplete   SecondaryNetworkState = "delete-complete"
+	SecondaryNetworkStateDeleteFailed     SecondaryNetworkState = "delete-failed"
+)
+
+// Values returns all known values for SecondaryNetworkState. Note that this can
+// be expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondaryNetworkState) Values() []SecondaryNetworkState {
+	return []SecondaryNetworkState{
+		"create-in-progress",
+		"create-complete",
+		"create-failed",
+		"delete-in-progress",
+		"delete-complete",
+		"delete-failed",
+	}
+}
+
+type SecondaryNetworkType string
+
+// Enum values for SecondaryNetworkType
+const (
+	SecondaryNetworkTypeRdma SecondaryNetworkType = "rdma"
+)
+
+// Values returns all known values for SecondaryNetworkType. Note that this can be
+// expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondaryNetworkType) Values() []SecondaryNetworkType {
+	return []SecondaryNetworkType{
+		"rdma",
+	}
+}
+
+type SecondarySubnetCidrBlockAssociationState string
+
+// Enum values for SecondarySubnetCidrBlockAssociationState
+const (
+	SecondarySubnetCidrBlockAssociationStateAssociating          SecondarySubnetCidrBlockAssociationState = "associating"
+	SecondarySubnetCidrBlockAssociationStateAssociated           SecondarySubnetCidrBlockAssociationState = "associated"
+	SecondarySubnetCidrBlockAssociationStateAssociationFailed    SecondarySubnetCidrBlockAssociationState = "association-failed"
+	SecondarySubnetCidrBlockAssociationStateDisassociating       SecondarySubnetCidrBlockAssociationState = "disassociating"
+	SecondarySubnetCidrBlockAssociationStateDisassociated        SecondarySubnetCidrBlockAssociationState = "disassociated"
+	SecondarySubnetCidrBlockAssociationStateDisassociationFailed SecondarySubnetCidrBlockAssociationState = "disassociation-failed"
+)
+
+// Values returns all known values for SecondarySubnetCidrBlockAssociationState.
+// Note that this can be expanded in the future, and so it is only as up to date as
+// the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondarySubnetCidrBlockAssociationState) Values() []SecondarySubnetCidrBlockAssociationState {
+	return []SecondarySubnetCidrBlockAssociationState{
+		"associating",
+		"associated",
+		"association-failed",
+		"disassociating",
+		"disassociated",
+		"disassociation-failed",
+	}
+}
+
+type SecondarySubnetState string
+
+// Enum values for SecondarySubnetState
+const (
+	SecondarySubnetStateCreateInProgress SecondarySubnetState = "create-in-progress"
+	SecondarySubnetStateCreateComplete   SecondarySubnetState = "create-complete"
+	SecondarySubnetStateCreateFailed     SecondarySubnetState = "create-failed"
+	SecondarySubnetStateDeleteInProgress SecondarySubnetState = "delete-in-progress"
+	SecondarySubnetStateDeleteComplete   SecondarySubnetState = "delete-complete"
+	SecondarySubnetStateDeleteFailed     SecondarySubnetState = "delete-failed"
+)
+
+// Values returns all known values for SecondarySubnetState. Note that this can be
+// expanded in the future, and so it is only as up to date as the client.
+//
+// The ordering of this slice is not guaranteed to be stable across updates.
+func (SecondarySubnetState) Values() []SecondarySubnetState {
+	return []SecondarySubnetState{
+		"create-in-progress",
+		"create-complete",
+		"create-failed",
+		"delete-in-progress",
+		"delete-complete",
+		"delete-failed",
 	}
 }
 
@@ -10662,7 +10972,8 @@ type SupportedAdditionalProcessorFeature string
 
 // Enum values for SupportedAdditionalProcessorFeature
 const (
-	SupportedAdditionalProcessorFeatureAmdSevSnp SupportedAdditionalProcessorFeature = "amd-sev-snp"
+	SupportedAdditionalProcessorFeatureAmdSevSnp            SupportedAdditionalProcessorFeature = "amd-sev-snp"
+	SupportedAdditionalProcessorFeatureNestedVirtualization SupportedAdditionalProcessorFeature = "nested-virtualization"
 )
 
 // Values returns all known values for SupportedAdditionalProcessorFeature. Note
@@ -10673,6 +10984,7 @@ const (
 func (SupportedAdditionalProcessorFeature) Values() []SupportedAdditionalProcessorFeature {
 	return []SupportedAdditionalProcessorFeature{
 		"amd-sev-snp",
+		"nested-virtualization",
 	}
 }
 
