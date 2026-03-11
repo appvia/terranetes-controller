@@ -61,21 +61,6 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			}
 		}
 
-		// @step: check we have a terraform state - else we can just continue
-		secret := &v1.Secret{}
-		secret.Namespace = c.ControllerNamespace
-		secret.Name = configuration.GetTerraformStateSecretName()
-
-		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
-		if err != nil {
-			cond.Failed(err, "Failed to check for the terraform state secret")
-
-			return reconcile.Result{}, err
-		}
-		if !found {
-			return reconcile.Result{}, nil
-		}
-
 		// @step: find any currently running destroy jobs
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).

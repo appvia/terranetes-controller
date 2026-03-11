@@ -70,6 +70,7 @@ func main() {
 	flags.StringVarP(&step.Shell, "shell", "s", "/bin/sh", "The shell to execute the command in")
 	flags.StringVar(&step.FailureFile, "is-failure", "", "The path of the file used to indicate failure above")
 	flags.StringSliceVarP(&step.UploadFile, "upload", "u", []string{}, "Upload file as a kubernetes secret")
+	flags.StringSliceVar(&step.UploadOnErrorFile, "upload-on-error", []string{}, "Upload file as a kubernetes secret even when the command has failed")
 	flags.StringVar(&step.WaitFile, "wait-on", "", "The path to a file to indicate this step can be run")
 	flags.StringSliceVarP(&step.Commands, "command", "c", []string{}, "Command to execute")
 	flags.IntVar(&step.RetryAttempts, "retry-attempts", 0, "Number of times to retry the commands")
@@ -99,7 +100,7 @@ func Run(ctx context.Context, step Step) error {
 	}
 
 	var cc client.Client
-	if len(step.UploadFile) > 0 {
+	if len(step.UploadFile) > 0 || len(step.UploadOnErrorFile) > 0 {
 		ci, err := kubernetes.NewRuntimeClient(nil)
 		if err != nil {
 			return err
@@ -213,6 +214,38 @@ func Run(ctx context.Context, step Step) error {
 					return err
 				}
 			}
+
+			// @step: attempt a best-effort upload of any files configured to upload on error
+			for name, path := range step.UploadOnErrorKeyPairs() {
+				if found, err := utils.FileExists(path); err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"path":   path,
+						"secret": name,
+					}).Warn("failed to check if upload-on-error file exists, skipping")
+
+					continue
+				} else if !found {
+					log.WithFields(log.Fields{
+						"path":   path,
+						"secret": name,
+					}).Warn("skipping upload-on-error as file does not exist")
+
+					continue
+				}
+
+				if err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
+					err := uploadSecret(ctx, cc, step.Namespace, name, path)
+					if err == nil {
+						return true, nil
+					}
+					log.WithError(err).WithField("secret", name).Error("failed to upload secret on error")
+
+					return false, nil
+				}); err != nil {
+					log.WithError(err).WithField("secret", name).Error("failed to upload secret on error, continuing")
+				}
+			}
+
 			return fmt.Errorf("command failed after %d attempts: %w", attempt, lastErr)
 		}
 	}

@@ -187,6 +187,36 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 			})
 		})
 
+		Context("and the terraform state secret is missing", func() {
+			BeforeEach(func() {
+				// Delete the state secret to simulate an apply that failed before state was uploaded
+				state := fixtures.NewTerraformState(configuration)
+				state.Namespace = ctrl.ControllerNamespace
+				Expect(cc.Delete(context.Background(), state)).To(Succeed())
+
+				result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+			})
+
+			It("should not return an error", func() {
+				Expect(rerr).ToNot(HaveOccurred())
+			})
+
+			It("should create a destroy job even though state secret is missing", func() {
+				list := &batchv1.JobList{}
+				Expect(cc.List(context.Background(), list)).To(Succeed())
+				Expect(list.Items).ToNot(HaveLen(0))
+			})
+
+			It("should indicate the status in the conditions", func() {
+				Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+				cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+				Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+				Expect(cond.Message).To(Equal("Terraform destroy is running"))
+			})
+		})
+
 		Context("and the provider is not ready", func() {
 			BeforeEach(func() {
 				provider.Status.GetCondition(corev1alpha1.ConditionReady).Status = metav1.ConditionFalse
