@@ -61,6 +61,28 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 			}
 		}
 
+		// @step: check if the terraform state secret exists. If the state is stored in an external
+		// backend (e.g. S3, GCS) or if the apply failed before the state was uploaded, the secret
+		// may not exist. In both cases we should still attempt the destroy so any partially-created
+		// cloud resources are cleaned up.
+		secret := &v1.Secret{}
+		secret.Namespace = c.ControllerNamespace
+		secret.Name = configuration.GetTerraformStateSecretName()
+
+		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		if err != nil {
+			cond.Failed(err, "Failed to check for the terraform state secret")
+
+			return reconcile.Result{}, err
+		}
+		if !found {
+			log.WithFields(log.Fields{
+				"name":      configuration.GetName(),
+				"namespace": configuration.GetNamespace(),
+				"secret":    secret.Name,
+			}).Warn("terraform state secret not found, proceeding with destroy regardless (state may be held in an external backend)")
+		}
+
 		// @step: find any currently running destroy jobs
 		job, found := filters.Jobs(state.jobs).
 			WithGeneration(generation).
