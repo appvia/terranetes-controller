@@ -70,7 +70,7 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		// @step: only skip the destroy when the resource count is explicitly zero AND no terraform
 		// state exists. If state exists we must run destroy even when Resources reports zero,
 		// because a failed apply can leave Resources unset while some cloud resources were created.
-		if configuration.Status.Resources != nil && ptr.Deref(configuration.Status.Resources, 0) == 0 && !stateExists {
+		if shouldSkipDestroy(configuration, stateExists) {
 			c.recorder.Event(configuration, v1.EventTypeNormal, "DeletionSkipped", "Configuration had zero resources, skipping terraform destroy")
 
 			return reconcile.Result{}, nil
@@ -174,6 +174,15 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
+}
+
+// shouldSkipDestroy returns true when we can safely skip running terraform destroy: the resource
+// count is explicitly zero AND no terraform state secret exists. If state exists we must still
+// attempt destroy because a failed apply can leave Resources == 0 while cloud resources were created.
+func shouldSkipDestroy(configuration *terraformv1alpha1.Configuration, stateExists bool) bool {
+	return configuration.Status.Resources != nil &&
+		ptr.Deref(configuration.Status.Resources, 0) == 0 &&
+		!stateExists
 }
 
 // ensureConfigurationSecretsDeleted is responsible for deleting any associated terraform state

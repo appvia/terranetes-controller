@@ -83,6 +83,11 @@ func main() {
 	}
 }
 
+// uploadRetryAttempts is the fixed number of retry attempts used for all secret upload
+// operations (both success-path and error-path). A small conservative value is used
+// intentionally: uploads are best-effort and should not block the primary operation.
+const uploadRetryAttempts = 2
+
 // calculateBackoff returns a duration that includes the minimum backoff plus a random jitter
 func calculateBackoff(minBackoff, maxJitter time.Duration) time.Duration {
 	if maxJitter <= 0 {
@@ -91,6 +96,178 @@ func calculateBackoff(minBackoff, maxJitter time.Duration) time.Duration {
 	//nolint:gosec // math/rand is acceptable here as jitter value is not used for security purposes
 	jitter := time.Duration(rand.Int63n(int64(maxJitter)))
 	return minBackoff + jitter
+}
+
+// waitForSignal waits for a signal file to appear before allowing execution to proceed.
+// It returns an error if a failure file is found or the timeout expires.
+func waitForSignal(ctx context.Context, step Step) error {
+	log.WithFields(log.Fields{
+		"is-failure": step.FailureFile,
+		"on-error":   step.ErrorFile,
+		"on-wait":    step.WaitFile,
+		"timeout":    step.Timeout.String(),
+	}).Info("waiting for signal to execute")
+
+	return utils.RetryWithTimeout(ctx, step.Timeout, time.Second, func() (bool, error) {
+		if step.FailureFile != "" {
+			if found, _ := utils.FileExists(step.FailureFile); found {
+				return false, errors.New("found error signal file, refusing to execute")
+			}
+		}
+		if found, _ := utils.FileExists(step.WaitFile); found {
+			return true, nil
+		}
+
+		return false, nil
+	})
+}
+
+// runCommand executes a single attempt of a command and returns any error.
+func runCommand(ctx context.Context, step Step, index, attempt int, command string) error {
+	//nolint:gosec
+	cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
+	cmd.Env = os.Environ()
+
+	logger := log.WithFields(log.Fields{
+		"command-index": index,
+		"attempt":       attempt,
+	})
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		logger.WithError(err).Error("failed to acquire stdout pipe on command")
+
+		return err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		logger.WithError(err).Error("failed to acquire stderr pipe on command")
+
+		return err
+	}
+
+	//nolint:errcheck
+	go io.Copy(os.Stdout, stdout)
+	//nolint:errcheck
+	go io.Copy(os.Stdout, stderr)
+
+	if err := cmd.Start(); err != nil {
+		logger.WithError(err).Error("failed to execute the command")
+
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		logger.WithError(err).Error("command execution failed")
+
+		return err
+	}
+
+	return nil
+}
+
+// runCommandWithRetries runs a command with retry logic, returning the number of
+// attempts made and any error after all retries are exhausted.
+func runCommandWithRetries(ctx context.Context, step Step, index int, command string) (int, error) {
+	attempt := 0
+	var lastErr error
+
+	for attempt <= step.RetryAttempts {
+		if attempt > 0 {
+			backoff := calculateBackoff(step.RetryMinBackoff, step.RetryMaxJitter)
+			log.WithFields(log.Fields{
+				"attempt":       attempt,
+				"command-index": index,
+				"backoff":       backoff,
+			}).Info("retrying command")
+
+			select {
+			case <-ctx.Done():
+				return attempt, ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+
+		if err := runCommand(ctx, step, index, attempt, command); err != nil {
+			lastErr = err
+			attempt++
+
+			continue
+		}
+
+		return attempt, nil
+	}
+
+	return attempt, lastErr
+}
+
+// handleCommandError processes a command failure: touches the error file if configured,
+// performs best-effort upload of any on-error files, and returns a wrapped error.
+func handleCommandError(ctx context.Context, step Step, cc client.Client, attempts int, lastErr error) error {
+	if step.ErrorFile != "" {
+		if err := utils.TouchFile(step.ErrorFile); err != nil {
+			log.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
+
+			return err
+		}
+	}
+
+	// @step: attempt a best-effort upload of any files configured to upload on error
+	for name, path := range step.UploadOnErrorKeyPairs() {
+		if found, err := utils.FileExists(path); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"path":   path,
+				"secret": name,
+			}).Warn("failed to check if upload-on-error file exists, skipping")
+
+			continue
+		} else if !found {
+			log.WithFields(log.Fields{
+				"path":   path,
+				"secret": name,
+			}).Warn("skipping upload-on-error as file does not exist")
+
+			continue
+		}
+
+		// @step: attempt a best-effort upload with a conservative fixed retry count rather than
+		// the command's RetryAttempts, since this is a best-effort operation that should not
+		// block error reporting.
+		if err := utils.Retry(ctx, uploadRetryAttempts, true, 5*time.Second, func() (bool, error) {
+			err := uploadSecret(ctx, cc, step.Namespace, name, path)
+			if err == nil {
+				return true, nil
+			}
+			log.WithError(err).WithField("secret", name).Error("failed to upload secret on error")
+
+			return false, nil
+		}); err != nil {
+			log.WithError(err).WithField("secret", name).Error("failed to upload secret on error, continuing")
+		}
+	}
+
+	return fmt.Errorf("command failed after %d attempts: %w", attempts, lastErr)
+}
+
+// uploadSuccessFiles uploads all configured files as Kubernetes secrets after a successful run.
+func uploadSuccessFiles(ctx context.Context, step Step, cc client.Client) error {
+	for name, path := range step.UploadKeyPairs() {
+		err := utils.Retry(ctx, uploadRetryAttempts, true, 5*time.Second, func() (bool, error) {
+			err := uploadSecret(ctx, cc, step.Namespace, name, path)
+			if err == nil {
+				return true, nil
+			}
+			log.WithError(err).WithField("secret", name).Error("failed to upload secret")
+
+			return false, nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Run is called to implement the action
@@ -117,157 +294,22 @@ func Run(ctx context.Context, step Step) error {
 	}
 
 	if step.WaitFile != "" {
-		log.WithFields(log.Fields{
-			"is-failure": step.FailureFile,
-			"on-error":   step.ErrorFile,
-			"on-wait":    step.WaitFile,
-			"timeout":    step.Timeout.String(),
-		}).Info("waiting for signal to execute")
-
-		err := utils.RetryWithTimeout(ctx, step.Timeout, time.Second, func() (bool, error) {
-			if step.FailureFile != "" {
-				if found, _ := utils.FileExists(step.FailureFile); found {
-					return false, errors.New("found error signal file, refusing to execute")
-				}
-			}
-			if found, _ := utils.FileExists(step.WaitFile); found {
-				return true, nil
-			}
-
-			return false, nil
-		})
-		if err != nil {
+		if err := waitForSignal(ctx, step); err != nil {
 			return err
 		}
 	}
 
 	for i, command := range step.Commands {
-		attempt := 0
-		var lastErr error
-
-		for attempt <= step.RetryAttempts {
-			if attempt > 0 {
-				backoff := calculateBackoff(step.RetryMinBackoff, step.RetryMaxJitter)
-				log.WithFields(log.Fields{
-					"attempt":       attempt,
-					"command-index": i,
-					"backoff":       backoff,
-				}).Info("retrying command")
-
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case <-time.After(backoff):
-				}
-			}
-
-			//nolint:gosec
-			cmd := exec.CommandContext(ctx, step.Shell, "-c", command)
-			cmd.Env = os.Environ()
-
-			logger := log.WithFields(log.Fields{
-				"command-index": i,
-				"attempt":       attempt,
-			})
-
-			stdout, err := cmd.StdoutPipe()
-			if err != nil {
-				logger.WithError(err).Error("failed to acquire stdout pipe on command")
-				return err
-			}
-			stderr, err := cmd.StderrPipe()
-			if err != nil {
-				logger.WithError(err).Error("failed to acquire stderr pipe on command")
-				return err
-			}
-
-			//nolint:errcheck
-			go io.Copy(os.Stdout, stdout)
-			//nolint:errcheck
-			go io.Copy(os.Stdout, stderr)
-
-			if err := cmd.Start(); err != nil {
-				logger.WithError(err).Error("failed to execute the command")
-				lastErr = err
-				attempt++
-				continue
-			}
-
-			// @step: wait for the command to finish
-			if err := cmd.Wait(); err != nil {
-				logger.WithError(err).Error("command execution failed")
-				lastErr = err
-				attempt++
-				continue
-			}
-
-			// Command succeeded, break the retry loop
-			lastErr = nil
-			break
-		}
-
-		// If we exhausted all retries and still have an error
-		if lastErr != nil {
-			if step.ErrorFile != "" {
-				if err := utils.TouchFile(step.ErrorFile); err != nil {
-					log.WithError(err).WithField("file", step.ErrorFile).Error("failed to create error file")
-					return err
-				}
-			}
-
-			// @step: attempt a best-effort upload of any files configured to upload on error
-			for name, path := range step.UploadOnErrorKeyPairs() {
-				if found, err := utils.FileExists(path); err != nil {
-					log.WithError(err).WithFields(log.Fields{
-						"path":   path,
-						"secret": name,
-					}).Warn("failed to check if upload-on-error file exists, skipping")
-
-					continue
-				} else if !found {
-					log.WithFields(log.Fields{
-						"path":   path,
-						"secret": name,
-					}).Warn("skipping upload-on-error as file does not exist")
-
-					continue
-				}
-
-				// @step: attempt a best-effort upload of any files configured to upload on error.
-				// Uses a conservative fixed retry count rather than the command's RetryAttempts,
-				// since this is a best-effort operation that should not block error reporting.
-				if err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
-					err := uploadSecret(ctx, cc, step.Namespace, name, path)
-					if err == nil {
-						return true, nil
-					}
-					log.WithError(err).WithField("secret", name).Error("failed to upload secret on error")
-
-					return false, nil
-				}); err != nil {
-					log.WithError(err).WithField("secret", name).Error("failed to upload secret on error, continuing")
-				}
-			}
-
-			return fmt.Errorf("command failed after %d attempts: %w", attempt, lastErr)
+		attempts, err := runCommandWithRetries(ctx, step, i, command)
+		if err != nil {
+			return handleCommandError(ctx, step, cc, attempts, err)
 		}
 	}
+
 	log.Info("successfully executed the step")
 
-	// @step: upload any files as kubernetes secrets
-	for name, path := range step.UploadKeyPairs() {
-		err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
-			err := uploadSecret(ctx, cc, step.Namespace, name, path)
-			if err == nil {
-				return true, nil
-			}
-			log.WithError(err).WithField("secret", name).Error("failed to upload secret")
-
-			return false, nil
-		})
-		if err != nil {
-			return err
-		}
+	if err := uploadSuccessFiles(ctx, step, cc); err != nil {
+		return err
 	}
 
 	// @step: everything was good - lets touch the file
