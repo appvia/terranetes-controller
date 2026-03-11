@@ -234,10 +234,9 @@ func Run(ctx context.Context, step Step) error {
 				}
 
 				// @step: attempt a best-effort upload of any files configured to upload on error.
-			// Uses a conservative fixed retry count (same as the success-path --upload) rather than
-			// the command's RetryAttempts, since this is a best-effort operation that should not
-			// block or delay the error reporting back to the caller.
-			if err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
+				// Uses a conservative fixed retry count rather than the command's RetryAttempts,
+				// since this is a best-effort operation that should not block error reporting.
+				if err := utils.Retry(ctx, 2, true, 5*time.Second, func() (bool, error) {
 					err := uploadSecret(ctx, cc, step.Namespace, name, path)
 					if err == nil {
 						return true, nil

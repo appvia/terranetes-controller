@@ -165,6 +165,11 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
 					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
 
+					// Delete the state secret so there is truly no evidence of any resources
+					stateSecret := fixtures.NewTerraformState(configuration)
+					stateSecret.Namespace = ctrl.ControllerNamespace
+					Expect(cc.Delete(context.Background(), stateSecret)).To(Succeed())
+
 					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
 				})
 
@@ -183,6 +188,43 @@ var _ = Describe("Configuration Controller with Contexts", func() {
 					list := &terraformv1alpha1.ConfigurationList{}
 					Expect(cc.List(context.Background(), list)).To(Succeed())
 					Expect(list.Items).To(HaveLen(0))
+				})
+			})
+
+			Context("but the configuration has no resources yet terraform state secret exists", func() {
+				BeforeEach(func() {
+					configuration.Status.Resources = ptr.To(0)
+					Expect(cc.Status().Update(context.Background(), configuration)).To(Succeed())
+					Expect(cc.Get(context.Background(), configuration.GetNamespacedName(), configuration)).To(Succeed())
+
+					// State secret is still present (from BeforeEach) — simulates a failed apply
+					// that left Resources == 0 in the status but did write some terraform state.
+					result, _, rerr = controllertests.Roll(context.TODO(), ctrl, configuration, 0)
+				})
+
+				It("should not return an error", func() {
+					Expect(rerr).ToNot(HaveOccurred())
+				})
+
+				It("should create a destroy job despite zero resource count", func() {
+					list := &batchv1.JobList{}
+					Expect(cc.List(context.Background(), list)).To(Succeed())
+					Expect(list.Items).ToNot(HaveLen(0))
+				})
+
+				It("should not emit a DeletionSkipped event", func() {
+					for _, ev := range recorder.Events {
+						Expect(ev).ToNot(ContainSubstring("DeletionSkipped"))
+					}
+				})
+
+				It("should indicate destroy is running in the conditions", func() {
+					Expect(cc.Get(context.TODO(), configuration.GetNamespacedName(), configuration)).ToNot(HaveOccurred())
+
+					cond := configuration.Status.GetCondition(corev1alpha1.ConditionReady)
+					Expect(cond.Status).To(Equal(metav1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(corev1alpha1.ReasonInProgress))
+					Expect(cond.Message).To(Equal("Terraform destroy is running"))
 				})
 			})
 		})

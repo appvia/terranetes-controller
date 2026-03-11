@@ -52,34 +52,35 @@ func (c *Controller) ensureTerraformDestroy(configuration *terraformv1alpha1.Con
 		// else we are deleting the resource
 		configuration.Status.ResourceStatus = terraformv1alpha1.DestroyingResources
 
-		// @step: ensure we have a status and the resource count has been defined
-		if configuration.Status.Resources != nil {
-			if ptr.Deref(configuration.Status.Resources, 0) == 0 {
-				c.recorder.Event(configuration, v1.EventTypeNormal, "DeletionSkipped", "Configuration had zero resources, skipping terraform destroy")
+		// @step: check if the terraform state secret exists. We do this before the resource-count
+		// check because a failed apply may have left Resources == 0 in the status even though some
+		// cloud resources were created. If state is stored in an external backend (e.g. S3, GCS)
+		// the secret will also be absent, but we must still attempt the destroy.
+		stateSecret := &v1.Secret{}
+		stateSecret.Namespace = c.ControllerNamespace
+		stateSecret.Name = configuration.GetTerraformStateSecretName()
 
-				return reconcile.Result{}, nil
-			}
-		}
-
-		// @step: check if the terraform state secret exists. If the state is stored in an external
-		// backend (e.g. S3, GCS) or if the apply failed before the state was uploaded, the secret
-		// may not exist. In both cases we should still attempt the destroy so any partially-created
-		// cloud resources are cleaned up.
-		secret := &v1.Secret{}
-		secret.Namespace = c.ControllerNamespace
-		secret.Name = configuration.GetTerraformStateSecretName()
-
-		found, err := kubernetes.GetIfExists(ctx, c.cc, secret)
+		stateExists, err := kubernetes.GetIfExists(ctx, c.cc, stateSecret)
 		if err != nil {
 			cond.Failed(err, "Failed to check for the terraform state secret")
 
 			return reconcile.Result{}, err
 		}
-		if !found {
+
+		// @step: only skip the destroy when the resource count is explicitly zero AND no terraform
+		// state exists. If state exists we must run destroy even when Resources reports zero,
+		// because a failed apply can leave Resources unset while some cloud resources were created.
+		if configuration.Status.Resources != nil && ptr.Deref(configuration.Status.Resources, 0) == 0 && !stateExists {
+			c.recorder.Event(configuration, v1.EventTypeNormal, "DeletionSkipped", "Configuration had zero resources, skipping terraform destroy")
+
+			return reconcile.Result{}, nil
+		}
+
+		if !stateExists {
 			log.WithFields(log.Fields{
 				"name":      configuration.GetName(),
 				"namespace": configuration.GetNamespace(),
-				"secret":    secret.Name,
+				"secret":    stateSecret.Name,
 			}).Warn("terraform state secret not found, proceeding with destroy regardless (state may be held in an external backend)")
 		}
 
