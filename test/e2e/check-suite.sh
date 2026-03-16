@@ -64,6 +64,11 @@ run_diagnosis() {
 run_bats() {
   trap run_diagnosis EXIT
 
+  USE_INFRACOST="true"
+  if [[ -z ${INFRACOST_API_KEY}   ]]; then
+    USE_INFRACOST="false"
+  fi
+
   echo -e "Running units: ${*}\n"
   APP_NAMESPACE=${APP_NAMESPACE} \
     BUCKET=${BUCKET} \
@@ -72,6 +77,7 @@ run_bats() {
     NAMESPACE="terraform-system" \
     RESOURCE_NAME=bucket-${CLOUD:-"test"} \
     USE_CHART=${USE_CHART} \
+    USE_INFRACOST=${USE_INFRACOST} \
     VERSION=${VERSION} \
     bats ${BATS_OPTIONS} ${@} || exit 1
 }
