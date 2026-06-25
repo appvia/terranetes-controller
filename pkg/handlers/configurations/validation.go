@@ -168,8 +168,11 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 	if err != nil {
 		return err
 	}
-	if !found || provider.Spec.Selector == nil {
+	if !found {
 		return nil
+	}
+	if provider.Spec.Selector == nil {
+		return errors.New("configuration has been denied by the provider policy")
 	}
 
 	matched, err := kubernetes.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())

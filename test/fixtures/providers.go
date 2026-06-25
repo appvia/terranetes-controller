@@ -33,6 +33,7 @@ func NewValidAWSProvider(name string, secret *v1.Secret) *terraformv1alpha1.Prov
 		Spec: terraformv1alpha1.ProviderSpec{
 			Source:   terraformv1alpha1.SourceSecret,
 			Provider: "aws",
+			Selector: &terraformv1alpha1.Selector{},
 		},
 	}
 

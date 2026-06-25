@@ -382,6 +382,29 @@ var _ = Describe("Checking Configuration Validation", func() {
 			})
 		})
 
+
+		Context("provider has no selector", func() {
+			BeforeEach(func() {
+				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
+				provider.Spec.Selector = nil
+				Expect(cc.Create(ctx, provider)).To(Succeed())
+			})
+
+			It("should deny the creation of the configuration", func() {
+				warnings, err := v.ValidateCreate(ctx, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
+			})
+
+			It("should deny the update of the configuration", func() {
+				warnings, err := v.ValidateUpdate(ctx, nil, fixtures.NewValidBucketConfiguration(namespace, "test"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("configuration has been denied by the provider policy"))
+				Expect(warnings).To(BeEmpty())
+			})
+		})
+
 		Context("provider namespace selectors do not match", func() {
 			BeforeEach(func() {
 				provider := fixtures.NewValidAWSProvider(name, fixtures.NewValidAWSProviderSecret(namespace, name))
@@ -522,3 +545,4 @@ var _ = Describe("Checking Configuration Validation", func() {
 		})
 	})
 })
+	
