@@ -35,12 +35,13 @@ import (
 type validator struct {
 	cc client.Client
 	// enableVersions indicates the terraform version can be changed
-	enableVersions bool
+	enableVersions     bool
+	enableAutoApproval bool
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
-	return &validator{cc: cc, enableVersions: versioning}
+func NewValidator(cc client.Client, versioning bool, autoApproval bool) admission.CustomValidator {
+	return &validator{cc: cc, enableVersions: versioning, enableAutoApproval: autoApproval}
 }
 
 // ValidateCreate is called when a new resource is created
@@ -82,6 +83,8 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 		return errors.New("spec.providerRef is required")
 	case configuration.Spec.Module == "":
 		return errors.New("spec.module is required")
+	case !v.enableAutoApproval && configuration.Spec.EnableAutoApproval:
+		return errors.New("spec.enableAutoApproval is not permitted")
 	}
 
 	if configuration.Spec.Plan != nil {

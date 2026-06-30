@@ -47,13 +47,13 @@ var _ = Describe("Checking Configuration Validation", func() {
 
 	BeforeEach(func() {
 		cc = fake.NewClientBuilder().WithScheme(schema.GetScheme()).WithRuntimeObjects(fixtures.NewNamespace("default")).Build()
-		v = &validator{cc: cc, enableVersions: true}
+		v = &validator{cc: cc, enableVersions: true, enableAutoApproval: false}
 		configuration = fixtures.NewValidBucketConfiguration(namespace, name)
 	})
 
 	When("creating a validator", func() {
 		It("should not be nil", func() {
-			v := NewValidator(cc, true)
+			v := NewValidator(cc, true, false)
 			Expect(v).ToNot(BeNil())
 		})
 	})
@@ -230,7 +230,7 @@ var _ = Describe("Checking Configuration Validation", func() {
 
 					after := before.DeepCopy()
 					after.Spec.TerraformVersion = "v1.1.9"
-					after.Spec.EnableAutoApproval = true
+					after.Spec.EnableAutoApproval = false
 
 					warnings, err := v.ValidateUpdate(ctx, before, after)
 					Expect(err).To(Succeed())
@@ -381,7 +381,6 @@ var _ = Describe("Checking Configuration Validation", func() {
 				Expect(warnings).To(BeEmpty())
 			})
 		})
-
 
 		Context("provider has no selector", func() {
 			BeforeEach(func() {
@@ -545,4 +544,3 @@ var _ = Describe("Checking Configuration Validation", func() {
 		})
 	})
 })
-	

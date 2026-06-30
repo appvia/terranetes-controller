@@ -182,6 +182,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 		DefaultExecutorMemoryLimit:   config.ExecutorMemoryLimit,
 		DefaultExecutorMemoryRequest: config.ExecutorMemoryRequest,
 		EnableInfracosts:             (config.InfracostsSecretName != ""),
+		EnableAutoApproval:           config.EnableAutoApproval,
 		EnableTerraformVersions:      config.EnableTerraformVersions,
 		EnableWatchers:               config.EnableWatchers,
 		EnableWebhooks:               config.EnableWebhooks,
@@ -243,6 +244,7 @@ func New(cfg *rest.Config, config Config) (*Server, error) {
 
 	// @step: ensure the cloudresource controller is enabled
 	if err := (&cloudresource.Controller{
+		EnableAutoApproval:      config.EnableAutoApproval,
 		EnableTerraformVersions: config.EnableTerraformVersions,
 		EnableWebhooks:          config.EnableWebhooks,
 	}).Add(mgr); err != nil {

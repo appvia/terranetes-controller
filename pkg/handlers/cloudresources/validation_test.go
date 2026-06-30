@@ -83,6 +83,26 @@ var _ = Describe("Checking CloudResource Validation", func() {
 		})
 	})
 
+	When("enableAutoApproval is not permitted", func() {
+		It("should deny creation when enableAutoApproval is true", func() {
+			cloudresource.Spec.EnableAutoApproval = true
+
+			warnings, err := v.ValidateCreate(context.Background(), cloudresource)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.enableAutoApproval is not permitted"))
+		})
+
+		It("should deny update when enableAutoApproval is true", func() {
+			cloudresource.Spec.EnableAutoApproval = true
+
+			warnings, err := v.ValidateUpdate(context.Background(), cloudresource, cloudresource)
+			Expect(err).To(HaveOccurred())
+			Expect(warnings).To(BeEmpty())
+			Expect(err.Error()).To(Equal("spec.enableAutoApproval is not permitted"))
+		})
+	})
+
 	When("creating a cloud resource", func() {
 		It("should fail when no plan name is provided", func() {
 			cloudresource.Spec.Plan.Name = ""

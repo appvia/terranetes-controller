@@ -81,6 +81,8 @@ type Controller struct {
 	EnableContextInjection bool
 	// EnableInfracosts enables the cost analytics via infracost
 	EnableInfracosts bool
+	// EnableAutoApproval indicates tenants are permitted to set enableAutoApproval on configurations
+	EnableAutoApproval bool
 	// EnableTerraformVersions enables the use of the configuration's Terraform version
 	EnableTerraformVersions bool
 	// EnableWatchers indicates we should create watcher jobs in the user namespace
@@ -229,7 +231,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions)),
+			admission.WithCustomValidator(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions, c.EnableAutoApproval)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),

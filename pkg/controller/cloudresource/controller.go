@@ -48,6 +48,8 @@ type Controller struct {
 	cc client.Client
 	// recorder is the kubernetes event recorder
 	recorder record.EventRecorder
+	// EnableAutoApproval indicates tenants are permitted to set enableAutoApproval on cloudresources
+	EnableAutoApproval bool
 	// EnableTerraformVersions enables the use of the cloudresource's Terraform version
 	EnableTerraformVersions bool
 	// EnableWebhooks indicates if we should register the webhooks
@@ -64,7 +66,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/cloudresources", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc)),
+			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc, c.EnableAutoApproval)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/cloudresources", terraformv1alpha1.GroupName),

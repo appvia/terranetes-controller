@@ -73,3 +73,7 @@ Sessionx.vim
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/go,vim,visualstudiocode
+kubeconfig-tenant
+listener.py
+module/
+controller

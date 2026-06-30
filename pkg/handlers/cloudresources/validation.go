@@ -37,12 +37,13 @@ import (
 )
 
 type validator struct {
-	cc client.Client
+	cc                 client.Client
+	enableAutoApproval bool
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
-	return &validator{cc: cc}
+func NewValidator(cc client.Client, enableAutoApproval bool) admission.CustomValidator {
+	return &validator{cc: cc, enableAutoApproval: enableAutoApproval}
 }
 
 // ValidateCreate is called when a new resource is created
@@ -52,7 +53,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		return admission.Warnings{}, fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, obj)
 	}
 
-	return admission.Warnings{}, validate(ctx, v.cc, o)
+	return admission.Warnings{}, validate(ctx, v.cc, v.enableAutoApproval, o)
 }
 
 // ValidateUpdate is called when a resource is being updated
@@ -67,7 +68,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		before = o
 	}
 
-	return admission.Warnings{}, validate(ctx, v.cc, before)
+	return admission.Warnings{}, validate(ctx, v.cc, v.enableAutoApproval, before)
 }
 
 // ValidateDelete is called when a resource is being deleted
@@ -77,7 +78,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (adm
 
 // validate is responsible for validating the configuration plan
 // nolint:gocyclo
-func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudResource) error {
+func validate(ctx context.Context, cc client.Client, enableAutoApproval bool, o *terraformv1alpha1.CloudResource) error {
 	var values map[string]interface{}
 
 	if err := o.Spec.Plan.IsValid(); err != nil {
@@ -90,6 +91,9 @@ func validate(ctx context.Context, cc client.Client, o *terraformv1alpha1.CloudR
 	}
 	if o.Spec.Auth != nil && o.Spec.Auth.Name == "" {
 		return errors.New("spec.auth.name is required")
+	}
+	if !enableAutoApproval && o.Spec.EnableAutoApproval {
+		return errors.New("spec.enableAutoApproval is not permitted")
 	}
 	if o.Spec.WriteConnectionSecretToRef != nil {
 		if err := o.Spec.WriteConnectionSecretToRef.IsValid(); err != nil {

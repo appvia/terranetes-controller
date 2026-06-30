@@ -69,6 +69,7 @@ spec:
             - --enable-context-injection={{ .Values.controller.enableContextInjection }}
             - --enable-namespace-protection={{ .Values.controller.enableNamespaceProtection }}
             - --enable-revision-update-protection={{ .Values.controller.enableRevisionUpdateProtection }}
+            - --enable-auto-approval={{ .Values.controller.enableAutoApproval }}
             - --enable-terraform-versions={{ .Values.controller.enableTerraformVersions }}
             - --enable-watchers={{ .Values.controller.enableWatchers }}
             - --enable-webhook-prefix={{ .Values.controller.webhooks.prefix }}

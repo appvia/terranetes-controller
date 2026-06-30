@@ -59,6 +59,7 @@ func main() {
 	flags.BoolVar(&config.EnableContextInjection, "enable-context-injection", false, "Indicates the controller should inject Configuration context into the terraform variables")
 	flags.BoolVar(&config.EnableNamespaceProtection, "enable-namespace-protection", false, "Indicates the controller should protect the controller namespace from being deleted")
 	flags.BoolVar(&config.EnableRevisionUpdateProtection, "enable-revision-update-protection", false, "Indicates we should protect the revisions in use from being updated")
+	flags.BoolVar(&config.EnableAutoApproval, "enable-auto-approval", false, "Indicates tenants are permitted to set enableAutoApproval on configurations")
 	flags.BoolVar(&config.EnableTerraformVersions, "enable-terraform-versions", true, "Indicates the terraform version can be overridden by configurations")
 	flags.BoolVar(&config.EnableWatchers, "enable-watchers", true, "Indicates we create watcher jobs in the configuration namespaces")
 	flags.BoolVar(&config.EnableWebhookPrefix, "enable-webhook-prefix", false, "Indicates the controller should prefix webhook configuration names with the controller name")
