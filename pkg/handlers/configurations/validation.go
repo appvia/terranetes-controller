@@ -35,12 +35,13 @@ import (
 type validator struct {
 	cc client.Client
 	// enableVersions indicates the terraform version can be changed
-	enableVersions bool
+	enableVersions     bool
+	enableAutoApproval bool
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, versioning bool) admission.CustomValidator {
-	return &validator{cc: cc, enableVersions: versioning}
+func NewValidator(cc client.Client, versioning bool, autoApproval bool) admission.CustomValidator {
+	return &validator{cc: cc, enableVersions: versioning, enableAutoApproval: autoApproval}
 }
 
 // ValidateCreate is called when a new resource is created
@@ -82,6 +83,8 @@ func (v *validator) validate(ctx context.Context, before, configuration *terrafo
 		return errors.New("spec.providerRef is required")
 	case configuration.Spec.Module == "":
 		return errors.New("spec.module is required")
+	case !v.enableAutoApproval && configuration.Spec.EnableAutoApproval:
+		return errors.New("spec.enableAutoApproval is not permitted")
 	}
 
 	if configuration.Spec.Plan != nil {
@@ -168,8 +171,11 @@ func validateProvider(ctx context.Context, cc client.Client, configuration *terr
 	if err != nil {
 		return err
 	}
-	if !found || provider.Spec.Selector == nil {
+	if !found {
 		return nil
+	}
+	if provider.Spec.Selector == nil {
+		return errors.New("configuration has been denied by the provider policy")
 	}
 
 	matched, err := kubernetes.IsSelectorMatch(*provider.Spec.Selector, configuration.GetLabels(), namespace.GetLabels())

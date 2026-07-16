@@ -84,6 +84,8 @@ controller:
   enableNamespaceProtection: false
   # indicates if the controller should deny updates to Revisions which are currently in use
   enableRevisionUpdateProtection: true
+  # enableAutoApproval indicates tenants are permitted to set enableAutoApproval on configurations and cloudresources
+  enableAutoApproval: false
   # enableTerraformVersions indicates configurations are permitted to override
   # the terraform version in their spec.
   enableTerraformVersions: true

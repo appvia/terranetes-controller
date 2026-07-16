@@ -58,6 +58,8 @@ type Config struct {
 	EnableWebhooksRegistration bool
 	// EnableWatchers enables the creation of watcher jobs
 	EnableWatchers bool
+	// EnableAutoApproval indicates tenants are permitted to set enableAutoApproval on configurations
+	EnableAutoApproval bool
 	// EnableTerraformVersions indicates if configurations can override the default terraform version
 	EnableTerraformVersions bool
 	// EnableWebhookPrefix enables adding the "terranetes-controller-" prefix to webhook configuration names
