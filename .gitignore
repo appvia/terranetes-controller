@@ -18,6 +18,7 @@ test/results/
 *.kubeconfig
 me
 out
+/step
 me.yml
 me.yaml
 tmp/

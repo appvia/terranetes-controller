@@ -50,6 +50,8 @@ type Step struct {
 	Timeout time.Duration
 	// UploadFile is file to upload on success of the command
 	UploadFile []string
+	// UploadOnErrorFile is a list of files to upload even when the command has failed
+	UploadOnErrorFile []string
 	// WaitFile is the path to a file which is wait for to run
 	WaitFile string
 }
@@ -83,6 +85,16 @@ func (s Step) IsValid() error {
 		}
 	}
 
+	if len(s.UploadOnErrorFile) > 0 && s.Namespace == "" {
+		return errors.New("namespace must be specified when uploading files on error")
+	}
+
+	for _, x := range s.UploadOnErrorFile {
+		if e := strings.Split(x, "="); len(e) != 2 {
+			return fmt.Errorf("upload-on-error file %q must be in the format 'key=path'", x)
+		}
+	}
+
 	return nil
 }
 
@@ -94,6 +106,22 @@ func (s Step) UploadKeyPairs() map[string]string {
 
 	keys := make(map[string]string)
 	for _, x := range s.UploadFile {
+		if e := strings.Split(x, "="); len(e) == 2 {
+			keys[e[0]] = e[1]
+		}
+	}
+
+	return keys
+}
+
+// UploadOnErrorKeyPairs returns a map of key pairs to upload even when the command has failed
+func (s Step) UploadOnErrorKeyPairs() map[string]string {
+	if len(s.UploadOnErrorFile) == 0 {
+		return nil
+	}
+
+	keys := make(map[string]string)
+	for _, x := range s.UploadOnErrorFile {
 		if e := strings.Split(x, "="); len(e) == 2 {
 			keys[e[0]] = e[1]
 		}
