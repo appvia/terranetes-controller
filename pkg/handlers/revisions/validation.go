@@ -23,7 +23,6 @@ import (
 	"reflect"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -41,36 +40,22 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, updateProtection bool) admission.CustomValidator {
+func NewValidator(cc client.Client, updateProtection bool) admission.Validator[*terraformv1alpha1.Revision] {
 	return &validator{cc: cc, EnableUpdateProtection: updateProtection}
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	o, ok := obj.(*terraformv1alpha1.Revision)
-	if !ok {
-		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", obj)
-	}
-
-	return v.validate(ctx, nil, o)
+func (v *validator) ValidateCreate(ctx context.Context, obj *terraformv1alpha1.Revision) (admission.Warnings, error) {
+	return v.validate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	after, ok := newObj.(*terraformv1alpha1.Revision)
-	if !ok {
-		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", newObj)
-	}
-	before, ok := oldObj.(*terraformv1alpha1.Revision)
-	if !ok {
-		return admission.Warnings{}, fmt.Errorf("expected a Revision but got a %T", oldObj)
-	}
-
-	return v.validate(ctx, before, after)
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *terraformv1alpha1.Revision) (admission.Warnings, error) {
+	return v.validate(ctx, oldObj, newObj)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *terraformv1alpha1.Revision) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }
 

@@ -46,7 +46,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/policies", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(mgr.GetScheme(), &terraformv1alpha1.Policy{}, policies.NewValidator(c.cc)),
+			admission.WithValidator(mgr.GetScheme(), policies.NewValidator(c.cc)),
 		)
 	}
 

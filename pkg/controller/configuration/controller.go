@@ -213,6 +213,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 		log.WithField("namespace", key).Warn("evicted namespace from cache")
 	})
 
+	//nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder (events.k8s.io) - deprecation tracked with controller-runtime 0.23 upgrade
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	kc, err := kubernetes.NewForConfig(mgr.GetConfig())
@@ -231,11 +232,11 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/configurations", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewValidator(c.cc, c.EnableTerraformVersions, c.EnableAutoApproval)),
+			admission.WithValidator(mgr.GetScheme(), configurations.NewValidator(c.cc, c.EnableTerraformVersions, c.EnableAutoApproval)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/configurations", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(mgr.GetScheme(), &terraformv1alpha1.Configuration{}, configurations.NewMutator(c.cc)),
+			admission.WithDefaulter(mgr.GetScheme(), configurations.NewMutator(c.cc)),
 		)
 	}
 

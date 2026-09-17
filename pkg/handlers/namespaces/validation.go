@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -37,22 +36,17 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, enabled bool) admission.CustomValidator {
+func NewValidator(cc client.Client, enabled bool) admission.Validator[*v1.Namespace] {
 	return &validator{cc: cc, EnableNamespaceProtection: enabled}
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, ns *v1.Namespace) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
 	// @step: check if the namespace protection is enabled
 	if !v.EnableNamespaceProtection {
 		return warnings, nil
-	}
-
-	ns, ok := obj.(*v1.Namespace)
-	if !ok {
-		return warnings, fmt.Errorf("the object %T is not an expected v1.Namespace", obj)
 	}
 
 	// @step: check if there are any configurations in the namespace
@@ -68,11 +62,11 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (adm
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateCreate(ctx context.Context, obj *v1.Namespace) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *v1.Namespace) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }

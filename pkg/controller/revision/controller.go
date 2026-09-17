@@ -53,18 +53,17 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	log.Info("adding the revision controller")
 
 	c.cc = mgr.GetClient()
+	//nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder (events.k8s.io) - deprecation tracked with controller-runtime 0.23 upgrade
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/revisions", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(schema.GetScheme(), &terraformv1alpha1.Revision{}, revisions.NewMutator(c.cc)),
+			admission.WithDefaulter(schema.GetScheme(), revisions.NewMutator(c.cc)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/revisions", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.Revision{},
-				revisions.NewValidator(c.cc, c.EnableUpdateProtection),
-			),
+			admission.WithValidator(schema.GetScheme(), revisions.NewValidator(c.cc, c.EnableUpdateProtection)),
 		)
 	}
 

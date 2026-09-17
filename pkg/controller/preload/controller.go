@@ -62,6 +62,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	}
 
 	c.cc = mgr.GetClient()
+	//nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder (events.k8s.io) - deprecation tracked with controller-runtime 0.23 upgrade
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	return ctrl.NewControllerManagedBy(mgr).

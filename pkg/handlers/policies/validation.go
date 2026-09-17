@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -38,16 +37,15 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
+func NewValidator(cc client.Client) admission.Validator[*terraformv1alpha1.Policy] {
 	return &validator{cc: cc}
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, o *terraformv1alpha1.Policy) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
 	list := &terraformv1alpha1.ConfigurationList{}
-	o := obj.(*terraformv1alpha1.Policy)
 
 	err := v.cc.List(ctx, list, client.InNamespace(""))
 	if err != nil {
@@ -79,14 +77,14 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (adm
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateCreate(ctx context.Context, obj *terraformv1alpha1.Policy) (admission.Warnings, error) {
 	return v.ValidateUpdate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *terraformv1alpha1.Policy) (admission.Warnings, error) {
 	var warnings admission.Warnings
-	o := newObj.(*terraformv1alpha1.Policy)
+	o := newObj
 
 	if err := validateDefaultVariables(o); err != nil {
 		return warnings, err

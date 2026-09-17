@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -49,7 +48,7 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/namespaces", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(mgr.GetScheme(), &v1.Namespace{}, namespaces.NewValidator(c.cc, c.EnableNamespaceProtection)),
+			admission.WithValidator(mgr.GetScheme(), namespaces.NewValidator(c.cc, c.EnableNamespaceProtection)),
 		)
 	}
 
