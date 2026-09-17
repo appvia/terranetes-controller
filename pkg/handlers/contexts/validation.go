@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -37,24 +36,24 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client) admission.CustomValidator {
+func NewValidator(cc client.Client) admission.Validator[*terraformv1alpha1.Context] {
 	return &validator{cc: cc}
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return admission.Warnings{}, v.validate(ctx, nil, obj.(*terraformv1alpha1.Context))
+func (v *validator) ValidateCreate(ctx context.Context, obj *terraformv1alpha1.Context) (admission.Warnings, error) {
+	return admission.Warnings{}, v.validate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *terraformv1alpha1.Context) (admission.Warnings, error) {
 	var before, after *terraformv1alpha1.Context
 
 	if newObj != nil {
-		after = newObj.(*terraformv1alpha1.Context)
+		after = newObj
 	}
 	if oldObj != nil {
-		before = oldObj.(*terraformv1alpha1.Context)
+		before = oldObj
 	}
 
 	return admission.Warnings{}, v.validate(ctx, before, after)
@@ -89,9 +88,9 @@ func (v *validator) validate(_ context.Context, _, current *terraformv1alpha1.Co
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *terraformv1alpha1.Context) (admission.Warnings, error) {
 	var warnings admission.Warnings
-	current := obj.(*terraformv1alpha1.Context)
+	current := obj
 
 	if current.GetAnnotations()[terraformv1alpha1.OrphanAnnotation] == "true" {
 		return warnings, nil

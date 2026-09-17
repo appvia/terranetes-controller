@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -40,36 +39,31 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, versioning bool, autoApproval bool) admission.CustomValidator {
+func NewValidator(cc client.Client, versioning bool, autoApproval bool) admission.Validator[*terraformv1alpha1.Configuration] {
 	return &validator{cc: cc, enableVersions: versioning, enableAutoApproval: autoApproval}
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	o, ok := obj.(*terraformv1alpha1.Configuration)
-	if !ok {
-		return admission.Warnings{}, fmt.Errorf("expected a Configuration, but got: %T", obj)
-	}
-
-	return admission.Warnings{}, v.validate(ctx, nil, o)
+func (v *validator) ValidateCreate(ctx context.Context, obj *terraformv1alpha1.Configuration) (admission.Warnings, error) {
+	return admission.Warnings{}, v.validate(ctx, nil, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *terraformv1alpha1.Configuration) (admission.Warnings, error) {
 	var before, after *terraformv1alpha1.Configuration
 
 	if newObj != nil {
-		after = newObj.(*terraformv1alpha1.Configuration)
+		after = newObj
 	}
 	if oldObj != nil {
-		before = oldObj.(*terraformv1alpha1.Configuration)
+		before = oldObj
 	}
 
 	return admission.Warnings{}, v.validate(ctx, before, after)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *terraformv1alpha1.Configuration) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }
 

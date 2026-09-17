@@ -39,17 +39,12 @@ type mutator struct {
 }
 
 // NewMutator returns a mutation handler
-func NewMutator(cc client.Client) admission.CustomDefaulter {
+func NewMutator(cc client.Client) admission.Defaulter[*terraformv1alpha1.Configuration] {
 	return &mutator{cc: cc}
 }
 
 // Default implements the mutation handler
-func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
-	o, ok := obj.(*terraformv1alpha1.Configuration)
-	if !ok {
-		return fmt.Errorf("expected terraform configuration, not %T", obj)
-	}
-
+func (m *mutator) Default(ctx context.Context, o *terraformv1alpha1.Configuration) error {
 	// @step: we need to check if the configuration has a provider reference
 	if err := m.mutateOnProviderDefault(ctx, o); err != nil {
 		return err

@@ -69,20 +69,6 @@ var _ = Describe("Checking CloudResource Validation", func() {
 		})
 	})
 
-	When("resource not a cloud resource", func() {
-		It("should return an error", func() {
-			warnings, err := v.ValidateCreate(context.Background(), &terraformv1alpha1.Revision{})
-			Expect(err).To(HaveOccurred())
-			Expect(warnings).To(BeEmpty())
-			Expect(err.Error()).To(Equal("expected a CloudResource, but got: *v1alpha1.Revision"))
-
-			warnings, err = v.ValidateUpdate(context.Background(), &terraformv1alpha1.Revision{}, &terraformv1alpha1.Revision{})
-			Expect(err).To(HaveOccurred())
-			Expect(warnings).To(BeEmpty())
-			Expect(err.Error()).To(Equal("expected a CloudResource, but got: *v1alpha1.Revision"))
-		})
-	})
-
 	When("enableAutoApproval is not permitted", func() {
 		It("should deny creation when enableAutoApproval is true", func() {
 			cloudresource.Spec.EnableAutoApproval = true

@@ -19,9 +19,7 @@ package revisions
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -34,17 +32,12 @@ type mutator struct {
 }
 
 // NewMutator returns a mutation handler
-func NewMutator(cc client.Client) admission.CustomDefaulter {
+func NewMutator(cc client.Client) admission.Defaulter[*terraformv1alpha1.Revision] {
 	return &mutator{cc: cc}
 }
 
 // Default implements the mutation handler
-func (m *mutator) Default(ctx context.Context, obj runtime.Object) error {
-	o, ok := obj.(*terraformv1alpha1.Revision)
-	if !ok {
-		return fmt.Errorf("expected Revision, not %T", obj)
-	}
-
+func (m *mutator) Default(ctx context.Context, o *terraformv1alpha1.Revision) error {
 	o.Labels = utils.MergeStringMaps(o.Labels, map[string]string{
 		terraformv1alpha1.RevisionPlanNameLabel: o.Spec.Plan.Name,
 		terraformv1alpha1.RevisionNameLabel:     o.Spec.Plan.Revision,

@@ -58,15 +58,6 @@ var _ = Describe("Checking Configuration Validation", func() {
 		})
 	})
 
-	When("not passing a configuration", func() {
-		It("should fail", func() {
-			warnings, err = v.ValidateCreate(ctx, &v1.Namespace{})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("expected a Configuration, but got: *v1.Namespace"))
-			Expect(warnings).To(BeEmpty())
-		})
-	})
-
 	When("and the configuration has a plan reference", func() {
 		BeforeEach(func() {
 			configuration.Spec.Variables = nil

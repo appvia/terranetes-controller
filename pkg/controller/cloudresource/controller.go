@@ -61,16 +61,17 @@ func (c *Controller) Add(mgr manager.Manager) error {
 	log.Info("adding the cloudresource controller")
 
 	c.cc = mgr.GetClient()
+	//nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder (events.k8s.io) - deprecation tracked with controller-runtime 0.23 upgrade
 	c.recorder = mgr.GetEventRecorderFor(controllerName)
 
 	if c.EnableWebhooks {
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/validate/%s/cloudresources", terraformv1alpha1.GroupName),
-			admission.WithCustomValidator(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewValidator(c.cc, c.EnableAutoApproval)),
+			admission.WithValidator(schema.GetScheme(), cloudresources.NewValidator(c.cc, c.EnableAutoApproval)),
 		)
 		mgr.GetWebhookServer().Register(
 			fmt.Sprintf("/mutate/%s/cloudresources", terraformv1alpha1.GroupName),
-			admission.WithCustomDefaulter(schema.GetScheme(), &terraformv1alpha1.CloudResource{}, cloudresources.NewMutator(c.cc)),
+			admission.WithDefaulter(schema.GetScheme(), cloudresources.NewMutator(c.cc)),
 		)
 	}
 

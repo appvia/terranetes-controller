@@ -42,37 +42,28 @@ type validator struct {
 }
 
 // NewValidator is validation handler
-func NewValidator(cc client.Client, enableAutoApproval bool) admission.CustomValidator {
+func NewValidator(cc client.Client, enableAutoApproval bool) admission.Validator[*terraformv1alpha1.CloudResource] {
 	return &validator{cc: cc, enableAutoApproval: enableAutoApproval}
 }
 
 // ValidateCreate is called when a new resource is created
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	o, ok := obj.(*terraformv1alpha1.CloudResource)
-	if !ok {
-		return admission.Warnings{}, fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, obj)
-	}
-
-	return admission.Warnings{}, validate(ctx, v.cc, v.enableAutoApproval, o)
+func (v *validator) ValidateCreate(ctx context.Context, obj *terraformv1alpha1.CloudResource) (admission.Warnings, error) {
+	return admission.Warnings{}, validate(ctx, v.cc, v.enableAutoApproval, obj)
 }
 
 // ValidateUpdate is called when a resource is being updated
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *terraformv1alpha1.CloudResource) (admission.Warnings, error) {
 	var before *terraformv1alpha1.CloudResource
 
 	if newObj != nil {
-		o, ok := newObj.(*terraformv1alpha1.CloudResource)
-		if !ok {
-			return admission.Warnings{}, fmt.Errorf("expected a %s, but got: %T", terraformv1alpha1.CloudResourceKind, newObj)
-		}
-		before = o
+		before = newObj
 	}
 
 	return admission.Warnings{}, validate(ctx, v.cc, v.enableAutoApproval, before)
 }
 
 // ValidateDelete is called when a resource is being deleted
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *terraformv1alpha1.CloudResource) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }
 
