@@ -49,16 +49,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build
-        uses: docker/build-push-action@v6.19.2
+        uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: images/Dockerfile.controller
           tags: ghcr.io/appvia/terranetes-controller:ci
           outputs: type=docker,dest=/tmp/controller-image.tar
       - name: Save
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: controller-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp/controller-image.tar
@@ -71,16 +71,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build
-        uses: docker/build-push-action@v6.19.2
+        uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: images/Dockerfile.executor
           tags: ghcr.io/appvia/terranetes-executor:ci
           outputs: type=docker,dest=/tmp/executor-image.tar
       - name: Save
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: executor-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp/executor-image.tar
@@ -111,13 +111,13 @@ jobs:
 
       - name: Retrieve Controller Image
         if: (github.event.inputs || inputs).version == 'ci'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: controller-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp
       - name: Retrieve Executor Image
         if: (github.event.inputs || inputs).version == 'ci'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: executor-image-${{ github.run_id }}-${{ (github.event.inputs || inputs).cloud }}
           path: /tmp
