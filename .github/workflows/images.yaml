@@ -50,6 +50,10 @@ jobs:
             latest=auto
           tags: |
             type=raw,value=${{ steps.get_image_tag.outputs.image_tag }}
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v4.3.0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.3.0
       - name: Build & Push
         uses: docker/build-push-action@v6.18.0
         with:
@@ -59,3 +63,4 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
