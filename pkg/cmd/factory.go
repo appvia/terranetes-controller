@@ -19,7 +19,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"io"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -51,6 +50,8 @@ type Factory interface {
 	SaveConfig(config Config) error
 	// Stdout returns the stdout io writer
 	Stdout() io.Writer
+	// SetFormatter sets the formatter for the cli
+	SetFormatter(Formatter)
 }
 
 type factory struct {
@@ -62,6 +63,8 @@ type factory struct {
 	cfg ConfigInterface
 	// streams is the input and output streams for the command
 	streams genericclioptions.IOStreams
+	// formatter is the formatter for printing to the screen
+	formatter Formatter
 }
 
 // OptionFunc is the function type for the option function
@@ -78,7 +81,16 @@ func NewFactory(options ...OptionFunc) (Factory, error) {
 		f.cfg = NewFileConfiguration(ConfigPath())
 	}
 
+	if f.formatter == nil {
+		f.formatter = &defaultFormatter{}
+	}
+
 	return f, nil
+}
+
+// SetFormatter sets the formatter for the cli
+func (f *factory) SetFormatter(formatter Formatter) {
+	f.formatter = formatter
 }
 
 // GetConfig returns the config for the cli if available
@@ -112,14 +124,12 @@ func (f *factory) SaveConfig(config Config) error {
 
 // Printf prints a message to the output stream
 func (f *factory) Printf(format string, a ...interface{}) {
-	//nolint
-	f.streams.Out.Write([]byte(fmt.Sprintf(format, a...)))
+	f.formatter.Printf(f.streams.Out, format, a...)
 }
 
 // Println prints a message to the output stream
 func (f *factory) Println(format string, a ...interface{}) {
-	//nolint
-	f.streams.Out.Write([]byte(fmt.Sprintf(format+"\n", a...)))
+	f.formatter.Println(f.streams.Out, format, a...)
 }
 
 // Stdout returns the stdout io writer
