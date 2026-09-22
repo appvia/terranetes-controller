@@ -81,7 +81,6 @@ controller-gen:
 		output:crd:dir=charts/terranetes-controller/crds \
 		webhook \
 		output:webhook:dir=deploy/webhooks 
-	@./hack/patch-crd-gen.sh
 	@./hack/gofmt.sh pkg/apis/*/*/zz_generated.deepcopy.go
 
 register-gen:
