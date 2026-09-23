@@ -51,7 +51,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Build
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           file: images/Dockerfile.controller
@@ -73,7 +73,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Build
-        uses: docker/build-push-action@v7.0.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           file: images/Dockerfile.executor
