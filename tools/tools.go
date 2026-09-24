@@ -9,7 +9,6 @@ import (
 	_ "github.com/golang/mock/gomock"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
-	_ "github.com/mikefarah/yq/v3"
 	_ "github.com/mitchellh/gox"
 	_ "github.com/stretchr/testify/assert"
 	_ "github.com/stretchr/testify/require"
