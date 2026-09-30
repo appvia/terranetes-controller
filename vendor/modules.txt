@@ -678,13 +678,6 @@ github.com/gobwas/glob/syntax/ast
 github.com/gobwas/glob/syntax/lexer
 github.com/gobwas/glob/util/runes
 github.com/gobwas/glob/util/strings
-# github.com/goccy/go-yaml v1.18.0
-## explicit; go 1.21.0
-github.com/goccy/go-yaml/ast
-github.com/goccy/go-yaml/lexer
-github.com/goccy/go-yaml/printer
-github.com/goccy/go-yaml/scanner
-github.com/goccy/go-yaml/token
 # github.com/gofrs/flock v0.12.1
 ## explicit; go 1.21.0
 github.com/gofrs/flock
@@ -1084,9 +1077,6 @@ github.com/kulti/thelper/pkg/analyzer
 # github.com/kunwardeep/paralleltest v1.0.10
 ## explicit; go 1.17
 github.com/kunwardeep/paralleltest/pkg/paralleltest
-# github.com/kylelemons/godebug v1.1.0
-## explicit; go 1.11
-github.com/kylelemons/godebug/diff
 # github.com/lasiar/canonicalheader v1.1.2
 ## explicit; go 1.22.0
 github.com/lasiar/canonicalheader
@@ -1157,11 +1147,6 @@ github.com/mgechev/revive/rule
 # github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 ## explicit
 github.com/mgutz/ansi
-# github.com/mikefarah/yq/v3 v3.0.0-20201202084205-8846255d1c37
-## explicit; go 1.15
-github.com/mikefarah/yq/v3
-github.com/mikefarah/yq/v3/cmd
-github.com/mikefarah/yq/v3/pkg/yqlib
 # github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 ## explicit
 github.com/mitchellh/colorstring
@@ -1308,9 +1293,6 @@ github.com/pelletier/go-toml/v2/unstable
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 ## explicit
 github.com/peterbourgon/diskv
-# github.com/pkg/errors v0.9.1
-## explicit
-github.com/pkg/errors
 # github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 ## explicit; go 1.20
 github.com/planetscale/vtprotobuf/protohelpers
@@ -2170,9 +2152,6 @@ gopkg.in/evanphx/json-patch.v4
 # gopkg.in/inf.v0 v0.9.1
 ## explicit
 gopkg.in/inf.v0
-# gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
-## explicit
-gopkg.in/op/go-logging.v1
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
