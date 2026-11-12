@@ -61,17 +61,20 @@ func New(factory cmd.Factory) *cobra.Command {
 		Long:          strings.TrimPrefix(longDescription, "\n"),
 		SilenceErrors: true,
 		Version:       version.Version,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(fcmd *cobra.Command, args []string) error {
 			log.SetOutput(factory.GetStreams().Out)
 
-			if v, _ := cmd.Flags().GetBool("verbose"); v {
+			if v, _ := fcmd.Flags().GetBool("verbose"); v {
 				log.SetLevel(log.DebugLevel)
 			}
-			if v, _ := cmd.Flags().GetBool("no-color"); v {
+			if v, _ := fcmd.Flags().GetBool("no-color"); v {
 				color.NoColor = true
 			}
+			if v, _ := fcmd.Flags().GetString("output"); v == "json" {
+				factory.SetFormatter(cmd.NewJSONFormatter())
+			}
 
-			return cmd.Help()
+			return fcmd.Help()
 		},
 	}
 
@@ -95,6 +98,7 @@ func New(factory cmd.Factory) *cobra.Command {
 
 	flags := command.PersistentFlags()
 	flags.Bool("verbose", false, "Enable verbose logging")
+	flags.String("output", "text", "Output format for CLI command (text, json)")
 
 	flags.String("config", filepath.Join(os.ExpandEnv("HOME"), ".tnctl.yaml"), "Path to the configuration file")
 	flag.Bool("no-color", false, "Disable color output")

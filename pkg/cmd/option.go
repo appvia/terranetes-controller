@@ -50,3 +50,11 @@ func WithStreams(stream genericclioptions.IOStreams) OptionFunc {
 		f.streams = stream
 	}
 }
+
+// WithFormatter sets the formatter 
+func WithFormatter(formatter Formatter) OptionFunc { 
+	return func(f *factory) { 
+		f.formatter = formatter 
+	} 
+}
+

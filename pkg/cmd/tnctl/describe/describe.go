@@ -97,7 +97,7 @@ func (o *Command) Run(ctx context.Context) error {
 	if found, err := kubernetes.GetIfExists(ctx, cc, configuration); err != nil {
 		return err
 	} else if !found {
-		return fmt.Errorf("noo configurations found in namespace %q", o.Namespace)
+		return fmt.Errorf("no configurations found in namespace %q", o.Namespace)
 	}
 
 	// @step: retrieve a list of all secrets related to the builds
